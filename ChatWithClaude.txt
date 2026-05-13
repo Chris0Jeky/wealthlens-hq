@@ -1,0 +1,234 @@
+You said: What if I wanted to pivot my education, I was really moved by someone on youtube called Garys Economics, and I want to help fight wealth inequality and just be more competent when it comes to other areas of importance in my life like world politics, etc
+Would trying to get a master from LSE in london be feasible or doable? How hard would it be to get in? can you give me your considerations on this especially given my background?
+
+12:05
+Claude responded: Great question — and a meaningful one.
+
+Evaluated LSE feasibility and weighed educational pivot considerations
+Evaluated LSE feasibility and weighed educational pivot considerations
+Great question — and a meaningful one. Let me look into LSE specifically for your profile.
+
+
+Synthesized information to address educational pivot feasibility
+Synthesized information to address educational pivot feasibility
+This is a really interesting pivot to consider, and I want to give you an honest, layered answer rather than just a "yes" or "no."
+
+The short answer: yes, it's feasible — and there's a perfect-fit programme
+The MSc Inequalities and Social Science at LSE is almost tailor-made for what you're describing. It examines the socioeconomic causes and impacts of global inequalities, drawing on interdisciplinary perspectives from sociology, anthropology, economics, geography, law and statistics. Crucially, the programme directors explicitly state that most students will not have a background in sociology — indeed, the mix of students is one of the most exciting features of the programme. 
+YourDreamSchool
+Prospects.ac.uk
+
+There's even a direct precedent for your exact situation: Wendy Liu, a former software engineer and tech startup founder, did this programme in 2017–2018 and published all her notes and essays publicly. She took modules including "Technology and Justice" and "The Politics of Inequality and Redistribution" — exactly the Gary's Economics territory you're drawn to. She later wrote a book (Abolish Silicon Valley) connecting tech to inequality. You're not the first CS person to feel this pull, and LSE designed this programme to welcome people like you. 
+Admission Report
+
+Your chances of getting in
+Here's the realistic picture:
+
+What works in your favour: The minimum entry requirement is usually a 2:1 undergraduate degree from a UK institution. You have a First Class Honours — that exceeds the minimum comfortably and puts you in the preferred category. Your Springer publication demonstrates research capability, which is exactly what a dissertation-based MSc values. Your quantitative background (statistics, data analysis, programming) is a genuine asset in a social science programme where many students struggle with the methods courses. And your real-world experience — GE Digital, startup work, student voice leadership — gives you a compelling personal statement about understanding systems and wanting to apply that lens to societal problems. 
+LSE
+
+What you're up against: The offer rate for this programme is approximately 12% — roughly 1 in 8 applicants receive an offer. That's competitive but not absurdly so (LSE's MSc Data Science is 9.9%, MSc Financial Mathematics is 9.9%). LSE has an overall postgraduate offer rate of approximately 25%. The Inequalities programme is below average, but your First Class degree and publication put you in the upper tier of applicants. 
+LSE
+LSE
+
+The Middlesex factor: LSE doesn't officially filter by institution, but they do evaluate your degree in context. A First from Middlesex won't carry the same weight as a First from UCL in a social science subject. However, your publication in Springer proceedings, your GE Digital internship, and your startup experience provide the external validation that compensates. Your personal statement needs to do heavy lifting here — connect your technical background to genuine intellectual curiosity about inequality, not just "I watched some YouTube videos."
+
+My honest assessment: you have a realistic shot, probably 25–40% chance of an offer given your First, your publication, and the programme's explicit welcome of non-traditional backgrounds. That's a solid bet worth taking.
+
+The practical considerations
+Cost: LSE home fees for taught master's programmes are approximately £14,000–£16,000 for 2026/27. You'd also lose a year of income if studying full-time. The programme is full-time only — no part-time option. Total real cost: roughly £30,000–£45,000 including lost earnings and London living.
+
+However, there's a remarkable funding opportunity: the Atlantic Fellows for Social and Economic Equity (AFSEE) fellowship covers tuition fees (including overseas fees), visa costs, and generous stipends for living expenses for up to nine students each year. This is specifically attached to this programme. You'd be a strong candidate given your tech background plus inequality interest — they value interdisciplinary profiles. 
+YourDreamSchool
+
+The UK government postgraduate loan covers up to £12,471 for master's study, which would cover most of the tuition.
+
+The harder question: should you?
+This is where I want to be really candid with you, because I think there are a few different things happening in your question, and they deserve different answers.
+
+If your goal is to understand wealth inequality and world politics deeply: You don't need LSE for this. The intellectual content is largely accessible for free. Read Piketty's Capital in the Twenty-First Century, Branko Milanovic's Global Inequality, Ha-Joon Chang's 23 Things They Don't Tell You About Capitalism, and David Graeber's Debt: The First 5000 Years. Follow Gary's Economics, watch LSE's own free public lectures on YouTube, take Coursera/edX courses from top universities. You can build genuine expertise without a formal degree. Many of the most effective voices on inequality — including Gary himself — don't have MScs in the subject.
+
+If your goal is to work in policy, think tanks, or international development: Then yes, LSE is one of the absolute best credentials you could get. The LSE brand in policy circles is unmatched in the UK. An MSc from their International Inequalities Institute opens doors at the UN, World Bank, DFID successor bodies, Chatham House, IPPR, and similar organisations. If this is a genuine career pivot you're considering, it's a powerful move.
+
+If your goal is to combine tech and inequality — building tools, platforms, or systems that address these problems: This is where your profile becomes genuinely unique and powerful. A software engineer who deeply understands inequality, can build systems, and can speak both languages is extraordinarily rare. Wendy Liu took this exact path. Organisations like the Open Data Institute, mySociety, DataKind UK, and countless civic tech organisations desperately need people with exactly this combination.
+
+If the real impulse is intellectual enrichment while you're still early-career and building momentum in tech: I'd gently push back on doing this now. You're in a critical acceleration phase — the quant startup, Taskdeck, your early career capital. A full-time year at LSE would pause all of that momentum. The knowledge you'd gain is genuinely valuable, but the timing cost is high. Consider: do the reading, attend LSE public lectures (they're free and frequent), join the LSE alumni network through short courses, and keep LSE as a medium-term option (3–5 years out) when you have more financial runway and clearer conviction about the pivot.
+
+My recommendation
+Apply. It costs about £80 and a few hours on the personal statement. Your profile is competitive enough that you have a genuine shot, and having the offer in hand gives you the option without committing. You can defer for a year if the timing isn't right. But be clear-eyed about what you're optimising for — if it's intellectual growth and breadth, there are cheaper and less disruptive paths. If it's a genuine career reorientation toward policy or civic tech, LSE is one of the best moves available to you.
+
+The most powerful version of your career might not be "quant engineer" or "inequality researcher" separately — it might be the person who can build the systems that make inequality visible and actionable. That person needs both skill sets. The question is just sequencing.
+
+You said: Can I get in touch with Gary and try to work with him somehow?
+Can I get in touch with Gary and try to work with him somehow? I'd be willing to do anything he says it's the best path to solve world inequality, especially if it takes more than just an election win from the right party, maybe it takes exposure to the people, creating organisations, etc
+
+12:11
+Claude responded: Let me find out who Gary is, what he's building, and how you could realistically reach him.
+
+Investigated contact methods for economics content creator
+Investigated contact methods for economics content creator
+Let me find out who Gary is, what he's building, and how you could realistically reach him.
+
+
+Synthesized contact strategy and activism ecosystem insights
+Synthesized contact strategy and activism ecosystem insights
+OK — so here's the full picture on Gary and how you could realistically connect.
+
+Who Gary actually is
+Gary Stevenson is a British YouTuber, author, and former financial trader who studied economics and mathematics at LSE, then became a financial trader at Citibank in 2008 at age 21. He grew up in a low-income household in Ilford — genuinely working-class London. He became a millionaire by betting on a large increase in economic inequality, retired from trading in 2014 to study for an MPhil in Economics at Oxford, and in 2020 started GarysEconomics. He now has 1.57 million YouTube subscribers, 1 million Instagram followers, a Penguin-published memoir (The Trading Game), and is a founding member of Patriotic Millionaires UK. 
+The Depot
+The Depot
+
+What's interesting for you: he studied at LSE himself and later at Oxford, becoming "depressed and disillusioned" with the education he was receiving, concluding that "change isn't going to come from there." He read Piketty, Saez, Zucman, and pivoted to public advocacy instead of academia. In 2025, he received the Human Act Award for advancing the UN's SDG 1 (No Poverty) and SDG 10 (Reduced Inequalities). 
+The Depot
+HypeAuditor
+
+How to actually reach him
+Gary is a public figure with a massive audience, so reaching him requires standing out from the 1.5 million followers. Here are the realistic channels, ranked by likelihood of a response:
+
+1. Twitter/X DMs or replies (@garyseconomics) — He's active here with 3,500+ posts. This is your best shot for a direct message. But you need to lead with something that makes him stop scrolling. Don't say "I'm a fan, can I work with you?" Say something like: "I'm a software engineer building trading systems who was born in East London. I want to build the tools that make wealth inequality visible to ordinary people. I've read Piketty, I've published research on cooperation dynamics. What would be the most useful thing I could build for the campaign?" That's a message he'd actually read — it offers concrete skills and shows genuine engagement with the substance, not just the content.
+
+2. Patriotic Millionaires UK — This is the formal organisation he works with. They are a nonpartisan organisation of wealthy individuals who advocate for economic justice and tax reform, lobbying for policies like corporate accountability, transparent campaign funding, and a living wage. They have a UK website (patrioticmillionaires.uk) and are actively campaigning. They may need volunteers, data analysts, or web/tech support. Reach out through their contact form explicitly offering your engineering skills — organisations like this are chronically under-resourced on the tech side. 
+World Finance
+
+3. Tax Justice UK, 38 Degrees, Oxfam GB — These are the allied organisations Gary campaigns alongside. They jointly delivered over 575,000 petition signatures to the Treasury calling on the government to tax the super rich. These organisations actually hire people and take volunteers. Tax Justice UK in particular does data-driven research and advocacy that could use someone with your Python, data analysis, and visualisation skills. 
+Big Issue
+
+4. The Conduit — Gary has appeared at The Conduit, a London members' club focused on social impact. They host regular events on inequality, climate, and economic empowerment. Attending their events (some are open to non-members) puts you in the same room as the people in this ecosystem. 
+Apple Podcasts
+
+5. His YouTube comments and community — Less likely to get a direct response, but engaging thoughtfully and consistently with his content builds visibility. If you wrote a technical blog post like "What my experience building trading systems taught me about wealth inequality" and shared it in his comments, that's the kind of thing that gets noticed.
+
+The honest conversation about what you're really asking
+I want to push on this a bit, because there are a few different things tangled together here, and separating them will help you act more effectively.
+
+"Can I work with Gary?" — Probably not directly, at least not yet. He's essentially a solo content creator with 1.5M+ subscribers. He recently took an extended break because he's exhausted and fighting a very difficult battle — a marathon, not a sprint. He doesn't run a company with employees. He campaigns through Patriotic Millionaires and makes YouTube videos from his kitchen table. There's no "team" to join in the traditional sense. 
+Patrioticmillionaires
+
+"Can I contribute to the cause?" — Absolutely yes, and your skills are genuinely useful here. The wealth inequality movement in the UK is surprisingly under-built on the tech side. Most advocacy organisations run on WordPress, manual spreadsheets, and volunteer labour. Someone who can build data visualisation tools, scrape and analyse public wealth data, create compelling interactive explainers, or build campaign infrastructure is genuinely valuable. This is where you create your own opportunity rather than waiting for someone to give you one.
+
+"Does this replace my engineering career?" — This is where I'd urge caution. Gary himself is financially independent from his trading years — he can campaign full-time because he has millions. The organisations around him (Tax Justice UK, Patriotic Millionaires, Oxfam) hire policy researchers, campaign managers, and communications professionals — not typically software engineers at significant salaries. The most powerful version of this for you is probably building tech tools for the movement as a parallel track while your engineering career provides the income and platform.
+
+What I'd actually do if I were you
+Rather than trying to become Gary's employee (a role that doesn't exist), I'd build something that makes you impossible to ignore in this space.
+
+Build the tool that doesn't exist yet. There's no great, publicly accessible, interactive UK wealth inequality dashboard. ONS publishes data, but it's buried in CSVs. The Resolution Foundation does great analysis, but it's static reports. Imagine an open-source, beautifully designed interactive tool — "UK Wealth Tracker" — that lets anyone see how wealth concentration has changed by region, age cohort, and asset class over time. You have the Python, data analysis, Vue 3, and visualisation skills to build this. If it's good, Gary would share it with 1.5 million people. Tax Justice UK would embed it in their campaigns. The Resolution Foundation would cite it. That is how you enter this world — not by asking permission, but by building something so useful they come to you.
+
+Volunteer for Patriotic Millionaires UK or Tax Justice UK first. Get involved at ground level. Offer to build or improve their website, create data visualisations for their reports, or help with campaign tech. This is how you meet the people, understand the ecosystem, and earn credibility. Then the conversations about larger roles happen organically.
+
+Read the intellectual foundations. Gary's thinking is built on Piketty (Capital in the Twenty-First Century), Atkinson (Inequality: What Can Be Done?), and the work of Saez and Zucman (The Triumph of Injustice). Read these not to agree uncritically, but to develop your own informed perspective. The people who matter in this space can tell the difference between someone who watched YouTube videos and someone who's engaged with the primary sources.
+
+Then consider LSE. If after 6–12 months of genuine engagement with this ecosystem — volunteering, building tools, reading the literature, attending events — you still feel the pull toward formal education in inequality, then apply for the MSc Inequalities and Social Science with a personal statement that isn't hypothetical. You'll be able to say "I built the UK Wealth Tracker used by Tax Justice UK, I volunteer with Patriotic Millionaires, and I want the theoretical framework to complement the tools I'm already building." That application gets accepted.
+
+The person who can build the trading systems and explain why they perpetuate inequality and create the tools to fight it — that person doesn't exist yet. You could be that person. But the path there runs through building, not through asking for permission.
+
+You said: Ok, so here's the thing: I don't necessarily want any money out of this.
+Ok, so here's the thing: I don't necessarily want any money out of this. If opportunities arise from this, it's a bonus, I need to do something about this though. So what's the plan? Emailing oxfam, Patriotic Millionaires UK, The Conduit, etc ? What would I need from them to create and do the exact things I need to do? What would I say? How do I frame it? How do I action things asap? Can you give me a plan? Can you give me a number of pointers to start research from to identify the gaps or even create a prompt for an LLM to do this research? I want to come out of this today that I'm already sending the emails and trying to get in touch with the right people and I want to already kick off the first project to address a gap and thinking about the next ones. How's my approach? Any gaps, any feedback?
+
+12:19
+Claude responded: Your approach is good — the energy is right, the instinct to build first and ask permission later is right.
+
+Synthesized actionable advocacy framework for immediate implementation
+Synthesized actionable advocacy framework for immediate implementation
+Your approach is good — the energy is right, the instinct to build first and ask permission later is right. But I want to sharpen a few things before you fire off emails, because the difference between "enthusiastic volunteer who gets ignored" and "person who gets a reply within 24 hours" is entirely in the framing.
+
+The critical insight: don't email asking what you can do for them. Email showing what you've already started doing. Organisations get hundreds of "I want to help" emails. They reply to almost none. What they reply to is someone who says "I've built this thing, it uses your data, here's the live link, I'd love your feedback on whether it's useful." That flips the power dynamic entirely.
+
+So here's the plan, structured so you're sending emails and building by end of today.
+
+This morning: kick off the first project.
+
+The UK Wealth Inequality Dashboard. The data is freely available right now. Go to the ONS Wealth and Assets Survey (ons.gov.uk, search "Wealth in Great Britain"), the World Inequality Database (wid.world — UK data downloadable as CSV), and the Equality Trust's data page (equalitytrust.org.uk). Pull the data into a Python notebook, clean it, and start building an interactive visualisation with your existing stack. Even a rough working prototype — wealth share of top 1% vs bottom 50% over time, UK house price to earnings ratios by region, billionaire wealth growth vs median wage growth — gives you something concrete to show within hours. You know how to do this. FastAPI backend, Vue 3 frontend, deploy on Railway or Vercel. Call it something like "WealthLens UK" or "FairShare Tracker."
+
+The gaps you're looking for in your research are: what data exists publicly that nobody has made accessible or interactive? ONS publishes incredible datasets that almost nobody reads because they're buried in spreadsheets. HMRC publishes capital gains and inheritance tax statistics. The Resolution Foundation and IPPR publish excellent analysis but as static PDFs. The Equality Trust has data pages that haven't been updated in years. Your job is to turn static, expert-only data into something a 25-year-old scrolling Twitter can understand in 30 seconds.
+
+This afternoon: send the emails.
+
+Don't email Oxfam — they're enormous and your email will disappear into a general inbox. Target the smaller, more responsive organisations where one person reads the contact emails. Here's the priority order and what to say:
+
+Email 1: Tax Justice UK (info@taxjustice.uk). They're the most data-driven of the lot, they're small enough that real humans read emails, and they actively collaborate with tech volunteers. Something like:
+
+Subject: Software engineer offering to build open data tools for wealth inequality research
+
+Hi — I'm a London-based software engineer with experience building data platforms (Python, FastAPI, Vue 3, and data visualisation). I'm a published researcher (Springer, SGAI-AI 2025) and I've worked on trading systems, so I understand financial data well. I've started building an open-source interactive dashboard that makes ONS wealth distribution data and HMRC tax statistics accessible and visual for non-experts — [link to GitHub repo or live prototype]. I'd love to know whether this kind of tool would be useful for your campaigns or research, and whether there are specific datasets or visualisations your team wishes existed but doesn't have the engineering capacity to build. Happy to contribute my time and skills on a volunteer basis. Best, Cristian
+
+Email 2: Patriotic Millionaires UK (through their website contact form at patrioticmillionaires.uk). Similar framing but shorter — they're a campaign organisation, not a research body, so emphasise campaign tools:
+
+I'm a software engineer and published researcher in London. I want to build open-source tools that make the case for wealth taxation undeniable — interactive visualisations, shareable data graphics, campaign infrastructure. I've already started work on [link]. Is there someone on your team I could talk to about what would be most useful?
+
+Email 3: The Equality Trust (info@equalitytrust.org.uk). They're a charity specifically focused on reducing inequality in the UK, founded on the research behind The Spirit Level. They're small, data-focused, and likely to be responsive to a tech volunteer.
+
+Email 4: Gary Stevenson directly via Twitter/X DM (@garyseconomics). Keep it short — he's reading on his phone:
+
+Hey Gary — software engineer from East London, published researcher, currently building trading systems. Started building an open-source UK wealth inequality dashboard to make the data you talk about visual and shareable for everyone. Would love your input on what would be most impactful. [link]
+
+Send all four today. Don't wait for replies before continuing to build.
+
+The research prompt for identifying gaps — paste this into a separate Claude conversation or use it yourself:
+
+"I'm building open-source data visualisation tools to make UK wealth inequality data accessible to the general public. Help me identify: (1) What publicly available UK datasets exist on wealth distribution, income inequality, housing affordability, asset ownership, inheritance, capital gains, and tax revenue — specifically from ONS, HMRC, Bank of England, Resolution Foundation, IFS, IPPR, Equality Trust, and World Inequality Database? (2) For each dataset, what format is it in, how frequently is it updated, and how easy is it to access programmatically? (3) What are the most compelling statistics and trends that campaigners like Gary Stevenson, Tax Justice UK, and Patriotic Millionaires UK cite most frequently — and which of those are hardest for ordinary people to verify or explore themselves? (4) What interactive tools or dashboards already exist for UK wealth inequality data, and what are their limitations? (5) What specific visualisations would be most shareable and impactful on social media — the kind of chart that makes someone stop scrolling and think?"
+
+That will give you a comprehensive map of the data landscape and the gaps worth filling.
+
+Feedback on your approach — the things to watch out for:
+
+Your energy is your biggest asset and your biggest risk. The risk is that you send passionate emails today, start three projects, and in two weeks the momentum fades because you're also building Taskdeck, working on the quant startup, doing your university job, and preparing for interviews. The organisations you email will judge you by follow-through, not by initial enthusiasm. So pick one project — the wealth dashboard — and commit to having a working v0.1 live within two weeks. That's your credibility anchor. Everything else flows from it.
+
+Don't over-promise in your emails. Say "I've started building" (which will be true by the time you send them), not "I want to build a comprehensive platform that..." Specificity and evidence beat ambition and promises every time.
+
+Don't position yourself as someone who needs to be told what to do. Position yourself as someone who's already doing it and wants to make sure it's useful. That's a fundamentally different conversation — one makes you a cost (someone who needs managing), the other makes you an asset (someone who's already producing value).
+
+And one more thing: read The Trading Game this week. It's a fast read, it's compelling, and if you ever do get in front of Gary or his circle, having engaged with his actual work — not just his YouTube clips — will be immediately obvious and appreciated.
+
+Now go build the thing.
+
+You said: Ok, this, from today, will become my mission and my brand.
+Ok, this, from today, will become my mission and my brand. Can we think about doing a total rebranding, Linkedin wise, I will likely create a twitter account for it, blue sky, I will transform my personal instagram in this too to promote this mission and share it with my friends. 
+Also, I started working within my university recently as part of the outreach team and we work with Widening Partecipation, which plays in my favour here, as I'm very passionate about helping kids that are unprivileged go to uni if they want
+
+12:36
+Claude responded: I love that the widening participation work connects here — that's not a coincidence, that's the thread that ties your whole story together.
+
+Synthesized rebranding strategy across multiple platforms with widening participation alignment
+Synthesized rebranding strategy across multiple platforms with widening participation alignment
+I love that the widening participation work connects here — that's not a coincidence, that's the thread that ties your whole story together. Let me help you think through the rebranding carefully, because there's a right way and a wrong way to do this.
+
+Before we touch any profile, let's get the narrative right.
+
+The mistake would be to rebrand as "inequality activist" and bury the engineer. The power of your positioning is that you're both — someone who understands the systems from the inside (built trading platforms, worked in enterprise DevSecOps, published research on cooperation dynamics) and someone who grew up seeing inequality firsthand and now works to widen access for underprivileged kids. That combination is what makes you credible and distinctive. Gary himself is powerful precisely because he was a trader and comes from a council estate. Your story has the same structure.
+
+The brand line that connects everything is something like: "Building the tools that make inequality visible." Or: "Software engineer turning financial data into public knowledge." The engineering isn't the thing you're leaving behind — it's the weapon you're bringing to the fight.
+
+Your widening participation work is a huge asset here. You're not theorising about inequality from a comfortable distance — you're literally in schools talking to kids whose families can't afford university, helping them see a path forward. That's the lived credibility that makes everything else land.
+
+Let me draft the key pieces for you.
+
+
+Synthesized rebranding strategy across multiple platforms
+Synthesized rebranding strategy across multiple platforms
+That's your complete playbook — LinkedIn copy ready to paste, Twitter/Bluesky/Instagram strategy, email templates from the previous conversation, a day-one checklist, and the narrative framework that ties your engineering career, your widening participation work, and your inequality mission into one coherent story.
+
+The key thing I want to stress: your widening participation role isn't a side detail — it's the emotional proof that makes everything else credible. You're not someone who discovered inequality from a comfortable distance. You're in schools right now talking to kids who are living it. That's the thing that makes your story land differently from a thousand other tech workers who share Piketty quotes on LinkedIn.
+
+The document has a concrete checklist for today, this week, and this month. Start with the data pull this morning — ONS Wealth and Assets Survey, World Inequality Database — and get something into a GitHub repo before lunch. Then update your LinkedIn and send the emails. By tonight you should have a repo, updated profiles, and four outreach messages sent. That's a real day one.
+
+You said: Also, I'm thinking: I could say publicly on my instagram and Linkedin that this is what I started doing and if anyone wants to help, there's always stuff to do, such as social media presence/agent, content creation, strategy, newsletter, help with the software, helping by hooking me up with people that are interested, setting up a donation page, setting up a social media account for this, creating a public facing page where I list all the contributors, things that we need help with, the mission (for instance: inequality can be solved with a number of things, including taxes on wealth, but to get there a lot needs to be done first to lay the foundations, and things like "people ask how they can become rich or make money, without realising that the main factor that goes against them and their goals is inequality, and solving that would give them and everyone else a better chance", and other things like that), and much much more, please think carefully about this and provide me with a thorough table of contents, a strategy, documentation, and everything else you think I might need for this.
+
+13:35
+Claude responded: That's your founding document — 11 sections covering everything from mission statement to legal structure to a day-by-day Week 1 execution plan.
+
+Orchestrated comprehensive strategy for public campaign launch
+Orchestrated comprehensive strategy for public campaign launch
+That's your founding document — 11 sections covering everything from mission statement to legal structure to a day-by-day Week 1 execution plan.
+
+A few things I want to flag because they'll save you from common mistakes:
+
+Don't build infrastructure before you have people. The temptation will be to spend three days setting up a perfect Discord, designing a logo, choosing a domain, and building a contributor page before you've written a single line of data analysis code. Resist this. The prototype is what attracts contributors. Everything else is scaffolding that only matters once people show up. GitHub repo, README, and working charts first. Everything else follows.
+
+Don't create a separate social media account for the project yet. Run everything from your personal accounts. Your story — grew up without privilege, built trading systems, works with underprivileged kids — is the draw. A faceless @WealthLensUK account with 12 followers gets zero engagement. Cristian Tcaci saying "I built this thing and here's why" gets engagement. Create the project account only when you have someone else to run it.
+
+The call for volunteers will work, but manage expectations. You'll get a burst of "I want to help!" responses. Maybe 10-20 people. Of those, 2-3 will actually do something. That's normal. Don't be discouraged. Welcome everyone warmly, give specific tasks (not "how can you help?" but "can you pull HMRC capital gains data into a CSV?"), and invest your energy in the 2-3 who follow through.
+
+Your widening participation work IS your credibility. Every time you're in a school talking to a kid who thinks university isn't for them, that's the lived experience that makes your inequality data work feel real rather than performative. Don't separate them — when you post about WP workshops, connect it to the data. "Today I told a room full of 16-year-olds that students from the lowest income quintile are X% less likely to attend a Russell Group university. Then I showed them the chart I built. The room went quiet."
+
+Now go build the first charts. Everything else follows from having something real to show.
