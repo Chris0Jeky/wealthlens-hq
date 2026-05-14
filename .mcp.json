@@ -1,0 +1,24 @@
+{
+  "mcpServers": {
+    "sequential-thinking": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"]
+    },
+    "playwright": {
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp@latest"]
+    },
+    "docker": {
+      "command": "docker",
+      "args": [
+        "run", "-i", "--rm",
+        "--mount", "type=bind,src=.,dst=/projects/wealthlens-hq",
+        "mcp/docker"
+      ]
+    },
+    "Context7": {
+      "type": "url",
+      "url": "https://mcp.context7.com/mcp"
+    }
+  }
+}
