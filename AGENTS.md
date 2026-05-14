@@ -1,79 +1,186 @@
-# AGENTS.md — Instructions for AI Agents
+# WealthLens HQ — AGENTS.md
 
-## Who Is Cristian Tcaci
+Repository-level operating instructions for coding agents working in `wealthlens-hq/`.
 
-Cristian is a London-based software engineer and the founder of WealthLens UK,
-an open-source project making UK wealth inequality data visible to the public.
+Use [CLAUDE.md](./CLAUDE.md) as the Claude Code session contract.
+Use [.codex/README.md](./.codex/README.md) for Codex planning and phase gate orientation.
+Use [autodoc/README.md](./autodoc/README.md) as the concise code-grounded synthesis layer (once code exists).
 
-### Background
-- BSc Computer Science, First Class Honours, Middlesex University (2025)
-- Published lead author: "Navigating the N-Person Prisoners' Dilemma" — Springer, SGAI-AI 2025
-- 15-month software engineering internship at GE Digital (DevSecOps, AWS, Jenkins, CI/CD)
-- Near-co-founder of a quant/options trading platform startup
-- Built Taskdeck: a 4,000-commit local-first developer tool (.NET 8, Vue 3, LLM integration)
-- Works at Middlesex University in Widening Participation outreach
-- See identity/ folder for full details
+## Scope
 
-### Technical Skills
-- Primary: C#/.NET 8, Python, TypeScript, JavaScript
-- Backend: FastAPI, Node.js/Express, .NET, REST APIs
-- Frontend: Vue 3, Pinia, TailwindCSS, D3.js
-- Data: Pandas, scikit-learn, SQLite, PostgreSQL, MongoDB
-- Infrastructure: Docker, AWS, Jenkins, CI/CD, Git, Linux
-- AI/LLM: OpenAI API, Gemini API, multi-provider abstraction, intent classification
+- Work inside this repository only.
+- Treat `.codex/memories/00_ACTIVE.md` as the workspace status board. Always check it — do not assume what is active.
+- Prefer small, reviewable diffs. Avoid rewrite-style changes.
+- When implementing a backlog item, do the work on a branch scoped to that item.
+- Preserve existing repo conventions unless there is a documented reason to change them.
+- This is a multi-domain workspace: code, content, research, strategy, outreach. Read the task context to determine which domain you are in.
 
-### Mission
-Build open-source tools that make UK wealth inequality data accessible, interactive,
-and impossible to ignore. Collaborate with organisations like Tax Justice UK,
-Patriotic Millionaires UK, and the Equality Trust.
+## First 5 minutes on any task
 
-### Values
-- Data first, opinion second
-- Open source always
-- Accessible by default
-- Independent and non-partisan
+1. Read `.codex/memories/00_ACTIVE.md`.
+2. Read `.codex/memories/program/00_READ_THIS_FIRST.md`.
+3. Read `tasks/active-sprint.md` for current priorities.
+4. Use the matching repo skill (`codex-repo-onramp`, `codex-worktree-issue-worker`, `codex-verification-doc-sync`, or `codex-question-batch`) before broad searching.
+5. Identify the smallest change that creates measurable progress.
 
-## How to Help Cristian
+## Codex autonomy skills
+
+Repo-local Codex skills live under `.agents/skills/` and supplement this file. Use them only when their trigger matches the task; do not load every skill by default.
+
+- `codex-repo-onramp` — use for broad/ambiguous requests, session setup, or high-autonomy orientation.
+- `codex-worktree-issue-worker` — use for one assigned issue/task in an isolated git worktree.
+- `codex-verification-doc-sync` — use before handoff to run final checks, update status docs, and seed follow-ups.
+- `codex-question-batch` — use to decide whether to ask the user or proceed with assumptions.
+
+## Operational issue handling
+
+- Do not silently ignore tool, environment, dependency, auth, MCP, plugin, skill, test, CI, lint, docs, or filesystem errors just because there is a workaround.
+- When an issue appears, pause long enough to classify it as blocker, non-blocking risk, pre-existing noise, or invalid signal. State the classification, why work can or cannot continue, and what evidence supports it.
+- Inform the user during the run when the issue changes scope, risk, verification confidence, or future operability.
+- For every non-blocking workaround, capture a follow-up path: fix now, seed a follow-up, document accepted risk, or explain why no action is needed.
+- The final handoff must include any observed issue that was not fully fixed.
+- For long-running or multi-session tasks, keep a task-scoped markdown note under `.codex/memories/session_notes/`.
+
+## Backward compatibility
+
+- Never change default values in `.env.example`, config fields, or shared settings unless the new default is backward-compatible.
+- New behavior ships toggleable, default OFF. Existing behavior must not change silently.
+- Local overrides go in `.env` (not committed), not in templates or shared config.
+
+## Subagents and worktrees
+
+- Use spawned subagents only when the user explicitly asks for subagents, delegation, or parallel agent work.
+- Split by disjoint file/module ownership; keep one coordinator responsible for selection, synthesis, docs, and final verification.
+- Do not pass absolute main-checkout paths to workers. Project paths must be derived from the worktree root.
+
+## Hard guardrails
+
+### Secrets and sensitive data
+
+- Never commit secrets such as API keys, DB passwords, JWT secrets, or encryption keys.
+- Never add "temporary" keys in docs or code.
+- If a secret is discovered in-repo, stop and propose rotation plus purge steps.
+
+### Data integrity
+
+- All data must cite its source with URL and access date.
+- Do not fabricate statistics, percentages, or data points.
+- Charts must be mobile-responsive and meet WCAG AA minimum.
+
+### Authentication and authorization (when dashboard exists)
+
+- All endpoints that return user or private data must require auth.
+- All privileged endpoints must enforce authorization server-side.
+- Do not rely on UI-only gating.
+- Add tests that prove non-admins receive `403` on admin routes.
+
+### Command safety
+
+- Do not run destructive shell commands unless explicitly asked.
+- If a task requires a risky command, ask the user first and propose a safer alternative.
+- See `docs/agentic/GIT_WORKFLOW.md` for safe vs. blocked git commands.
+
+## How to help — by domain
 
 ### When working on WealthLens code (projects/wealthlens-dashboard/)
+
 - Use Python (FastAPI) for backend, Vue 3 + TypeScript for frontend
 - All data must cite its source with URL and access date
 - Charts must be mobile-responsive and accessible (WCAG AA minimum)
 - Write clear docstrings and comments — volunteers will read this code
 - Prefer D3.js or ECharts for interactive visualisations
-- All data pipelines should be reproducible (scripts in automation/data-pipelines/)
+- All data pipelines should be reproducible (scripts in `automation/data-pipelines/`)
 
 ### When working on content (tasks/social-media/, strategy/)
+
 - Voice: confident but not arrogant, data-driven, accessible, personal
 - Never partisan — present data, not political opinions
 - Connect inequality to personal experience (housing, wages, opportunity)
-- Reference the messaging playbook in strategy/branding-playbook.md
+- Reference the messaging playbook in `strategy/branding-playbook.md`
 
 ### When working on tasks and planning
-- Check tasks/active-sprint.md for current priorities
-- New ideas go in tasks/inbox.md for later triage
-- Completed tasks move to tasks/done.md with date
+
+- Check `tasks/active-sprint.md` for current priorities
+- New ideas go in `tasks/inbox.md` for later triage
+- Completed tasks move to `tasks/done.md` with date
 - Always check if a task connects to an existing strategy doc before creating new ones
 
 ### When working on outreach
-- Check tasks/outreach/contacts.md for existing relationships
-- Never send an email without checking tasks/outreach/emails-sent.md for prior contact
+
+- Check `tasks/outreach/contacts.md` for existing relationships
+- Never send an email without checking `tasks/outreach/emails-sent.md` for prior contact
 - Tone: professional, specific, offering value (not asking for favours)
 - Always include a link to something you've already built
 
 ### When organising research
-- Raw LLM outputs go in research/raw/ numbered sequentially
-- After processing, key insights go in research/synthesised/key-insights.md
-- Action items extracted from research go in tasks/inbox.md
+
+- Raw LLM outputs go in `research/raw/` numbered sequentially
+- After processing, key insights go in `research/synthesised/key-insights.md`
+- Action items extracted from research go in `tasks/inbox.md`
 
 ### When making decisions
-- Refer to vision/north-stars.md for what success looks like
-- Refer to identity/principles.md for values-based decision making
-- When in doubt, optimise for: (1) shipping something real, (2) making it visible,
-  (3) connecting with the right people — in that order
 
-### File Conventions
+- Refer to `vision/north-stars.md` for what success looks like
+- Refer to `identity/principles.md` for values-based decision making
+- When in doubt, optimise for: (1) shipping something real, (2) making it visible, (3) connecting with the right people — in that order
+
+## Definition of Done
+
+- Change is minimal and localized.
+- Tests are added or updated, or verification steps are written explicitly (for code work).
+- `make ci-quick` passes locally (when code exists).
+- Relevant linters and typechecks pass.
+- `.codex/memories/00_ACTIVE.md` is updated if the work changes current status.
+- If a meaningful decision was made, capture it in `.codex/memories/decisions/`.
+
+## File conventions
+
 - Markdown for all docs
-- Dates in YYYY-MM-DD format
-- Task format: "- [ ] Task description (@owner if assigned) [due: YYYY-MM-DD]"
-- When updating any strategy doc, add a "Last updated: YYYY-MM-DD" line at the top
+- Dates in `YYYY-MM-DD` format
+- Task format: `- [ ] Task description (@owner if assigned) [due: YYYY-MM-DD]`
+- When updating any strategy doc, add a `Last updated: YYYY-MM-DD` line at the top
+- Commit subjects: `<area>: <imperative summary>`
+
+## Repo map
+
+### Product
+
+- `projects/wealthlens-dashboard/backend/` — FastAPI application (planned)
+- `projects/wealthlens-dashboard/frontend/` — Vue 3 + TypeScript UI (planned)
+- `projects/wealthlens-dashboard/data/` — processed datasets (planned)
+- `projects/wealthlens-dashboard/docs/` — product documentation (planned)
+
+### Automation
+
+- `automation/data-pipelines/` — data fetching scripts (stubs)
+- `automation/analysis/` — research processing scripts (stubs)
+- `automation/social-media/` — social asset generation (stubs)
+- `automation/workflows/` — CI/CD workflow definitions (placeholders)
+
+### Strategy and operations
+
+- `strategy/` — branding, content, growth, outreach, funding, partnership, volunteer, career
+- `vision/` — mission, theory of change, horizon, north stars, inspiration
+- `identity/` — about Cristian, CV, principles, passions, portfolio, skills
+- `research/` — raw inputs, synthesised insights, data source registry, reading list
+- `tasks/` — active sprint, inbox, done, outreach tracking, learning, social media
+
+### Memory and planning
+
+- `.codex/memories/00_ACTIVE.md` — current focus and status board
+- `.codex/memories/program/` — cross-cutting program context
+- `.codex/memories/decisions/` — captured design decisions (ADRs)
+- `.codex/memories/session_notes/` — running notes for multi-session work
+- `.agents/skills/` — repo-scoped Codex workflows
+
+## Canonical commands
+
+```bash
+make lint              # ruff check + mypy (backend)
+make format            # ruff format (auto-fix)
+make test              # pytest -q (backend)
+make dev-backend       # uvicorn on 127.0.0.1:8000
+make dev-frontend      # vite dev server on :3000
+make ci-quick          # lint + tests (~60s, no external deps)
+make ci-full           # lint + tests + frontend build + type check
+```
