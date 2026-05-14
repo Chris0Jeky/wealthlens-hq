@@ -4,39 +4,47 @@
 
 Last updated: 2026-05-14
 
-## Current phase: Foundation
+## Current phase: Foundation → First Deploy
 
-The project is in early-stage scaffolding. No production code exists yet — all product directories contain stubs or `.gitkeep` files.
+The project has moved from pure scaffolding to having real data pipelines and charts. Three interactive Plotly visualisations exist locally. Next milestone: live URL.
 
 ### Active focus areas
 
 | Area | Status | Next step |
 | --- | --- | --- |
-| Repo scaffolding | In progress | Finish agent infrastructure, create Makefile |
-| Research consolidation | Not started | Consolidate raw research by topic |
-| Data source registry | Not started | Build first entries in `research/data-sources/data-source-registry.md` |
-| Dashboard v0.1 | Not started | Decide first 3 chart pages, then build |
-| Contributing guide | Not started | Draft `CONTRIBUTING.md` for volunteers |
-| Outreach | Not started | Create initial contact list |
+| Data pipelines | Done (3 scripts) | Maintain; add more datasets after deploy |
+| Charts (v0.1) | Done (3 charts, local) | Fix CGT nan% bug, add index.html, deploy |
+| Deployment | Not started | Deploy to GitHub Pages or Cloudflare Pages |
+| Social accounts | Twitter/X + Bluesky created | Update LinkedIn profile, write first post |
+| Outreach | Emails sent to mySociety + Democracy Club | Wait for replies, follow up 2026-05-21 |
+| Reading | *The Trading Game* started | Continue; start Piketty when it arrives |
+| Newsletters | 5 subscribed | Ongoing — read and note insights |
+| Research consolidation | Done | Maintained in `research/synthesised/` |
+| Contributing guide | Not started | Draft after v0.1 deploy |
 
 ### Recent activity
 
+- 2026-05-14: Built 3 data pipelines (WID, ONS housing, HMRC CGT) with reproducible fetch/process/chart workflow
+- 2026-05-14: Generated 3 interactive Plotly charts in `projects/wealthlens-dashboard/charts/`
+- 2026-05-14: Created Twitter/X and Bluesky accounts
+- 2026-05-14: Sent volunteer emails to Democracy Club and mySociety
+- 2026-05-14: Subscribed to 5 key newsletters
+- 2026-05-14: Ordered books (*The Trading Game*, *A Brief History of Equality*)
 - 2026-05-14: Added combined UK wealth inequality research
-- 2026-05-14: Added dashboard and automation stubs
 - 2026-05-14: Added operating scaffold (strategy, vision, identity, tasks)
-- 2026-05-14: Configured Claude Code agent guidance and settings
+- 2026-05-14: Configured agent guidance and settings
 
 ### Guardrails snapshot
 
-- No production code deployed — all changes are greenfield.
-- Data integrity: every dataset must cite source, URL, and access date.
+- No production deployment yet — all changes are local/greenfield.
+- Data integrity: every dataset cites source, URL, and access date. All 3 charts have source annotations.
 - Open source: all code will be public. Never commit secrets.
 - Volunteers will read this code — clarity over cleverness.
 
 ### Best next actions
 
-1. Finish scaffolding (Makefile, data pipeline stubs, CI workflows)
-2. Consolidate research by topic into numbered files
-3. Build first data source registry entries (ONS, HMRC, WID)
-4. Choose first 3 chart pages for dashboard v0.1
-5. Draft contributing guide
+1. Fix CGT chart nan% display bug and create index.html for charts directory
+2. Deploy v0.1 to GitHub Pages or Cloudflare Pages — get a live URL
+3. Update LinkedIn profile (headline, about, featured)
+4. Write and publish first LinkedIn post
+5. Find good-first-issue in mySociety or Democracy Club repos for first PR

@@ -1,174 +1,95 @@
-# Today — 2026-05-14
+# Today — 2026-05-15
 
 ## 5 Things To Do Today
 
-### 1. Order *The Trading Game* and *A Brief History of Equality*
+### 1. Fix the CGT Chart and Create an Index Page
 
-Buy both today. Start *The Trading Game* tonight — it's a fast read and it's the emotional foundation for everything. *A Brief History of Equality* is Piketty's most accessible book and gives you the intellectual backbone without needing to tackle the 700-page *Capital* yet.
+Two quick fixes before deployment:
 
-- *The Trading Game* — Gary Stevenson (Penguin). Amazon, Waterstones, or Audible.
-- *A Brief History of Equality* — Thomas Piketty (2022). Amazon or Waterstones. Free summary of the underlying data at wir2022.wid.world.
+**Fix the nan% bug:** The HMRC CGT chart shows "nan%" for the £3,000+ band's taxpayer share — there's a missing data point in that row. Either interpolate, show "n/a", or skip the band.
 
-### 2. Create Twitter/X and Bluesky Accounts
+**Create `projects/wealthlens-dashboard/charts/index.html`:**
+- Simple page linking to all 3 charts with titles and one-line descriptions
+- Include the WealthLens name and mission statement at the top
+- Add a footer: "Built by Chris Tcaci · Source code on GitHub · Data sources cited on each chart"
+- Keep it clean — this is what every email and post will link to
 
-This is a one-time setup that blocks everything else — you can't post, engage, or tag people without accounts.
+Estimated time: 30-45 minutes.
 
-**Twitter/X:**
-- Sign up with jeky.tck@gmail.com or a dedicated email.
-- Handle: @CristianTcaci or @CrisTcaci (check availability).
-- Bio: "Engineer. Turning inequality data into public knowledge. Springer SGAI-AI 2025. ex-GE Digital. Building @WealthLensUK."
-- Pin: leave empty for now — you'll pin your manifesto thread after v0.1.
+### 2. Deploy v0.1 to a Live URL
 
-**Bluesky:**
-- Sign up at bsky.app.
-- Handle: @cristiantcaci.bsky.social (later verify via personal domain).
-- Bio: mission-first variant of the X bio.
+This is the highest-leverage thing you can do today. Nothing is real until it has a URL.
 
-**LinkedIn (update today, 10 minutes):**
-- Headline: "Software Engineer | Building open-source tools for economic justice | Published Researcher | Widening Participation Advocate"
-- About section: rewrite around "engineer making inequality data visible" — see `tasks/outreach/emails-to-send.md` for the narrative.
-- Featured section: add WealthLens repo (once public), Springer publication, one WP-related post.
-- Add skills: Data Visualisation, Open Data, Economic Research, Widening Participation.
+**Option A — GitHub Pages (recommended for speed):**
+1. Make the repo public (or use a separate `wealthlens-charts` repo for just the charts)
+2. Push the `charts/` directory
+3. Enable GitHub Pages from Settings → Pages → Deploy from branch
+4. URL: `chris0jeky.github.io/wealthlens-charts/` (or similar)
 
-### 3. Pull ONS + WID Data Into a Python Notebook
+**Option B — Cloudflare Pages:**
+1. Connect to GitHub repo
+2. Build command: none (static files)
+3. Output directory: `projects/wealthlens-dashboard/charts/`
+4. Custom domain later: `charts.wealthlens.uk` or similar
 
-Nothing else matters until there's a live URL. Start the first chart today.
+Either way, the goal is: **by tonight, you can paste a URL in a DM and someone sees your charts.**
 
-```bash
-# Create the project structure
-mkdir -p projects/wealthlens-dashboard/notebooks
-cd projects/wealthlens-dashboard/notebooks
+Estimated time: 30-60 minutes.
 
-# Create a virtual environment
-python -m venv .venv
-.venv\Scripts\activate  # Windows
+### 3. Update LinkedIn Profile
 
-# Install basics
-pip install pandas matplotlib requests openpyxl
+Deferred from yesterday. Quick 15-minute job:
 
-# Start a notebook
-pip install jupyter
-jupyter notebook
-```
+- **Headline:** "Software Engineer | Building open-source tools for economic justice | Published Researcher | Widening Participation Advocate"
+- **About section:** Rewrite around "engineer making inequality data visible" — see `tasks/outreach/emails-to-send.md` for the narrative.
+- **Featured section:** Add the live charts URL (from step 2), Springer publication link, one WP-related post.
+- **Skills:** Add Data Visualisation, Open Data, Economic Research, Widening Participation.
 
-**First chart: Top 1% wealth share over time (WID data)**
-1. Go to wid.world/data/
-2. Select: Country = United Kingdom, Indicator = "Net personal wealth", Percentile = "Top 1% share"
-3. Download CSV
-4. Load in pandas, plot with matplotlib
-5. Add source citation, title, and date
+Estimated time: 15-20 minutes.
 
-**Second chart: Housing affordability by region**
-1. Go to ons.gov.uk, search "Housing affordability in England and Wales"
-2. Download the XLSX (Dataset 9 has LA-level data)
-3. Plot median house price to median earnings ratio by region, 1997-2024
+### 4. Draft First LinkedIn Post
 
-**Third chart: Capital gains concentration**
-1. Go to gov.uk/government/statistics/capital-gains-tax-statistics
-2. Download the ODS/XLSX
-3. Show that 92% of gains accrue to top 1% of taxpayers
+Don't publish yet — draft it tonight, sleep on it, publish tomorrow morning. The content calendar says the first post should be "Why I'm building WealthLens UK."
 
-### 4. Email Democracy Club and mySociety
+**Structure (aim for ~150-200 words):**
+1. Hook: a single striking stat from one of your charts (e.g., "The top 1% own more wealth than the bottom 70% combined")
+2. Personal angle: one sentence connecting your WP work or housing experience
+3. What you're doing: "I'm building WealthLens — open-source tools to make this data impossible to ignore"
+4. What's live: link to the charts URL (in first comment, not in post body — LinkedIn algorithm penalises external links)
+5. Call to action: "Follow along" or "What data would you want to see?"
 
-These don't need a prototype. Send today.
+**Rules from content calendar:**
+- No external links in post body
+- One number, one chart, one sentence
+- Use hashtags sparingly: #WealthInequality #OpenData #EconomicJustice
 
-**Democracy Club** — copy from `tasks/outreach/emails-to-send.md` Draft 6:
-- To: hello@democracyclub.org.uk
-- Keep it short. Mention Python/Django, GE Digital, Springer paper, WealthLens.
-- Ask Sym Roe which issue to start on.
+Estimated time: 30 minutes for a solid draft.
 
-**mySociety** — copy from Draft 5:
-- To: whofundsthem@mysociety.org
-- Offer to join the volunteer cohort for register-of-interests scrutiny.
-- Mention Python/FastAPI/Vue 3 skills.
+### 5. Find a Good-First-Issue for Your First Open-Source PR
 
-### 5. Subscribe to 5 Key Newsletters
+Browse the repos you emailed about. You don't need to submit the PR today — just find the issue and understand the codebase.
 
-10 minutes. Compounds forever.
+**Democracy Club:**
+- GitHub: `github.com/DemocracyClub`
+- Look at `yournextrepresentative` or `uk-election-data` repos
+- Filter by `good first issue` or `help wanted` labels
 
-1. **Resolution Foundation "Top of the Charts"** — resolutionfoundation.org (weekly, Friday)
-2. **Dan Neidle's Tax Policy Associates** — taxpolicy.org.uk or find on Substack
-3. **Branko Milanovic "Global Inequality and More 3.0"** — Substack (28k+ subs)
-4. **Adam Tooze "Chartbook"** — Substack (polycrisis context)
-5. **IFS publications** — ifs.org.uk/publications (sign up for email alerts)
+**mySociety:**
+- GitHub: `github.com/mysociety`
+- Look at `theyworkforyou` or `parlparse` repos
+- Filter by `good first issue` labels
+
+**What to look for:** Python/Django bugs, documentation fixes, or data-processing tasks that match your skills. One small merged PR is worth more than a dozen unfinished ideas.
+
+Estimated time: 20-30 minutes browsing.
 
 ---
 
-## Gaps and Contradictions — How To Handle Them
+## Evening Reading
 
-### 1. Gary Stevenson: Inspiration vs Methodology
+Continue *The Trading Game*. If you finish a chapter that sparks a chart idea or data angle, note it in `tasks/inbox.md`.
 
-**The tension:** Gary is the emotional catalyst and audience-building model, but the research warns he's not a methodological source. His claims are sometimes imprecise.
+## Follow-Up Reminders
 
-**How to adjust:** Use Gary for audience-finding, framing, and proof that popular inequality content works in the UK. But source your data from the primary economists (Piketty, Atkinson, Saez, Zucman, Advani/Summers). When quote-tweeting Gary, always add the primary source. Never cite "Gary said X" — cite "ONS data shows X." The research calls this avoiding the "Gary trap."
-
-**In practice:**
-- Quote-tweet Gary with ONS/HMRC/WID data, not just agreement.
-- Read the books Gary's thinking is built on (Piketty, Atkinson).
-- Position yourself as "engineer who builds tools" not "Gary's disciple."
-
-### 2. WAS Accreditation Withdrawal
-
-**The tension:** The ONS Wealth and Assets Survey lost accredited official statistics status in June 2025 (response rate collapsed 66% to 41%). It also systematically undercounts top-tail wealth by ~£800bn. But it's still the primary UK wealth distribution dataset.
-
-**How to adjust:** Create a methodology page (`research/methodology/was-caveats.md`) that:
-- Explains the accreditation withdrawal and what it means
-- Documents the December 2024 DB pension methodology change (~£2.3tn impact)
-- Describes Pareto adjustment for top-tail (Vermeulen 2018, Tippet & Wildauer STRL reconstruction)
-- Every WAS-sourced chart gets a visible caveat badge
-- Offer a source toggle: ONS WAS / WID DINA / RF corrected — treat disagreement as a feature
-
-### 3. "Build Fast" vs "Read First"
-
-**The tension:** The 26-week curriculum says study 260 hours before publishing credibly. ChatWithClaude says "v0.1 live in two weeks." Both are right for different things.
-
-**How to adjust:** Ship immediately from well-understood data. Defer complex analysis.
-
-| Ship now (well-understood) | Defer (needs study first) |
-|---|---|
-| WID top shares (clean CSV, clear methodology) | WAS-derived distributional claims |
-| HMRC capital gains/IHT (simple counts) | Wealth tax revenue modelling |
-| ONS housing affordability (straightforward ratio) | Cross-source wealth comparisons |
-| Land Registry price trends | Policy recommendations |
-
-**Rule:** If you can link to the exact ONS/HMRC/WID methodology page and explain it in one paragraph, ship it. If you'd need to hedge with "depending on the definition of..." then study first.
-
-### 4. LSE MSc: Now vs Later
-
-**The tension:** ChatWithClaude treats it as worth applying immediately. The career docs say "only if AFSEE-funded" and "pauses critical momentum."
-
-**How to adjust:** Hold as a medium-term option. Don't spend time on it now.
-- Note the AFSEE fellowship deadline (typically January 2027).
-- Attend LSE public lectures and III seminars as free credibility-building.
-- If in 12 months WealthLens has traction + AFSEE is available, reconsider.
-- Meanwhile, Georgia Tech OMSCS (applications Aug-Sep 2026) is higher-ROI: part-time, ~£8-10k total, no career interruption, signals CS depth for research engineering roles.
-
-### 5. 200-Item Inbox vs "One Sharp Spear"
-
-**The tension:** The inbox has ~200 action items. The research consistently warns against scattering.
-
-**How to adjust:** The inbox is a reference library, not a to-do list. Only the active sprint matters this week. Rules:
-- Maximum 7 items in active sprint at any time.
-- Do not start items from the inbox unless they're promoted to the sprint.
-- The priority chain is: **charts -> deploy -> first post -> first outreach emails -> everything else.**
-- Taskdeck, quant startup, LSE, OMSCS, LeetCode, C++ all stay at maintenance level for 30 days.
-- Review the inbox every Sunday evening and promote 1-2 items to the next week's sprint.
-- Check `tasks/deadlines.md` weekly for upcoming time-sensitive items.
-
----
-
-## New Structural Files Created
-
-These four files were created to fill gaps identified during the research extraction:
-
-### 1. `research/methodology/was-caveats.md`
-Documents the ONS Wealth and Assets Survey accreditation withdrawal (June 2025), the December 2024 DB pension methodology change, top-tail undercoverage (~£800bn), Pareto adjustment methods, and standard caveat text for charts. Also covers Gini vs Palma and measurement unit requirements. Every WAS-sourced chart should reference this file.
-
-### 2. `tasks/outreach/pitch-tracker.md`
-Consolidates all conference CFPs, podcast pitches, newsletter submissions, and grant applications with specific deadlines. Organised by time period (May 2026 through 2027) plus rolling/ongoing items. Check this monthly to avoid missing windows.
-
-### 3. `identity/personal-story.md`
-A template and prompt for Chris to write his personal narrative — the single strongest content hook identified across all research. Contains the themes to cover (housing, wages, education, the contradiction, the turn, the commitment), a narrative arc template, content hooks the story unlocks, and framing rules. **Chris needs to write his version — the template shows what to cover but the authenticity must be his.**
-
-### 4. `tasks/deadlines.md`
-All time-sensitive items from across the entire inbox consolidated into one chronological file. Covers May 2026 through early 2027 plus rolling deadlines. Check weekly on Sunday evenings.
+- Check for replies from Democracy Club and mySociety by 2026-05-21 — if no reply, send a gentle follow-up.
+- *A Brief History of Equality* should arrive soon — start when it does.
