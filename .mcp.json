@@ -15,10 +15,6 @@
         "--mount", "type=bind,src=.,dst=/projects/wealthlens-hq",
         "mcp/docker"
       ]
-    },
-    "Context7": {
-      "type": "url",
-      "url": "https://mcp.context7.com/mcp"
     }
   }
 }
