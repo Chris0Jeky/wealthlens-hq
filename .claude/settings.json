@@ -12,6 +12,13 @@
   "permissions": {
     "defaultMode": "bypassPermissions",
     "allow": [
+      "Read(*)",
+      "Grep(*)",
+      "Glob(*)",
+      "Bash(pwd:*)",
+      "Bash(ls:*)",
+      "Bash(find:*)",
+      "Bash(rg:*)",
       "Bash(git status:*)",
       "Bash(git log:*)",
       "Bash(git diff:*)",
@@ -24,6 +31,7 @@
       "Bash(git switch:*)",
       "Bash(git checkout:*)",
       "Bash(git merge:*)",
+      "Bash(git stash:*)",
       "Bash(gh :*)",
       "Bash(python --version:*)",
       "Bash(python -m venv:*)",
@@ -31,19 +39,19 @@
       "Bash(python -m pytest:*)",
       "Bash(python -m ruff:*)",
       "Bash(python -m mypy:*)",
-      "Bash(python automation/data-pipelines/*:*)",
-      "Bash(python automation/analysis/*:*)",
+      "Bash(python -m uvicorn:*)",
+      "Bash(python automation/*:*)",
+      "Bash(python scripts/*:*)",
       "Bash(pytest:*)",
       "Bash(ruff:*)",
       "Bash(mypy:*)",
+      "Bash(uvicorn:*)",
+      "Bash(fastapi:*)",
       "Bash(uv --version:*)",
       "Bash(uv init:*)",
       "Bash(uv sync:*)",
       "Bash(uv add:*)",
       "Bash(uv run:*)",
-      "Bash(python -m uvicorn:*)",
-      "Bash(uvicorn:*)",
-      "Bash(fastapi:*)",
       "Bash(node --version:*)",
       "Bash(npm --version:*)",
       "Bash(npm install:*)",
@@ -59,26 +67,53 @@
       "Bash(docker compose:*)",
       "Bash(docker build:*)",
       "Bash(docker ps:*)",
-      "Bash(ls:*)",
-      "Bash(pwd:*)",
-      "Bash(find:*)",
-      "Bash(rg:*)"
+      "Bash(make :*)",
+      "Bash(make:*)"
     ],
     "deny": [
       "Bash(git push --force:*)",
       "Bash(git push --force-with-lease:*)",
       "Bash(git clean -fd:*)",
+      "Bash(git clean -f:*)",
       "Bash(git checkout --:*)",
       "Bash(git reset --hard:*)",
+      "Bash(git rebase:*)",
       "Bash(rm -rf /:*)",
       "Bash(rm -rf *:*)",
       "Bash(sudo *)",
       "Bash(chmod -R 777 *)",
       "Bash(curl * | sh*)",
-      "Bash(wget * | sh*)"
+      "Bash(wget * | sh*)",
+      "Bash(npm publish:*)"
     ]
   },
   "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "shell": "powershell",
+            "command": "python scripts/agent_hooks/pre_tool_use.py",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "shell": "powershell",
+            "command": "python scripts/agent_hooks/post_tool_failure.py",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
     "SessionStart": [
       {
         "matcher": "",
@@ -86,7 +121,7 @@
           {
             "type": "command",
             "shell": "powershell",
-            "command": "Write-Output 'WealthLens HQ. Read CLAUDE.md, AGENTS.md, and tasks/active-sprint.md. Dashboard work uses Python/FastAPI, Vue 3 + TypeScript, reproducible data pipelines, cited data sources with access dates, and mobile/WCAG AA charts.'",
+            "command": "python scripts/agent_hooks/session_start.py",
             "timeout": 5
           }
         ]
