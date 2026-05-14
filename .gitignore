@@ -1,4 +1,6 @@
 /.claude/worktrees
+/.claude/local/
+/.claude/settings.local.json
 
 # Local environment
 .env
