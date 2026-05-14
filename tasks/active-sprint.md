@@ -6,23 +6,25 @@ This week's focus. Keep this list to 5-7 tasks.
 
 ## Sprint: 2026-05-14 to 2026-05-21
 
-1. - [ ] Pull ONS Wealth and Assets Survey + WID UK data into Python notebooks and produce first 3 charts: top 1% wealth share, housing affordability by region, capital gains concentration (@Chris) [due: 2026-05-18]
-2. - [ ] Deploy v0.1 prototype with at least 3 interactive charts on Cloudflare Pages (@Chris) [due: 2026-05-19]
-3. - [ ] Create Twitter/X account and Bluesky account; update LinkedIn headline and About section with WealthLens narrative (@Chris) [due: 2026-05-16]
-4. - [ ] Order *The Trading Game* by Gary Stevenson and *A Brief History of Equality* by Piketty; begin reading (@Chris) [due: 2026-05-15]
-5. - [ ] Write and publish first LinkedIn post: "Why I'm building WealthLens UK" — personal story connecting WP work, trading systems, and the mission (@Chris) [due: 2026-05-19]
-6. - [ ] Send volunteer emails to mySociety and Democracy Club to start building civic-tech credentials (@Chris) [due: 2026-05-17]
-7. - [ ] Make first open-source PR to mySociety, Democracy Club, or TJN repos (@Chris) [due: 2026-05-21]
+1. - [ ] Deploy v0.1 prototype with at least 3 interactive charts on GitHub Pages or Cloudflare Pages — needs index.html and CGT chart fix (@Chris) [due: 2026-05-19]
+2. - [ ] Update LinkedIn headline and About section with WealthLens narrative (@Chris) [due: 2026-05-16]
+3. - [ ] Write and publish first LinkedIn post: "Why I'm building WealthLens UK" — personal story connecting WP work, trading systems, and the mission (@Chris) [due: 2026-05-19]
+4. - [ ] Make first open-source PR to mySociety, Democracy Club, or TJN repos (@Chris) [due: 2026-05-21]
+5. - [ ] Continue reading *The Trading Game* and start *A Brief History of Equality* when it arrives (@Chris) [due: 2026-05-21]
 
-## Why These Seven
+## Why These Five
 
-- **Charts + deploy (1-2):** Nothing else matters until there's a live URL to link in every email, post, and DM. "Build first, ask permission later."
-- **Social accounts + rebrand (3):** Must exist before publishing the first post. One-time setup.
-- **Reading (4):** Foundation for credibility. Gary's book is a week read; Piketty's is the intellectual backbone.
-- **First post (5):** Establishes public commitment. Personal story + mission declaration.
-- **Civic-tech volunteering (6-7):** Three PRs in three weeks is the most credible portfolio signal you can build for free. Start the clock now.
+- **Deploy (1):** Charts exist but nobody can see them. A live URL is the single highest-leverage thing to create this week — it makes every email, post, and DM 10x more credible.
+- **LinkedIn (2-3):** Deferred from day 1. Quick profile update + first post establishes public commitment.
+- **Open-source PR (4):** Three PRs in three weeks is the credibility target. Start the clock.
+- **Reading (5):** Foundation work continues in background.
 
 ## Completed This Sprint
 
 - [x] Extract all research insights, action items, contacts, and data sources into structured files (@Chris) [completed: 2026-05-14]
 - [x] Create initial WealthLens HQ scaffold (@Codex) [completed: 2026-05-14]
+- [x] Order *The Trading Game* by Gary Stevenson and *A Brief History of Equality* by Piketty; begin reading (@Chris) [completed: 2026-05-14]
+- [x] Create Twitter/X account and Bluesky account (@Chris) [completed: 2026-05-14]
+- [x] Build 3 data pipelines + interactive Plotly charts: WID wealth shares, ONS housing affordability, HMRC CGT concentration (@Chris) [completed: 2026-05-14]
+- [x] Send volunteer emails to mySociety and Democracy Club (@Chris) [completed: 2026-05-14]
+- [x] Subscribe to 5 key newsletters: Resolution Foundation, Tax Policy Associates, Milanovic, Tooze, IFS (@Chris) [completed: 2026-05-14]
