@@ -1,0 +1,96 @@
+{
+  "includeCoAuthoredBy": false,
+  "enableAllProjectMcpServers": true,
+  "worktree": {
+    "symlinkDirectories": [
+      "node_modules",
+      "projects/wealthlens-dashboard/frontend/node_modules",
+      ".venv",
+      "projects/wealthlens-dashboard/backend/.venv"
+    ]
+  },
+  "permissions": {
+    "defaultMode": "bypassPermissions",
+    "allow": [
+      "Bash(git status:*)",
+      "Bash(git log:*)",
+      "Bash(git diff:*)",
+      "Bash(git branch:*)",
+      "Bash(git show:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git fetch:*)",
+      "Bash(git remote:*)",
+      "Bash(git switch:*)",
+      "Bash(git checkout:*)",
+      "Bash(git merge:*)",
+      "Bash(gh :*)",
+      "Bash(python --version:*)",
+      "Bash(python -m venv:*)",
+      "Bash(python -m pip:*)",
+      "Bash(python -m pytest:*)",
+      "Bash(python -m ruff:*)",
+      "Bash(python -m mypy:*)",
+      "Bash(python automation/data-pipelines/*:*)",
+      "Bash(python automation/analysis/*:*)",
+      "Bash(pytest:*)",
+      "Bash(ruff:*)",
+      "Bash(mypy:*)",
+      "Bash(uv --version:*)",
+      "Bash(uv init:*)",
+      "Bash(uv sync:*)",
+      "Bash(uv add:*)",
+      "Bash(uv run:*)",
+      "Bash(python -m uvicorn:*)",
+      "Bash(uvicorn:*)",
+      "Bash(fastapi:*)",
+      "Bash(node --version:*)",
+      "Bash(npm --version:*)",
+      "Bash(npm install:*)",
+      "Bash(npm ci:*)",
+      "Bash(npm run:*)",
+      "Bash(npm test:*)",
+      "Bash(npx vite:*)",
+      "Bash(npx vue-tsc:*)",
+      "Bash(npx vitest:*)",
+      "Bash(npx playwright:*)",
+      "Bash(npx eslint:*)",
+      "Bash(npx prettier:*)",
+      "Bash(docker compose:*)",
+      "Bash(docker build:*)",
+      "Bash(docker ps:*)",
+      "Bash(ls:*)",
+      "Bash(pwd:*)",
+      "Bash(find:*)",
+      "Bash(rg:*)"
+    ],
+    "deny": [
+      "Bash(git push --force:*)",
+      "Bash(git push --force-with-lease:*)",
+      "Bash(git clean -fd:*)",
+      "Bash(git checkout --:*)",
+      "Bash(git reset --hard:*)",
+      "Bash(rm -rf /:*)",
+      "Bash(rm -rf *:*)",
+      "Bash(sudo *)",
+      "Bash(chmod -R 777 *)",
+      "Bash(curl * | sh*)",
+      "Bash(wget * | sh*)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "shell": "powershell",
+            "command": "Write-Output 'WealthLens HQ. Read CLAUDE.md, AGENTS.md, and tasks/active-sprint.md. Dashboard work uses Python/FastAPI, Vue 3 + TypeScript, reproducible data pipelines, cited data sources with access dates, and mobile/WCAG AA charts.'",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}
