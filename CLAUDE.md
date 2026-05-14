@@ -27,9 +27,9 @@ When sources conflict, use the higher source and report the conflict.
 
 Do not bulk-read strategy docs, vision docs, identity docs, or research archives unless the task explicitly requires them.
 
-## Who is Cristian Tcaci
+## Who is Chris
 
-Cristian is a London-based software engineer and the founder of WealthLens UK, an open-source project making UK wealth inequality data visible to the public.
+Chris is a London-based software engineer and the founder of WealthLens UK, an open-source project making UK wealth inequality data visible to the public.
 
 ### Background
 

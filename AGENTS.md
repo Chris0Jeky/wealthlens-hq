@@ -161,7 +161,7 @@ Repo-local Codex skills live under `.agents/skills/` and supplement this file. U
 
 - `strategy/` — branding, content, growth, outreach, funding, partnership, volunteer, career
 - `vision/` — mission, theory of change, horizon, north stars, inspiration
-- `identity/` — about Cristian, CV, principles, passions, portfolio, skills
+- `identity/` — about Chris, CV, principles, passions, portfolio, skills
 - `research/` — raw inputs, synthesised insights, data source registry, reading list
 - `tasks/` — active sprint, inbox, done, outreach tracking, learning, social media
 

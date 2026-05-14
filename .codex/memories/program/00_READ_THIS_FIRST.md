@@ -23,7 +23,7 @@ wealthlens-hq/
 ├── research/           ← raw inputs, synthesised insights, data sources
 ├── strategy/           ← branding, content, growth, outreach, funding
 ├── vision/             ← mission, theory of change, north stars
-├── identity/           ← about Cristian, CV, principles, skills
+├── identity/           ← about Chris, CV, principles, skills
 ├── tasks/              ← active sprint, inbox, outreach, learning
 ├── .codex/             ← agent control plane (this directory)
 ├── .claude/            ← Claude Code skills and settings

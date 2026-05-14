@@ -4,7 +4,7 @@ Last updated: 2026-05-14
 
 ## Working Thesis
 
-Cristian's strongest lane is public-interest engineering: building systems and artefacts that make unequal systems legible.
+Chris's strongest lane is public-interest engineering: building systems and artefacts that make unequal systems legible.
 
 ## Near-Term Focus
 

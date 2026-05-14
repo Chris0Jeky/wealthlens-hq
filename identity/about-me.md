@@ -1,6 +1,6 @@
 # About Me
 
-Cristian Tcaci is a London-based software engineer and the founder of WealthLens UK.
+Chris is a London-based software engineer and the founder of WealthLens UK.
 
 This file should capture the personal story behind the work: background, values, professional path, lived experience, and why wealth inequality visibility matters.
 

@@ -1,6 +1,6 @@
 # Content Calendar
 
-Weekly content plan for WealthLens and Cristian's public voice.
+Weekly content plan for WealthLens and Chris's public voice.
 
 ## Template
 
