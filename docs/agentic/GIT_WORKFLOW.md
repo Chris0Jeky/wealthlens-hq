@@ -1,56 +1,39 @@
-# Git Workflow — Shared Repo Rules
+# Git Workflow — Repo Rules
 
-> Plain-language command explanations and recovery procedures for agents.
+> Solo-developer repo. Rules are relaxed but still prevent catastrophic data loss.
 
 ## Rules
 
-- **Never rebase.** Use `git merge main` to update your branch. Rebase rewrites history and requires force-push, which is never allowed.
-- **Never force-push.** Not `--force`, not `--force-with-lease`, not on any branch.
-- **Never `git commit --amend` after pushing.** Create a new fixup commit instead.
-- **Never run `git reset --hard`, `git clean -f`, `git checkout -- .`, or `git restore .`** without explicit user approval. These permanently destroy uncommitted work.
-- **Recovery commands are always safe:** `git rebase --abort`, `git merge --abort`, `git stash`.
+- **Never `git push --force`** (bare force). Use `--force-with-lease` if you must rewrite remote history.
+- **Never run `rm -rf /` or `rm -rf ~`** — catastrophic filesystem deletion.
+- All standard git commands are allowed: commit, amend, rebase, reset, stash, clean, etc.
+- Prefer new commits over amending when sharing context with the user, but amending is fine if asked.
 
 ## Explain-before-acting rule
 
-Before any git command that could discard work or rewrite history, you MUST:
+For commands that discard uncommitted work (`git reset --hard`, `git clean -f`, `git checkout -- .`):
 
-1. Tell the user what you want to do in plain language — assume they may not be a git expert.
-2. Explain what data is at risk (uncommitted changes? commit history? remote state?).
-3. State whether the action is reversible and how to recover if it goes wrong.
-4. Wait for explicit user approval before proceeding.
+1. Briefly state what will be lost.
+2. Proceed unless the user has unsaved work you know about.
 
 ## When you get tangled
 
-If you end up with diverged branches, unresolvable merge conflicts, or detached HEAD:
+If you end up with diverged branches, unresolvable conflicts, or detached HEAD:
 
-1. **Stop.** Do not attempt destructive recovery.
-2. Run `git status` and `git log --oneline -10`.
-3. Tell the user: what happened, what state you are in, and what your options are (safest first).
-4. Let the user choose. Never silently discard work to get unstuck.
+1. Run `git status` and `git log --oneline -10`.
+2. Tell the user: what happened, what state you are in, and options (safest first).
+3. Let the user choose. Never silently discard significant work.
 
-Recovery options (safest first):
+## Safe vs. caution commands
 
-1. `git merge --abort` / `git rebase --abort` — undo in-progress operation, no data loss.
-2. `git stash` — save uncommitted changes before attempting recovery.
-3. `git merge origin/<branch>` — reconcile diverged branches with a merge commit.
-4. Ask the user to intervene manually.
-
-## Safe vs. blocked commands
-
-| Command | Status | Why |
+| Command | Status | Notes |
 | --- | --- | --- |
-| `git merge main` | Always allowed | Merge commit preserves all history |
-| `git pull --no-rebase` | Always allowed | Same as fetch + merge |
-| `git stash` / `git stash pop` | Always allowed | Reversible |
-| `git merge --abort` | Always allowed | Cancels in-progress merge |
-| `git rebase --abort` | Always allowed | Cancels in-progress rebase |
-| `git push` (no flags) | Allowed | Normal push, no history rewriting |
-| `git rebase` | **Blocked** | Rewrites history, requires force-push |
-| `git pull --rebase` | **Blocked** | Rewrites local history |
-| `git push --force[-with-lease]` | **Blocked** | Can destroy remote commits |
-| `git reset --hard` | **Blocked** | Destroys uncommitted changes |
-| `git reset --soft/--mixed` | **Blocked** | Rewrites commit history |
-| `git clean -f` | **Blocked** | Deletes untracked files permanently |
-| `git checkout -- .` | **Blocked** | Discards all uncommitted changes |
-| `git restore .` | **Blocked** | Discards all uncommitted changes |
-| `git commit --amend` (after push) | **Blocked by policy** | Requires force-push to sync |
+| `git commit`, `git commit --amend` | Allowed | Normal workflow |
+| `git rebase`, `git rebase -i` | Allowed | Fine for local branches |
+| `git reset --soft/--mixed/--hard` | Allowed | Mention if uncommitted work at risk |
+| `git stash`, `git stash pop` | Allowed | Reversible |
+| `git clean -f` | Allowed | Mention what will be deleted |
+| `git push` | Allowed | Normal push |
+| `git push --force-with-lease` | Allowed | Safer force-push |
+| `git push --force` | **Blocked** | Use --force-with-lease instead |
+| `git merge`, `git pull` | Allowed | Any strategy is fine |
