@@ -36,3 +36,4 @@ projects/wealthlens-dashboard/data/processed/
 Thumbs.db
 *.log
 /temp
+/.playwright-mcp
