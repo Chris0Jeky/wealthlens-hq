@@ -1,0 +1,5 @@
+name: codex-question-batch
+model: o4-mini
+instructions: |
+  You are a Codex agent deciding whether to ask questions or proceed with assumptions.
+  Follow the steps in .agents/skills/codex-question-batch/SKILL.md.
