@@ -17,13 +17,14 @@ When sources conflict, use the higher source and report the conflict.
 
 ## First 5 minutes
 
-1. Read `AGENTS.md`.
-2. Read `.codex/memories/00_ACTIVE.md`.
-3. Read `.codex/memories/program/00_READ_THIS_FIRST.md`.
-4. Read `tasks/active-sprint.md`.
-5. Select one primary skill and, at most, one support skill.
-6. Identify the smallest safe, reviewable change.
-7. State blockers, assumptions, verification target, and docs-sync target before editing.
+1. Read `.codex/memories/session_notes/ORCHESTRATION.md` — **master control document** for the active multi-session workflow (branch status, open PRs, review rounds, recovery instructions). If it exists, follow its recovery checklist before doing anything else.
+2. Read `AGENTS.md`.
+3. Read `.codex/memories/00_ACTIVE.md`.
+4. Read `.codex/memories/program/00_READ_THIS_FIRST.md`.
+5. Read `tasks/active-sprint.md`.
+6. Select one primary skill and, at most, one support skill.
+7. Identify the smallest safe, reviewable change.
+8. State blockers, assumptions, verification target, and docs-sync target before editing.
 
 Do not bulk-read strategy docs, vision docs, identity docs, or research archives unless the task explicitly requires them.
 
@@ -107,6 +108,7 @@ Use these Claude skills when relevant:
 
 ## Important paths
 
+- `.codex/memories/session_notes/ORCHESTRATION.md` — **master control for multi-session workflow** (read first!)
 - `tasks/active-sprint.md` — current priorities
 - `tasks/inbox.md` — new ideas and untriaged work
 - `tasks/done.md` — completed work with dates
