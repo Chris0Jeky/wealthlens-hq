@@ -11,9 +11,7 @@ from __future__ import annotations
 import os
 from unittest.mock import patch
 
-import pytest
 from fastapi.testclient import TestClient
-
 
 # ---------------------------------------------------------------------------
 # Helpers — each test that needs a custom CORS_ORIGINS value must reimport
@@ -113,6 +111,47 @@ class TestCorsEnvOverride:
             )
             assert response.status_code == 200
             assert response.headers.get("access-control-allow-origin") == origin
+
+
+class TestCorsEdgeCases:
+    """Edge-case CORS_ORIGINS values should fall back to defaults."""
+
+    def test_empty_cors_origins_falls_back(self) -> None:
+        """CORS_ORIGINS="" should fall back to default localhost origins."""
+        client = _make_client({"CORS_ORIGINS": ""})
+        response = client.get(
+            "/health",
+            headers={"Origin": "http://localhost:3000"},
+        )
+        assert response.status_code == 200
+        assert response.headers.get("access-control-allow-origin") == "http://localhost:3000"
+
+    def test_trailing_comma_filtered(self) -> None:
+        """CORS_ORIGINS="https://a.com," should allow a.com and not produce empty entry."""
+        client = _make_client({"CORS_ORIGINS": "https://a.com,"})
+        # The valid origin should work
+        response = client.get(
+            "/health",
+            headers={"Origin": "https://a.com"},
+        )
+        assert response.status_code == 200
+        assert response.headers.get("access-control-allow-origin") == "https://a.com"
+        # An empty-string origin must not be allowed
+        response = client.get(
+            "/health",
+            headers={"Origin": "http://evil.example.com"},
+        )
+        assert "access-control-allow-origin" not in response.headers
+
+    def test_whitespace_only_falls_back(self) -> None:
+        """CORS_ORIGINS="  " should fall back to default localhost origins."""
+        client = _make_client({"CORS_ORIGINS": "  "})
+        response = client.get(
+            "/health",
+            headers={"Origin": "http://localhost:3000"},
+        )
+        assert response.status_code == 200
+        assert response.headers.get("access-control-allow-origin") == "http://localhost:3000"
 
 
 class TestCorsDefaults:

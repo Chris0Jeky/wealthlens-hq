@@ -20,7 +20,10 @@ from app.routers import data
 # works out of the box.
 # ---------------------------------------------------------------------------
 _default_origins = "http://localhost:3000,http://127.0.0.1:3000"
-cors_origins = [o.strip() for o in os.environ.get("CORS_ORIGINS", _default_origins).split(",")]
+_raw = os.environ.get("CORS_ORIGINS", _default_origins)
+cors_origins = [o.strip() for o in _raw.split(",") if o.strip()]
+if not cors_origins:
+    cors_origins = [o.strip() for o in _default_origins.split(",")]
 
 app = FastAPI(
     title="WealthLens UK API",
