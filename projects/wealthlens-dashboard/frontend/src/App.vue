@@ -27,7 +27,7 @@ import { RouterView } from "vue-router";
         </nav>
       </div>
     </header>
-    <main id="main-content">
+    <main id="main-content" tabindex="-1">
       <RouterView />
     </main>
     <footer role="contentinfo" class="border-t border-gray-200 px-6 py-6 mt-12 text-center text-sm text-gray-500">
