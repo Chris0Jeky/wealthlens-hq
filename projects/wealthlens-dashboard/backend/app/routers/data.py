@@ -15,6 +15,13 @@ from typing import Any
 import pandas as pd
 from fastapi import APIRouter, HTTPException, Query
 
+from app.routers.schemas import (
+    AllDatasetsMetadataResponse,
+    DatasetListResponse,
+    DatasetMetadataResponse,
+    PaginatedDatasetResponse,
+)
+
 router = APIRouter()
 
 DATA_DIR = Path(__file__).resolve().parents[3] / "data" / "processed"
@@ -164,19 +171,19 @@ def health_data() -> dict[str, Any]:
     }
 
 
-@router.get("/")
+@router.get("/", response_model=DatasetListResponse)
 def list_datasets() -> dict[str, list[str]]:
     """Return available dataset names."""
     return {"datasets": list(DATASETS.keys())}
 
 
-@router.get("/metadata")
+@router.get("/metadata", response_model=AllDatasetsMetadataResponse)
 def all_datasets_metadata() -> dict[str, list[dict[str, Any]]]:
     """Return metadata with source citations for every dataset."""
     return {"datasets": [_build_metadata(name) for name in DATASETS]}
 
 
-@router.get("/{dataset_name}/metadata")
+@router.get("/{dataset_name}/metadata", response_model=DatasetMetadataResponse)
 def dataset_metadata(dataset_name: str) -> dict[str, Any]:
     """Return metadata with source citation for a single dataset."""
     if dataset_name not in DATASETS:
@@ -184,7 +191,7 @@ def dataset_metadata(dataset_name: str) -> dict[str, Any]:
     return _build_metadata(dataset_name)
 
 
-@router.get("/{dataset_name}")
+@router.get("/{dataset_name}", response_model=PaginatedDatasetResponse)
 def get_dataset(
     dataset_name: str,
     page: int = Query(default=1, ge=1, description="Page number (1-indexed)"),
