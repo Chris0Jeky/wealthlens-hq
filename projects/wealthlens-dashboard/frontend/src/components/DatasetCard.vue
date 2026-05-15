@@ -1,8 +1,16 @@
 <script setup lang="ts">
-defineProps<{
+/** Dataset names that have a chart implementation. */
+const SUPPORTED_CHARTS = new Set(["wealth-shares"]);
+
+const props = defineProps<{
   name: string;
   description: string;
+  /** Override chart availability. When omitted, checks SUPPORTED_CHARTS. */
+  hasChart?: boolean;
 }>();
+
+const chartAvailable =
+  props.hasChart !== undefined ? props.hasChart : SUPPORTED_CHARTS.has(props.name);
 </script>
 
 <template>
@@ -10,10 +18,12 @@ defineProps<{
     <h3 class="text-lg font-semibold mb-2">{{ name }}</h3>
     <p class="text-sm text-gray-600 mb-3">{{ description }}</p>
     <router-link
+      v-if="chartAvailable"
       :to="`/charts/${name}`"
       class="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-800"
     >
       View Chart &rarr;
     </router-link>
+    <span v-else class="text-sm text-gray-400 italic">Chart coming soon</span>
   </div>
 </template>

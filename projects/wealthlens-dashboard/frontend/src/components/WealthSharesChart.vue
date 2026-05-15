@@ -69,9 +69,54 @@ function seriesFor(percentile: string): { years: number[]; values: number[] } {
 const COLOR_TOP_10 = "#1a56db";
 const COLOR_TOP_1 = "#dc2626";
 
+/** Escape HTML special characters to prevent XSS in tooltip content. */
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+/** Safely compute min/max from a number array without spreading (stack-safe). */
+function safeMinMax(arr: number[]): { min: number; max: number } {
+  if (arr.length === 0) return { min: 0, max: 0 };
+  let min = arr[0];
+  let max = arr[0];
+  for (let i = 1; i < arr.length; i++) {
+    if (arr[i] < min) min = arr[i];
+    if (arr[i] > max) max = arr[i];
+  }
+  return { min, max };
+}
+
+/** Pre-computed series data for top 1% and top 10%. */
+const top1Data = computed(() => seriesFor("p99p100"));
+const top10Data = computed(() => seriesFor("p90p100"));
+
+/** True when the API returned actual data to display. */
+const hasData = computed(
+  () => top1Data.value.years.length > 0 || top10Data.value.years.length > 0,
+);
+
+/** Year range across all series, with empty-array guards. */
+const yearRange = computed(() => {
+  const years = [
+    ...top1Data.value.years,
+    ...top10Data.value.years,
+  ];
+  return safeMinMax(years);
+});
+
+/** Safe min/max for top 10% series values. */
+const top10Range = computed(() => safeMinMax(top10Data.value.values));
+
+/** Safe min/max for top 1% series values. */
+const top1Range = computed(() => safeMinMax(top1Data.value.values));
+
 const option = computed(() => {
-  const top1 = seriesFor("p99p100");
-  const top10 = seriesFor("p90p100");
+  const top1 = top1Data.value;
+  const top10 = top10Data.value;
 
   // Use the longer year array for the x-axis (they should match)
   const years = top10.years.length >= top1.years.length ? top10.years : top1.years;
@@ -91,10 +136,10 @@ const option = computed(() => {
       axisPointer: { type: "cross" as const },
       formatter: (params: Array<{ seriesName: string; value: number; axisValue: string }>) => {
         if (!Array.isArray(params) || params.length === 0) return "";
-        let html = `<strong>${params[0].axisValue}</strong><br/>`;
+        let html = `<strong>${escapeHtml(String(params[0].axisValue))}</strong><br/>`;
         for (const p of params) {
-          const pct = typeof p.value === "number" ? p.value.toFixed(1) : p.value;
-          html += `${p.seriesName}: ${pct}%<br/>`;
+          const pct = typeof p.value === "number" ? p.value.toFixed(1) : String(p.value);
+          html += `${escapeHtml(String(p.seriesName))}: ${escapeHtml(pct)}%<br/>`;
         }
         return html;
       },
@@ -172,11 +217,16 @@ const option = computed(() => {
     </p>
   </div>
 
+  <!-- No data state -->
+  <div v-else-if="!hasData" class="py-10 text-center">
+    <p class="text-gray-500 text-lg">No data available for this chart.</p>
+  </div>
+
   <!-- Chart -->
   <div v-else>
     <div
       role="img"
-      :aria-label="`Line chart showing UK wealth concentration over time. The top 10 percent held between ${Math.round(Math.min(...option.series[0].data))}% and ${Math.round(Math.max(...option.series[0].data))}% of total wealth. The top 1 percent held between ${Math.round(Math.min(...option.series[1].data))}% and ${Math.round(Math.max(...option.series[1].data))}% of total wealth.`"
+      :aria-label="`Line chart showing UK wealth concentration from ${yearRange.min} to ${yearRange.max}. The top 10 percent held between ${Math.round(top10Range.min)}% and ${Math.round(top10Range.max)}% of total wealth. The top 1 percent held between ${Math.round(top1Range.min)}% and ${Math.round(top1Range.max)}% of total wealth.`"
       class="w-full"
     >
       <VChart

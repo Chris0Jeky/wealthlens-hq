@@ -5,9 +5,13 @@
  * Uses the route param :name to determine which chart component to render.
  * Currently supports: wealth-shares
  */
-import { computed } from "vue";
+import { computed, defineAsyncComponent } from "vue";
 import { useRoute } from "vue-router";
-import WealthSharesChart from "@/components/WealthSharesChart.vue";
+
+/** Lazy-load chart components to avoid bundling ECharts on every route. */
+const WealthSharesChart = defineAsyncComponent(
+  () => import("@/components/WealthSharesChart.vue"),
+);
 
 const route = useRoute();
 
