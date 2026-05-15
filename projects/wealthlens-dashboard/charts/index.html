@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>WealthLens UK — Interactive Charts on UK Wealth Inequality</title>
+  <meta name="description" content="Open-source interactive charts making UK wealth inequality data visible. Explore wealth concentration, housing affordability, and capital gains data.">
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      color: #1a1a1a;
+      background: #fafafa;
+      line-height: 1.6;
+    }
+
+    a:focus-visible {
+      outline: 3px solid #1f77b4;
+      outline-offset: 2px;
+    }
+
+    .skip-link {
+      position: absolute;
+      top: -40px;
+      left: 0;
+      background: #1f77b4;
+      color: #fff;
+      padding: 8px 16px;
+      z-index: 100;
+      font-size: 0.875rem;
+    }
+
+    .skip-link:focus {
+      top: 0;
+    }
+
+    header {
+      background: #1a1a1a;
+      color: #fff;
+      padding: 2rem 1rem;
+      text-align: center;
+    }
+
+    header h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+
+    header p {
+      font-size: 1rem;
+      color: #ccc;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    main {
+      max-width: 900px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+    }
+
+    .chart-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+
+    @media (min-width: 640px) {
+      .chart-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .chart-card {
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 1.5rem;
+      transition: box-shadow 0.15s ease;
+    }
+
+    .chart-card:hover {
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    .chart-card h2 {
+      font-size: 1.125rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .chart-card h2 a {
+      color: #1f77b4;
+      text-decoration: none;
+    }
+
+    .chart-card h2 a:hover {
+      text-decoration: underline;
+    }
+
+    .chart-card p {
+      font-size: 0.875rem;
+      color: #555;
+      margin-bottom: 0.75rem;
+    }
+
+    .chart-card .source {
+      font-size: 0.75rem;
+      color: #888;
+    }
+
+    footer {
+      text-align: center;
+      padding: 2rem 1rem;
+      font-size: 0.8125rem;
+      color: #888;
+      border-top: 1px solid #e0e0e0;
+      margin-top: 2rem;
+    }
+
+    footer a {
+      color: #1f77b4;
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header>
+    <h1>WealthLens UK</h1>
+    <p>Open-source interactive charts making UK wealth inequality data visible, accessible, and impossible to ignore.</p>
+  </header>
+
+  <main id="main">
+    <div class="chart-grid">
+
+      <article class="chart-card">
+        <h2><a href="wid_wealth_shares_gb.html">UK Wealth Shares (1820&ndash;2024)</a></h2>
+        <p>How much of the UK's net personal wealth is owned by the top 1% and top 10%? Two centuries of data from the World Inequality Database.</p>
+        <span class="source">Source: WID.world &middot; CC-BY</span>
+      </article>
+
+      <article class="chart-card">
+        <h2><a href="ons_housing_affordability.html">Housing Affordability by Region</a></h2>
+        <p>Median house price to median earnings ratio across English regions. London's ratio has more than doubled since 1997.</p>
+        <span class="source">Source: ONS &middot; OGL v3.0</span>
+      </article>
+
+      <article class="chart-card">
+        <h2><a href="ons_wealth_by_decile.html">Wealth by Decile</a></h2>
+        <p>The richest 10% of households hold nearly half of all net wealth in Great Britain. The poorest 10% have negative net wealth.</p>
+        <span class="source">Source: ONS WAS &middot; OGL v3.0</span>
+      </article>
+
+      <article class="chart-card">
+        <h2><a href="hmrc_cgt_concentration.html">Capital Gains Concentration</a></h2>
+        <p>A small number of taxpayers with very large gains account for the vast majority of all capital gains in the UK.</p>
+        <span class="source">Source: HMRC &middot; OGL v3.0</span>
+      </article>
+
+    </div>
+  </main>
+
+  <footer>
+    <p>
+      Built by <strong>WealthLens UK</strong> &middot;
+      Data first, opinion second &middot;
+      <a href="https://github.com/Chris0Jeky/wealthlens-hq">Source on GitHub</a>
+    </p>
+  </footer>
+
+  <noscript>
+    <p style="text-align:center;padding:2rem;">These charts require JavaScript to display. Links above will still work.</p>
+  </noscript>
+</body>
+</html>
