@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { RouterView } from "vue-router";
+import { RouterView } from 'vue-router'
 </script>
 
 <template>
@@ -24,9 +24,12 @@ import { RouterView } from "vue-router";
     <main>
       <RouterView />
     </main>
-    <footer class="border-t border-gray-200 px-6 py-6 mt-12 text-center text-sm text-gray-500">
+    <footer
+      class="border-t border-gray-200 px-6 py-6 mt-12 text-center text-sm text-gray-500"
+    >
       <p>
-        WealthLens UK &middot; Open source &middot; Data cited from ONS, WID, HMRC
+        WealthLens UK &middot; Open source &middot; Data cited from ONS, WID,
+        HMRC
       </p>
     </footer>
   </div>
