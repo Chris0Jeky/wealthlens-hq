@@ -18,6 +18,9 @@ const HousingAffordabilityChart = defineAsyncComponent(
 const CgtConcentrationChart = defineAsyncComponent(
   () => import("@/components/CgtConcentrationChart.vue"),
 );
+const WealthByDecileChart = defineAsyncComponent(
+  () => import("@/components/WealthByDecileChart.vue"),
+);
 
 const route = useRoute();
 
@@ -28,6 +31,7 @@ const chartTitles: Record<string, string> = {
   "wealth-shares": "Wealth Shares — Top 1% and Top 10%",
   "housing-affordability": "Housing Affordability — Price-to-Earnings Ratios by Region",
   "cgt-concentration": "Capital Gains Tax — Concentration by Size of Gain",
+  "wealth-by-decile": "Total Household Wealth by Decile",
 };
 
 const isSupported = computed(() => chartName.value in chartTitles);
@@ -50,6 +54,7 @@ const isSupported = computed(() => chartName.value in chartTitles);
       <WealthSharesChart v-if="chartName === 'wealth-shares'" />
       <HousingAffordabilityChart v-else-if="chartName === 'housing-affordability'" />
       <CgtConcentrationChart v-else-if="chartName === 'cgt-concentration'" />
+      <WealthByDecileChart v-else-if="chartName === 'wealth-by-decile'" />
     </template>
 
     <!-- Unsupported chart name -->
