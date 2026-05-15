@@ -24,7 +24,7 @@ pipelines = [
 [tool.ruff]
 target-version = "py311"
 line-length = 120
-src = ["automation", "projects"]
+src = ["automation", "tests"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "UP", "B", "SIM", "RUF"]

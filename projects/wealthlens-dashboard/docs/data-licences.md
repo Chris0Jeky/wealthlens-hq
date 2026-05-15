@@ -10,6 +10,7 @@ Every dataset used in WealthLens charts is listed here with its licence and attr
 |---|---|---|---|---|
 | World Inequality Database — UK wealth shares | WID.world | CC-BY 4.0 | Yes — "Source: WID.world" | https://wid.world/country/united-kingdom/ |
 | Housing Affordability in England and Wales | ONS | OGL v3.0 | Yes — "Source: ONS" | https://www.ons.gov.uk/peoplepopulationandcommunity/housing/datasets/ratioofhousepricetoworkplacebasedearningslowerquartileandmedian |
+| Total Wealth in Great Britain (WAS) | ONS | OGL v3.0 | Yes — "Source: ONS" | https://www.ons.gov.uk/peoplepopulationandcommunity/personalandhouseholdfinances/incomeandwealth/bulletins/totalwealthingreatbritain/latest |
 | Capital Gains Tax Statistics | HMRC | OGL v3.0 | Yes — "Contains public sector information licensed under the Open Government Licence v3.0" | https://www.gov.uk/government/statistics/capital-gains-tax-statistics |
 
 ## Licence summaries
