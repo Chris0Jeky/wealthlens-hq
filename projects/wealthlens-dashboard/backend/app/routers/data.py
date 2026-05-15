@@ -6,11 +6,12 @@ source citations for every dataset.
 
 from __future__ import annotations
 
+import math
 from pathlib import Path
 from typing import Any
 
 import pandas as pd
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 
 router = APIRouter()
 
@@ -107,10 +108,27 @@ def dataset_metadata(dataset_name: str) -> dict[str, Any]:
 
 
 @router.get("/{dataset_name}")
-def get_dataset(dataset_name: str) -> dict[str, list[dict]]:
-    """Return a processed dataset as a list of row objects."""
+def get_dataset(
+    dataset_name: str,
+    page: int = Query(default=1, ge=1, description="Page number (1-indexed)"),
+    limit: int = Query(default=100, ge=1, le=1000, description="Rows per page (max 1000)"),
+) -> dict[str, Any]:
+    """Return a processed dataset as a paginated list of row objects."""
     if dataset_name not in DATASETS:
         raise HTTPException(status_code=404, detail=f"Unknown dataset: {dataset_name}")
 
     df = _read_csv(dataset_name)
-    return {"data": df.to_dict(orient="records")}
+    total = len(df)
+    total_pages = math.ceil(total / limit) if total > 0 else 1
+
+    start = (page - 1) * limit
+    end = start + limit
+    page_df = df.iloc[start:end]
+
+    return {
+        "data": page_df.to_dict(orient="records"),
+        "page": page,
+        "limit": limit,
+        "total": total,
+        "total_pages": total_pages,
+    }
