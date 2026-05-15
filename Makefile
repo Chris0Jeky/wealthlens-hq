@@ -23,7 +23,7 @@ ANALYSIS_DIR := automation/analysis
         ci-quick ci-full \
         frontend-install frontend-build frontend-dev frontend-lint frontend-typecheck \
         backend-install backend-test backend-lint backend-format \
-        pipeline-test clean
+        pipeline-test pipelines clean
 
 # ── Help ──────────────────────────────────────────────────────────────────
 help: ## Show all targets
@@ -68,6 +68,12 @@ pipeline-test: ## Test data pipeline scripts
 	$(PYTHON) $(PIPELINE_DIR)/fetch_ons_wealth.py 2>/dev/null || echo "Pipeline stubs only"
 	$(PYTHON) $(PIPELINE_DIR)/fetch_hmrc_stats.py 2>/dev/null || echo "Pipeline stubs only"
 	$(PYTHON) $(PIPELINE_DIR)/fetch_wid_data.py 2>/dev/null || echo "Pipeline stubs only"
+
+pipelines: ## Run all working data pipelines (fetches live data)
+	$(PYTHON) $(PIPELINE_DIR)/fetch_wid_data.py
+	$(PYTHON) $(PIPELINE_DIR)/fetch_ons_housing.py
+	$(PYTHON) $(PIPELINE_DIR)/fetch_ons_wealth.py
+	$(PYTHON) $(PIPELINE_DIR)/fetch_hmrc_stats.py
 
 # ── Aggregate targets ─────────────────────────────────────────────────────
 install: backend-install frontend-install ## Install all dependencies
