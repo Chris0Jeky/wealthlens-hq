@@ -25,7 +25,7 @@ from chart_html import write_accessible_chart
 try:
     from openpyxl.utils.exceptions import InvalidFileException
 except ImportError:  # pragma: no cover — openpyxl is always installed with pandas[excel]
-    InvalidFileException = Exception  # type: ignore[assignment,misc]
+    InvalidFileException = type('InvalidFileException', (OSError,), {})  # type: ignore[assignment,misc]
 
 ROOT = Path(__file__).resolve().parents[2]
 DATA_DIR = ROOT / "projects" / "wealthlens-dashboard" / "data"
@@ -130,7 +130,7 @@ def process(xlsx_path: Path | None) -> pd.DataFrame:
     # server returning an HTML error page with a .xlsx extension).
     try:
         xl = pd.ExcelFile(xlsx_path, engine="openpyxl")
-    except (zipfile.BadZipFile, InvalidFileException, Exception) as exc:
+    except (zipfile.BadZipFile, InvalidFileException, ValueError, OSError) as exc:
         print(f"  Warning: cannot open XLSX ({type(exc).__name__}: {exc})")
         print("  Falling back to hard-coded data.")
         df = _build_fallback_data()
@@ -163,7 +163,7 @@ def process(xlsx_path: Path | None) -> pd.DataFrame:
         df_raw = pd.read_excel(
             xlsx_path, sheet_name=target_sheet, header=None, engine="openpyxl",
         )
-    except (zipfile.BadZipFile, InvalidFileException, Exception) as exc:
+    except (zipfile.BadZipFile, InvalidFileException, ValueError, OSError) as exc:
         print(f"  Warning: cannot read sheet ({type(exc).__name__}: {exc})")
         print("  Falling back to hard-coded data.")
         df = _build_fallback_data()
