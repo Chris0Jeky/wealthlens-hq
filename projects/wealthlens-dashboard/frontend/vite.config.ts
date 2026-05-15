@@ -10,6 +10,16 @@ export default defineConfig({
       "@": resolve(__dirname, "src"),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          echarts: ["echarts", "echarts/core", "echarts/renderers", "echarts/charts", "echarts/components"],
+          "vue-vendor": ["vue", "vue-router", "pinia"],
+        },
+      },
+    },
+  },
   server: {
     port: 3000,
     proxy: {
