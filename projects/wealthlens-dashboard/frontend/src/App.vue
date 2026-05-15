@@ -4,12 +4,18 @@ import { RouterView } from "vue-router";
 
 <template>
   <div class="min-h-screen bg-white text-gray-900 font-sans">
+    <a
+      href="#main-content"
+      class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2 focus:bg-blue-600 focus:text-white focus:rounded"
+    >
+      Skip to main content
+    </a>
     <header class="border-b border-gray-200 px-6 py-4">
       <div class="max-w-6xl mx-auto flex items-center justify-between">
         <router-link to="/" class="text-xl font-bold tracking-tight">
           WealthLens<span class="text-blue-600"> UK</span>
         </router-link>
-        <nav class="flex gap-6 text-sm">
+        <nav aria-label="Main navigation" class="flex gap-6 text-sm">
           <a
             href="https://github.com/Chris0Jeky/wealthlens-hq"
             target="_blank"
@@ -21,10 +27,10 @@ import { RouterView } from "vue-router";
         </nav>
       </div>
     </header>
-    <main>
+    <main id="main-content">
       <RouterView />
     </main>
-    <footer class="border-t border-gray-200 px-6 py-6 mt-12 text-center text-sm text-gray-500">
+    <footer role="contentinfo" class="border-t border-gray-200 px-6 py-6 mt-12 text-center text-sm text-gray-500">
       <p>
         WealthLens UK &middot; Open source &middot; Data cited from ONS, WID, HMRC
       </p>

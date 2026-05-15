@@ -30,16 +30,16 @@ onMounted(() => {
     <section>
       <h2 class="text-xl font-semibold mb-4">Available Datasets</h2>
 
-      <p v-if="store.loading" class="text-gray-500">Loading datasets...</p>
-      <p v-else-if="store.error" class="text-red-600">{{ store.error }}</p>
+      <p v-if="store.loading" class="text-gray-500" aria-live="polite">Loading datasets...</p>
+      <p v-else-if="store.error" class="text-red-600" aria-live="assertive">{{ store.error }}</p>
 
-      <div v-else class="grid gap-4 sm:grid-cols-2">
-        <DatasetCard
-          v-for="name in store.datasets"
-          :key="name"
-          :name="name"
-          :description="descriptions[name] ?? 'UK inequality dataset'"
-        />
+      <div v-else class="grid gap-4 sm:grid-cols-2" role="list">
+        <div v-for="name in store.datasets" :key="name" role="listitem">
+          <DatasetCard
+            :name="name"
+            :description="descriptions[name] ?? 'UK inequality dataset'"
+          />
+        </div>
       </div>
     </section>
   </div>
