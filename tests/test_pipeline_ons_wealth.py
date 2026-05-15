@@ -217,3 +217,64 @@ def test_fetch_returns_none_when_both_urls_fail() -> None:
         result = fetch_ons_wealth.fetch()
 
     assert result is None
+
+
+# ---------------------------------------------------------------------------
+# Hardening: partial decile data rejection
+# ---------------------------------------------------------------------------
+
+
+def _build_partial_table_2_2(n_deciles: int = 5) -> pd.DataFrame:
+    """Build a Table 2.2-like DataFrame with fewer than 10 decile rows."""
+    rows: list[list[object]] = [
+        ["Table 2.2: ...", None, None, None],
+        ["Great Britain...", "millions", None, None],
+        [None, None, "Apr 2018\nto\nMar 2020", "Apr 2020\nto\nMar 2022"],
+        ["Aggregate total wealth\n(millions)", "Total Wealth Decile 1 (lowest)", -1372, 13897],
+    ]
+    for i in range(2, n_deciles + 1):
+        rows.append([None, f"Total Wealth Decile {i}", 100000 * i, 100000 * i])
+    return pd.DataFrame(rows)
+
+
+def test_parse_table_2_2_rejects_partial_deciles() -> None:
+    """Partial decile data (fewer than 10 rows) must return None."""
+    df_raw = _build_partial_table_2_2(n_deciles=5)
+    result = fetch_ons_wealth._parse_table_2_2(df_raw)
+    assert result is None, "Should reject partial decile data (5 rows)"
+
+
+def test_parse_table_2_2_rejects_nine_deciles() -> None:
+    """Edge case: 9 deciles should also be rejected."""
+    df_raw = _build_partial_table_2_2(n_deciles=9)
+    result = fetch_ons_wealth._parse_table_2_2(df_raw)
+    assert result is None, "Should reject partial decile data (9 rows)"
+
+
+# ---------------------------------------------------------------------------
+# Hardening: corrupt XLSX handling in process()
+# ---------------------------------------------------------------------------
+
+
+def test_process_falls_back_on_corrupt_xlsx(tmp_path: Path) -> None:
+    """process() should return fallback data when the XLSX is corrupt."""
+    corrupt_file = tmp_path / "corrupt.xlsx"
+    corrupt_file.write_bytes(b"this is not a valid xlsx file")
+
+    df = fetch_ons_wealth.process(corrupt_file)
+
+    # Should fall back gracefully to the hard-coded data.
+    assert len(df) == 10
+    assert set(df.columns) == {"decile", "total_wealth_bn"}
+    assert "1st (poorest)" in df["decile"].values
+
+
+def test_process_falls_back_on_truncated_xlsx(tmp_path: Path) -> None:
+    """process() should handle a truncated (zero-byte) XLSX gracefully."""
+    empty_file = tmp_path / "empty.xlsx"
+    empty_file.write_bytes(b"")
+
+    df = fetch_ons_wealth.process(empty_file)
+
+    assert len(df) == 10
+    assert set(df.columns) == {"decile", "total_wealth_bn"}
