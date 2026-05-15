@@ -14,6 +14,8 @@ import pandas as pd
 import plotly.graph_objects as go
 import requests
 
+from chart_html import write_accessible_chart
+
 ROOT = Path(__file__).resolve().parents[2]
 DATA_DIR = ROOT / "projects" / "wealthlens-dashboard" / "data"
 RAW_DIR = DATA_DIR / "raw"
@@ -184,7 +186,7 @@ def build_chart(df: pd.DataFrame) -> None:
             "#d62728" if pct > 20 else "#ff7f0e" if pct > 10 else "#1f77b4"
             for pct in df["share_of_gains_pct"]
         ],
-        text=[f"{pct:.0f}%" for pct in df["share_of_gains_pct"]],
+        text=[f"{pct:.0f}%" if pd.notna(pct) else "n/a" for pct in df["share_of_gains_pct"]],
         textposition="outside",
         textfont=dict(size=12),
         hovertemplate=(
@@ -252,13 +254,12 @@ def build_chart(df: pd.DataFrame) -> None:
     )
 
     out_path = CHART_DIR / "hmrc_cgt_concentration.html"
-    fig.write_html(
-        str(out_path),
-        include_plotlyjs="cdn",
-        full_html=True,
-        config={"responsive": True, "displayModeBar": True},
+    write_accessible_chart(
+        fig,
+        out_path,
+        title="Capital Gains Concentration by Size of Gain",
+        description="Bar chart showing how capital gains are concentrated among a small number of high-gain taxpayers in the UK, sourced from HMRC.",
     )
-    print(f"  Chart saved to {out_path}")
 
 
 def main() -> None:

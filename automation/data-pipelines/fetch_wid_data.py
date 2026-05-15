@@ -16,6 +16,8 @@ import pandas as pd
 import plotly.graph_objects as go
 import requests
 
+from chart_html import write_accessible_chart
+
 ROOT = Path(__file__).resolve().parents[2]
 DATA_DIR = ROOT / "projects" / "wealthlens-dashboard" / "data"
 RAW_DIR = DATA_DIR / "raw"
@@ -167,13 +169,12 @@ def build_chart(df: pd.DataFrame) -> None:
     )
 
     out_path = CHART_DIR / "wid_wealth_shares_gb.html"
-    fig.write_html(
-        str(out_path),
-        include_plotlyjs="cdn",
-        full_html=True,
-        config={"responsive": True, "displayModeBar": True},
+    write_accessible_chart(
+        fig,
+        out_path,
+        title="Share of Net Personal Wealth — United Kingdom",
+        description="Line chart showing the top 1% and top 10% share of UK net personal wealth from 1820 to 2024, sourced from the World Inequality Database.",
     )
-    print(f"  Chart saved to {out_path}")
 
 
 def main() -> None:
