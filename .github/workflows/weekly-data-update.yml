@@ -23,6 +23,8 @@ jobs:
         run: pip install -r automation/data-pipelines/requirements.txt
 
       - name: Run data pipelines
+        env:
+          WID_API_KEY: ${{ secrets.WID_API_KEY }}
         run: |
           python automation/data-pipelines/fetch_wid_data.py
           python automation/data-pipelines/fetch_ons_housing.py
