@@ -9,9 +9,9 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
-logger = logging.getLogger(__name__)
-
 import plotly.graph_objects as go
+
+logger = logging.getLogger(__name__)
 
 
 def write_accessible_chart(
