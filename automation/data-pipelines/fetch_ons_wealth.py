@@ -24,6 +24,7 @@ import requests
 from chart_html import write_accessible_chart
 
 logger = logging.getLogger(__name__)
+REQUEST_TIMEOUT_SECONDS = 60
 
 try:
     from openpyxl.utils.exceptions import InvalidFileException
@@ -79,7 +80,7 @@ def fetch() -> Path | None:
     for label, url in urls:
         logger.info("Downloading ONS Total Wealth data (%s URL)...", label)
         try:
-            resp = requests.get(url, timeout=60)
+            resp = requests.get(url, timeout=REQUEST_TIMEOUT_SECONDS)
             resp.raise_for_status()
         except requests.RequestException as exc:
             logger.warning("%s download failed: %s", label.capitalize(), exc)

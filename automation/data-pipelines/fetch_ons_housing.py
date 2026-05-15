@@ -30,6 +30,7 @@ XLSX_URL = (
 ACCESS_DATE = date.today().isoformat()
 
 logger = logging.getLogger(__name__)
+REQUEST_TIMEOUT_SECONDS = 60
 
 def fetch() -> Path:
     """Download the ONS housing affordability XLSX."""
@@ -37,7 +38,7 @@ def fetch() -> Path:
     out_path = RAW_DIR / "ons_housing_affordability.xlsx"
 
     logger.info("Downloading ONS housing affordability data...")
-    resp = requests.get(XLSX_URL, timeout=60)
+    resp = requests.get(XLSX_URL, timeout=REQUEST_TIMEOUT_SECONDS)
     resp.raise_for_status()
 
     out_path.write_bytes(resp.content)

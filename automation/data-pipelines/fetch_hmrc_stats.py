@@ -37,6 +37,7 @@ TABLE1_URL = (
 ACCESS_DATE = date.today().isoformat()
 
 logger = logging.getLogger(__name__)
+REQUEST_TIMEOUT_SECONDS = 60
 
 
 def fetch() -> dict[str, Path]:
@@ -47,7 +48,7 @@ def fetch() -> dict[str, Path]:
     for name, url in [("table2", TABLE2_URL), ("table1", TABLE1_URL)]:
         out_path = RAW_DIR / f"hmrc_cgt_{name}.ods"
         logger.info("Downloading HMRC CGT %s...", name)
-        resp = requests.get(url, timeout=60)
+        resp = requests.get(url, timeout=REQUEST_TIMEOUT_SECONDS)
         resp.raise_for_status()
         out_path.write_bytes(resp.content)
         logger.info("Saved to %s (%d KB)", out_path, len(resp.content) // 1024)

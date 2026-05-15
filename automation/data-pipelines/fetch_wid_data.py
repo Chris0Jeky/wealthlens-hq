@@ -35,6 +35,7 @@ ACCESS_DATE = date.today().isoformat()
 # Variable format: {indicator}_{percentile}_{age}_{population}
 # 992 = equal-split adults, j = all population
 logger = logging.getLogger(__name__)
+REQUEST_TIMEOUT_SECONDS = 60
 
 VARIABLES = [
     "shweal_p99p100_992_j",  # Top 1% share of net personal wealth
@@ -51,14 +52,14 @@ def fetch() -> dict:
         f"{WID_API_BASE}/countries-variables",
         params={"countries": AREA, "variables": ",".join(VARIABLES)},
         headers=HEADERS,
-        timeout=60,
+        timeout=REQUEST_TIMEOUT_SECONDS,
     )
     resp.raise_for_status()
     raw_data = resp.json()
 
     # API may return an S3 download URL for large payloads
     if isinstance(raw_data, dict) and "download_url" in raw_data:
-        resp2 = requests.get(raw_data["download_url"], timeout=60)
+        resp2 = requests.get(raw_data["download_url"], timeout=REQUEST_TIMEOUT_SECONDS)
         resp2.raise_for_status()
         raw_data = resp2.json()
 
