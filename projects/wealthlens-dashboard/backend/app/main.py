@@ -9,6 +9,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.routers import data
+from app.routers.data import health_data
 
 app = FastAPI(
     title="WealthLens UK API",
@@ -28,6 +29,10 @@ app.add_middleware(
 )
 
 app.include_router(data.router, prefix="/api/data", tags=["data"])
+
+# Register the data-health check separately so it lives at /api/health/data
+# rather than under the /api/data prefix.
+app.get("/api/health/data", tags=["health"])(health_data)
 
 
 @app.get("/health")
