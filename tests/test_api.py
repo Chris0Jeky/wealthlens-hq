@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "projects" / "wealthlens-dashboard" / "backend"))
 
@@ -223,3 +224,26 @@ def test_dataset_response_contains_no_nan_strings():
             # float('nan') != float('nan') is True, but json.loads turns
             # NaN into None in strict mode or raises ValueError, so a
             # successful parse already proves no bare NaN tokens.
+
+
+# --- Error message quality tests ---
+
+
+def test_missing_csv_error_includes_dataset_name():
+    """When a CSV file is missing, the 503 detail must include the dataset name."""
+    from app.routers.data import DATA_DIR
+
+    # Patch Path.exists to return False for the CSV file, simulating a missing file
+    original_exists = Path.exists
+
+    def fake_exists(self: Path) -> bool:
+        if str(self).startswith(str(DATA_DIR)):
+            return False
+        return original_exists(self)
+
+    with patch.object(Path, "exists", fake_exists):
+        response = client.get("/api/data/wealth-shares")
+
+    assert response.status_code == 503
+    detail = response.json()["detail"]
+    assert "wealth-shares" in detail, f"Dataset name missing from error: {detail}"

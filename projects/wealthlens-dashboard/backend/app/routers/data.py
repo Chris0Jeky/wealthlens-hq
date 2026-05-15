@@ -20,6 +20,8 @@ DATA_DIR = Path(__file__).resolve().parents[3] / "data" / "processed"
 # Cache for metadata derived from CSV reads (row_count, columns).
 # Populated lazily by _build_metadata to avoid re-reading CSVs on every
 # metadata request.  Safe because the processed data is read-only at runtime.
+# Cache is populated once per process lifetime. Restart the server after
+# pipeline re-runs to pick up new or changed data files.
 _metadata_cache: dict[str, tuple[int, list[str]]] = {}
 
 DATASETS: dict[str, str] = {
@@ -67,14 +69,30 @@ DATASET_META: dict[str, dict[str, str]] = {
 
 
 def _read_csv(dataset_name: str) -> pd.DataFrame:
-    """Read a dataset CSV, raising appropriate HTTP errors."""
+    """Read a dataset CSV, raising appropriate HTTP errors.
+
+    Handles missing files (503) and corrupt/locked/empty/encoding issues
+    so that callers always receive a clear error message with the dataset
+    name rather than an opaque 500.
+    """
     csv_path = DATA_DIR / DATASETS[dataset_name]
     if not csv_path.exists():
         raise HTTPException(
             status_code=503,
-            detail="Dataset file not found — run the pipeline first",
+            detail=f"Dataset file not found: {dataset_name} — run the pipeline first",
         )
-    return pd.read_csv(csv_path)
+    try:
+        return pd.read_csv(csv_path)
+    except (
+        pd.errors.ParserError,
+        pd.errors.EmptyDataError,
+        PermissionError,
+        UnicodeDecodeError,
+    ) as e:
+        raise HTTPException(
+            status_code=503,
+            detail=f"Failed to read dataset '{dataset_name}': {e}",
+        ) from e
 
 
 def _build_metadata(dataset_name: str) -> dict[str, Any]:
