@@ -60,6 +60,21 @@ describe("useDataStore", () => {
       expect(store.loading).toBe(false);
     });
 
+    it("sets error on non-ok HTTP response", async () => {
+      vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        json: async () => ({ datasets: ["should-not-appear"] }),
+      } as unknown as Response);
+
+      const store = useDataStore();
+      await store.fetchDatasets();
+
+      expect(store.error).toBe("HTTP 500");
+      expect(store.loading).toBe(false);
+      expect(store.datasets).toEqual([]);
+    });
+
     it("sets error on fetch failure", async () => {
       vi.spyOn(globalThis, "fetch").mockRejectedValueOnce(
         new Error("Network error"),
