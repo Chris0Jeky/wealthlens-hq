@@ -17,6 +17,11 @@ router = APIRouter()
 
 DATA_DIR = Path(__file__).resolve().parents[3] / "data" / "processed"
 
+# Cache for metadata derived from CSV reads (row_count, columns).
+# Populated lazily by _build_metadata to avoid re-reading CSVs on every
+# metadata request.  Safe because the processed data is read-only at runtime.
+_metadata_cache: dict[str, tuple[int, list[str]]] = {}
+
 DATASETS: dict[str, str] = {
     "wealth-shares": "wid_wealth_shares_gb.csv",
     "housing-affordability": "ons_housing_affordability_by_region.csv",
@@ -73,17 +78,27 @@ def _read_csv(dataset_name: str) -> pd.DataFrame:
 
 
 def _build_metadata(dataset_name: str) -> dict[str, Any]:
-    """Build the full metadata dict for a single dataset."""
+    """Build the full metadata dict for a single dataset.
+
+    Uses a module-level cache so that CSV files are only read once for
+    row_count and column information.
+    """
     meta = DATASET_META[dataset_name]
-    df = _read_csv(dataset_name)
+
+    if dataset_name not in _metadata_cache:
+        df = _read_csv(dataset_name)
+        _metadata_cache[dataset_name] = (len(df), list(df.columns))
+
+    row_count, columns = _metadata_cache[dataset_name]
+
     return {
         "name": dataset_name,
         "description": meta["description"],
         "source": meta["source"],
         "source_url": meta["source_url"],
         "access_date": meta["access_date"],
-        "row_count": len(df),
-        "columns": list(df.columns),
+        "row_count": row_count,
+        "columns": columns,
     }
 
 
@@ -118,6 +133,11 @@ def get_dataset(
         raise HTTPException(status_code=404, detail=f"Unknown dataset: {dataset_name}")
 
     df = _read_csv(dataset_name)
+
+    # Replace NaN with None so JSON serialization produces explicit nulls
+    # rather than silently converting pandas NaN.
+    df = df.where(pd.notna(df), None)
+
     total = len(df)
     total_pages = math.ceil(total / limit) if total > 0 else 1
 
@@ -132,3 +152,11 @@ def get_dataset(
         "total": total,
         "total_pages": total_pages,
     }
+
+
+# --- Module-level guard ---
+# Fail fast at import time if someone adds a dataset to one dict but not the other.
+assert set(DATASETS.keys()) == set(DATASET_META.keys()), (
+    "DATASETS and DATASET_META keys must match — "
+    f"DATASETS has {set(DATASETS.keys())}, DATASET_META has {set(DATASET_META.keys())}"
+)

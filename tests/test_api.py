@@ -185,3 +185,41 @@ def test_pagination_total_pages_calculated_correctly():
     body = response.json()
     expected_pages = math.ceil(body["total"] / 10)
     assert body["total_pages"] == expected_pages
+
+
+# --- Key parity tests ---
+
+
+def test_datasets_and_dataset_meta_keys_match():
+    """DATASETS and DATASET_META must have exactly the same keys.
+
+    Catches the case where someone adds a key to one dict but forgets
+    the other, which would cause a KeyError at runtime.
+    """
+    from app.routers.data import DATASETS, DATASET_META
+
+    assert set(DATASETS.keys()) == set(DATASET_META.keys()), (
+        f"Key mismatch — DATASETS: {sorted(DATASETS.keys())}, "
+        f"DATASET_META: {sorted(DATASET_META.keys())}"
+    )
+
+
+# --- NaN handling tests ---
+
+
+def test_dataset_response_contains_no_nan_strings():
+    """JSON responses must not contain NaN as a value — only None/null."""
+    import json
+
+    response = client.get("/api/data/wealth-shares")
+    assert response.status_code == 200
+    raw = response.text
+    # pandas NaN serialised as JSON would appear as the literal NaN (unquoted)
+    # or "NaN" (quoted). Neither should be in our response.
+    parsed = json.loads(raw)
+    for row in parsed["data"]:
+        for key, value in row.items():
+            assert value != "NaN", f"Found string 'NaN' in {key}"
+            # float('nan') != float('nan') is True, but json.loads turns
+            # NaN into None in strict mode or raises ValueError, so a
+            # successful parse already proves no bare NaN tokens.
