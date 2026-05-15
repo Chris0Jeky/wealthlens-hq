@@ -164,7 +164,7 @@ def process(paths: dict[str, Path]) -> pd.DataFrame:
     df.to_csv(out_path, index=False)
     logger.info("Processed: %d bands, total gains £%s m, %s k taxpayers", len(df), f"{total_gains:,.0f}", f"{total_taxpayers:,.0f}")
 
-    # Print the headline stat
+    # Log the headline stat
     top_bands = df[df["band_lower"] >= 1_000_000]
     top_gains_share = top_bands["share_of_gains_pct"].sum()
     top_taxpayer_share = top_bands["share_of_taxpayers_pct"].sum()
