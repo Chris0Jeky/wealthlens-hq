@@ -23,11 +23,10 @@ jobs:
         run: pip install -r automation/data-pipelines/requirements.txt
 
       - name: Run data pipelines
-        run: |
-          python automation/data-pipelines/fetch_wid_data.py
-          python automation/data-pipelines/fetch_ons_housing.py
-          python automation/data-pipelines/fetch_ons_wealth.py
-          python automation/data-pipelines/fetch_hmrc_stats.py
+        run: python automation/data-pipelines/run_all.py
+
+      - name: Validate processed datasets
+        run: python automation/data-pipelines/validate.py
 
       - name: Check for changes
         id: changes
