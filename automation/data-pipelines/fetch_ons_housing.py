@@ -6,14 +6,12 @@ Dataset: House price to workplace-based earnings ratio
 
 from __future__ import annotations
 
-import sys
 from datetime import date
 from pathlib import Path
 
 import pandas as pd
 import plotly.graph_objects as go
 import requests
-
 from chart_html import write_accessible_chart
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -80,7 +78,7 @@ def process(xlsx_path: Path) -> pd.DataFrame:
         if not region or region == "nan":
             continue
 
-        for year, col_idx in zip(years, year_cols):
+        for year, col_idx in zip(years, year_cols, strict=True):
             val = df_raw.iloc[i, col_idx]
             try:
                 ratio = float(val)

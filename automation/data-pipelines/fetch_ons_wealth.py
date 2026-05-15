@@ -11,14 +11,12 @@ These caveats are noted on the chart output.
 
 from __future__ import annotations
 
-import sys
 from datetime import date
 from pathlib import Path
 
 import pandas as pd
 import plotly.graph_objects as go
 import requests
-
 from chart_html import write_accessible_chart
 
 ROOT = Path(__file__).resolve().parents[2]

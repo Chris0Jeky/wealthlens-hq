@@ -13,7 +13,6 @@ from pathlib import Path
 import pandas as pd
 import plotly.graph_objects as go
 import requests
-
 from chart_html import write_accessible_chart
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -76,7 +75,7 @@ def process(paths: dict[str, Path]) -> pd.DataFrame:
             target_sheet = name
             break
     if target_sheet is None:
-        target_sheet = [s for s in xl.sheet_names if s != "Contents"][0]
+        target_sheet = next(s for s in xl.sheet_names if s != "Contents")
 
     print(f"  Reading sheet: '{target_sheet}'")
     df_raw = pd.read_excel(table2_path, sheet_name=target_sheet, header=None, engine="odf")
@@ -90,7 +89,7 @@ def process(paths: dict[str, Path]) -> pd.DataFrame:
             break
 
     if header_row is None:
-        print(f"  Could not find header row. Dumping first 15 rows:")
+        print("  Could not find header row. Dumping first 15 rows:")
         for i in range(min(15, len(df_raw))):
             print(f"    {i}: {[str(v)[:40] for v in df_raw.iloc[i].values if pd.notna(v)]}")
         sys.exit(1)

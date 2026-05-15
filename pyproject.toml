@@ -12,6 +12,7 @@ dev = [
     "mypy>=1.10",
     "pytest>=8.0",
     "pandas-stubs>=2.1",
+    "types-requests>=2.31",
 ]
 pipelines = [
     "requests>=2.31",
@@ -41,7 +42,7 @@ disallow_untyped_defs = false
 check_untyped_defs = true
 
 [[tool.mypy.overrides]]
-module = ["plotly.*", "odf.*", "openpyxl.*"]
+module = ["plotly.*", "odf.*", "openpyxl.*", "requests.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
