@@ -37,21 +37,26 @@ XLSX_URL = (
 ACCESS_DATE = date.today().isoformat()
 
 
-def fetch() -> Path:
-    """Download the ONS Total Wealth XLSX."""
+def fetch() -> Path | None:
+    """Download the ONS Total Wealth XLSX. Returns None if download fails."""
     RAW_DIR.mkdir(parents=True, exist_ok=True)
     out_path = RAW_DIR / "ons_total_wealth_by_decile.xlsx"
 
     print("Downloading ONS Total Wealth data...")
-    resp = requests.get(XLSX_URL, timeout=60)
-    resp.raise_for_status()
+    try:
+        resp = requests.get(XLSX_URL, timeout=60)
+        resp.raise_for_status()
+    except requests.RequestException as exc:
+        print(f"  Download failed: {exc}")
+        print("  Using fallback data from ONS bulletin (cited below).")
+        return None
 
     out_path.write_bytes(resp.content)
     print(f"  Saved to {out_path} ({len(resp.content) // 1024} KB)")
     return out_path
 
 
-def process(xlsx_path: Path) -> pd.DataFrame:
+def process(xlsx_path: Path | None) -> pd.DataFrame:
     """Extract total net wealth by decile from the XLSX.
 
     The spreadsheet has multiple sheets. We target the sheet with total
@@ -59,6 +64,15 @@ def process(xlsx_path: Path) -> pd.DataFrame:
     wealth in the top deciles.
     """
     PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
+
+    if xlsx_path is None:
+        print("  No XLSX available, using fallback data.")
+        df = _build_fallback_data()
+        out_path = PROCESSED_DIR / "ons_wealth_by_decile.csv"
+        df.to_csv(out_path, index=False)
+        print(f"  Processed data saved to {out_path}")
+        print(f"  {len(df)} rows")
+        return df
 
     xl = pd.ExcelFile(xlsx_path, engine="openpyxl")
     print(f"  Available sheets: {xl.sheet_names}")
