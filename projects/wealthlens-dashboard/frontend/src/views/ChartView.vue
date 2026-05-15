@@ -3,7 +3,7 @@
  * ChartView — Dedicated page for viewing a single chart.
  *
  * Uses the route param :name to determine which chart component to render.
- * Currently supports: wealth-shares
+ * Currently supports: wealth-shares, housing-affordability, cgt-concentration
  */
 import { computed, defineAsyncComponent } from "vue";
 import { useRoute } from "vue-router";
@@ -48,8 +48,8 @@ const isSupported = computed(() => chartName.value in chartTitles);
       <h1 class="text-2xl font-bold mb-6">{{ chartTitles[chartName] }}</h1>
 
       <WealthSharesChart v-if="chartName === 'wealth-shares'" />
-      <HousingAffordabilityChart v-if="chartName === 'housing-affordability'" />
-      <CgtConcentrationChart v-if="chartName === 'cgt-concentration'" />
+      <HousingAffordabilityChart v-else-if="chartName === 'housing-affordability'" />
+      <CgtConcentrationChart v-else-if="chartName === 'cgt-concentration'" />
     </template>
 
     <!-- Unsupported chart name -->
