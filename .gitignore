@@ -33,6 +33,7 @@ coverage/
 *.db
 projects/wealthlens-dashboard/data/raw/
 projects/wealthlens-dashboard/data/processed/
+projects/wealthlens-dashboard/social-assets/
 
 # OS / editor noise
 .DS_Store
