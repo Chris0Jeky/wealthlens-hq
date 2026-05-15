@@ -9,8 +9,6 @@ export const useDataStore = defineStore("data", () => {
   const datasets = ref<string[]>([]);
   const loading = ref(false);
   const error = ref<string | null>(null);
-  const datasetLoading = ref(false);
-  const datasetError = ref<string | null>(null);
 
   async function fetchDatasets(): Promise<void> {
     loading.value = true;
@@ -27,29 +25,13 @@ export const useDataStore = defineStore("data", () => {
   }
 
   async function fetchDataset(name: string): Promise<DatasetRow[]> {
-    datasetLoading.value = true;
-    datasetError.value = null;
-    try {
-      const res = await fetch(`/api/data/${name}`);
-      if (!res.ok) throw new Error(`Failed to fetch ${name}`);
-      const json = await res.json();
-      return json.data;
-    } catch (e) {
-      datasetError.value =
-        e instanceof Error ? e.message : `Failed to fetch dataset "${name}"`;
-      return [];
-    } finally {
-      datasetLoading.value = false;
+    const res = await fetch(`/api/data/${name}`);
+    if (!res.ok) {
+      throw new Error(`Failed to fetch ${name}: ${res.status} ${res.statusText}`);
     }
+    const json = await res.json();
+    return json.data;
   }
 
-  return {
-    datasets,
-    loading,
-    error,
-    datasetLoading,
-    datasetError,
-    fetchDatasets,
-    fetchDataset,
-  };
+  return { datasets, loading, error, fetchDatasets, fetchDataset };
 });
