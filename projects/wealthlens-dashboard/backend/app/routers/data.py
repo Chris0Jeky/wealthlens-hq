@@ -138,16 +138,14 @@ def health_data() -> dict[str, Any]:
         csv_path = DATA_DIR / filename
         entry: dict[str, Any] = {"file": filename}
         try:
-            stat = os.stat(csv_path)
-            # Verify the file is actually readable, not just present.
-            with open(csv_path, "rb"):
-                pass
+            with open(csv_path, "rb") as f:
+                size = os.fstat(f.fileno()).st_size
             entry["available"] = True
-            entry["size_bytes"] = stat.st_size
+            entry["size_bytes"] = size
             available_count += 1
         except OSError as exc:
             entry["available"] = False
-            entry["error"] = str(exc)
+            entry["error"] = getattr(exc, "strerror", None) or type(exc).__name__
         datasets_status[name] = entry
 
     total = len(DATASETS)

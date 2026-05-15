@@ -82,3 +82,18 @@ def test_health_data_partial(tmp_path, monkeypatch):
     for name in data_module.DATASETS:
         if name != first_name:
             assert body["datasets"][name]["available"] is False
+
+
+def test_health_data_errors_contain_no_paths(tmp_path, monkeypatch):
+    """Error messages must not leak absolute filesystem paths."""
+    monkeypatch.setattr(data_module, "DATA_DIR", tmp_path)
+
+    response = client.get("/api/health/data")
+    body = response.json()
+
+    for ds in body["datasets"].values():
+        if not ds["available"]:
+            error_msg = ds.get("error", "")
+            assert str(tmp_path) not in error_msg
+            assert "Users" not in error_msg
+            assert "C:" not in error_msg and "C:\\" not in error_msg
