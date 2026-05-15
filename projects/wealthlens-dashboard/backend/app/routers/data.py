@@ -73,7 +73,9 @@ def _read_csv(dataset_name: str) -> pd.DataFrame:
 
     Handles missing files (503) and corrupt/locked/empty/encoding issues
     so that callers always receive a clear error message with the dataset
-    name rather than an opaque 500.
+    name rather than an opaque 500.  The OSError catch covers
+    PermissionError, IsADirectoryError, FileNotFoundError (TOCTOU race),
+    and Windows file-locking errors.
     """
     csv_path = DATA_DIR / DATASETS[dataset_name]
     if not csv_path.exists():
@@ -86,7 +88,7 @@ def _read_csv(dataset_name: str) -> pd.DataFrame:
     except (
         pd.errors.ParserError,
         pd.errors.EmptyDataError,
-        PermissionError,
+        OSError,
         UnicodeDecodeError,
     ) as e:
         raise HTTPException(
