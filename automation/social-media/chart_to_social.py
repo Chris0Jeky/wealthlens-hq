@@ -10,7 +10,6 @@ Usage: python automation/social-media/chart_to_social.py [--chart NAME]
 from __future__ import annotations
 
 import argparse
-import sys
 from pathlib import Path
 
 import pandas as pd
