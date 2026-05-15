@@ -1,0 +1,53 @@
+name: Weekly Data Update
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"  # Every Monday at 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update-data:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r automation/data-pipelines/requirements.txt
+
+      - name: Run data pipelines
+        run: |
+          python automation/data-pipelines/fetch_wid_data.py
+          python automation/data-pipelines/fetch_ons_housing.py
+          python automation/data-pipelines/fetch_ons_wealth.py
+          python automation/data-pipelines/fetch_hmrc_stats.py
+
+      - name: Check for changes
+        id: changes
+        run: |
+          git diff --quiet projects/wealthlens-dashboard/charts/ && echo "changed=false" >> "$GITHUB_OUTPUT" || echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Create PR if data changed
+        if: steps.changes.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BRANCH="data-update/$(date +%Y-%m-%d)"
+          git checkout -b "$BRANCH"
+          git add projects/wealthlens-dashboard/charts/
+          git add projects/wealthlens-dashboard/data/processed/
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "data: weekly pipeline refresh $(date +%Y-%m-%d)"
+          git push -u origin "$BRANCH"
+          gh pr create \
+            --title "Data update $(date +%Y-%m-%d)" \
+            --body "Automated weekly data pipeline refresh. Review charts for any unexpected changes before merging." \
+            --base main

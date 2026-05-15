@@ -1,15 +1,4 @@
-# Placeholder workflow spec.
+# The real workflow lives at .github/workflows/weekly-data-update.yml.
+# This file is kept as a pointer so the automation/ directory structure is clear.
 #
-# Move this file to .github/workflows/ when the data pipeline is ready to run
-# in CI. Keep it here while the automation design is still being drafted.
-
-name: Weekly Data Update
-
-on:
-  workflow_dispatch:
-
-jobs:
-  placeholder:
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo "Weekly data update workflow not implemented yet."
+# See .github/workflows/weekly-data-update.yml for the weekly cron configuration.
