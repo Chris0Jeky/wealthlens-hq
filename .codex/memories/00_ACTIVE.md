@@ -4,17 +4,17 @@
 
 Last updated: 2026-05-15
 
-## Current phase: Foundation → First Deploy
+## Current phase: v0.1 Live → Visibility & Outreach
 
-The project has 4 working data pipelines, 4 accessible charts, an index page, GitHub Pages deploy workflow, CI, tests, and a public-ready README. Next step: push to GitHub and enable Pages.
+The project is live at https://chris0jeky.github.io/wealthlens-hq/ with 4 interactive charts, automated deploy, and weekly data update workflows. Next steps: LinkedIn presence, first open-source PR, and frontend redesign.
 
 ### Active focus areas
 
 | Area | Status | Next step |
 | --- | --- | --- |
 | Data pipelines | Done (4 scripts) | Maintain; find correct ONS WAS XLSX URL |
-| Charts (v0.1) | Done (4 charts + index, accessible HTML) | Push and enable GitHub Pages |
-| Deployment | GitHub Actions workflow ready | Enable Pages in repo settings after push |
+| Charts (v0.1) | Live (4 charts + index, accessible HTML) | Add charts as frontend redesign progresses |
+| Deployment | Live at chris0jeky.github.io/wealthlens-hq/ | Automatic on push to main |
 | Testing | 7 tests passing | Add tests for ONS housing and ONS wealth output |
 | CI/CD | Deploy + weekly-update workflows created | Verify workflows after first push |
 | Social accounts | Twitter/X + Bluesky created | Update LinkedIn profile, write first post |
@@ -25,6 +25,7 @@ The project has 4 working data pipelines, 4 accessible charts, an index page, Gi
 
 ### Recent activity
 
+- 2026-05-15: Deployed v0.1 to GitHub Pages — site live with 4 charts
 - 2026-05-15: Fixed CGT chart nan% display bug for suppressed taxpayer bands
 - 2026-05-15: Created charts/index.html landing page with mobile-responsive grid
 - 2026-05-15: Added shared chart_html.py accessibility wrapper (lang, viewport, aria, skip link)
@@ -50,8 +51,8 @@ The project has 4 working data pipelines, 4 accessible charts, an index page, Gi
 
 ### Best next actions
 
-1. Push to GitHub and enable GitHub Pages in repo settings — get a live URL
-2. Update LinkedIn profile (headline, about, featured)
-3. Write and publish first LinkedIn post
-4. Find good-first-issue in mySociety or Democracy Club repos for first PR
-5. Find correct ONS Wealth and Assets Survey XLSX URL (current one 404s)
+1. Update LinkedIn profile (headline, about, featured) — link to live site
+2. Write and publish first LinkedIn post — "Why I'm building WealthLens UK"
+3. Find good-first-issue in mySociety or Democracy Club repos for first PR
+4. Find correct ONS Wealth and Assets Survey XLSX URL (current one 404s)
+5. Begin frontend redesign when instructions arrive
