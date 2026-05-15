@@ -6,6 +6,7 @@ Dataset: House price to workplace-based earnings ratio
 
 from __future__ import annotations
 
+import logging
 from datetime import date
 from pathlib import Path
 
@@ -28,17 +29,19 @@ XLSX_URL = (
 
 ACCESS_DATE = date.today().isoformat()
 
+logger = logging.getLogger(__name__)
+
 def fetch() -> Path:
     """Download the ONS housing affordability XLSX."""
     RAW_DIR.mkdir(parents=True, exist_ok=True)
     out_path = RAW_DIR / "ons_housing_affordability.xlsx"
 
-    print("Downloading ONS housing affordability data...")
+    logger.info("Downloading ONS housing affordability data...")
     resp = requests.get(XLSX_URL, timeout=60)
     resp.raise_for_status()
 
     out_path.write_bytes(resp.content)
-    print(f"  Saved to {out_path} ({len(resp.content) // 1024} KB)")
+    logger.info("Saved to %s (%d KB)", out_path, len(resp.content) // 1024)
     return out_path
 
 
@@ -69,7 +72,7 @@ def process(xlsx_path: Path) -> pd.DataFrame:
         except (ValueError, TypeError):
             continue
 
-    print(f"  Found {len(years)} years: {min(years)}-{max(years)}")
+    logger.info("Found %d years: %d-%d", len(years), min(years), max(years))
 
     # Rows 2+ have data: code, name, values
     records = []
@@ -91,8 +94,8 @@ def process(xlsx_path: Path) -> pd.DataFrame:
 
     out_path = PROCESSED_DIR / "ons_housing_affordability_by_region.csv"
     df.to_csv(out_path, index=False)
-    print(f"  Processed data saved to {out_path}")
-    print(f"  {len(df)} rows across {df['region'].nunique()} regions")
+    logger.info("Processed data saved to %s", out_path)
+    logger.info("%d rows across %d regions", len(df), df["region"].nunique())
 
     return df
 
@@ -193,8 +196,12 @@ def main() -> None:
     xlsx_path = fetch()
     df = process(xlsx_path)
     build_chart(df)
-    print("\nDone. Open the chart HTML in a browser to view.")
+    logger.info("Done. Open the chart HTML in a browser to view.")
 
 
 if __name__ == "__main__":
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(levelname)s: %(message)s",
+    )
     main()

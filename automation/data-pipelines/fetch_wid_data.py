@@ -8,6 +8,7 @@ API endpoint discovered from the public WID Stata tool:
 from __future__ import annotations
 
 import json
+import logging
 import sys
 from datetime import date
 from pathlib import Path
@@ -33,6 +34,8 @@ ACCESS_DATE = date.today().isoformat()
 
 # Variable format: {indicator}_{percentile}_{age}_{population}
 # 992 = equal-split adults, j = all population
+logger = logging.getLogger(__name__)
+
 VARIABLES = [
     "shweal_p99p100_992_j",  # Top 1% share of net personal wealth
     "shweal_p90p100_992_j",  # Top 10% share of net personal wealth
@@ -43,7 +46,7 @@ def fetch() -> dict:
     """Download top wealth share data from WID API."""
     RAW_DIR.mkdir(parents=True, exist_ok=True)
 
-    print("Fetching UK wealth share data from WID API...")
+    logger.info("Fetching UK wealth share data from WID API...")
     resp = requests.get(
         f"{WID_API_BASE}/countries-variables",
         params={"countries": AREA, "variables": ",".join(VARIABLES)},
@@ -61,7 +64,7 @@ def fetch() -> dict:
 
     raw_path = RAW_DIR / "wid_shweal_gb_data.json"
     raw_path.write_text(json.dumps(raw_data, indent=2), encoding="utf-8")
-    print(f"  Saved raw data to {raw_path}")
+    logger.info("Saved raw data to %s", raw_path)
 
     return raw_data
 
@@ -88,15 +91,15 @@ def process(raw_data: dict) -> pd.DataFrame:
     df = pd.DataFrame(records)
 
     if df.empty:
-        print("  WARNING: No data returned from WID API")
+        logger.error("No data returned from WID API")
         sys.exit(1)
 
     df = df.sort_values(["variable", "year"])
 
     out_path = PROCESSED_DIR / "wid_wealth_shares_gb.csv"
     df.to_csv(out_path, index=False)
-    print(f"  Processed data saved to {out_path}")
-    print(f"  {len(df)} rows, years {int(df['year'].min())}-{int(df['year'].max())}")
+    logger.info("Processed data saved to %s", out_path)
+    logger.info("%d rows, years %d-%d", len(df), int(df["year"].min()), int(df["year"].max()))
 
     return df
 
@@ -181,8 +184,12 @@ def main() -> None:
     raw_data = fetch()
     df = process(raw_data)
     build_chart(df)
-    print("\nDone. Open the chart HTML in a browser to view.")
+    logger.info("Done. Open the chart HTML in a browser to view.")
 
 
 if __name__ == "__main__":
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(levelname)s: %(message)s",
+    )
     main()

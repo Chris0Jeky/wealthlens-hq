@@ -6,7 +6,10 @@ title, aria-label, skip link, and noscript fallback.
 
 from __future__ import annotations
 
+import logging
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 import plotly.graph_objects as go
 
@@ -55,4 +58,4 @@ def write_accessible_chart(
 </html>"""
 
     out_path.write_text(html, encoding="utf-8")
-    print(f"  Chart saved to {out_path}")
+    logger.info("Chart saved to %s", out_path)
