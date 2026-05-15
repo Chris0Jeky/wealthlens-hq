@@ -132,6 +132,10 @@ Repo-local Codex skills live under `.agents/skills/` and supplement this file. U
 - Relevant linters and typechecks pass.
 - `.codex/memories/00_ACTIVE.md` is updated if the work changes current status.
 - If a meaningful decision was made, capture it in `.codex/memories/decisions/`.
+- If a data pipeline was added or changed, re-run it to verify the output and regenerate charts.
+- If a new data source was used, add it to `projects/wealthlens-dashboard/docs/data-licences.md`.
+- Commits are made incrementally as work progresses, not batched at session end.
+- If index.html or any public-facing page references a new file, verify that file exists.
 
 ## File conventions
 

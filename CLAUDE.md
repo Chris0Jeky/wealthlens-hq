@@ -208,6 +208,16 @@ In practice, prefer a small number of source-backed, shareable chart pages over 
 
 Single repo at `wealthlens-hq/`. Commit subjects: `<area>: <imperative summary>`. Use `gh` CLI for GitHub operations.
 
+### Incremental commits
+
+Commit early and often as you work. Do not batch all changes into one commit at the end of a session. Group commits by domain:
+
+- One commit for a pipeline fix, another for the chart it affects.
+- One commit for infrastructure (pyproject.toml, Makefile), another for docs.
+- One commit per new feature or file group.
+
+Each commit should be independently reviewable. If a session produces more than ~3 files of changes without a commit, something is wrong.
+
 ## Windows notes
 
 - Primary dev platform is Windows 10 Pro.
