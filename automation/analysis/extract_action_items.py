@@ -74,7 +74,7 @@ def scan_file(path: Path) -> list[str]:
     """Return deduplicated action items found in *path*."""
     try:
         text = path.read_text(encoding="utf-8")
-    except OSError as exc:
+    except (OSError, UnicodeDecodeError) as exc:
         logger.warning("Could not read %s: %s", path, exc)
         return []
 
@@ -136,12 +136,6 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     """Parse command-line arguments."""
     parser = argparse.ArgumentParser(
         description="Extract action items from research/raw/ Markdown files.",
-    )
-    parser.add_argument(
-        "--dry-run",
-        action="store_true",
-        default=True,
-        help="Show what would be found without side effects (default behaviour).",
     )
     parser.add_argument(
         "--output",
