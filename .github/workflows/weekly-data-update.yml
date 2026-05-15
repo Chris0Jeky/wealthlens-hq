@@ -22,11 +22,11 @@ jobs:
       - name: Install dependencies
         run: pip install -r automation/data-pipelines/requirements.txt
 
+      # run_all.py fetches, processes, and validates all datasets in one
+      # invocation.  A separate validate step is unnecessary and would be
+      # unreachable when the pipeline fails (non-zero exit stops the job).
       - name: Run data pipelines
         run: python automation/data-pipelines/run_all.py
-
-      - name: Validate processed datasets
-        run: python automation/data-pipelines/validate.py
 
       - name: Check for changes
         id: changes
