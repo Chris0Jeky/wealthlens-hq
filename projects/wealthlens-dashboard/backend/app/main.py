@@ -5,10 +5,22 @@ Serves processed UK wealth inequality datasets as JSON for the Vue 3 frontend.
 
 from __future__ import annotations
 
+import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.routers import data
+
+# ---------------------------------------------------------------------------
+# CORS configuration
+# ---------------------------------------------------------------------------
+# Override with the CORS_ORIGINS env var (comma-separated list of allowed
+# origins).  Defaults to the local Vite dev server addresses so development
+# works out of the box.
+# ---------------------------------------------------------------------------
+_default_origins = "http://localhost:3000,http://127.0.0.1:3000"
+cors_origins = [o.strip() for o in os.environ.get("CORS_ORIGINS", _default_origins).split(",")]
 
 app = FastAPI(
     title="WealthLens UK API",
@@ -18,10 +30,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-    ],
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["GET"],
     allow_headers=["*"],
