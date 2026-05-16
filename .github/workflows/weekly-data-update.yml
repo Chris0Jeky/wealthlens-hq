@@ -26,6 +26,8 @@ jobs:
       # invocation.  A separate validate step is unnecessary and would be
       # unreachable when the pipeline fails (non-zero exit stops the job).
       - name: Run data pipelines
+        env:
+          WID_API_KEY: ${{ secrets.WID_API_KEY }}
         run: python automation/data-pipelines/run_all.py
 
       - name: Check for changes
