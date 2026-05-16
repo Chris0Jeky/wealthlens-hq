@@ -37,11 +37,13 @@ jobs:
 
       - name: Lint
         run: npm run lint
-        # TODO: remove continue-on-error after PR #22 merges ESLint config
-        continue-on-error: true
 
       - name: Type-check
         run: npm run typecheck
+
+      - name: Test
+        run: npm run test
+        continue-on-error: true
 
       - name: Build
         run: npm run build
