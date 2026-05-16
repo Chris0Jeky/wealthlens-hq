@@ -4,10 +4,8 @@ import { useDataStore } from '@/stores/data'
 import DatasetCard from '@/components/DatasetCard.vue'
 import DatasetSearch from '@/components/DatasetSearch.vue'
 import { CHART_METADATA } from '@/utils/chartConstants'
-import { useDatasetSearch } from '@/composables/useDatasetSearch'
 
 const store = useDataStore()
-const { isSearchActive } = useDatasetSearch(200)
 
 const descriptions: Record<string, string> = Object.fromEntries(
   Object.values(CHART_METADATA).map((c) => [c.name, c.description]),

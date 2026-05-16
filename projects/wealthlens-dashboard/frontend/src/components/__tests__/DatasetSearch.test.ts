@@ -179,10 +179,14 @@ describe('DatasetSearch', () => {
     expect(liveRegion.exists()).toBe(true)
   })
 
-  it('search input has combobox role', () => {
+  it('search input has combobox role', async () => {
     const wrapper = factory()
     const input = wrapper.find('input[type="search"]')
     expect(input.attributes('role')).toBe('combobox')
+    // aria-controls is only set when search is active
+    expect(input.attributes('aria-controls')).toBeUndefined()
+    await input.setValue('wealth')
+    await flushPromises()
     expect(input.attributes('aria-controls')).toBe('dataset-search-results')
   })
 

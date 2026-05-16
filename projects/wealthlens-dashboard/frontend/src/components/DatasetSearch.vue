@@ -96,9 +96,10 @@ function toggleCategory(id: string) {
         aria-describedby="search-result-count"
         class="w-full rounded-md border border-[var(--wl-rule)] bg-[var(--wl-paper)] px-4 py-3 pl-11 text-sm text-[var(--wl-ink)] placeholder-[var(--wl-ink-muted)] focus:border-[var(--wl-teal)] focus:outline-none focus:ring-2 focus:ring-[var(--wl-teal)] font-[var(--wl-serif)]"
         role="combobox"
-        aria-expanded="true"
-        aria-controls="dataset-search-results"
-        :aria-activedescendant="activeIndex >= 0 ? `search-result-${activeIndex}` : undefined"
+        :aria-expanded="isSearchActive ? 'true' : 'false'"
+        :aria-controls="isSearchActive ? 'dataset-search-results' : undefined"
+        :aria-activedescendant="activeIndex >= 0 && isSearchActive ? `search-result-${activeIndex}` : undefined"
+        maxlength="200"
         @keydown="onKeydown"
       />
       <!-- Magnifying glass icon -->
