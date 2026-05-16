@@ -279,11 +279,10 @@ def test_missing_csv_error_includes_dataset_name():
 
 
 def test_health_data_returns_healthy_structure():
-    """GET /api/health/data returns all required keys and valid status.
+    """GET /api/health/data returns healthy status when all CSVs exist.
 
-    When the data directory contains processed CSVs (as it does on the
-    default DATA_DIR used by CI), the status should be 'healthy' and
-    every dataset should be marked available with a file size.
+    The conftest _seed_test_data fixture ensures CSVs are present, so
+    all datasets should be available with file sizes.
     """
     from app.routers import data as data_module
 
@@ -291,18 +290,16 @@ def test_health_data_returns_healthy_structure():
     assert response.status_code == 200
 
     body = response.json()
-    assert body["status"] in ("healthy", "degraded", "unavailable")
-    assert "datasets" in body
-    assert "available_count" in body
-    assert "total_count" in body
+    assert body["status"] == "healthy"
+    assert body["available_count"] == body["total_count"]
     assert body["total_count"] == len(data_module.DATASETS)
 
-    # Every configured dataset must appear in the response.
     for name in data_module.DATASETS:
         assert name in body["datasets"], f"Missing dataset '{name}' in health response"
         ds = body["datasets"][name]
         assert "file" in ds
-        assert "available" in ds
+        assert ds["available"] is True
+        assert ds["size_bytes"] > 0
 
 
 def test_health_data_unavailable_when_no_csvs_exist(tmp_path):
@@ -433,27 +430,31 @@ def test_metadata_caching_avoids_redundant_csv_reads(tmp_path):
     for filename in data_module.DATASETS.values():
         (tmp_path / filename).write_text("col_a,col_b\n1,2\n3,4\n")
 
-    # Clear the cache so we start fresh for this test.
+    saved_cache = dict(data_module._metadata_cache)
     data_module._metadata_cache.clear()
 
-    with (
-        patch.object(data_module, "DATA_DIR", tmp_path),
-        patch("app.routers.data.pd.read_csv", wraps=pd.read_csv) as mock_read,
-    ):
-        response1 = client.get("/api/data/metadata")
-        assert response1.status_code == 200
+    try:
+        with (
+            patch.object(data_module, "DATA_DIR", tmp_path),
+            patch("app.routers.data.pd.read_csv", wraps=pd.read_csv) as mock_read,
+        ):
+            response1 = client.get("/api/data/metadata")
+            assert response1.status_code == 200
 
-        first_call_count = mock_read.call_count
-        assert first_call_count == len(data_module.DATASETS), (
-            f"Expected {len(data_module.DATASETS)} read_csv calls on first request, "
-            f"got {first_call_count}"
-        )
+            first_call_count = mock_read.call_count
+            assert first_call_count == len(data_module.DATASETS), (
+                f"Expected {len(data_module.DATASETS)} read_csv calls on first request, "
+                f"got {first_call_count}"
+            )
 
-        response2 = client.get("/api/data/metadata")
-        assert response2.status_code == 200
+            response2 = client.get("/api/data/metadata")
+            assert response2.status_code == 200
 
-        # Second request should not trigger any additional read_csv calls.
-        assert mock_read.call_count == first_call_count, (
-            f"Expected no additional read_csv calls, but got "
-            f"{mock_read.call_count - first_call_count} extra"
-        )
+            # Second request should not trigger any additional read_csv calls.
+            assert mock_read.call_count == first_call_count, (
+                f"Expected no additional read_csv calls, but got "
+                f"{mock_read.call_count - first_call_count} extra"
+            )
+    finally:
+        data_module._metadata_cache.clear()
+        data_module._metadata_cache.update(saved_cache)
