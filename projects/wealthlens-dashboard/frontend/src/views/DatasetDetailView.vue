@@ -38,7 +38,7 @@ onMounted(async () => {
     ])
     if (!metaRes.ok) throw new Error(`Metadata request failed: ${metaRes.status}`)
     metadata.value = await metaRes.json()
-    rows.value = dataRows.slice(0, 10)
+    rows.value = dataRows.data.slice(0, 10)
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Failed to load dataset'
   } finally {

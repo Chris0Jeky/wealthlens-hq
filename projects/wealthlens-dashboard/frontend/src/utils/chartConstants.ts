@@ -40,7 +40,7 @@ export type ChartName = keyof typeof CHARTS;
 
 export const CHART_METADATA: typeof CHARTS = CHARTS;
 
-export const SUPPORTED_CHART_NAMES: ReadonlySet<ChartName> = new Set<ChartName>(
+export const SUPPORTED_CHART_NAMES: ReadonlySet<string> = new Set<ChartName>(
   Object.keys(CHARTS) as ChartName[],
 );
 

@@ -9,7 +9,8 @@ export function useChartData(datasetName: string) {
 
   onMounted(async () => {
     try {
-      rows.value = await store.fetchDataset(datasetName);
+      const response = await store.fetchDataset(datasetName);
+      rows.value = response.data;
     } catch (e) {
       error.value = e instanceof Error ? e.message : `Failed to load ${datasetName}`;
     } finally {

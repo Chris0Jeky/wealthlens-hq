@@ -13,7 +13,7 @@ describe('DatasetCard', () => {
     props: ['to'],
   }
 
-  function factory(props = defaultProps) {
+  function factory(props: { name: string; description: string; hasChart?: boolean } = defaultProps) {
     return mount(DatasetCard, {
       props,
       global: { stubs: { 'router-link': routerLinkStub } },

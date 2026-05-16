@@ -68,7 +68,7 @@ function stubSuccessfulFetches() {
       json: () => Promise.resolve(mockMetadata),
     }),
   )
-  mockFetchDataset.mockResolvedValue(mockRows)
+  mockFetchDataset.mockResolvedValue({ data: mockRows, page: 1, limit: 100, total: mockRows.length, total_pages: 1 })
 }
 
 describe('DatasetDetailView', () => {

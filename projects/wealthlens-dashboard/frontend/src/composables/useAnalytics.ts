@@ -7,25 +7,29 @@
  */
 import { ref } from 'vue'
 
+interface PlausibleWindow {
+  plausible?: ((...args: unknown[]) => void) & { q?: unknown[][] }
+}
+
 const initialized = ref(false)
 
 export function useAnalytics() {
   const domain =
     ((import.meta.env.VITE_PLAUSIBLE_DOMAIN as string | undefined) ?? '').trim() || undefined
 
-  /** Load the Plausible script tag. Safe to call multiple times. */
   function init() {
     if (initialized.value || !domain || typeof window === 'undefined') return
     initialized.value = true
 
-    // Queue shim: buffer events sent before the async script loads.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const w = window as any
+    const w = window as unknown as PlausibleWindow
     w.plausible =
       w.plausible ||
-      function (...args: unknown[]) {
-        ;(w.plausible.q = w.plausible.q || []).push(args)
-      }
+      Object.assign(
+        function (...args: unknown[]) {
+          ;(w.plausible!.q = w.plausible!.q || []).push(args)
+        },
+        { q: [] as unknown[][] },
+      )
 
     const script = document.createElement('script')
     script.defer = true
@@ -36,18 +40,16 @@ export function useAnalytics() {
         '[WealthLens] Plausible analytics script failed to load. ' +
           'This is expected if an ad-blocker is active.',
       )
-      if (w.plausible?.q) w.plausible.q.length = 0
       w.plausible = function () {}
     }
     document.head.appendChild(script)
   }
 
-  /** Send a custom event to Plausible. No-op when analytics is disabled. */
   function trackEvent(name: string, props?: Record<string, string | number>) {
     if (!domain) return
     if (!initialized.value) init()
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const w = window as any
+
+    const w = window as unknown as PlausibleWindow
     if (w.plausible) {
       w.plausible(name, { props })
     }

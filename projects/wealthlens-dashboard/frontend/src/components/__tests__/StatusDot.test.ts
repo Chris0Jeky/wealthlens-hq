@@ -18,7 +18,7 @@ describe('StatusDot', () => {
     }
 
     for (const [status, cls] of Object.entries(expected)) {
-      const wrapper = mount(StatusDot, { props: { status } })
+      const wrapper = mount(StatusDot, { props: { status: status as 'online' | 'offline' | 'warning' | 'idle' } })
       const dot = wrapper.find('[aria-hidden="true"]')
       expect(dot.classes()).toContain(cls)
     }

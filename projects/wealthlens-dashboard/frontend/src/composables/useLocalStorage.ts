@@ -2,7 +2,7 @@ import { ref, watch, type Ref } from 'vue'
 
 export function useLocalStorage<T>(key: string, defaultValue: T): Ref<T> {
   const stored = read(key)
-  const data = ref<T>(stored !== null ? stored : defaultValue) as Ref<T>
+  const data = ref<T>((stored !== null ? stored : defaultValue) as T) as Ref<T>
 
   watch(
     data,
