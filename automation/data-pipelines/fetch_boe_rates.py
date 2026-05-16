@@ -132,7 +132,6 @@ def _write_fallback(out_path: Path) -> Path:
         ("2024-12-01", 4.75, 2.5),
         ("2025-01-01", 4.50, 3.0),
     ]
-    df = pd.DataFrame(fallback_rows, columns=["date", "bank_rate", "cpi_annual"])
 
     # Write as CSV (same format the process step expects after parsing)
     out_path.write_text(

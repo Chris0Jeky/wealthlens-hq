@@ -7,13 +7,11 @@ correctly, and returns proper metadata with source citations.
 from __future__ import annotations
 
 from pathlib import Path
-from unittest.mock import patch
 
 import pytest
-from fastapi.testclient import TestClient
-
 from app.main import app
 from app.routers import data as data_module
+from fastapi.testclient import TestClient
 
 client = TestClient(app)
 
