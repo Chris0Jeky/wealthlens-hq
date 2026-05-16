@@ -721,18 +721,36 @@ const clipRect = {
   .chart-toolbar {
     padding: 12px 14px;
     gap: 10px;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .chart-toolbar-left {
+    gap: 10px;
   }
 
   .chart-ranges {
     margin-left: 0;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .chart-range {
+    min-height: 44px;
+    padding: 6px 16px;
+    flex-shrink: 0;
   }
 
   .chart-stage {
-    padding: 16px 8px 8px;
+    padding: 16px 4px 8px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .chart-svg {
-    height: 260px;
+    height: auto;
+    min-width: 480px;
   }
 
   .chart-footer {
@@ -740,6 +758,28 @@ const clipRect = {
     align-items: flex-start;
     gap: 8px;
     padding: 12px 14px;
+  }
+
+  .chart-footer-download {
+    gap: 12px;
+  }
+
+  .chart-footer-download a {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+}
+
+/* 375px and below — ensure chart is scrollable */
+@media (max-width: 375px) {
+  .chart-toolbar-tag {
+    font-size: 10px;
+  }
+
+  .chart-range {
+    padding: 6px 12px;
+    font-size: 10px;
   }
 }
 </style>

@@ -472,5 +472,34 @@ const footerSrcY = H - 16
     max-width: 400px;
     margin: 0 auto;
   }
+
+  .flow-corner-tag {
+    font-size: 9px;
+    top: 10px;
+    right: 10px;
+  }
+}
+
+/* 375px and below — scale for narrow phones */
+@media (max-width: 375px) {
+  .hero-lens-stage {
+    aspect-ratio: auto;
+    max-width: 100%;
+    min-height: 400px;
+  }
+
+  .flow-corner-tag {
+    font-size: 8px;
+    letter-spacing: 0.1em;
+    top: 8px;
+    right: 8px;
+  }
+}
+
+/* 320px — smallest supported width */
+@media (max-width: 320px) {
+  .hero-lens-stage {
+    min-height: 360px;
+  }
 }
 </style>
