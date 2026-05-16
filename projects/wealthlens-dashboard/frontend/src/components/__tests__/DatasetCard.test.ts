@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { mount } from "@vue/test-utils";
+import { mount, RouterLinkStub } from "@vue/test-utils";
 import DatasetCard from "@/components/DatasetCard.vue";
 
 describe("DatasetCard", () => {
@@ -32,8 +32,23 @@ describe("DatasetCard", () => {
     expect(paragraph.text()).toBe(defaultProps.description);
   });
 
-  it("has a root div wrapper", () => {
+  it("uses a semantic article element with aria-label", () => {
     const wrapper = mount(DatasetCard, { props: defaultProps });
-    expect(wrapper.element.tagName).toBe("DIV");
+    expect(wrapper.element.tagName).toBe("ARTICLE");
+    expect(wrapper.attributes("aria-label")).toBe(
+      `Dataset: ${defaultProps.name}`,
+    );
+  });
+
+  it("renders view-chart link with aria-label when chart is available", () => {
+    const wrapper = mount(DatasetCard, {
+      props: { ...defaultProps, hasChart: true },
+      global: { stubs: { RouterLink: RouterLinkStub } },
+    });
+    const link = wrapper.findComponent(RouterLinkStub);
+    expect(link.exists()).toBe(true);
+    expect(link.attributes("aria-label")).toBe(
+      `View ${defaultProps.name} chart`,
+    );
   });
 });
