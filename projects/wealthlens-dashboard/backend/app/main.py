@@ -48,6 +48,16 @@ def health_data() -> dict:
     return data.health_data()
 
 
+@app.get("/api/version")
+def version() -> dict[str, str]:
+    """Return API version and project metadata."""
+    return {
+        "version": app.version,
+        "title": app.title,
+        "project": "WealthLens UK",
+    }
+
+
 @app.get("/health")
 def health() -> dict[str, str]:
     """Liveness probe."""
