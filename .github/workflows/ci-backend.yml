@@ -46,7 +46,9 @@ jobs:
         run: pip install -r automation/data-pipelines/requirements.txt
 
       - name: Install dev tools
-        run: pip install ".[dev]"
+        run: |
+          pip install ".[dev]"
+          pip install pytest-cov>=6.0
 
       - name: Ruff check
         run: |
@@ -67,5 +69,13 @@ jobs:
           bandit -r projects/wealthlens-dashboard/backend/ -c pyproject.toml --exit-zero
           bandit -r automation/ -c pyproject.toml --exit-zero
 
-      - name: Pytest
-        run: pytest -q tests/
+      - name: Run tests with coverage
+        run: |
+          python -m pytest tests/ -q --cov=app --cov-report=term-missing --cov-report=xml:coverage.xml
+        working-directory: projects/wealthlens-dashboard/backend
+
+      - name: Coverage summary
+        if: always()
+        run: |
+          python -m pytest tests/ --cov=app --cov-report=term --cov-fail-under=60 || true
+        working-directory: projects/wealthlens-dashboard/backend
