@@ -24,10 +24,7 @@ describe('HealthStatus', () => {
       json: async () => ({
         version: '0.2.0',
         datasets_available: 10,
-        commit: 'abc1234',
-        environment: 'development',
-        python_version: '3.11.0',
-        uptime_seconds: 120.5,
+        status: 'ok',
       }),
     } as Response)
 
@@ -67,6 +64,7 @@ describe('HealthStatus', () => {
       json: async () => ({
         version: '0.2.0',
         datasets_available: 10,
+        status: 'ok',
       }),
     } as Response)
 
@@ -84,6 +82,7 @@ describe('HealthStatus', () => {
       json: async () => ({
         version: '0.2.0',
         datasets_available: 10,
+        status: 'ok',
       }),
     } as Response)
 
@@ -106,6 +105,7 @@ describe('HealthStatus', () => {
       json: async () => ({
         version: '0.2.0',
         datasets_available: 10,
+        status: 'ok',
       }),
     } as Response)
 
@@ -132,6 +132,7 @@ describe('HealthStatus', () => {
       json: async () => ({
         version: '0.2.0',
         datasets_available: 10,
+        status: 'ok',
       }),
     } as Response)
 
@@ -148,5 +149,39 @@ describe('HealthStatus', () => {
       'visibilitychange',
       expect.any(Function),
     )
+  })
+
+  it('passes AbortController signal to fetch', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        version: '0.2.0',
+        datasets_available: 10,
+        status: 'ok',
+      }),
+    } as Response)
+
+    mount(HealthStatus)
+    await flushPromises()
+
+    // Verify fetch was called with a signal option
+    expect(fetchSpy).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    )
+  })
+
+  it('does not update state on aborted request after unmount', async () => {
+    // Simulate an abort error being thrown on fetch
+    const abortError = new DOMException('The operation was aborted.', 'AbortError')
+    vi.spyOn(globalThis, 'fetch').mockRejectedValueOnce(abortError)
+
+    const wrapper = mount(HealthStatus)
+    await flushPromises()
+
+    // State should still be 'checking' — abort errors are ignored
+    // (In practice, the component would have been unmounted, but this
+    // tests that the catch handler properly ignores AbortError)
+    expect(wrapper.text()).toContain('Checking API')
   })
 })

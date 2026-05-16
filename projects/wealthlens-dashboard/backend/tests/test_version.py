@@ -1,8 +1,10 @@
-"""Tests for the /api/version endpoint."""
+"""Tests for the /api/version and /api/version/debug endpoints."""
 
 from __future__ import annotations
 
-import sys
+import os
+import platform
+from unittest.mock import patch
 
 from app.main import app
 from fastapi.testclient import TestClient
@@ -10,13 +12,56 @@ from fastapi.testclient import TestClient
 client = TestClient(app)
 
 
+# ---------------------------------------------------------------------------
+# /api/version — public, safe for unauthenticated access
+# ---------------------------------------------------------------------------
+
+
 def test_version_returns_200() -> None:
     response = client.get("/api/version")
     assert response.status_code == 200
 
 
-def test_version_contains_all_expected_keys() -> None:
+def test_version_contains_only_public_keys() -> None:
     response = client.get("/api/version")
+    data = response.json()
+    expected_keys = {"version", "datasets_available", "status"}
+    assert set(data.keys()) == expected_keys
+
+
+def test_version_is_0_2_0() -> None:
+    response = client.get("/api/version")
+    data = response.json()
+    assert data["version"] == "0.2.0"
+
+
+def test_version_datasets_available_is_positive_int() -> None:
+    response = client.get("/api/version")
+    data = response.json()
+    assert isinstance(data["datasets_available"], int)
+    assert data["datasets_available"] > 0
+
+
+def test_version_status_is_ok() -> None:
+    response = client.get("/api/version")
+    data = response.json()
+    assert data["status"] == "ok"
+
+
+# ---------------------------------------------------------------------------
+# /api/version/debug — only available in non-production environments
+# ---------------------------------------------------------------------------
+
+
+def test_version_debug_returns_200_in_dev() -> None:
+    with patch.dict(os.environ, {"APP_ENV": "development"}):
+        response = client.get("/api/version/debug")
+    assert response.status_code == 200
+
+
+def test_version_debug_contains_all_expected_keys() -> None:
+    with patch.dict(os.environ, {"APP_ENV": "development"}):
+        response = client.get("/api/version/debug")
     data = response.json()
     expected_keys = {
         "version",
@@ -29,41 +74,45 @@ def test_version_contains_all_expected_keys() -> None:
     assert set(data.keys()) == expected_keys
 
 
-def test_version_is_0_2_0() -> None:
-    response = client.get("/api/version")
+def test_version_debug_python_version_is_safe() -> None:
+    """python_version must be just the version number, no build paths."""
+    with patch.dict(os.environ, {"APP_ENV": "development"}):
+        response = client.get("/api/version/debug")
     data = response.json()
-    assert data["version"] == "0.2.0"
+    assert data["python_version"] == platform.python_version()
+    # Should not contain filesystem paths
+    assert "/" not in data["python_version"]
+    assert "\\" not in data["python_version"]
 
 
-def test_version_commit_is_string() -> None:
-    response = client.get("/api/version")
+def test_version_debug_commit_is_string() -> None:
+    with patch.dict(os.environ, {"APP_ENV": "development"}):
+        response = client.get("/api/version/debug")
     data = response.json()
     assert isinstance(data["commit"], str)
     assert len(data["commit"]) > 0
 
 
-def test_version_environment_defaults_to_development() -> None:
-    response = client.get("/api/version")
-    data = response.json()
-    # In test context, APP_ENV is not set, so defaults to 'development'
-    assert data["environment"] == "development"
-
-
-def test_version_python_version_matches_runtime() -> None:
-    response = client.get("/api/version")
-    data = response.json()
-    assert data["python_version"] == sys.version
-
-
-def test_version_datasets_available_is_positive_int() -> None:
-    response = client.get("/api/version")
-    data = response.json()
-    assert isinstance(data["datasets_available"], int)
-    assert data["datasets_available"] > 0
-
-
-def test_version_uptime_is_non_negative_float() -> None:
-    response = client.get("/api/version")
+def test_version_debug_uptime_is_non_negative_float() -> None:
+    with patch.dict(os.environ, {"APP_ENV": "development"}):
+        response = client.get("/api/version/debug")
     data = response.json()
     assert isinstance(data["uptime_seconds"], float)
     assert data["uptime_seconds"] >= 0
+
+
+def test_version_debug_returns_404_in_production() -> None:
+    with patch.dict(os.environ, {"APP_ENV": "production"}):
+        response = client.get("/api/version/debug")
+    assert response.status_code == 404
+
+
+def test_version_debug_uses_git_commit_env_var() -> None:
+    """GIT_COMMIT env var should be preferred over subprocess."""
+    with patch.dict(os.environ, {"GIT_COMMIT": "abc1234567890", "APP_ENV": "development"}):
+        # Need to reimport to pick up the env var — but since _git_commit
+        # is resolved at import time, we test the function directly.
+        from app.main import _get_git_commit
+
+        commit = _get_git_commit()
+    assert commit == "abc1234"

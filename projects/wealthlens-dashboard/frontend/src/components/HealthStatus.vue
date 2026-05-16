@@ -22,6 +22,7 @@ const state = ref<ConnectionState>('checking')
 const versionInfo = ref<VersionInfo | null>(null)
 
 let pollTimer: ReturnType<typeof setInterval> | null = null
+let abortController: AbortController | null = null
 
 const statusLabel = computed(() => {
   if (state.value === 'checking') return 'Checking API...'
@@ -44,13 +45,20 @@ const dotClass = computed(() => {
 })
 
 async function checkHealth(): Promise<void> {
+  // Abort any in-flight request before starting a new one
+  abortController?.abort()
+  abortController = new AbortController()
   try {
-    const res = await fetch(`${BASE_URL}/api/version`)
+    const res = await fetch(`${BASE_URL}/api/version`, {
+      signal: abortController.signal,
+    })
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     const json: VersionInfo = await res.json()
     versionInfo.value = json
     state.value = 'connected'
-  } catch {
+  } catch (err) {
+    // Ignore aborted requests — component may have unmounted
+    if (err instanceof DOMException && err.name === 'AbortError') return
     state.value = 'disconnected'
     versionInfo.value = null
   }
@@ -69,6 +77,8 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  abortController?.abort()
+  abortController = null
   if (pollTimer !== null) {
     clearInterval(pollTimer)
     pollTimer = null

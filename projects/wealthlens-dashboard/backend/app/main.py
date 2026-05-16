@@ -6,8 +6,8 @@ Serves processed UK wealth inequality datasets as JSON for the Vue 3 frontend.
 from __future__ import annotations
 
 import os
+import platform
 import subprocess
-import sys
 import time
 from datetime import UTC, datetime
 
@@ -31,10 +31,14 @@ _started_at: float = time.time()
 def _get_git_commit() -> str:
     """Return the short git commit hash, or 'unknown' if unavailable.
 
-    Gracefully handles missing git binary, missing .git directory,
-    timeouts, and any other subprocess failures so CI environments
-    without git still start cleanly.
+    Checks the GIT_COMMIT environment variable first (standard in CI/CD),
+    then falls back to subprocess.  Gracefully handles missing git binary,
+    missing .git directory, timeouts, and any other subprocess failures so
+    CI environments without git still start cleanly.
     """
+    env_commit = os.environ.get("GIT_COMMIT")
+    if env_commit:
+        return env_commit[:7]
     try:
         result = subprocess.run(
             ["git", "rev-parse", "--short", "HEAD"],
@@ -125,27 +129,46 @@ def health() -> dict:
     """Enhanced liveness probe with dataset availability info.
 
     Returns status, dataset count, and ISO timestamp for load balancers
-    and uptime monitors.
+    and uptime monitors.  Preserves backward-compatible ``"status": "ok"``
+    while adding new informational fields.
     """
     return {
-        "status": "healthy",
+        "status": "ok",
         "datasets_loaded": len(data.DATASETS),
         "timestamp": datetime.now(tz=UTC).isoformat(),
     }
 
 
-@app.get("/api/version", tags=["health"], summary="API version and runtime info")
+@app.get("/api/version", tags=["health"], summary="API version info")
 def version() -> dict:
-    """Return API version, git commit, environment, and runtime details.
+    """Return public API version metadata.
 
-    Useful for debugging deployments, monitoring dashboards, and the
-    frontend health status widget.
+    Only exposes fields safe for unauthenticated access and consumed by
+    the frontend health status widget: version, dataset count, and status.
     """
+    return {
+        "version": app.version,
+        "datasets_available": len(data.DATASETS),
+        "status": "ok",
+    }
+
+
+@app.get("/api/version/debug", tags=["health"], summary="Debug runtime info")
+def version_debug() -> dict:
+    """Return detailed runtime info for debugging deployments.
+
+    Only available in non-production environments.  Returns 404 when
+    APP_ENV is set to 'production'.
+    """
+    from fastapi import HTTPException
+
+    if os.environ.get("APP_ENV") == "production":
+        raise HTTPException(status_code=404, detail="Not found")
     return {
         "version": app.version,
         "commit": _git_commit,
         "environment": os.environ.get("APP_ENV", "development"),
-        "python_version": sys.version,
+        "python_version": platform.python_version(),
         "datasets_available": len(data.DATASETS),
         "uptime_seconds": round(time.time() - _started_at, 2),
     }

@@ -23,10 +23,10 @@ def test_health_contains_expected_keys() -> None:
     assert "timestamp" in data
 
 
-def test_health_status_is_healthy() -> None:
+def test_health_status_is_ok() -> None:
     response = client.get("/health")
     data = response.json()
-    assert data["status"] == "healthy"
+    assert data["status"] == "ok"
 
 
 def test_health_datasets_loaded_is_positive_int() -> None:
