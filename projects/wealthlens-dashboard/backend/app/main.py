@@ -42,6 +42,12 @@ app.add_middleware(
 app.include_router(data.router, prefix="/api/data", tags=["data"])
 
 
+@app.get("/api/health/data", tags=["health"])
+def health_data() -> dict:
+    """Dataset availability check — delegates to the data module."""
+    return data.health_data()
+
+
 @app.get("/health")
 def health() -> dict[str, str]:
     """Liveness probe."""

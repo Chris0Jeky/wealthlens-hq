@@ -1,12 +1,14 @@
 """Data endpoints — serves processed CSV datasets as JSON.
 
-Provides dataset listing, paginated data access, and metadata with
-source citations for every dataset.
+Provides dataset listing, paginated data access, metadata with
+source citations for every dataset, and a health-check endpoint
+that reports CSV availability.
 """
 
 from __future__ import annotations
 
 import math
+import os
 from pathlib import Path
 from typing import Any
 
@@ -119,6 +121,46 @@ def _build_metadata(dataset_name: str) -> dict[str, Any]:
         "access_date": meta["access_date"],
         "row_count": row_count,
         "columns": columns,
+    }
+
+
+def health_data() -> dict[str, Any]:
+    """Check availability of all configured CSV datasets.
+
+    Returns overall status (healthy/degraded/unavailable) plus per-dataset
+    detail including file size when available.  No auth required — this is
+    a health / monitoring endpoint.
+    """
+    datasets_status: dict[str, dict[str, Any]] = {}
+    available_count = 0
+
+    for name, filename in DATASETS.items():
+        csv_path = DATA_DIR / filename
+        entry: dict[str, Any] = {"file": filename}
+        try:
+            with open(csv_path, "rb") as f:
+                size = os.fstat(f.fileno()).st_size
+            entry["available"] = True
+            entry["size_bytes"] = size
+            available_count += 1
+        except OSError as exc:
+            entry["available"] = False
+            entry["error"] = getattr(exc, "strerror", None) or type(exc).__name__
+        datasets_status[name] = entry
+
+    total = len(DATASETS)
+    if available_count == total:
+        status = "healthy"
+    elif available_count > 0:
+        status = "degraded"
+    else:
+        status = "unavailable"
+
+    return {
+        "status": status,
+        "datasets": datasets_status,
+        "available_count": available_count,
+        "total_count": total,
     }
 
 
