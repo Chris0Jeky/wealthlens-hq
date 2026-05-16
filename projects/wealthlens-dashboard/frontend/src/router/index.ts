@@ -50,6 +50,11 @@ const router = createRouter({
       component: () => import("@/views/WealthCalculatorView.vue"),
     },
     {
+      path: "/faq",
+      name: "faq",
+      component: () => import("@/views/FaqView.vue"),
+    },
+    {
       path: "/:pathMatch(.*)*",
       name: "not-found",
       component: () => import("@/views/NotFoundView.vue"),
