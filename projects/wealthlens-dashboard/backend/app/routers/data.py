@@ -92,7 +92,7 @@ def _read_csv(dataset_name: str) -> pd.DataFrame:
     """
     csv_path = DATA_DIR / DATASETS[dataset_name]
     if not csv_path.exists():
-        logger.warning("dataset_missing dataset=%s path=%s", dataset_name, csv_path)
+        logger.warning("dataset_missing dataset=%s file=%s", dataset_name, DATASETS[dataset_name])
         raise HTTPException(
             status_code=503,
             detail=f"Dataset file not found: {dataset_name} — run the pipeline first",
@@ -109,7 +109,7 @@ def _read_csv(dataset_name: str) -> pd.DataFrame:
         OSError,
         UnicodeDecodeError,
     ) as e:
-        logger.error("csv_read_error dataset=%s error=%s", dataset_name, e)
+        logger.exception("csv_read_error dataset=%s", dataset_name)
         raise HTTPException(
             status_code=503,
             detail=f"Failed to read dataset '{dataset_name}': {e}",
