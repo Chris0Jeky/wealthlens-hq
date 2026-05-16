@@ -4,11 +4,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
-
-from extract_action_items import format_report, main, scan_directory, scan_file
 import extract_action_items as module
-
+import pytest
+from extract_action_items import format_report, main, scan_directory, scan_file
 
 # ---------------------------------------------------------------------------
 # scan_file
