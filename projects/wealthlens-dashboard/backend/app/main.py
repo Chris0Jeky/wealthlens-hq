@@ -10,6 +10,7 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.error_handlers import register_error_handlers
 from app.routers import data
 
 # ---------------------------------------------------------------------------
@@ -38,6 +39,8 @@ app.add_middleware(
     allow_methods=["GET"],
     allow_headers=["*"],
 )
+
+register_error_handlers(app)
 
 app.include_router(data.router, prefix="/api/data", tags=["data"])
 
