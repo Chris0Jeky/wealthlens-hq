@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { RouterView } from 'vue-router'
 import ErrorBoundary from '@/components/ErrorBoundary.vue'
+import AppHeader from '@/components/AppHeader.vue'
+import AppFooter from '@/components/AppFooter.vue'
 </script>
 
 <template>
@@ -14,36 +16,12 @@ import ErrorBoundary from '@/components/ErrorBoundary.vue'
     >
       Skip to main content
     </a>
-    <header class="border-b border-[var(--wl-rule)] px-6 py-4">
-      <div class="max-w-wl mx-auto flex items-center justify-between">
-        <router-link to="/" class="text-xl font-bold tracking-tight">
-          WealthLens<span class="text-[var(--wl-red)]"> UK</span>
-        </router-link>
-        <nav aria-label="Main navigation" class="flex gap-6 text-sm">
-          <a
-            href="https://github.com/Chris0Jeky/wealthlens-hq"
-            target="_blank"
-            rel="noopener"
-            class="text-[var(--wl-ink-muted)] hover:text-[var(--wl-ink)]"
-          >
-            GitHub
-          </a>
-        </nav>
-      </div>
-    </header>
+    <AppHeader />
     <main id="main-content" tabindex="-1">
       <ErrorBoundary>
         <RouterView />
       </ErrorBoundary>
     </main>
-    <footer
-      role="contentinfo"
-      class="border-t border-[var(--wl-rule)] px-6 py-6 mt-12 text-center text-sm text-[var(--wl-ink-muted)]"
-    >
-      <p>
-        WealthLens UK &middot; Open source &middot; Data cited from ONS, WID,
-        HMRC
-      </p>
-    </footer>
+    <AppFooter />
   </div>
 </template>
