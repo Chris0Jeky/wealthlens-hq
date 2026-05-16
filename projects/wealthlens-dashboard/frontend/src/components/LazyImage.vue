@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from "vue";
+import { ref } from "vue";
+import { useIntersectionObserver } from "@/composables/useIntersectionObserver";
 
 const props = defineProps<{
   src: string;
@@ -10,26 +11,11 @@ const props = defineProps<{
 
 const imgRef = ref<HTMLImageElement | null>(null);
 const loaded = ref(false);
-const inView = ref(false);
 
-let observer: IntersectionObserver | null = null;
-
-onMounted(() => {
-  if (!imgRef.value) return;
-  observer = new IntersectionObserver(
-    ([entry]) => {
-      if (entry.isIntersecting) {
-        inView.value = true;
-        observer?.disconnect();
-      }
-    },
-    { rootMargin: "200px" }
-  );
-  observer.observe(imgRef.value);
-});
-
-onUnmounted(() => {
-  observer?.disconnect();
+const { isVisible: inView } = useIntersectionObserver(imgRef, {
+  rootMargin: "200px",
+  threshold: 0,
+  once: true,
 });
 </script>
 
@@ -41,6 +27,7 @@ onUnmounted(() => {
     :width="props.width"
     :height="props.height"
     :class="['lazy-img', { 'lazy-img--loaded': loaded }]"
+    :aria-busy="!loaded"
     loading="lazy"
     @load="loaded = true"
   />
@@ -54,5 +41,12 @@ onUnmounted(() => {
 
 .lazy-img--loaded {
   opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lazy-img {
+    transition: none;
+    opacity: 1;
+  }
 }
 </style>

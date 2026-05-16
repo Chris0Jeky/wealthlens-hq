@@ -9,9 +9,12 @@ beforeEach(() => {
   mockObserve.mockClear();
   mockDisconnect.mockClear();
 
-  const MockIO = vi.fn(function (this: any, callback: any) {
+  const MockIO = vi.fn(function (
+    this: IntersectionObserver,
+    callback: IntersectionObserverCallback,
+  ) {
     this.observe = mockObserve.mockImplementation(() => {
-      callback([{ isIntersecting: true }]);
+      callback([{ isIntersecting: true } as IntersectionObserverEntry], this);
     });
     this.disconnect = mockDisconnect;
     this.unobserve = vi.fn();

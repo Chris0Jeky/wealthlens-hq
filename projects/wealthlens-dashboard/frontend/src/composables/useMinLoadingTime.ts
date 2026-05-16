@@ -1,4 +1,4 @@
-import { ref, watch, type Ref } from "vue";
+import { ref, watch, onUnmounted, type Ref } from "vue";
 
 /**
  * Ensures a loading state displays for a minimum duration to prevent
@@ -25,6 +25,13 @@ export function useMinLoadingTime(loading: Ref<boolean>, minMs = 300) {
       if (timer === null) {
         showing.value = false;
       }
+    }
+  });
+
+  onUnmounted(() => {
+    if (timer) {
+      clearTimeout(timer);
+      timer = null;
     }
   });
 

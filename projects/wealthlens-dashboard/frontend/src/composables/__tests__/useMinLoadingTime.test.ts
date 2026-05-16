@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
-import { ref, nextTick } from "vue";
+import { ref, nextTick, defineComponent } from "vue";
+import { mount } from "@vue/test-utils";
 import { useMinLoadingTime } from "../useMinLoadingTime";
 
 describe("useMinLoadingTime", () => {
@@ -62,6 +63,47 @@ describe("useMinLoadingTime", () => {
     loading.value = false;
     await nextTick();
     expect(showing.value).toBe(false);
+
+    vi.useRealTimers();
+  });
+
+  it("clears timer on unmount", async () => {
+    vi.useFakeTimers();
+
+    const loading = ref(false);
+    let showing: { value: boolean } | undefined;
+
+    const Wrapper = defineComponent({
+      setup() {
+        const result = useMinLoadingTime(loading, 300);
+        showing = result.showing;
+        return {};
+      },
+      template: "<div />",
+    });
+
+    const wrapper = mount(Wrapper);
+
+    // Trigger loading to start the timer
+    loading.value = true;
+    await nextTick();
+    expect(showing!.value).toBe(true);
+
+    // Turn off loading while timer is still pending
+    loading.value = false;
+    await nextTick();
+    // showing should still be true because timer hasn't fired yet
+    expect(showing!.value).toBe(true);
+
+    // Unmount while timer is pending
+    wrapper.unmount();
+
+    // Advance timers past the minMs — timer should have been cleared
+    vi.advanceTimersByTime(500);
+    await nextTick();
+
+    // showing should still be true (timer was cleared, never set it to false)
+    expect(showing!.value).toBe(true);
 
     vi.useRealTimers();
   });
