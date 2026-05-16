@@ -23,6 +23,7 @@ SCRIPTS = [
     "fetch_hmrc_stats.py",
     "fetch_productivity_pay.py",
     "fetch_ons_gdhi.py",
+    "fetch_tax_composition.py",
 ]
 
 
