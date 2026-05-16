@@ -54,12 +54,27 @@ describe('api client', () => {
 
     it('ApiError includes status code', async () => {
       mockFetch.mockResolvedValue(jsonResponse(null, 500))
-      try {
-        await api.listDatasets()
-      } catch (e) {
-        expect(e).toBeInstanceOf(ApiError)
-        expect((e as ApiError).status).toBe(500)
-      }
+      await expect(api.listDatasets()).rejects.toMatchObject({ status: 500 })
+    })
+
+    it('throws ApiError with status 0 on network failure', async () => {
+      mockFetch.mockRejectedValue(new TypeError('Failed to fetch'))
+      const err = await api.listDatasets().catch((e) => e)
+      expect(err).toBeInstanceOf(ApiError)
+      expect(err.status).toBe(0)
+      expect(err.message).toBe('Could not reach the server')
+    })
+
+    it('throws ApiError when response is not valid JSON', async () => {
+      mockFetch.mockResolvedValue({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        json: () => Promise.reject(new SyntaxError('Unexpected token')),
+      })
+      const err = await api.listDatasets().catch((e) => e)
+      expect(err).toBeInstanceOf(ApiError)
+      expect(err.message).toBe('Response was not valid JSON')
     })
   })
 })
