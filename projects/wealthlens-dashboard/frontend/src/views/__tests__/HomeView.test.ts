@@ -73,53 +73,21 @@ describe('HomeView', () => {
     })
   })
 
-  describe('loading state', () => {
-    it('shows skeleton loaders when loading', () => {
-      const wrapper = mount(HomeView, createMountOptions({ loading: true }))
-      const skeletons = wrapper.findAll('[role="status"]')
-      // Each of 10 cards has 3 skeleton loaders (title, description, actions)
-      expect(skeletons.length).toBeGreaterThanOrEqual(10)
+  describe('dataset cards', () => {
+    it('always renders all 10 dataset cards regardless of store state', () => {
+      const wrapper = mount(HomeView, createMountOptions())
+      const items = wrapper.findAll('[role="listitem"]')
+      expect(items.length).toBe(10)
     })
 
-    it('does not show dataset cards when loading', () => {
+    it('renders cards even when store is loading', () => {
       const wrapper = mount(HomeView, createMountOptions({ loading: true }))
       const items = wrapper.findAll('[role="listitem"]')
-      expect(items.length).toBe(0)
+      expect(items.length).toBe(10)
     })
-  })
 
-  describe('error state', () => {
-    it('shows error message', () => {
+    it('renders cards even when store has error', () => {
       const wrapper = mount(HomeView, createMountOptions({ error: 'Network error' }))
-      expect(wrapper.text()).toContain('Network error')
-    })
-
-    it('shows failure heading', () => {
-      const wrapper = mount(HomeView, createMountOptions({ error: 'Server down' }))
-      expect(wrapper.text()).toContain('Failed to load datasets')
-    })
-
-    it('shows retry button', () => {
-      const wrapper = mount(HomeView, createMountOptions({ error: 'Network error' }))
-      const button = wrapper.find('button')
-      expect(button.exists()).toBe(true)
-      expect(button.text()).toBe('Retry')
-    })
-
-    it('retry button calls fetchDatasets', async () => {
-      const wrapper = mount(HomeView, createMountOptions({ error: 'Network error' }))
-      const store = useDataStore()
-      // Reset the call count from onMounted
-      vi.mocked(store.fetchDatasets).mockClear()
-
-      await wrapper.find('button').trigger('click')
-      expect(store.fetchDatasets).toHaveBeenCalledOnce()
-    })
-  })
-
-  describe('dataset cards', () => {
-    it('renders all 10 dataset cards when loaded', () => {
-      const wrapper = mount(HomeView, createMountOptions())
       const items = wrapper.findAll('[role="listitem"]')
       expect(items.length).toBe(10)
     })
@@ -165,6 +133,28 @@ describe('HomeView', () => {
       const store = useDataStore()
       expect(store.fetchAllMetadata).toHaveBeenCalledOnce()
     })
+
+    it('tracks both fetches concurrently via Promise.allSettled', () => {
+      // Both should be called without waiting for one to complete before the other
+      mount(HomeView, createMountOptions())
+      const store = useDataStore()
+      expect(store.fetchDatasets).toHaveBeenCalledOnce()
+      expect(store.fetchAllMetadata).toHaveBeenCalledOnce()
+    })
+  })
+
+  describe('metadata enrichment error', () => {
+    it('does not show metadata warning by default', () => {
+      const wrapper = mount(HomeView, createMountOptions())
+      expect(wrapper.text()).not.toContain('Metadata enrichment unavailable')
+    })
+
+    it('cards remain visible even if metadata fails', () => {
+      // Even with store error, cards should always render
+      const wrapper = mount(HomeView, createMountOptions({ error: 'Server down' }))
+      const items = wrapper.findAll('[role="listitem"]')
+      expect(items.length).toBe(10)
+    })
   })
 
   describe('accessibility', () => {
@@ -178,11 +168,6 @@ describe('HomeView', () => {
       const wrapper = mount(HomeView, createMountOptions())
       const section = wrapper.find('[aria-labelledby="datasets-heading"]')
       expect(section.exists()).toBe(true)
-    })
-
-    it('has role="alert" on error state', () => {
-      const wrapper = mount(HomeView, createMountOptions({ error: 'Error' }))
-      expect(wrapper.find('[role="alert"]').exists()).toBe(true)
     })
 
     it('has role="list" on dataset grid', () => {

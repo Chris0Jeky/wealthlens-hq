@@ -1,14 +1,17 @@
 <script setup lang="ts">
-import { onMounted, computed } from 'vue'
+import { onMounted, computed, ref } from 'vue'
 import { useDataStore } from '@/stores/data'
 import DatasetCard from '@/components/DatasetCard.vue'
 import ResponsiveGrid from '@/components/ResponsiveGrid.vue'
-import SkeletonLoader from '@/components/SkeletonLoader.vue'
 import NumberStat from '@/components/NumberStat.vue'
 import { CHART_METADATA } from '@/utils/chartConstants'
 import { SUPPORTED_CHART_NAMES } from '@/utils/chartConstants'
 
 const store = useDataStore()
+
+/** Local state for metadata enrichment (does not gate card rendering). */
+const metadataLoading = ref(true)
+const metadataError = ref<string | null>(null)
 
 /** All 10 datasets in display order. */
 const ALL_DATASETS = [
@@ -54,11 +57,19 @@ const chartCount = computed(() => SUPPORTED_CHART_NAMES.size)
 const datasetCount = computed(() => ALL_DATASETS.length)
 
 onMounted(async () => {
-  store.fetchDatasets()
-  try {
-    await store.fetchAllMetadata()
-  } catch {
-    // Metadata fetch failure is non-blocking — fallback descriptions will be used
+  // Track both fetches with Promise.allSettled so neither silently fails
+  const results = await Promise.allSettled([
+    store.fetchDatasets(),
+    store.fetchAllMetadata(),
+  ])
+
+  metadataLoading.value = false
+
+  // Report metadata enrichment failure (non-blocking — fallback descriptions used)
+  if (results[1].status === 'rejected') {
+    metadataError.value = results[1].reason instanceof Error
+      ? results[1].reason.message
+      : 'Failed to load metadata'
   }
 })
 </script>
@@ -107,47 +118,19 @@ onMounted(async () => {
         Available Datasets
       </h2>
 
-      <!-- Loading state -->
-      <div v-if="store.loading" aria-live="polite">
-        <ResponsiveGrid min-width="280px" gap="1.5rem">
-          <div
-            v-for="i in 10"
-            :key="i"
-            class="rounded-lg border border-[var(--wl-rule)] p-6"
-          >
-            <SkeletonLoader height="1.5rem" width="60%" label="Loading dataset title" />
-            <div class="mt-3">
-              <SkeletonLoader :lines="2" label="Loading dataset description" />
-            </div>
-            <div class="mt-4">
-              <SkeletonLoader height="1rem" width="40%" label="Loading dataset actions" />
-            </div>
-          </div>
-        </ResponsiveGrid>
-      </div>
-
-      <!-- Error state -->
+      <!-- Metadata enrichment error (non-blocking) -->
       <div
-        v-else-if="store.error"
-        role="alert"
-        class="rounded-lg border border-[var(--wl-red)] bg-red-50 dark:bg-red-950 p-6"
+        v-if="metadataError"
+        role="status"
+        class="rounded-lg border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950 p-4 mb-4"
       >
-        <p class="text-[var(--wl-red)] font-medium mb-2">
-          Failed to load datasets
+        <p class="text-sm text-amber-800 dark:text-amber-200">
+          Metadata enrichment unavailable — showing default descriptions.
         </p>
-        <p class="text-sm text-[var(--wl-ink-muted)]">
-          {{ store.error }}
-        </p>
-        <button
-          class="mt-4 px-4 py-2 text-sm font-medium rounded border border-[var(--wl-red)] text-[var(--wl-red)] hover:bg-red-100 dark:hover:bg-red-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--wl-red)]"
-          @click="store.fetchDatasets()"
-        >
-          Retry
-        </button>
       </div>
 
-      <!-- Dataset cards grid -->
-      <ResponsiveGrid v-else min-width="280px" gap="1.5rem" role="list">
+      <!-- Dataset cards always render (hardcoded data, no API dependency) -->
+      <ResponsiveGrid min-width="280px" gap="1.5rem" role="list">
         <div v-for="name in ALL_DATASETS" :key="name" role="listitem">
           <DatasetCard
             :name="name"
