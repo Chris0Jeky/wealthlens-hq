@@ -115,7 +115,7 @@ npm install
 npm run dev   # Opens http://localhost:3000
 
 # Run tests
-make ci-quick   # Lint + backend tests + frontend tests
+make ci-quick   # Backend lint + backend tests
 ```
 
 The Vite dev server proxies `/api/*` to `localhost:8000` automatically.
@@ -123,7 +123,7 @@ The Vite dev server proxies `/api/*` to `localhost:8000` automatically.
 ## How to Add a New Dataset
 
 1. **Write a pipeline script**: Create `automation/data-pipelines/fetch_<name>.py` that fetches, cleans, and outputs a CSV to `projects/wealthlens-dashboard/data/processed/<name>.csv`.
-2. **Register in backend**: Add the dataset slug and CSV filename to the `DATASETS` dict in `app/routers/data.py`.
+2. **Register in backend**: Add the dataset slug/CSV filename to `DATASETS` and matching source metadata to `DATASET_META` in `app/routers/data.py`.
 3. **Generate static JSON**: Run the pipeline and copy output to `frontend/public/data/<name>.json`.
 4. **Register the chart name**: Add the dataset slug to `frontend/src/constants/charts.ts` (`VALID_CHART_NAMES`).
 5. **Create a chart component**: See below.
