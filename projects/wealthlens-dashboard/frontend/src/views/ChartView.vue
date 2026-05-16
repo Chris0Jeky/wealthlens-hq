@@ -570,6 +570,10 @@ watch(chartName, (name) => {
 .crumb__link:hover {
   color: var(--wl-red);
 }
+.crumb__link:focus-visible {
+  outline: 2px solid var(--wl-red);
+  outline-offset: 2px;
+}
 .crumb__sep {
   margin: 0 8px;
   color: var(--wl-rule-strong);
@@ -615,6 +619,11 @@ watch(chartName, (name) => {
   border-color: var(--wl-red);
   color: #fff;
   font-weight: 600;
+}
+
+/* Ensure consistent spacing on the simple-layout chart card */
+.simple-layout .chart-card {
+  margin-bottom: 32px;
 }
 
 .article-head__title {
@@ -684,6 +693,10 @@ watch(chartName, (name) => {
   color: var(--wl-red);
   text-decoration: none;
   border-bottom: 1px solid var(--wl-red);
+}
+.meta-card__link:focus-visible {
+  outline: 2px solid var(--wl-red);
+  outline-offset: 2px;
 }
 
 /* ============================================================ */
@@ -830,6 +843,10 @@ watch(chartName, (name) => {
 }
 .method summary::-webkit-details-marker {
   display: none;
+}
+.method summary::marker {
+  display: none;
+  content: "";
 }
 .method summary::before {
   content: "+";
