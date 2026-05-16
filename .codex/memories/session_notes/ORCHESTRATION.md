@@ -11,7 +11,7 @@
 > 5. Pick up from the **Current Phase** section below.
 > 6. After completing work, UPDATE this file before the next compaction risk.
 
-Last updated: 2026-05-16 (wave 17 complete — 40 PRs total this session, #39-#78)
+Last updated: 2026-05-16 (wave 32 in progress — PRs #11-#138, 128 total)
 
 ## Workflow Design
 
@@ -39,7 +39,7 @@ main
 
 ## Current Phase
 
-**Phase: WAVE 17 COMPLETE** — PRs #39-#78 (waves 7-17). All reviewed x2. Wave 18 next.
+**Phase: WAVE 32 IN PROGRESS** — PRs #11-#138 total. Wave 31 R2 complete. Wave 32 R1 running.
 
 ### Work Stream Status
 
@@ -89,7 +89,9 @@ main
 35. [DONE] Build wave 15 PRs (#68-#70), R1+R2 all pass
 36. [DONE] Build wave 16 PRs (#71-#74), R1+R2 all pass
 37. [DONE] Build wave 17 PRs (#75-#78), R1+R2 all pass
-38. [IN PROGRESS] Seed and build wave 18
+38. [DONE] Waves 18-30 PRs (#79-#130), R1+R2 all pass
+39. [DONE] Wave 31 PRs (#131-#134): about page, structured logging, dark mode, request timeout — R1+R2 all pass
+40. [IN PROGRESS] Wave 32 PRs (#135-#138): CHANGELOG, PWA manifest, chart constants, nav a11y tests — R1 running
 
 ## Decisions Log
 
@@ -371,6 +373,28 @@ main
  ├── test/frontend-store-edge-cases (#77, independent)
  └── chore/docker-support (#78, independent)
 ```
+
+## Waves 18-30 — Summary (PRs #79-#130)
+
+Waves 18-30 created 52 PRs spanning: CI enhancements, route guards, request logging, error boundary improvements, API endpoint tests, chart view tests, rate limiting, error responses, chart data composable, CORS max-age, meta/OG tags, accessible data table, dataset validation, health version, loading skeleton, share button, cache headers, and more. All reviewed R1+R2.
+
+## Wave 31 — About page, structured logging, dark mode, request timeout
+
+| # | Stream | Branch | Base | PR | Status |
+|---|--------|--------|------|----|--------|
+| 49 | About page | `feat/about-page` | main | #131 | R2 PASS |
+| 50 | Structured logging | `feat/structured-logging` | main | #132 | R2 PASS |
+| 51 | Dark mode toggle | `feat/dark-mode` | main | #133 | R2 PASS |
+| 52 | Request timeout | `feat/request-timeout` | main | #134 | R2 PASS (fix: ASGI send-wrapper) |
+
+## Wave 32 — CHANGELOG, PWA manifest, chart constants, nav tests
+
+| # | Stream | Branch | Base | PR | Status |
+|---|--------|--------|------|----|--------|
+| 53 | CHANGELOG | `docs/changelog-v2` | main | #135 | R1 running |
+| 54 | PWA manifest | `feat/pwa-manifest` | main | #136 | R1 running |
+| 55 | Chart constants | `refactor/chart-constants` | main | #137 | R1 running |
+| 56 | Nav a11y tests | `test/nav-keyboard-focus` | main | #138 | R1 running |
 
 ## Notes
 
