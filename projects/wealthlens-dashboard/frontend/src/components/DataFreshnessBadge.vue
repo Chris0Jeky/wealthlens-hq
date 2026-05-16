@@ -11,7 +11,7 @@
  * Shows a tooltip on hover with the full date and source name.
  * Gracefully handles missing/unavailable freshness data by rendering nothing.
  */
-import { computed } from "vue";
+import { computed, toRef } from "vue";
 import {
   useDataFreshness,
   daysAgo,
@@ -19,11 +19,10 @@ import {
 } from "@/composables/useDataFreshness";
 
 const props = defineProps<{
-  /** The dataset slug (e.g. "wealth-shares") */
   dataset: string;
 }>();
 
-const { freshnessInfo, loading } = useDataFreshness(props.dataset);
+const { freshnessInfo, loading } = useDataFreshness(toRef(props, "dataset"));
 
 /** Number of days since last update. */
 const age = computed(() => {
@@ -100,6 +99,7 @@ const tooltipText = computed(() => {
 
 .freshness-badge__dot--amber {
   background-color: var(--wl-gold);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--wl-gold) 70%, black);
 }
 
 .freshness-badge__dot--red {
