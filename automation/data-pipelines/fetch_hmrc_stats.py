@@ -75,11 +75,11 @@ def process(paths: dict[str, Path]) -> pd.DataFrame:
     # Pick the most recent individual taxpayer sheet (2_1a pattern)
     target_sheet = None
     for name in xl.sheet_names:
-        if "1a" in name:
+        if "1a" in str(name):
             target_sheet = name
             break
     if target_sheet is None:
-        target_sheet = next(s for s in xl.sheet_names if s != "Contents")
+        target_sheet = next(s for s in xl.sheet_names if str(s) != "Contents")
 
     logger.info("Reading sheet: '%s'", target_sheet)
     df_raw = pd.read_excel(table2_path, sheet_name=target_sheet, header=None, engine="odf")
@@ -105,17 +105,17 @@ def process(paths: dict[str, Path]) -> pd.DataFrame:
         if not band_raw or band_raw == "nan":
             continue
 
-        gains_raw = df_raw.iloc[i, 2]
-        count_raw = df_raw.iloc[i, 1]
+        gains_raw: object = df_raw.iloc[i, 2]
+        count_raw: object = df_raw.iloc[i, 1]
 
         # Parse gains — skip rows with "[Less than 1]" or similar
         try:
-            gains = float(gains_raw)
+            gains = float(gains_raw)  # type: ignore[arg-type]
         except (ValueError, TypeError):
             continue
 
         try:
-            count = float(count_raw)
+            count: float | None = float(count_raw)  # type: ignore[arg-type]
         except (ValueError, TypeError):
             count = None
 

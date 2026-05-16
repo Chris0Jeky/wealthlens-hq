@@ -151,12 +151,12 @@ def process(xlsx_path: Path | None) -> pd.DataFrame:
     # the old heuristic if the sheet name changed in a future edition.
     target_sheet = None
     for name in xl.sheet_names:
-        if name.strip() == "Table 2.2":
+        if str(name).strip() == "Table 2.2":
             target_sheet = name
             break
     if target_sheet is None:
         for name in xl.sheet_names:
-            lower = name.lower()
+            lower = str(name).lower()
             if "decile" in lower or "total" in lower:
                 target_sheet = name
                 break
@@ -178,8 +178,10 @@ def process(xlsx_path: Path | None) -> pd.DataFrame:
         logger.info("%d rows", len(df))
         return df
 
-    df = _parse_table_2_2(df_raw)
-    if df is None:
+    parsed = _parse_table_2_2(df_raw)
+    if parsed is not None:
+        df = parsed
+    else:
         # Fall back to the older generic parser.
         header_row = _find_decile_header_row(df_raw)
         if header_row is not None:
@@ -239,8 +241,9 @@ def _parse_table_2_2(df_raw: pd.DataFrame) -> pd.DataFrame | None:
         if "decile" not in label.lower():
             continue
 
+        cell_val: object = df_raw.iloc[i, last_col]
         try:
-            wealth_m = float(df_raw.iloc[i, last_col])
+            wealth_m = float(cell_val)  # type: ignore[arg-type]
         except (ValueError, TypeError):
             continue
 
@@ -300,13 +303,14 @@ def _parse_decile_data(df_raw: pd.DataFrame, header_row: int) -> pd.DataFrame:
         if not label or label == "nan":
             continue
 
-        val = df_raw.iloc[i, 1] if len(df_raw.columns) > 1 else None
+        val: object = df_raw.iloc[i, 1] if len(df_raw.columns) > 1 else None
         try:
-            wealth_bn = float(val)
+            wealth_bn = float(val)  # type: ignore[arg-type]
         except (ValueError, TypeError):
             for col_idx in range(2, min(6, len(df_raw.columns))):
+                cell: object = df_raw.iloc[i, col_idx]
                 try:
-                    wealth_bn = float(df_raw.iloc[i, col_idx])
+                    wealth_bn = float(cell)  # type: ignore[arg-type]
                     break
                 except (ValueError, TypeError):
                     continue

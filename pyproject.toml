@@ -48,6 +48,22 @@ check_untyped_defs = true
 module = ["plotly.*", "odf.*", "openpyxl.*", "requests.*"]
 ignore_missing_imports = true
 
+# automation/data-pipelines/ has a hyphen so it can't be a Python package;
+# list modules explicitly instead of using a glob pattern.
+[[tool.mypy.overrides]]
+module = [
+    "fetch_wid_data",
+    "fetch_ons_housing",
+    "fetch_ons_wealth",
+    "fetch_hmrc_stats",
+    "chart_html",
+    "run_all",
+    "validate",
+    "extract_action_items",
+    "summarise_research",
+]
+disallow_untyped_defs = true
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
