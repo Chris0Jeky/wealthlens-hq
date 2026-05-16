@@ -88,7 +88,7 @@ def fetch() -> Path | None:
 
         try:
             out_path.write_bytes(resp.content)
-        except (OSError, IOError) as exc:
+        except OSError as exc:
             logger.warning("Could not write file (%s: %s)", type(exc).__name__, exc)
             continue
         logger.info("Saved to %s (%d KB)", out_path, len(resp.content) // 1024)
