@@ -22,6 +22,7 @@ from app.routers.schemas import (
     DatasetColumnsResponse,
     DatasetListResponse,
     DatasetMetadataResponse,
+    DatasetSummaryResponse,
     PaginatedDatasetResponse,
 )
 
@@ -269,6 +270,44 @@ def dataset_columns(dataset_name: str) -> dict[str, Any]:
             }
         )
     return {"dataset": dataset_name, "row_count": len(df), "columns": columns}
+
+
+_summary_cache: dict[str, dict[str, Any]] = {}
+
+
+@router.get("/{dataset_name}/summary", response_model=DatasetSummaryResponse,
+            summary="Summary statistics for a dataset")
+def dataset_summary(dataset_name: str) -> dict[str, Any]:
+    """Return descriptive statistics for numeric columns in a dataset."""
+    if dataset_name not in DATASETS:
+        raise HTTPException(status_code=404, detail=f"Unknown dataset: {dataset_name}")
+
+    if dataset_name in _summary_cache:
+        return _summary_cache[dataset_name]
+
+    df = _read_csv(dataset_name)
+    numeric_cols = df.select_dtypes(include="number").columns.tolist()
+
+    summaries = []
+    for col in numeric_cols:
+        series = df[col].dropna()
+        summaries.append({
+            "column": col,
+            "count": int(series.count()),
+            "mean": round(float(series.mean()), 4) if len(series) > 0 else None,
+            "std": round(float(series.std()), 4) if len(series) > 1 else None,
+            "min": round(float(series.min()), 4) if len(series) > 0 else None,
+            "max": round(float(series.max()), 4) if len(series) > 0 else None,
+            "median": round(float(series.median()), 4) if len(series) > 0 else None,
+        })
+
+    result: dict[str, Any] = {
+        "dataset": dataset_name,
+        "row_count": len(df),
+        "numeric_columns": summaries,
+    }
+    _summary_cache[dataset_name] = result
+    return result
 
 
 @router.get("/{dataset_name}/download", summary="Download dataset as CSV")
