@@ -1,81 +1,54 @@
-import { ref, computed } from 'vue'
+import { ref, watchEffect } from 'vue'
 
 export type Theme = 'light' | 'dark'
-export type ThemePreference = 'light' | 'dark' | 'system'
 
-const STORAGE_KEY = 'wealthlens-theme'
+const STORAGE_KEY = 'wl-theme'
 
-const preference = ref<ThemePreference>('system')
-const systemScheme = ref<Theme>('light')
+function getInitialTheme(): Theme {
+  if (typeof window === 'undefined') return 'light'
 
-let mql: MediaQueryList | null = null
-let initialised = false
-
-function onMediaChange() {
-  systemScheme.value = mql?.matches ? 'dark' : 'light'
-  applyClass()
-}
-
-function applyClass() {
-  if (typeof document === 'undefined') return
-  const theme: Theme = preference.value === 'system' ? systemScheme.value : preference.value
-  document.documentElement.classList.toggle('dark', theme === 'dark')
-}
-
-function safeStorage(action: 'get'): string | null
-function safeStorage(action: 'set', value: string): void
-function safeStorage(action: 'remove'): void
-function safeStorage(action: 'get' | 'set' | 'remove', value?: string): string | null | void {
   try {
-    if (action === 'get') return localStorage.getItem(STORAGE_KEY)
-    if (action === 'set' && value != null) localStorage.setItem(STORAGE_KEY, value)
-    if (action === 'remove') localStorage.removeItem(STORAGE_KEY)
+    const stored = localStorage.getItem(STORAGE_KEY)
+    if (stored === 'light' || stored === 'dark') return stored
   } catch {
-    return null
-  }
-}
-
-function init() {
-  if (initialised || typeof window === 'undefined' || typeof window.matchMedia !== 'function') return
-  initialised = true
-
-  const stored = safeStorage('get')
-  if (stored === 'light' || stored === 'dark') {
-    preference.value = stored
+    // localStorage unavailable
   }
 
-  mql = window.matchMedia('(prefers-color-scheme: dark)')
-  systemScheme.value = mql.matches ? 'dark' : 'light'
-  mql.addEventListener('change', onMediaChange)
-  applyClass()
+  if (typeof window.matchMedia === 'function') {
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+  }
+
+  return 'light'
 }
 
-init()
+const theme = ref<Theme>(getInitialTheme())
 
-export function _resetForTesting() {
-  if (mql) mql.removeEventListener('change', onMediaChange)
-  mql = null
-  initialised = false
-  preference.value = 'system'
-  systemScheme.value = 'light'
+function applyTheme() {
+  if (typeof document === 'undefined') return
+  document.documentElement.setAttribute('data-theme', theme.value)
 }
+
+applyTheme()
 
 export function useTheme() {
-  init()
+  watchEffect(applyTheme)
 
-  const resolved = computed<Theme>(() =>
-    preference.value === 'system' ? systemScheme.value : preference.value,
-  )
-
-  function setPreference(pref: ThemePreference) {
-    preference.value = pref
-    if (pref === 'system') {
-      safeStorage('remove')
-    } else {
-      safeStorage('set', pref)
+  function toggleTheme() {
+    theme.value = theme.value === 'light' ? 'dark' : 'light'
+    try {
+      localStorage.setItem(STORAGE_KEY, theme.value)
+    } catch {
+      // localStorage unavailable
     }
-    applyClass()
+    applyTheme()
   }
 
-  return { preference, resolved, setPreference }
+  return { theme, toggleTheme }
+}
+
+export function _resetForTesting() {
+  theme.value = 'light'
+  if (typeof document !== 'undefined') {
+    document.documentElement.removeAttribute('data-theme')
+  }
 }
