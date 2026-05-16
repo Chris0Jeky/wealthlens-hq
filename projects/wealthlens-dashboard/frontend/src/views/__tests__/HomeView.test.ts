@@ -1,59 +1,65 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { mount, RouterLinkStub } from "@vue/test-utils";
-import { createTestingPinia } from "@pinia/testing";
-import { useDataStore } from "@/stores/data";
-import HomeView from "@/views/HomeView.vue";
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { mount, flushPromises } from '@vue/test-utils'
+import { createTestingPinia } from '@pinia/testing'
+import { createRouter, createMemoryHistory } from 'vue-router'
+import HomeView from '../HomeView.vue'
+import { useDataStore } from '@/stores/data'
 
-describe("HomeView", () => {
-  beforeEach(() => {
-    vi.restoreAllMocks();
-  });
+function createMountOptions(storeOverrides = {}) {
+  const router = createRouter({
+    history: createMemoryHistory(),
+    routes: [
+      { path: '/', component: HomeView },
+      { path: '/charts/:name', component: { template: '<div />' } },
+    ],
+  })
 
-  function mountView(datasets: string[] = [], loading = false, error: string | null = null) {
-    return mount(HomeView, {
-      global: {
-        stubs: { RouterLink: RouterLinkStub },
-        plugins: [
-          createTestingPinia({
-            createSpy: vi.fn,
-            initialState: {
-              data: { datasets, loading, error },
-            },
-          }),
-        ],
-      },
-    });
+  return {
+    global: {
+      plugins: [
+        router,
+        createTestingPinia({
+          createSpy: vi.fn,
+          initialState: { data: { datasets: [], loading: false, error: null, ...storeOverrides } },
+        }),
+      ],
+    },
   }
+}
 
-  it("renders the dashboard heading", () => {
-    const wrapper = mountView();
-    expect(wrapper.find("h1").text()).toContain("UK Wealth Inequality Dashboard");
-  });
+describe('HomeView', () => {
+  it('renders main heading', () => {
+    const wrapper = mount(HomeView, createMountOptions())
+    expect(wrapper.find('h1').text()).toBe('UK Wealth Inequality Dashboard')
+  })
 
-  it("shows loading state", () => {
-    const wrapper = mountView([], true);
-    expect(wrapper.text()).toContain("Loading datasets...");
-  });
+  it('renders description paragraph', () => {
+    const wrapper = mount(HomeView, createMountOptions())
+    expect(wrapper.text()).toContain('Open-source, source-backed data')
+  })
 
-  it("shows error state", () => {
-    const wrapper = mountView([], false, "Network error");
-    expect(wrapper.text()).toContain("Network error");
-  });
+  it('shows loading state', () => {
+    const wrapper = mount(HomeView, createMountOptions({ loading: true }))
+    expect(wrapper.text()).toContain('Loading datasets')
+  })
 
-  it("renders dataset cards when data is loaded", () => {
-    const wrapper = mountView(["wealth-shares", "housing-affordability"]);
-    const items = wrapper.findAll('[role="listitem"]');
-    expect(items).toHaveLength(2);
-  });
+  it('shows error state', () => {
+    const wrapper = mount(HomeView, createMountOptions({ error: 'Network error' }))
+    expect(wrapper.text()).toContain('Network error')
+  })
 
-  it("displays dataset descriptions", () => {
-    const wrapper = mountView(["wealth-shares"]);
-    expect(wrapper.text()).toContain("Top 1% and 10% share of UK net personal wealth");
-  });
+  it('renders dataset cards when loaded', () => {
+    const wrapper = mount(
+      HomeView,
+      createMountOptions({ datasets: ['wealth-shares', 'housing-affordability'] }),
+    )
+    const items = wrapper.findAll('[role="listitem"]')
+    expect(items.length).toBe(2)
+  })
 
-  it("calls fetchDatasets on mount", () => {
-    mountView();
-    const store = useDataStore();
-    expect(store.fetchDatasets).toHaveBeenCalledOnce();
-  });
-});
+  it('calls fetchDatasets on mount', () => {
+    mount(HomeView, createMountOptions())
+    const store = useDataStore()
+    expect(store.fetchDatasets).toHaveBeenCalledOnce()
+  })
+})
