@@ -20,6 +20,7 @@ import {
   formatGBP,
   DECILE_DATA,
   COMPARISON_STATS,
+  MAX_DISPLAYABLE_WEALTH,
 } from "@/utils/wealthPosition";
 
 /** Raw text input from the user */
@@ -37,6 +38,15 @@ const parsedWealth = computed(() => {
 
 /** Whether the current input is valid */
 const isValid = computed(() => parsedWealth.value !== null);
+
+/**
+ * Whether the input exceeds the displayable cap (£100 billion).
+ * Absurdly large values produce unwieldy display and meaningless
+ * interpolation, so we show a simplified "top decile" message.
+ */
+const exceedsDisplayCap = computed(
+  () => parsedWealth.value !== null && parsedWealth.value > MAX_DISPLAYABLE_WEALTH,
+);
 
 /** Current decile (1-10) */
 const decile = computed(() =>
@@ -107,6 +117,10 @@ function reset() {
       <p class="calc__privacy">
         All calculation happens in your browser. No data is stored or
         transmitted.
+      </p>
+      <p class="calc__staleness">
+        Based on ONS Wealth and Assets Survey Round 7 (April 2018 to
+        March 2020). More recent data may show different thresholds.
       </p>
     </header>
 
@@ -191,8 +205,28 @@ function reset() {
     >
       <hr class="wl-rule-red" />
 
-      <!-- Position headline -->
-      <div class="calc__position">
+      <!-- Capped display for absurdly large values -->
+      <div v-if="exceedsDisplayCap" class="calc__position">
+        <p class="wl-eyebrow">Your position</p>
+        <p class="calc__position-headline">
+          You are in the
+          <span class="calc__decile-num">top</span>
+          decile
+        </p>
+        <p class="calc__position-sub">
+          Wealthier than approximately
+          <span class="wl-num">99%</span>
+          of UK households
+        </p>
+        <p class="calc__cap-note">
+          The value entered exceeds the range of available survey data.
+          At this level, you are firmly in the wealthiest 10% of UK
+          households.
+        </p>
+      </div>
+
+      <!-- Normal position headline -->
+      <div v-else class="calc__position">
         <p class="wl-eyebrow">Your position</p>
         <p class="calc__position-headline">
           You are in the
@@ -361,6 +395,15 @@ function reset() {
   margin: 0;
 }
 
+.calc__staleness {
+  font-family: var(--wl-mono);
+  font-size: 11px;
+  color: var(--wl-ink-faint);
+  letter-spacing: 0.04em;
+  margin: 6px 0 0;
+  line-height: 1.5;
+}
+
 /* ============================================================ */
 /* INPUT SECTION                                                 */
 /* ============================================================ */
@@ -514,6 +557,15 @@ function reset() {
   color: var(--wl-red);
   font-weight: 600;
   font-size: 20px;
+}
+
+.calc__cap-note {
+  font-family: var(--wl-mono);
+  font-size: 12px;
+  color: var(--wl-ink-muted);
+  margin: 16px auto 0;
+  max-width: 44ch;
+  line-height: 1.5;
 }
 
 /* ============================================================ */
