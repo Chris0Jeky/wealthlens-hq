@@ -68,6 +68,28 @@ wealthlens-hq/
 └── .github/workflows/               # GitHub Actions (deploy, data update)
 ```
 
+## API Documentation
+
+The backend API provides interactive documentation powered by FastAPI:
+
+| Interface | URL | Description |
+|-----------|-----|-------------|
+| Swagger UI | `http://localhost:8000/docs` | Interactive API explorer with try-it-out |
+| ReDoc | `http://localhost:8000/redoc` | Clean, readable API reference |
+
+Start the backend with `make dev-backend` or `uvicorn app.main:app --reload` from the backend directory, then open either URL in your browser.
+
+### Available endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/health` | Health check |
+| GET | `/api/data/` | List available datasets |
+| GET | `/api/data/{name}` | Paginated dataset rows (supports `?page=` and `?limit=`) |
+| GET | `/api/data/metadata` | Metadata for all datasets |
+| GET | `/api/data/{name}/metadata` | Metadata for a single dataset |
+| GET | `/api/health/data` | Data availability health check |
+
 ## How to contribute
 
 We welcome contributions. See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
