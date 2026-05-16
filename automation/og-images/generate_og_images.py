@@ -26,7 +26,6 @@ INK = (17, 17, 17)
 RED = (200, 22, 29)
 MUTED = (90, 85, 80)
 RULE = (216, 209, 193)
-CREAM_TINT = (236, 230, 218)
 
 
 def _get_font(size: int, bold: bool = False) -> ImageFont.FreeTypeFont:
@@ -39,7 +38,7 @@ def _get_font(size: int, bold: bool = False) -> ImageFont.FreeTypeFont:
     for path in candidates:
         try:
             return ImageFont.truetype(path, size)
-        except (OSError, IOError):
+        except OSError:
             continue
     return ImageFont.load_default()
 
@@ -53,7 +52,7 @@ def _get_sans_font(size: int, bold: bool = False) -> ImageFont.FreeTypeFont:
     for path in candidates:
         try:
             return ImageFont.truetype(path, size)
-        except (OSError, IOError):
+        except OSError:
             continue
     return ImageFont.load_default()
 
@@ -67,7 +66,7 @@ def _get_mono_font(size: int) -> ImageFont.FreeTypeFont:
     for path in candidates:
         try:
             return ImageFont.truetype(path, size)
-        except (OSError, IOError):
+        except OSError:
             continue
     return ImageFont.load_default()
 
@@ -101,10 +100,6 @@ def generate_landing_og() -> Path:
     draw.text((60, 90), "UK Wealth", fill=INK, font=font_title)
     draw.text((60, 170), "Inequality", fill=INK, font=font_title)
 
-    uk_text = "UK"
-    uk_bbox = draw.textbbox((0, 0), "UK Wealth", font=font_title)
-    draw.text((60, 90), "UK Wealth", fill=INK, font=font_title)
-
     _draw_rule(draw, 265, w, thick=True)
 
     draw.text(
@@ -116,11 +111,13 @@ def generate_landing_og() -> Path:
 
     _draw_rule(draw, 380, w)
 
+    # Source: ONS WAS Round 7 (top 10%); ONS Housing Affordability 2024
+    # (7.7x England median); HMRC tax receipts (93% work tax).
     stats = [
         ("57%", "of wealth held\nby top 10%"),
-        ("£85bn", "in rent paid\nper year"),
-        ("3.6×", "house price to\nearnings gap"),
+        ("7.7×", "house price to\nearnings ratio"),
         ("93%", "of tax from\nwork, not wealth"),
+        ("£85bn", "in rent paid\nper year"),
     ]
 
     stat_x = 60
@@ -260,26 +257,26 @@ def main() -> None:
         },
         {
             "title": "Housing Affordability by Region",
-            "stat_value": "3.6×",
-            "stat_label": "House price to earnings ratio, England avg",
+            "stat_value": "7.7×",
+            "stat_label": "England median house price to earnings (ONS 2024)",
             "filename": "og-housing-affordability.png",
         },
         {
             "title": "Wealth Distribution by Decile",
             "stat_value": "57%",
-            "stat_label": "Net wealth held by the top 10% of households",
+            "stat_label": "Net wealth held by top 10% (ONS WAS Round 7)",
             "filename": "og-wealth-by-decile.png",
         },
         {
             "title": "Capital Gains Concentration",
-            "stat_value": "77%",
-            "stat_label": "Capital gains from top 1% of realisations",
+            "stat_value": "92%",
+            "stat_label": "Capital gains from top 1% (Advani & Summers / HMRC)",
             "filename": "og-cgt-concentration.png",
         },
         {
             "title": "UK Productivity vs Pay Gap",
-            "stat_value": "2×",
-            "stat_label": "Productivity growth vs real pay since 1970",
+            "stat_value": "~60%",
+            "stat_label": "Productivity grew ~60% more than real pay since 1997",
             "filename": "og-productivity-pay.png",
         },
     ]
