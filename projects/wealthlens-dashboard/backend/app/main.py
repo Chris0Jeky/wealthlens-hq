@@ -29,7 +29,12 @@ _started_at: float = time.time()
 
 
 def _get_git_commit() -> str:
-    """Return the short git commit hash, or 'dev' if unavailable."""
+    """Return the short git commit hash, or 'unknown' if unavailable.
+
+    Gracefully handles missing git binary, missing .git directory,
+    timeouts, and any other subprocess failures so CI environments
+    without git still start cleanly.
+    """
     try:
         result = subprocess.run(
             ["git", "rev-parse", "--short", "HEAD"],
@@ -37,11 +42,11 @@ def _get_git_commit() -> str:
             text=True,
             timeout=5,
         )
-        if result.returncode == 0:
+        if result.returncode == 0 and result.stdout.strip():
             return result.stdout.strip()
-    except (OSError, subprocess.TimeoutExpired):
+    except (OSError, subprocess.SubprocessError):
         pass
-    return "dev"
+    return "unknown"
 
 
 _git_commit: str = _get_git_commit()

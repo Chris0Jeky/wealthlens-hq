@@ -15,9 +15,9 @@ def test_health_returns_ok():
     response = client.get("/health")
     assert response.status_code == 200
     body = response.json()
-    assert body["status"] == "ok"
-    assert "version" in body
-    assert "uptime_seconds" in body
+    assert body["status"] == "healthy"
+    assert "datasets_loaded" in body
+    assert "timestamp" in body
 
 
 def test_list_datasets():
@@ -573,4 +573,4 @@ def test_small_response_still_valid():
     )
     assert response.status_code == 200
     body = response.json()
-    assert body["status"] == "ok"
+    assert body["status"] == "healthy"
