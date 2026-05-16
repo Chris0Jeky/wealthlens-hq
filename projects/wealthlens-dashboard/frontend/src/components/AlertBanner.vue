@@ -26,8 +26,10 @@ async function handleDismiss() {
   emit('dismiss')
   await nextTick()
   if (parent && parent !== document.body) {
+    const hadTabindex = parent.hasAttribute('tabindex')
     parent.setAttribute('tabindex', '-1')
     parent.focus()
+    if (!hadTabindex) parent.removeAttribute('tabindex')
   }
 }
 
