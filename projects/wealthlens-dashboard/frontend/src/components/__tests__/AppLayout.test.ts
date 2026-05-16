@@ -1,9 +1,9 @@
-import { describe, it, expect } from "vitest";
-import { mount } from "@vue/test-utils";
-import { createRouter, createWebHistory } from "vue-router";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { mount, VueWrapper } from "@vue/test-utils";
+import { createRouter, createWebHistory, Router } from "vue-router";
 import App from "@/App.vue";
 
-function makeRouter() {
+function makeRouter(): Router {
   return createRouter({
     history: createWebHistory(),
     routes: [{ path: "/", component: { template: "<div>Home</div>" } }],
@@ -11,48 +11,47 @@ function makeRouter() {
 }
 
 describe("App layout accessibility", () => {
-  it("renders a skip-to-content link as the first focusable element", async () => {
+  let wrapper: VueWrapper;
+
+  beforeEach(async () => {
     const router = makeRouter();
     router.push("/");
     await router.isReady();
+    wrapper = mount(App, { global: { plugins: [router] } });
+  });
 
-    const wrapper = mount(App, { global: { plugins: [router] } });
+  afterEach(() => {
+    wrapper.unmount();
+  });
+
+  it("renders a skip-to-content link", () => {
     const skipLink = wrapper.find("a[href='#main-content']");
 
     expect(skipLink.exists()).toBe(true);
     expect(skipLink.text()).toBe("Skip to main content");
   });
 
-  it("main content target has the correct id and tabindex", async () => {
-    const router = makeRouter();
-    router.push("/");
-    await router.isReady();
+  it("skip-to-content link is the first anchor in the DOM", () => {
+    const firstAnchor = wrapper.find("a");
 
-    const wrapper = mount(App, { global: { plugins: [router] } });
+    expect(firstAnchor.attributes("href")).toBe("#main-content");
+  });
+
+  it("main content target has the correct id and tabindex", () => {
     const main = wrapper.find("main#main-content");
 
     expect(main.exists()).toBe(true);
     expect(main.attributes("tabindex")).toBe("-1");
   });
 
-  it("nav element has an accessible label", async () => {
-    const router = makeRouter();
-    router.push("/");
-    await router.isReady();
-
-    const wrapper = mount(App, { global: { plugins: [router] } });
+  it("nav element has an accessible label", () => {
     const nav = wrapper.find("nav");
 
     expect(nav.exists()).toBe(true);
     expect(nav.attributes("aria-label")).toBe("Main navigation");
   });
 
-  it("external GitHub link opens in new tab with noopener", async () => {
-    const router = makeRouter();
-    router.push("/");
-    await router.isReady();
-
-    const wrapper = mount(App, { global: { plugins: [router] } });
+  it("external GitHub link opens in new tab with noopener", () => {
     const ghLink = wrapper.find('a[href*="github.com"]');
 
     expect(ghLink.exists()).toBe(true);
@@ -60,26 +59,20 @@ describe("App layout accessibility", () => {
     expect(ghLink.attributes("rel")).toContain("noopener");
   });
 
-  it("footer has contentinfo role", async () => {
-    const router = makeRouter();
-    router.push("/");
-    await router.isReady();
-
-    const wrapper = mount(App, { global: { plugins: [router] } });
-    const footer = wrapper.find('footer[role="contentinfo"]');
+  it("footer element exists with expected content", () => {
+    const footer = wrapper.find("footer");
 
     expect(footer.exists()).toBe(true);
+    expect(footer.attributes("role")).toBe("contentinfo");
+    expect(footer.text()).toContain("WealthLens UK");
   });
 
-  it("home link navigates to root", async () => {
-    const router = makeRouter();
-    router.push("/");
-    await router.isReady();
+  it("home link points to root path", () => {
+    const homeLink = wrapper
+      .findAll("a")
+      .find((a) => a.text().includes("WealthLens"));
 
-    const wrapper = mount(App, { global: { plugins: [router] } });
-    const homeLink = wrapper.find("a.text-xl");
-
-    expect(homeLink.exists()).toBe(true);
-    expect(homeLink.attributes("href")).toBe("/");
+    expect(homeLink).toBeDefined();
+    expect(homeLink!.attributes("href")).toBe("/");
   });
 });
