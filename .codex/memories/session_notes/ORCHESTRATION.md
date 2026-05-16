@@ -11,7 +11,7 @@
 > 5. Pick up from the **Current Phase** section below.
 > 6. After completing work, UPDATE this file before the next compaction risk.
 
-Last updated: 2026-05-16 (wave 14 complete — 29 PRs total this session, #39-#67)
+Last updated: 2026-05-16 (wave 17 complete — 40 PRs total this session, #39-#78)
 
 ## Workflow Design
 
@@ -39,7 +39,7 @@ main
 
 ## Current Phase
 
-**Phase: WAVE 14 COMPLETE** — PRs #39-#67 (waves 7-14). All reviewed x2. Wave 15 next.
+**Phase: WAVE 17 COMPLETE** — PRs #39-#78 (waves 7-17). All reviewed x2. Wave 18 next.
 
 ### Work Stream Status
 
@@ -86,7 +86,10 @@ main
 32. [DONE] Build wave 12 PRs (#59-#62), R1+R2 all pass
 33. [DONE] Build wave 13 PRs (#63-#64), R1+R2 all pass
 34. [DONE] Build wave 14 PRs (#65-#67), R1+R2 all pass
-35. [IN PROGRESS] Seed and build wave 15
+35. [DONE] Build wave 15 PRs (#68-#70), R1+R2 all pass
+36. [DONE] Build wave 16 PRs (#71-#74), R1+R2 all pass
+37. [DONE] Build wave 17 PRs (#75-#78), R1+R2 all pass
+38. [IN PROGRESS] Seed and build wave 18
 
 ## Decisions Log
 
@@ -321,9 +324,9 @@ main
 
 | # | Stream | Branch | Base | PR | Status |
 |---|--------|--------|------|----|--------|
-| 38 | EditorConfig | `chore/editorconfig` | main | TBD | IN PROGRESS |
-| 39 | Frontend chart component tests | `test/frontend-chart-components` | main | TBD | IN PROGRESS |
-| 40 | py.typed marker + backend __init__ | `chore/py-typed` | main | TBD | IN PROGRESS |
+| 38 | EditorConfig | `chore/editorconfig` | main | #68 | R2 PASS |
+| 39 | Frontend chart component tests | `test/frontend-chart-components` | main | #70 | R2 PASS |
+| 40 | py.typed marker + backend __init__ | `chore/py-typed` | main | #69 | R2 PASS |
 
 ### Wave 15 stacking
 ```
@@ -331,6 +334,42 @@ main
  ├── chore/editorconfig (NEW, independent)
  ├── test/frontend-chart-components (NEW, independent)
  └── chore/py-typed (NEW, independent)
+```
+
+## Wave 16 — View tests, router tests, backend data route tests, GitHub templates
+
+| # | Stream | Branch | Base | PR | Status |
+|---|--------|--------|------|----|--------|
+| 41 | Frontend view component tests | `test/frontend-view-components` | main | #73 | R2 PASS |
+| 42 | Frontend router tests | `test/frontend-router` | main | #71 | R2 PASS |
+| 43 | Backend data route tests | `test/backend-data-routes` | main | #74 | R2 PASS |
+| 44 | GitHub issue/PR templates | `chore/github-templates` | main | #72 | R2 PASS |
+
+### Wave 16 stacking
+```
+main
+ ├── test/frontend-view-components (#73, independent)
+ ├── test/frontend-router (#71, independent)
+ ├── test/backend-data-routes (#74, independent)
+ └── chore/github-templates (#72, independent)
+```
+
+## Wave 17 — Makefile, Dependabot, store tests, Docker
+
+| # | Stream | Branch | Base | PR | Status |
+|---|--------|--------|------|----|--------|
+| 45 | Dependabot config | `chore/dependabot` | main | #75 | R2 PASS |
+| 46 | Makefile frontend-test | `chore/makefile-frontend-test` | main | #76 | R2 PASS |
+| 47 | Store edge case tests | `test/frontend-store-edge-cases` | main | #77 | R2 PASS |
+| 48 | Docker support | `chore/docker-support` | main | #78 | R2 PASS |
+
+### Wave 17 stacking
+```
+main
+ ├── chore/dependabot (#75, independent)
+ ├── chore/makefile-frontend-test (#76, independent)
+ ├── test/frontend-store-edge-cases (#77, independent)
+ └── chore/docker-support (#78, independent)
 ```
 
 ## Notes
