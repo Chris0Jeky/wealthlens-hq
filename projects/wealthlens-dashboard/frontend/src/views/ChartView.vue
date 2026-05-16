@@ -23,7 +23,7 @@ import RelatedCharts from "@/components/RelatedCharts.vue";
 import type { RelatedChartItem } from "@/components/RelatedCharts.vue";
 import ExportButton from "@/components/ExportButton.vue";
 import { useAnalytics } from "@/composables/useAnalytics";
-import { useChartExport, type ExportFormat } from "@/composables/useChartExport";
+import { useChartExport, type ExportFormat, type ChartComponentRef } from "@/composables/useChartExport";
 
 /** Lazy-load chart components to avoid bundling ECharts on every route. */
 const WealthSharesChart = defineAsyncComponent(
@@ -44,7 +44,7 @@ const { trackEvent } = useAnalytics();
 const chartName = computed(() => route.params.name as string);
 
 /** Ref to the chart component instance for export functionality. */
-const chartComponentRef = ref<{ chart: any } | null>(null);
+const chartComponentRef = ref<ChartComponentRef>(null);
 const { exportPNG, exportSVG } = useChartExport(chartComponentRef);
 
 const simpleChartSources: Record<string, string> = {
