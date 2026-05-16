@@ -51,6 +51,44 @@ const emit = defineEmits<{
 function selectRange(range: string) {
   emit("range-change", range);
 }
+
+/**
+ * Handle arrow-key navigation within the tablist per WAI-ARIA tab pattern.
+ * Left/Right arrows move focus between range buttons; Home/End jump to
+ * first/last. The focused tab is activated on arrow key press.
+ */
+function onKeydown(event: KeyboardEvent) {
+  const tabs = props.ranges;
+  if (tabs.length === 0) return;
+
+  const currentIdx = tabs.indexOf(props.activeRange);
+  let nextIdx = currentIdx;
+
+  switch (event.key) {
+    case "ArrowRight":
+      nextIdx = (currentIdx + 1) % tabs.length;
+      break;
+    case "ArrowLeft":
+      nextIdx = (currentIdx - 1 + tabs.length) % tabs.length;
+      break;
+    case "Home":
+      nextIdx = 0;
+      break;
+    case "End":
+      nextIdx = tabs.length - 1;
+      break;
+    default:
+      return; // let other keys propagate
+  }
+
+  event.preventDefault();
+  selectRange(tabs[nextIdx]);
+
+  // Move focus to the newly active tab button
+  const container = (event.currentTarget as HTMLElement);
+  const buttons = container.querySelectorAll<HTMLButtonElement>('[role="tab"]');
+  buttons[nextIdx]?.focus();
+}
 </script>
 
 <template>
@@ -78,6 +116,7 @@ function selectRange(range: string) {
       class="chart-toolbar__ranges"
       role="tablist"
       aria-label="Time range"
+      @keydown="onKeydown"
     >
       <button
         v-for="r in props.ranges"
@@ -85,6 +124,7 @@ function selectRange(range: string) {
         :class="['chart-toolbar__range', { active: r === props.activeRange }]"
         role="tab"
         :aria-selected="r === props.activeRange"
+        :tabindex="r === props.activeRange ? 0 : -1"
         @click="selectRange(r)"
       >
         {{ r }}
@@ -154,6 +194,10 @@ function selectRange(range: string) {
 }
 .chart-toolbar__range:hover {
   color: var(--wl-ink);
+}
+.chart-toolbar__range:focus-visible {
+  outline: 2px solid var(--wl-red);
+  outline-offset: -2px;
 }
 .chart-toolbar__range.active {
   background: var(--wl-ink);

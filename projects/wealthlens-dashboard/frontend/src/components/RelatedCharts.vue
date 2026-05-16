@@ -40,6 +40,7 @@ defineProps<{
       >
         <div class="related__domain">{{ chart.domain }}</div>
         <div class="related__title">{{ chart.title }}</div>
+        <!-- eslint-disable-next-line vue/no-v-html -- trusted hardcoded config, not user input -->
         <div class="related__finding" v-html="chart.finding"></div>
         <!-- Mini sparkline placeholder -->
         <svg

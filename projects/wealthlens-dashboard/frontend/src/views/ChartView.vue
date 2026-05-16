@@ -115,13 +115,15 @@ const chartConfigs: Record<string, ChartConfig> = {
     breadcrumb: [
       { label: "Home", to: "/" },
       { label: "The data", to: "/" },
-      { label: "Wealth", to: "/" },
+      /* Future pillar routes: link to pillar index when it exists */
+      { label: "Wealth", to: "#" },
       { label: "Who owns wealth in the UK?" },
     ],
     pills: [
       { text: "Wealth", accent: true },
       { text: "Historical · 1820–2023" },
       { text: "United Kingdom" },
+      /* Display date: human-readable format is intentional for UI pills */
       { text: "Updated 14 May 2026" },
     ],
     headline: "Who owns wealth in the UK?",
@@ -131,6 +133,7 @@ const chartConfigs: Record<string, ChartConfig> = {
       { label: "Source", value: "WID.world", href: "https://wid.world" },
       { label: "Series", value: "UK · Net personal wealth" },
       { label: "Coverage", value: "1820 — 2023" },
+      /* Display date: human-readable format is intentional for the meta card */
       { label: "Updated", value: "14 May 2026" },
       { label: "Licence", value: "CC-BY 4.0" },
       { label: "Data points", value: "22" },
@@ -338,6 +341,7 @@ watch(chartName, (name) => {
             {{ config.headlineEmphasis }}
           </em>
         </h1>
+        <!-- eslint-disable-next-line vue/no-v-html -- trusted hardcoded config, not user input -->
         <p class="article-head__lede" v-html="config.lede"></p>
       </div>
       <aside class="meta-card" aria-label="Chart metadata">
@@ -431,9 +435,11 @@ watch(chartName, (name) => {
           class="article-body__pull"
         >
           <p class="article-body__pull-label">&uarr; The takeaway</p>
+          <!-- eslint-disable-next-line vue/no-v-html -- trusted hardcoded config -->
           <p v-html="config.article.pullQuote.text"></p>
         </div>
 
+        <!-- eslint-disable-next-line vue/no-v-html -- trusted hardcoded config -->
         <p
           v-for="(para, j) in section.paragraphs"
           :key="`p-${i}-${j}`"
@@ -444,6 +450,7 @@ watch(chartName, (name) => {
       <!-- Methodology accordion -->
       <details class="method">
         <summary>Methodology &amp; data quality</summary>
+        <!-- eslint-disable-next-line vue/no-v-html -- trusted hardcoded methodology HTML with tables -->
         <div class="method__body" v-html="config.methodology"></div>
       </details>
     </article>
