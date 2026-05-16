@@ -1,7 +1,11 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
-const API_BASE = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/+$/, '') ?? '/api'
+const API_BASE = ((): string => {
+  const raw = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.trim()
+  if (!raw) return '/api'
+  return raw.replace(/\/+$/, '')
+})()
 
 export interface DatasetRow {
   [key: string]: string | number | null
