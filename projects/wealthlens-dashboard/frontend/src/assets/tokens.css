@@ -301,3 +301,20 @@ a { color: inherit; }
 .wl-rule       { border: 0; height: 1px; background: var(--wl-rule);   margin: 0; }
 .wl-rule-thick { border: 0; height: 4px; background: var(--wl-ink);    margin: 0; }
 .wl-rule-red   { border: 0; height: 4px; background: var(--wl-red);    margin: 0; }
+
+/* ---------------------------------------------------------------------------
+   Mobile responsiveness — global touch target and layout fixes
+   --------------------------------------------------------------------------- */
+
+@media (max-width: 768px) {
+  /* Ensure small buttons meet 44px touch target on mobile */
+  .wl-btn--sm {
+    min-height: 44px;
+    padding: 0 16px;
+  }
+
+  /* Prevent horizontal overflow on the page */
+  .wl-container {
+    padding: 0 16px;
+  }
+}
