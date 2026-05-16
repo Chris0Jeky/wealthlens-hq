@@ -31,6 +31,9 @@ coverage/
 # Transpile artifacts — TypeScript source is canonical
 projects/wealthlens-dashboard/frontend/src/**/*.js
 
+# Generated static API data (built by scripts/generate_static_api.py)
+projects/wealthlens-dashboard/frontend/public/data/
+
 # Data and generated artefacts
 *.parquet
 *.feather

@@ -7,7 +7,7 @@ import { setActivePinia, createPinia } from 'pinia'
  * but without retry logic or setTimeout backoff.
  */
 vi.mock('@/utils/fetchWithRetry', () => ({
-  fetchWithRetry: (...args: Parameters<typeof fetch>) => globalThis.fetch(...args),
+  fetchWithRetry: (url: string) => globalThis.fetch(url),
 }))
 
 import { useDataStore } from '@/stores/data'

@@ -26,12 +26,15 @@ export interface PaginatedResponse {
   total_pages: number
 }
 
-const BASE_URL = '/api/data'
+const STATIC_MODE = import.meta.env.VITE_STATIC_DATA === 'true'
+const API_BASE = '/api/data'
+const STATIC_BASE = `${import.meta.env.BASE_URL}data`
 
 async function request<T>(path: string): Promise<T> {
+  const url = STATIC_MODE ? toStaticUrl(path) : `${API_BASE}${path}`
   let res: Response
   try {
-    res = await fetchWithRetry(`${BASE_URL}${path}`)
+    res = await fetchWithRetry(url, undefined, STATIC_MODE ? 0 : 3)
   } catch {
     throw new Error('Could not reach the server')
   }
@@ -43,6 +46,19 @@ async function request<T>(path: string): Promise<T> {
   } catch {
     throw new Error('Response was not valid JSON')
   }
+}
+
+function toStaticUrl(apiPath: string): string {
+  if (apiPath === '/') return `${STATIC_BASE}/datasets.json`
+  if (apiPath === '/metadata') return `${STATIC_BASE}/all-metadata.json`
+
+  const metaMatch = apiPath.match(/^\/([a-z0-9-]+)\/metadata$/)
+  if (metaMatch) return `${STATIC_BASE}/${metaMatch[1]}-metadata.json`
+
+  const dataMatch = apiPath.match(/^\/([a-z0-9-]+)/)
+  if (dataMatch) return `${STATIC_BASE}/${dataMatch[1]}.json`
+
+  return `${STATIC_BASE}${apiPath}`
 }
 
 export const useDataStore = defineStore('data', () => {
@@ -69,6 +85,9 @@ export const useDataStore = defineStore('data', () => {
     page = 1,
     limit = 100,
   ): Promise<PaginatedResponse> {
+    if (STATIC_MODE) {
+      return request<PaginatedResponse>(`/${name}`)
+    }
     return request<PaginatedResponse>(`/${name}?page=${page}&limit=${limit}`)
   }
 

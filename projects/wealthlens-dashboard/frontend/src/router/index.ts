@@ -2,7 +2,7 @@ import { createRouter, createWebHistory } from "vue-router";
 import { VALID_CHART_NAMES } from "@/constants/charts";
 
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHistory(import.meta.env.BASE_URL),
   scrollBehavior(to, _from, savedPosition) {
     if (savedPosition) return savedPosition;
     if (to.hash) return { el: to.hash };
@@ -30,8 +30,6 @@ const router = createRouter({
       },
     },
     {
-      // Placeholder routes — these pages will be built later.
-      // For now they resolve to HomeView to avoid dead nav links.
       path: "/methodology",
       name: "methodology",
       component: () => import("@/views/HomeView.vue"),
@@ -39,17 +37,12 @@ const router = createRouter({
     {
       path: "/about",
       name: "about",
-      component: () => import("@/views/HomeView.vue"),
+      component: () => import("@/views/AboutView.vue"),
     },
     {
       path: "/contribute",
       name: "contribute",
       component: () => import("@/views/HomeView.vue"),
-    },
-    {
-      path: "/about",
-      name: "about",
-      component: () => import("@/views/AboutView.vue"),
     },
     {
       path: "/tools/wealth-calculator",
