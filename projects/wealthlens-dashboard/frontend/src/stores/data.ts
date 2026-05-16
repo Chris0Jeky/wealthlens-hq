@@ -1,6 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
+const API_BASE = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/+$/, '') ?? '/api'
+
 export interface DatasetRow {
   [key: string]: string | number | null
 }
@@ -14,7 +16,7 @@ export const useDataStore = defineStore('data', () => {
     loading.value = true
     error.value = null
     try {
-      const res = await fetch('/api/data/')
+      const res = await fetch(`${API_BASE}/data/`)
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const json = await res.json()
       datasets.value = json.datasets
@@ -26,7 +28,7 @@ export const useDataStore = defineStore('data', () => {
   }
 
   async function fetchDataset(name: string): Promise<DatasetRow[]> {
-    const res = await fetch(`/api/data/${name}`)
+    const res = await fetch(`${API_BASE}/data/${name}`)
     if (!res.ok) {
       throw new Error(
         `Failed to fetch ${name}: ${res.status} ${res.statusText}`,
