@@ -21,6 +21,7 @@ import type { SeriesLegendItem } from "@/components/ChartToolbar.vue";
 import ShareBar from "@/components/ShareBar.vue";
 import RelatedCharts from "@/components/RelatedCharts.vue";
 import type { RelatedChartItem } from "@/components/RelatedCharts.vue";
+import DataFreshnessBadge from "@/components/DataFreshnessBadge.vue";
 import { useAnalytics } from "@/composables/useAnalytics";
 
 /** Lazy-load chart components to avoid bundling ECharts on every route. */
@@ -341,6 +342,7 @@ watch(chartName, (name) => {
             {{ config.headlineEmphasis }}
           </em>
         </h1>
+        <DataFreshnessBadge :dataset="chartName" />
         <!-- eslint-disable-next-line vue/no-v-html -- trusted hardcoded config, not user input -->
         <p class="article-head__lede" v-html="config.lede"></p>
       </div>
@@ -500,6 +502,8 @@ watch(chartName, (name) => {
         {{ simpleChartTitles[chartName] || chartName }}
       </h1>
 
+      <DataFreshnessBadge :dataset="chartName" />
+
       <div class="chart-wrap">
         <div class="chart-card">
           <div class="chart-stage">
@@ -650,6 +654,9 @@ watch(chartName, (name) => {
   font-weight: 500;
 }
 
+.article-head :deep(.freshness-badge) {
+  margin-bottom: 14px;
+}
 .article-head__lede {
   font-size: 20px;
   color: var(--wl-ink-body);
@@ -962,7 +969,10 @@ watch(chartName, (name) => {
   line-height: 1.05;
   letter-spacing: -0.018em;
   color: var(--wl-ink);
-  margin: 24px 32px 32px;
+  margin: 24px 32px 12px;
+}
+.simple-layout :deep(.freshness-badge) {
+  margin: 0 32px 24px;
 }
 
 /* ============================================================ */
