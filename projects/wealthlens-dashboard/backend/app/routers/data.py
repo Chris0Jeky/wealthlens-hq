@@ -51,6 +51,7 @@ DATASETS: dict[str, str] = {
     "productivity-pay": "productivity_pay_gap.csv",
     "gdhi-by-region": "ons_gdhi_by_region.csv",
     "tax-composition": "tax_composition.csv",
+    "boe-rates": "boe_rates.csv",
 }
 
 # Source citations — every dataset must document where the data came from.
@@ -87,6 +88,7 @@ DATASET_META: dict[str, dict[str, str]] = {
         "source_url": "https://www.gov.uk/government/statistics/capital-gains-tax-statistics",
         "access_date": "2026-05-14",
     },
+<<<<<<< HEAD
     "productivity-pay": {
         "description": "UK productivity vs. real pay, indexed to 100 at 1997",
         "source": "ONS Labour Productivity (LZVD) & ONS AWE (KAB9) deflated by CPIH (L55O)",
@@ -112,6 +114,14 @@ DATASET_META: dict[str, dict[str, str]] = {
         "source_url": (
             "https://www.gov.uk/government/statistics/"
             "hmrc-tax-and-nics-receipts-for-the-uk"
+        ),
+        "access_date": "2026-05-16",
+    },
+    "boe-rates": {
+        "description": "Bank Rate and CPI annual inflation",
+        "source": "Bank of England Interactive Analytical Database",
+        "source_url": (
+            "https://www.bankofengland.co.uk/boeapps/database/"
         ),
         "access_date": "2026-05-16",
     },
