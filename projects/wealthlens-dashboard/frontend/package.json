@@ -13,7 +13,8 @@
     "format:check": "prettier --check .",
     "typecheck": "vue-tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "lighthouse": "lhci autorun"
   },
   "dependencies": {
     "echarts": "^6.0.0",
