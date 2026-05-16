@@ -25,8 +25,14 @@ const router = createRouter({
 });
 
 router.afterEach((to) => {
-  const title = to.meta.title as string | undefined;
-  document.title = title ?? "WealthLens UK";
+  if (to.name === "chart" && to.params.name) {
+    const chartName = String(to.params.name)
+      .replace(/-/g, " ")
+      .replace(/\b\w/g, (c) => c.toUpperCase());
+    document.title = `${chartName} — WealthLens UK`;
+  } else {
+    document.title = to.meta.title ?? "WealthLens UK";
+  }
 });
 
 export default router;
