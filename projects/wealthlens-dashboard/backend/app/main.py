@@ -6,6 +6,8 @@ Serves processed UK wealth inequality datasets as JSON for the Vue 3 frontend.
 from __future__ import annotations
 
 import os
+import time
+from datetime import datetime, timezone
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -20,6 +22,8 @@ from app.routers import data
 from app.timeout_middleware import TimeoutMiddleware
 
 setup_logging(os.environ.get("LOG_LEVEL", "INFO"))
+
+_started_at: float = time.time()
 
 # ---------------------------------------------------------------------------
 # CORS configuration
@@ -91,9 +95,15 @@ def health_data() -> dict:
 
 
 @app.get("/health", tags=["health"], summary="Liveness probe")
-def health() -> dict[str, str]:
-    """Minimal liveness check for load balancers and uptime monitors.
+def health() -> dict:
+    """Liveness probe with version and uptime info.
 
-    Returns ``{"status": "ok"}`` when the process is running.
+    Returns status, version, start time and uptime for load balancers
+    and uptime monitors.
     """
-    return {"status": "ok"}
+    return {
+        "status": "ok",
+        "version": app.version,
+        "started_at_utc": datetime.fromtimestamp(_started_at, tz=timezone.utc).isoformat(),
+        "uptime_seconds": int(time.time() - _started_at),
+    }
