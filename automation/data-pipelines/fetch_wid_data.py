@@ -17,8 +17,8 @@ from typing import Any
 
 import pandas as pd
 import plotly.graph_objects as go
-import requests
 from chart_html import write_accessible_chart
+from http_retry import fetch_with_retry
 
 ROOT = Path(__file__).resolve().parents[2]
 DATA_DIR = ROOT / "projects" / "wealthlens-dashboard" / "data"
@@ -53,7 +53,7 @@ def fetch() -> dict[str, Any]:
     RAW_DIR.mkdir(parents=True, exist_ok=True)
 
     logger.info("Fetching UK wealth share data from WID API...")
-    resp = requests.get(
+    resp = fetch_with_retry(
         f"{WID_API_BASE}/countries-variables",
         params={"countries": AREA, "variables": ",".join(VARIABLES)},
         headers=HEADERS,
@@ -64,9 +64,7 @@ def fetch() -> dict[str, Any]:
 
     # API may return an S3 download URL for large payloads
     if isinstance(raw_data, dict) and "download_url" in raw_data:
-        resp2 = requests.get(
-            raw_data["download_url"], timeout=REQUEST_TIMEOUT_SECONDS,
-        )
+        resp2 = fetch_with_retry(raw_data["download_url"], timeout=REQUEST_TIMEOUT_SECONDS)
         resp2.raise_for_status()
         raw_data = resp2.json()
 
