@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mount, RouterLinkStub } from "@vue/test-utils";
 import { createTestingPinia } from "@pinia/testing";
+import { useDataStore } from "@/stores/data";
 import HomeView from "@/views/HomeView.vue";
 
 describe("HomeView", () => {
@@ -48,5 +49,11 @@ describe("HomeView", () => {
   it("displays dataset descriptions", () => {
     const wrapper = mountView(["wealth-shares"]);
     expect(wrapper.text()).toContain("Top 1% and 10% share of UK net personal wealth");
+  });
+
+  it("calls fetchDatasets on mount", () => {
+    mountView();
+    const store = useDataStore();
+    expect(store.fetchDatasets).toHaveBeenCalledOnce();
   });
 });
