@@ -1,11 +1,5 @@
 import { createRouter, createWebHistory } from "vue-router";
-
-const VALID_CHARTS = new Set([
-  "wealth-shares",
-  "housing-affordability",
-  "wealth-by-decile",
-  "cgt-concentration",
-]);
+import { VALID_CHART_NAMES } from "@/constants/charts";
 
 const router = createRouter({
   history: createWebHistory(),
@@ -20,7 +14,7 @@ const router = createRouter({
       name: "chart",
       component: () => import("@/views/ChartView.vue"),
       beforeEnter(to) {
-        if (!VALID_CHARTS.has(to.params.name as string)) {
+        if (!VALID_CHART_NAMES.has(to.params.name as string)) {
           return { name: "not-found", params: { pathMatch: ["charts", to.params.name as string] } };
         }
       },
