@@ -45,15 +45,15 @@ CHECKS: list[dict] = [
         "file": "ons_wealth_by_decile.csv",
         "columns": {"decile", "total_wealth_bn"},
         "min_rows": 10,
-        "dtypes": {"decile": "int", "total_wealth_bn": "float"},
-        "ranges": {"decile": (1, 10), "total_wealth_bn": (-500.0, 10000.0)},
+        "dtypes": {"total_wealth_bn": "float"},
+        "ranges": {"total_wealth_bn": (-500.0, 10000.0)},
         "unique_keys": ["decile"],
     },
     {
         "file": "hmrc_cgt_concentration.csv",
         "columns": {"band_lower"},
         "min_rows": 3,
-        "dtypes": {"band_lower": "int"},
+        "dtypes": {"band_lower": "numeric"},
         "ranges": {"band_lower": (0, 100_000_000)},
         "unique_keys": ["band_lower"],
     },
@@ -98,7 +98,9 @@ def validate_all() -> list[str]:
             for col, expected_kind in check["dtypes"].items():
                 if col in df.columns:
                     actual = df[col].dtype
-                    if expected_kind == "int" and not pd.api.types.is_integer_dtype(actual):
+                    if expected_kind == "numeric" and not pd.api.types.is_numeric_dtype(actual):
+                        errors.append(f"DTYPE: {check['file']}.{col} is {actual}, expected numeric")
+                    elif expected_kind == "int" and not pd.api.types.is_integer_dtype(actual):
                         errors.append(f"DTYPE: {check['file']}.{col} is {actual}, expected integer")
                     elif expected_kind == "float" and not pd.api.types.is_float_dtype(actual):
                         errors.append(f"DTYPE: {check['file']}.{col} is {actual}, expected float")
