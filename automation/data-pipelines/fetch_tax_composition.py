@@ -4,8 +4,9 @@ Source: HMRC Tax and NIC Receipts (OGL v3.0)
 Shows the proportion of tax revenue from work (Income Tax + NICs) vs
 wealth (Capital Gains Tax + Inheritance Tax + Stamp Duty Land Tax).
 
-The key insight: approximately 85% of UK tax revenue comes from taxes
-on work and income, while only ~5% comes from taxes on wealth.
+The key insight: approximately 93% of selected UK tax revenue comes
+from taxes on work and income, while only ~7% comes from taxes on
+wealth (CGT, IHT, SDLT).
 
 HMRC publishes monthly/annual receipts data as XLSX at:
 https://www.gov.uk/government/statistics/hmrc-tax-and-nics-receipts-for-the-uk
@@ -96,7 +97,7 @@ def _try_parse_live(xlsx_path: Path) -> pd.DataFrame | None:
     """
     try:
         xl = pd.ExcelFile(xlsx_path)
-    except Exception as exc:
+    except (ValueError, TypeError, KeyError, PermissionError, OSError) as exc:
         logger.warning("Could not open XLSX: %s", exc)
         return None
 
@@ -118,7 +119,7 @@ def _try_parse_live(xlsx_path: Path) -> pd.DataFrame | None:
     logger.info("Reading sheet: '%s'", annual_sheet)
     try:
         df_raw = pd.read_excel(xlsx_path, sheet_name=annual_sheet, header=None)
-    except Exception as exc:
+    except (ValueError, TypeError, KeyError, OSError) as exc:
         logger.warning("Could not read sheet '%s': %s", annual_sheet, exc)
         return None
 
@@ -218,8 +219,9 @@ def process(xlsx_path: Path | None) -> pd.DataFrame:
     df["work_taxes_bn"] = df["income_tax_bn"] + df["nics_bn"]
     df["wealth_taxes_bn"] = df["cgt_bn"] + df["iht_bn"] + df["sdlt_bn"]
     df["total_selected_bn"] = df["work_taxes_bn"] + df["wealth_taxes_bn"]
-    df["work_pct"] = (df["work_taxes_bn"] / df["total_selected_bn"] * 100).round(1)
-    df["wealth_pct"] = (df["wealth_taxes_bn"] / df["total_selected_bn"] * 100).round(1)
+    safe_total = df["total_selected_bn"].replace(0, pd.NA)
+    df["work_pct"] = (df["work_taxes_bn"] / safe_total * 100).round(1)
+    df["wealth_pct"] = (df["wealth_taxes_bn"] / safe_total * 100).round(1)
     df["data_source"] = data_source
 
     out_path = PROCESSED_DIR / "tax_composition.csv"
@@ -317,7 +319,8 @@ def build_chart(df: pd.DataFrame) -> None:
             dict(
                 text=(
                     f"{source_label}<br>"
-                    f"Britain taxes work approximately {latest['work_pct']:.0f}x harder than "
+                    f"Britain taxes work approximately "
+                    f"{latest['work_pct'] / latest['wealth_pct']:.0f}x harder than "
                     f"wealth: {latest['work_pct']:.0f}% of these revenues come from "
                     f"Income Tax and NICs, just {latest['wealth_pct']:.0f}% from CGT, "
                     f"IHT, and Stamp Duty combined."
@@ -339,7 +342,7 @@ def build_chart(df: pd.DataFrame) -> None:
             "Stacked bar chart comparing UK tax revenue from work "
             "(Income Tax and NICs) versus wealth (Capital Gains Tax, "
             "Inheritance Tax, and Stamp Duty Land Tax). Shows that "
-            "approximately 85% of these revenues come from taxing work."
+            "approximately 93% of these revenues come from taxing work."
         ),
     )
 

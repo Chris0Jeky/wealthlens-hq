@@ -76,6 +76,17 @@ def test_get_gdhi_by_region():
     assert "year" in data["data"][0]
 
 
+def test_get_tax_composition():
+    response = client.get("/api/data/tax-composition")
+    assert response.status_code == 200
+    data = response.json()
+    assert "data" in data
+    assert len(data["data"]) > 0
+    first = data["data"][0]
+    assert "year" in first
+    assert "work_pct" in first or "work_taxes_bn" in first
+
+
 def test_unknown_dataset_returns_404():
     response = client.get("/api/data/nonexistent")
     assert response.status_code == 404
