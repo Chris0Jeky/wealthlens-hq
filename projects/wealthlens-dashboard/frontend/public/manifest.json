@@ -1,16 +1,25 @@
 {
   "name": "WealthLens UK",
   "short_name": "WealthLens",
-  "description": "Making UK wealth inequality data visible, interactive, and impossible to ignore.",
-  "start_url": "/",
+  "description": "UK wealth inequality data, visualised",
+  "start_url": "/wealthlens-hq/",
+  "scope": "/wealthlens-hq/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#2563eb",
+  "background_color": "#F4EFE6",
+  "theme_color": "#C8161D",
+  "categories": ["education", "news"],
   "icons": [
     {
-      "src": "/icon-192.svg",
-      "sizes": "any",
-      "type": "image/svg+xml"
+      "src": "/wealthlens-hq/icons/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/wealthlens-hq/icons/icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
     }
   ]
 }
