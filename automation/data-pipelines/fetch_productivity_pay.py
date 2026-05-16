@@ -310,16 +310,32 @@ def process(
     prod_base = float(base_row["productivity"].iloc[0])
     pay_base = float(base_row["real_awe"].iloc[0])
 
+    # Guard against zero base values — would cause division by zero
+    if prod_base <= 0 or pay_base <= 0:
+        logger.warning(
+            "Base year %d has zero/negative values (prod=%.2f, pay=%.2f). "
+            "Using illustrative fallback data.",
+            BASE_YEAR, prod_base, pay_base,
+        )
+        df = _build_fallback_data()
+        out_path = PROCESSED_DIR / "productivity_pay_gap.csv"
+        df.to_csv(out_path, index=False)
+        logger.info("Processed data saved to %s", out_path)
+        return df
+
     df = pd.DataFrame({
         "year": merged["year"],
         "productivity_index": round(merged["productivity"] / prod_base * 100, 1),
         "pay_index": round(merged["real_awe"] / pay_base * 100, 1),
     })
 
+    # Guard against zero/NaN pay_index before division
+    safe_pay = df["pay_index"].replace(0, float("nan"))
     df["gap_pct"] = round(
-        (df["productivity_index"] - df["pay_index"]) / df["pay_index"] * 100,
+        (df["productivity_index"] - df["pay_index"]) / safe_pay * 100,
         1,
     )
+    df["gap_pct"] = df["gap_pct"].fillna(0.0)
 
     df = df.sort_values("year").reset_index(drop=True)
 
