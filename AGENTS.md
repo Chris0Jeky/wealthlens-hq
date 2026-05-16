@@ -15,13 +15,18 @@ Use [autodoc/README.md](./autodoc/README.md) as the concise code-grounded synthe
 - Preserve existing repo conventions unless there is a documented reason to change them.
 - This is a multi-domain workspace: code, content, research, strategy, outreach. Read the task context to determine which domain you are in.
 
+## Active orchestration
+
+An end-to-end autonomous workflow may be in progress. **Always check** [`.codex/memories/session_notes/ORCHESTRATION.md`](.codex/memories/session_notes/ORCHESTRATION.md) for branch status, open PRs, review rounds, and recovery instructions before starting new work. That file is the master control document for multi-session continuity.
+
 ## First 5 minutes on any task
 
-1. Read `.codex/memories/00_ACTIVE.md`.
-2. Read `.codex/memories/program/00_READ_THIS_FIRST.md`.
-3. Read `tasks/active-sprint.md` for current priorities.
-4. Use the matching repo skill (`codex-repo-onramp`, `codex-worktree-issue-worker`, `codex-verification-doc-sync`, or `codex-question-batch`) before broad searching.
-5. Identify the smallest change that creates measurable progress.
+1. Read `.codex/memories/session_notes/ORCHESTRATION.md` (if it exists).
+2. Read `.codex/memories/00_ACTIVE.md`.
+3. Read `.codex/memories/program/00_READ_THIS_FIRST.md`.
+4. Read `tasks/active-sprint.md` for current priorities.
+5. Use the matching repo skill (`codex-repo-onramp`, `codex-worktree-issue-worker`, `codex-verification-doc-sync`, or `codex-question-batch`) before broad searching.
+6. Identify the smallest change that creates measurable progress.
 
 ## Codex autonomy skills
 
