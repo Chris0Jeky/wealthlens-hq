@@ -7,6 +7,7 @@
  */
 import { computed, defineAsyncComponent } from "vue";
 import { useRoute } from "vue-router";
+import ShareButton from "@/components/ShareButton.vue";
 
 /** Lazy-load chart components to avoid bundling ECharts on every route. */
 const WealthSharesChart = defineAsyncComponent(
@@ -49,7 +50,10 @@ const isSupported = computed(() => chartName.value in chartTitles);
 
     <!-- Supported chart -->
     <template v-if="isSupported">
-      <h1 class="text-2xl font-bold mb-6">{{ chartTitles[chartName] }}</h1>
+      <div class="flex items-center justify-between mb-6">
+        <h1 class="text-2xl font-bold">{{ chartTitles[chartName] }}</h1>
+        <ShareButton />
+      </div>
 
       <WealthSharesChart v-if="chartName === 'wealth-shares'" />
       <HousingAffordabilityChart v-else-if="chartName === 'housing-affordability'" />
