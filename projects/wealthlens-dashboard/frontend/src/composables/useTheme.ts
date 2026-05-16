@@ -10,7 +10,7 @@
  * Falls back to system `prefers-color-scheme: dark` on first visit.
  */
 
-import { ref, watch, onUnmounted } from 'vue'
+import { ref, watch } from 'vue'
 
 export type ThemeName = 'light' | 'dark' | 'stark'
 
@@ -61,12 +61,11 @@ let listenerAttached = false
  * Call once in App.vue to initialise; call again anywhere to read or
  * mutate the current theme.
  */
-export function useTheme() {
-  // Apply immediately on first call (App.vue mount).
-  applyTheme(currentTheme.value)
+// One-time setup: watch + mediaQuery listener are app-lifetime singletons.
+if (typeof window !== 'undefined' && !listenerAttached) {
+  listenerAttached = true
 
-  // Watch for programmatic changes.
-  const stopWatch = watch(currentTheme, (next) => {
+  watch(currentTheme, (next) => {
     applyTheme(next)
     try {
       localStorage.setItem(STORAGE_KEY, next)
@@ -75,27 +74,16 @@ export function useTheme() {
     }
   })
 
-  // Listen for OS dark-mode changes (only attach once).
-  let mediaQuery: MediaQueryList | null = null
-  if (typeof window !== 'undefined' && !listenerAttached) {
-    listenerAttached = true
-    mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
-
-    const onSystemChange = (e: MediaQueryListEvent) => {
-      // Only react if the user hasn't explicitly picked a theme.
-      if (!localStorage.getItem(STORAGE_KEY)) {
-        currentTheme.value = e.matches ? 'dark' : 'light'
-      }
+  const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+  mediaQuery.addEventListener('change', (e: MediaQueryListEvent) => {
+    if (!localStorage.getItem(STORAGE_KEY)) {
+      currentTheme.value = e.matches ? 'dark' : 'light'
     }
+  })
+}
 
-    mediaQuery.addEventListener('change', onSystemChange)
-
-    onUnmounted(() => {
-      mediaQuery?.removeEventListener('change', onSystemChange)
-      listenerAttached = false
-      stopWatch()
-    })
-  }
+export function useTheme() {
+  applyTheme(currentTheme.value)
 
   /** Cycle to the next theme in order. */
   function toggleTheme(): void {
