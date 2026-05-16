@@ -1,6 +1,8 @@
 # WealthLens HQ — Program Index
 
 > Cross-cutting program context. Read after `00_ACTIVE.md`.
+>
+> **If an orchestration session is active**, read [`.codex/memories/session_notes/ORCHESTRATION.md`](../session_notes/ORCHESTRATION.md) first — it has branch status, open PRs, and recovery instructions.
 
 Last updated: 2026-05-14
 

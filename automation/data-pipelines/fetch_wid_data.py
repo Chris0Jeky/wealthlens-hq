@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import sys
 from datetime import date
 from pathlib import Path
@@ -26,7 +27,11 @@ CHART_DIR = ROOT / "projects" / "wealthlens-dashboard" / "charts"
 
 WID_API_BASE = "https://rfap9nitz6.execute-api.eu-west-1.amazonaws.com/prod"
 # Published public key from https://github.com/world-inequality-database/wid-stata-tool
-WID_API_KEY = "rYFByOB0ioaPATwHtllMI71zLOZSK0Ic5veQonJP"
+# Prefer env var override; fall back to the public default so it works without config.
+logger = logging.getLogger(__name__)
+
+WID_API_KEY = os.environ.get("WID_API_KEY", "").strip() or "rYFByOB0ioaPATwHtllMI71zLOZSK0Ic5veQonJP"
+logger.info("WID API: using %s key", "environment" if os.environ.get("WID_API_KEY", "").strip() else "default public")
 HEADERS = {"x-api-key": WID_API_KEY}
 
 AREA = "GB"
@@ -34,7 +39,6 @@ ACCESS_DATE = date.today().isoformat()
 
 # Variable format: {indicator}_{percentile}_{age}_{population}
 # 992 = equal-split adults, j = all population
-logger = logging.getLogger(__name__)
 REQUEST_TIMEOUT_SECONDS = 60
 
 VARIABLES = [
