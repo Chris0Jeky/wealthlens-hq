@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, nextTick } from 'vue'
+import { ref, watch, nextTick, useId } from 'vue'
 
 const props = withDefaults(
   defineProps<{
@@ -17,21 +17,29 @@ const emit = defineEmits<{
   cancel: []
 }>()
 
+const titleId = useId()
+const descId = useId()
+
 const dialogRef = ref<HTMLDialogElement | null>(null)
 const cancelBtnRef = ref<HTMLButtonElement | null>(null)
+const previousFocus = ref<HTMLElement | null>(null)
 
 watch(
   () => props.open,
   async (isOpen) => {
     if (!dialogRef.value) return
     if (isOpen) {
+      previousFocus.value = document.activeElement as HTMLElement
       dialogRef.value.showModal()
       await nextTick()
       cancelBtnRef.value?.focus()
     } else {
       dialogRef.value.close()
+      await nextTick()
+      previousFocus.value?.focus()
     }
   },
+  { immediate: true },
 )
 
 function handleCancel() {
@@ -51,14 +59,23 @@ function handleNativeCancel(e: Event) {
 <template>
   <dialog
     ref="dialogRef"
+    :aria-labelledby="titleId"
+    :aria-describedby="descId"
+    aria-modal="true"
     class="rounded-lg shadow-xl p-0 backdrop:bg-black/50 max-w-md w-full"
     @cancel="handleNativeCancel"
   >
     <div class="p-6">
-      <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+      <h2
+        :id="titleId"
+        class="text-lg font-semibold text-gray-900 dark:text-white mb-2"
+      >
         {{ title }}
       </h2>
-      <div class="text-sm text-gray-600 dark:text-gray-400 mb-6">
+      <div
+        :id="descId"
+        class="text-sm text-gray-600 dark:text-gray-400 mb-6"
+      >
         <slot />
       </div>
       <div class="flex justify-end gap-3">

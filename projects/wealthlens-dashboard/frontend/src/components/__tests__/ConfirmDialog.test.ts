@@ -1,6 +1,11 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
+
+beforeEach(() => {
+  HTMLDialogElement.prototype.showModal = vi.fn()
+  HTMLDialogElement.prototype.close = vi.fn()
+})
 
 function mountDialog(props: Record<string, unknown> = {}, slotContent = '') {
   return mount(ConfirmDialog, {
@@ -72,10 +77,49 @@ describe('ConfirmDialog', () => {
     expect(confirmBtn.classes()).toContain('bg-blue-600')
   })
 
-  it('has an h2 heading for the title', () => {
+  it('has aria-labelledby pointing to the h2 title', () => {
     const wrapper = mountDialog({ open: true, title: 'Test title' })
+    const dialog = wrapper.find('dialog')
     const h2 = wrapper.find('h2')
-    expect(h2.exists()).toBe(true)
-    expect(h2.text()).toBe('Test title')
+    const labelledBy = dialog.attributes('aria-labelledby')
+    expect(labelledBy).toBeTruthy()
+    expect(h2.attributes('id')).toBe(labelledBy)
+  })
+
+  it('has aria-describedby pointing to the body content', () => {
+    const wrapper = mountDialog({ open: true })
+    const dialog = wrapper.find('dialog')
+    const describedBy = dialog.attributes('aria-describedby')
+    expect(describedBy).toBeTruthy()
+    const desc = wrapper.find(`#${describedBy}`)
+    expect(desc.exists()).toBe(true)
+    expect(desc.text()).toContain('Are you sure?')
+  })
+
+  it('has aria-modal="true" on the dialog', () => {
+    const wrapper = mountDialog({ open: true })
+    const dialog = wrapper.find('dialog')
+    expect(dialog.attributes('aria-modal')).toBe('true')
+  })
+
+  it('calls showModal when open prop changes to true', async () => {
+    const wrapper = mountDialog({ open: false })
+    await wrapper.setProps({ open: true })
+    expect(HTMLDialogElement.prototype.showModal).toHaveBeenCalled()
+  })
+
+  it('calls close when open prop changes to false', async () => {
+    const wrapper = mountDialog({ open: true })
+    await wrapper.setProps({ open: false })
+    expect(HTMLDialogElement.prototype.close).toHaveBeenCalled()
+  })
+
+  it('emits cancel and prevents default on native cancel event', () => {
+    const wrapper = mountDialog({ open: true })
+    const dialog = wrapper.find('dialog')
+    const event = new Event('cancel', { cancelable: true })
+    dialog.element.dispatchEvent(event)
+    expect(event.defaultPrevented).toBe(true)
+    expect(wrapper.emitted('cancel')).toHaveLength(1)
   })
 })
