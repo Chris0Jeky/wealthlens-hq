@@ -1,5 +1,10 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import type {
+  DatasetListResponse,
+  DatasetRow,
+  PaginatedDatasetResponse,
+} from '@/types/api'
 
 const API_BASE = ((): string => {
   const raw = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.trim()
@@ -7,9 +12,8 @@ const API_BASE = ((): string => {
   return raw.replace(/\/+$/, '')
 })()
 
-export interface DatasetRow {
-  [key: string]: string | number | null
-}
+// Re-export so existing component imports from '@/stores/data' keep working.
+export type { DatasetRow } from '@/types/api'
 
 export const useDataStore = defineStore('data', () => {
   const datasets = ref<string[]>([])
@@ -22,7 +26,7 @@ export const useDataStore = defineStore('data', () => {
     try {
       const res = await fetch(`${API_BASE}/data/`)
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const json = await res.json()
+      const json: DatasetListResponse = await res.json()
       datasets.value = json.datasets
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Failed to fetch datasets'
@@ -38,7 +42,7 @@ export const useDataStore = defineStore('data', () => {
         `Failed to fetch ${name}: ${res.status} ${res.statusText}`,
       )
     }
-    const json = await res.json()
+    const json: PaginatedDatasetResponse = await res.json()
     return json.data
   }
 
