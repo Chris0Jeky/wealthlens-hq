@@ -30,17 +30,7 @@ import ErrorBoundary from '@/components/ErrorBoundary.vue'
     </header>
     <main id="main-content" tabindex="-1">
       <ErrorBoundary>
-        <RouterView v-slot="{ Component }">
-          <Suspense>
-            <component :is="Component" />
-            <template #fallback>
-              <div class="max-w-6xl mx-auto px-6 py-10" role="status" aria-label="Loading page">
-                <div class="h-6 w-48 bg-gray-200 rounded animate-pulse mb-4" />
-                <div class="h-4 w-72 bg-gray-200 rounded animate-pulse" />
-              </div>
-            </template>
-          </Suspense>
-        </RouterView>
+        <RouterView />
       </ErrorBoundary>
     </main>
     <footer
