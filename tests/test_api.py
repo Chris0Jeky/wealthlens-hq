@@ -197,7 +197,7 @@ def test_datasets_and_dataset_meta_keys_match():
     Catches the case where someone adds a key to one dict but forgets
     the other, which would cause a KeyError at runtime.
     """
-    from app.routers.data import DATASETS, DATASET_META
+    from app.routers.data import DATASET_META, DATASETS
 
     assert set(DATASETS.keys()) == set(DATASET_META.keys()), (
         f"Key mismatch — DATASETS: {sorted(DATASETS.keys())}, "
@@ -235,7 +235,7 @@ def test_read_csv_parser_error_returns_503_with_dataset_name():
 
     original_exists = Path.exists
 
-    def _exists_true(self: Path) -> bool:  # noqa: ANN001
+    def _exists_true(self: Path) -> bool:
         """Let the CSV path pass the exists() guard so read_csv is reached."""
         from app.routers.data import DATA_DIR
 

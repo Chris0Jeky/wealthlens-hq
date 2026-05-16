@@ -205,7 +205,7 @@ def get_dataset(
 
     # Replace NaN with None so JSON serialization produces explicit nulls
     # rather than silently converting pandas NaN.
-    df = df.where(pd.notna(df), None)
+    df = df.where(pd.notna(df), other=None)  # type: ignore[arg-type]
 
     total = len(df)
     total_pages = math.ceil(total / limit) if total > 0 else 1
