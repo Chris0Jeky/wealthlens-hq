@@ -13,6 +13,7 @@ Every dataset used in WealthLens charts is listed here with its licence and attr
 | Total Wealth in Great Britain (WAS) | ONS | OGL v3.0 | Yes — "Source: ONS" | https://www.ons.gov.uk/peoplepopulationandcommunity/personalandhouseholdfinances/incomeandwealth/bulletins/totalwealthingreatbritain/latest |
 | Capital Gains Tax Statistics | HMRC | OGL v3.0 | Yes — "Contains public sector information licensed under the Open Government Licence v3.0" | https://www.gov.uk/government/statistics/capital-gains-tax-statistics |
 | Regional Gross Disposable Household Income | ONS | OGL v3.0 | Yes — "Source: ONS" | https://www.ons.gov.uk/economy/regionalaccounts/grossdisposablehouseholdincome/datasets/regionalgrossdisposablehouseholdincomegdhi |
+| Tax and NIC Receipts | HMRC | OGL v3.0 | Yes — "Contains public sector information licensed under the Open Government Licence v3.0" | https://www.gov.uk/government/statistics/hmrc-tax-and-nics-receipts-for-the-uk |
 
 ## Licence summaries
 

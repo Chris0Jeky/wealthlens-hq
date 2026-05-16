@@ -67,6 +67,11 @@ CHECKS: list[dict] = [
         "columns": {"region", "gdhi_per_head", "year"},
         "min_rows": 10,
     },
+    {
+        "file": "tax_composition.csv",
+        "columns": {"year", "income_tax_bn", "nics_bn", "cgt_bn", "iht_bn", "sdlt_bn", "work_pct", "wealth_pct"},
+        "min_rows": 3,
+    },
 ]
 
 

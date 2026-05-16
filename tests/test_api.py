@@ -27,6 +27,7 @@ def test_list_datasets():
     assert "wealth-by-decile" in data["datasets"]
     assert "cgt-concentration" in data["datasets"]
     assert "gdhi-by-region" in data["datasets"]
+    assert "tax-composition" in data["datasets"]
 
 
 def test_get_wealth_shares():
@@ -75,6 +76,17 @@ def test_get_gdhi_by_region():
     assert "year" in data["data"][0]
 
 
+def test_get_tax_composition():
+    response = client.get("/api/data/tax-composition")
+    assert response.status_code == 200
+    data = response.json()
+    assert "data" in data
+    assert len(data["data"]) > 0
+    first = data["data"][0]
+    assert "year" in first
+    assert "work_pct" in first or "work_taxes_bn" in first
+
+
 def test_unknown_dataset_returns_404():
     response = client.get("/api/data/nonexistent")
     assert response.status_code == 404
@@ -90,17 +102,18 @@ def test_cors_headers_present():
 
 
 def test_all_metadata_returns_all_datasets():
-    """GET /api/data/metadata returns metadata for all 5 datasets."""
+    """GET /api/data/metadata returns metadata for all 7 datasets."""
     response = client.get("/api/data/metadata")
     assert response.status_code == 200
     body = response.json()
     assert "datasets" in body
     datasets = body["datasets"]
-    assert len(datasets) == 5
+    assert len(datasets) == 7
     names = {d["name"] for d in datasets}
     assert names == {
         "wealth-shares", "housing-affordability", "wealth-by-decile",
-        "cgt-concentration", "gdhi-by-region",
+        "cgt-concentration", "productivity-pay", "gdhi-by-region",
+        "tax-composition",
     }
 
     required_fields = {"name", "description", "source", "source_url", "access_date", "row_count", "columns"}
