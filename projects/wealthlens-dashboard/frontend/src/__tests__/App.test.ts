@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { mount, RouterLinkStub } from "@vue/test-utils";
+import { mount } from "@vue/test-utils";
 import { createRouter, createMemoryHistory } from "vue-router";
 import App from "@/App.vue";
 
@@ -21,7 +21,6 @@ async function mountApp() {
     global: {
       plugins: [router],
       stubs: {
-        RouterLink: RouterLinkStub,
         ErrorBoundary: { template: "<div><slot /></div>" },
       },
     },
