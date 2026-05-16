@@ -40,6 +40,9 @@ jobs:
         # TODO: remove continue-on-error after PR #22 merges ESLint config
         continue-on-error: true
 
+      - name: Test
+        run: npm run test -- --run
+
       - name: Type-check
         run: npm run typecheck
 
