@@ -1,23 +1,17 @@
 <script setup lang="ts">
-/** Dataset names that have a chart implementation. */
-const SUPPORTED_CHARTS = new Set([
-  'wealth-shares',
-  'housing-affordability',
-  'cgt-concentration',
-  'wealth-by-decile',
-])
+import { VALID_CHART_NAMES } from '@/constants/charts'
 
 const props = defineProps<{
   name: string
   description: string
-  /** Override chart availability. When omitted, checks SUPPORTED_CHARTS. */
+  /** Override chart availability. When omitted, checks VALID_CHART_NAMES. */
   hasChart?: boolean
 }>()
 
 const chartAvailable =
   props.hasChart !== undefined
     ? props.hasChart
-    : SUPPORTED_CHARTS.has(props.name)
+    : VALID_CHART_NAMES.has(props.name)
 </script>
 
 <template>
