@@ -86,8 +86,7 @@ def test_get_boe_rates_metadata() -> None:
 def test_boe_rates_503_when_csv_missing(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """boe-rates should return 503 when the CSV does not exist."""
     monkeypatch.setattr(data_module, "DATA_DIR", tmp_path)
-    # Clear metadata cache to force re-read
-    data_module._metadata_cache.clear()
+    monkeypatch.setattr(data_module, "_metadata_cache", {})
 
     response = client.get("/api/data/boe-rates")
     assert response.status_code == 503

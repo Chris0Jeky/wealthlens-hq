@@ -190,6 +190,16 @@ def process(raw_path: Path) -> pd.DataFrame:
         if CPI_SERIES in col:
             cpi_col = col
 
+    if bank_rate_col is None and cpi_col is None:
+        logger.error(
+            "Neither Bank Rate (%s) nor CPI (%s) column found. Columns: %s",
+            BANK_RATE_SERIES, CPI_SERIES, list(df_raw.columns),
+        )
+        raise ValueError(
+            f"No Bank Rate or CPI columns in BoE data: {list(df_raw.columns)}"
+        )
+
+    skipped = 0
     records = []
     for _, row in df_raw.iterrows():
         record: dict[str, object] = {"date": row[date_col].strftime("%Y-%m-%d")}
@@ -198,6 +208,7 @@ def process(raw_path: Path) -> pd.DataFrame:
             try:
                 record["bank_rate"] = float(row[bank_rate_col])
             except (ValueError, TypeError):
+                skipped += 1
                 record["bank_rate"] = None
         else:
             record["bank_rate"] = None
@@ -206,13 +217,19 @@ def process(raw_path: Path) -> pd.DataFrame:
             try:
                 record["cpi_annual"] = float(row[cpi_col])
             except (ValueError, TypeError):
+                skipped += 1
                 record["cpi_annual"] = None
         else:
             record["cpi_annual"] = None
 
-        # Only keep rows that have at least one value
         if record.get("bank_rate") is not None or record.get("cpi_annual") is not None:
             records.append(record)
+
+    if skipped > 0:
+        logger.warning("Skipped %d unparseable numeric values", skipped)
+
+    if not records:
+        raise ValueError("No valid data rows after parsing BoE CSV")
 
     df = pd.DataFrame(records)
     df = df.sort_values("date").reset_index(drop=True)
@@ -320,20 +337,19 @@ def build_chart(df: pd.DataFrame) -> None:
         paper_bgcolor="white",
         font=dict(family="system-ui, -apple-system, sans-serif", color="#1a1a1a"),
         margin=dict(b=120),
-        annotations=[
-            dict(
-                text=(
-                    f"Source: Bank of England Interactive Analytical Database · "
-                    f"OGL v3.0 · Accessed {ACCESS_DATE}<br>"
-                    f"Bank Rate (IUDBEDR) and CPI annual rate (D7BT/ONS). "
-                    f"2% dashed line = BoE inflation target."
-                ),
-                xref="paper", yref="paper",
-                x=0, y=-0.18,
-                showarrow=False,
-                font=dict(size=11, color="#666666"),
-            ),
-        ],
+    )
+
+    fig.add_annotation(
+        text=(
+            f"Source: Bank of England Interactive Analytical Database · "
+            f"OGL v3.0 · Accessed {ACCESS_DATE}<br>"
+            f"Bank Rate (IUDBEDR) and CPI annual rate (D7BT/ONS). "
+            f"2% dashed line = BoE inflation target."
+        ),
+        xref="paper", yref="paper",
+        x=0, y=-0.18,
+        showarrow=False,
+        font=dict(size=11, color="#666666"),
     )
 
     out_path = CHART_DIR / "boe_rates.html"
