@@ -22,14 +22,13 @@ jobs:
       - name: Install dependencies
         run: pip install -r automation/data-pipelines/requirements.txt
 
+      # run_all.py fetches, processes, and validates all datasets in one
+      # invocation.  A separate validate step is unnecessary and would be
+      # unreachable when the pipeline fails (non-zero exit stops the job).
       - name: Run data pipelines
         env:
           WID_API_KEY: ${{ secrets.WID_API_KEY }}
-        run: |
-          python automation/data-pipelines/fetch_wid_data.py
-          python automation/data-pipelines/fetch_ons_housing.py
-          python automation/data-pipelines/fetch_ons_wealth.py
-          python automation/data-pipelines/fetch_hmrc_stats.py
+        run: python automation/data-pipelines/run_all.py
 
       - name: Check for changes
         id: changes

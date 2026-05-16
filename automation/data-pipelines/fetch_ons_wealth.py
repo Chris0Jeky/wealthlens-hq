@@ -2,6 +2,8 @@
 
 Source: ONS Total Wealth in Great Britain (OGL v3.0)
 Dataset: Aggregate total wealth by wealth decile and component.
+Edition: July 2006 to June 2016 / April 2014 to March 2022.
+Published: 24 January 2025.
 
 Note: WAS lost accredited official statistics status in June 2025.
 Response rate declined from 66% to 41%, and a December 2024 DB pension
@@ -11,6 +13,7 @@ These caveats are noted on the chart output.
 
 from __future__ import annotations
 
+import re
 from datetime import date
 from pathlib import Path
 
@@ -25,41 +28,83 @@ RAW_DIR = DATA_DIR / "raw"
 PROCESSED_DIR = DATA_DIR / "processed"
 CHART_DIR = ROOT / "projects" / "wealthlens-dashboard" / "charts"
 
+# Primary URL: latest ONS Total Wealth XLSX (Jan 2025 edition, covers up to
+# March 2022).  The previous URL (april2018tomarch2020revised/...) 404s as of
+# 2026-05-15 because ONS reorganised the download paths when they published
+# the combined multi-period edition.
 XLSX_URL = (
     "https://www.ons.gov.uk/file?uri=/peoplepopulationandcommunity/"
     "personalandhouseholdfinances/incomeandwealth/datasets/"
-    "totalwealthwealthingreatbritain/april2018tomarch2020revised/"
-    "totalwealthbycomponentanddecilegroupapril2018tomarch2020.xlsx"
+    "totalwealthwealthingreatbritain/"
+    "july2006tojune2016andapril2014tomarch2022/"
+    "totalwealthtables.xlsx"
+)
+
+# Fallback URL: the April 2014 to March 2020 edition (still online as of
+# 2026-05-15).  Used if the primary URL breaks in the future.
+XLSX_FALLBACK_URL = (
+    "https://www.ons.gov.uk/file?uri=/peoplepopulationandcommunity/"
+    "personalandhouseholdfinances/incomeandwealth/datasets/"
+    "totalwealthwealthingreatbritain/"
+    "july2006tojune2016andapril2014tomarch2020/"
+    "totalwealthtablesfinal1.xlsx"
 )
 
 ACCESS_DATE = date.today().isoformat()
 
 
 def fetch() -> Path | None:
-    """Download the ONS Total Wealth XLSX. Returns None if download fails."""
+    """Download the ONS Total Wealth XLSX.
+
+    Tries the primary URL first, then the fallback URL.  Returns the path to
+    the downloaded file, or None if both URLs fail (in which case the pipeline
+    will use hard-coded fallback data).
+    """
     RAW_DIR.mkdir(parents=True, exist_ok=True)
     out_path = RAW_DIR / "ons_total_wealth_by_decile.xlsx"
 
-    print("Downloading ONS Total Wealth data...")
-    try:
-        resp = requests.get(XLSX_URL, timeout=60)
-        resp.raise_for_status()
-    except requests.RequestException as exc:
-        print(f"  Download failed: {exc}")
-        print("  Using fallback data from ONS bulletin (cited below).")
-        return None
+    urls = [
+        ("primary", XLSX_URL),
+        ("fallback", XLSX_FALLBACK_URL),
+    ]
 
-    out_path.write_bytes(resp.content)
-    print(f"  Saved to {out_path} ({len(resp.content) // 1024} KB)")
-    return out_path
+    for label, url in urls:
+        print(f"Downloading ONS Total Wealth data ({label} URL)...")
+        try:
+            resp = requests.get(url, timeout=60)
+            resp.raise_for_status()
+        except requests.RequestException as exc:
+            print(f"  {label.capitalize()} download failed: {exc}")
+            continue
+
+        out_path.write_bytes(resp.content)
+        print(f"  Saved to {out_path} ({len(resp.content) // 1024} KB)")
+        return out_path
+
+    print(
+        "  ERROR: Both primary and fallback ONS download URLs failed.\n"
+        "  The ONS may have reorganised their download paths again.\n"
+        "  Check the dataset page for updated links:\n"
+        "    https://www.ons.gov.uk/peoplepopulationandcommunity/"
+        "personalandhouseholdfinances/incomeandwealth/datasets/"
+        "totalwealthwealthingreatbritain\n"
+        "  Falling back to hard-coded data from the ONS bulletin."
+    )
+    return None
 
 
 def process(xlsx_path: Path | None) -> pd.DataFrame:
     """Extract total net wealth by decile from the XLSX.
 
-    The spreadsheet has multiple sheets. We target the sheet with total
-    wealth by decile group, which shows the extreme concentration of
-    wealth in the top deciles.
+    The spreadsheet (Jan 2025 edition) uses "Table 2.2" for aggregate
+    household total wealth by decile.  The layout is:
+
+        Col 0: wealth-component label (merged across decile rows)
+        Col 1: decile label ("Total Wealth Decile 1 (lowest)" ... "10 (highest)")
+        Col 2..10: period columns (the last column is the most recent wave)
+
+    Values are in **millions of pounds**.  We convert to billions for the
+    processed CSV to stay consistent with the chart and fallback data.
     """
     PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -75,36 +120,40 @@ def process(xlsx_path: Path | None) -> pd.DataFrame:
     xl = pd.ExcelFile(xlsx_path, engine="openpyxl")
     print(f"  Available sheets: {xl.sheet_names}")
 
+    # Prefer "Table 2.2" (aggregate total wealth by decile).  Fall back to
+    # the old heuristic if the sheet name changed in a future edition.
     target_sheet = None
     for name in xl.sheet_names:
-        lower = name.lower()
-        if "decile" in lower or "total" in lower:
+        if name.strip() == "Table 2.2":
             target_sheet = name
             break
-
+    if target_sheet is None:
+        for name in xl.sheet_names:
+            lower = name.lower()
+            if "decile" in lower or "total" in lower:
+                target_sheet = name
+                break
     if target_sheet is None:
         target_sheet = xl.sheet_names[0]
 
     print(f"  Reading sheet: '{target_sheet}'")
-    df_raw = pd.read_excel(xlsx_path, sheet_name=target_sheet, header=None, engine="openpyxl")
+    df_raw = pd.read_excel(
+        xlsx_path, sheet_name=target_sheet, header=None, engine="openpyxl",
+    )
 
-    header_row = None
-    for i in range(min(20, len(df_raw))):
-        row_vals = [str(v).lower() for v in df_raw.iloc[i].values if pd.notna(v)]
-        row_str = " ".join(row_vals)
-        if "decile" in row_str or ("1st" in row_str and "10th" in row_str):
-            header_row = i
-            break
-
-    if header_row is None:
-        print("  Could not find decile header row. Dumping first 20 rows for debugging:")
-        for i in range(min(20, len(df_raw))):
-            vals = [str(v)[:50] for v in df_raw.iloc[i].values if pd.notna(v)]
-            print(f"    Row {i}: {vals}")
-        print("  Falling back to manual decile structure.")
-        df = _build_fallback_data()
-    else:
-        df = _parse_decile_data(df_raw, header_row)
+    df = _parse_table_2_2(df_raw)
+    if df is None:
+        # Fall back to the older generic parser.
+        header_row = _find_decile_header_row(df_raw)
+        if header_row is not None:
+            df = _parse_decile_data(df_raw, header_row)
+        else:
+            print("  Could not locate decile data.  Dumping first 20 rows:")
+            for i in range(min(20, len(df_raw))):
+                vals = [str(v)[:50] for v in df_raw.iloc[i].values if pd.notna(v)]
+                print(f"    Row {i}: {vals}")
+            print("  Falling back to hard-coded data.")
+            df = _build_fallback_data()
 
     out_path = PROCESSED_DIR / "ons_wealth_by_decile.csv"
     df.to_csv(out_path, index=False)
@@ -114,9 +163,100 @@ def process(xlsx_path: Path | None) -> pd.DataFrame:
     return df
 
 
+def _parse_table_2_2(df_raw: pd.DataFrame) -> pd.DataFrame | None:
+    """Parse the Jan-2025-edition Table 2.2 layout.
+
+    Expected layout (rows 3-12 are the "Aggregate total wealth" block):
+        Col 0: component label (only on the first row of each block)
+        Col 1: decile label
+        Col 2..N: period columns (last column = most recent wave)
+
+    Values are in millions; we convert to billions (divide by 1000).
+    Returns None if the expected structure is not found.
+    """
+    # Find the row that starts the "Aggregate total wealth" block.
+    agg_row = None
+    for i in range(min(20, len(df_raw))):
+        cell = str(df_raw.iloc[i, 0]).lower()
+        if "aggregate total wealth" in cell:
+            agg_row = i
+            break
+
+    if agg_row is None:
+        return None
+
+    # The last data column holds the most recent survey wave.  However,
+    # openpyxl often reads trailing empty columns as NaN-filled, so we
+    # walk backwards from the rightmost column to find the first one that
+    # contains any actual numeric data.
+    last_col = len(df_raw.columns) - 1
+    for col_idx in range(len(df_raw.columns) - 1, 0, -1):
+        col_values = df_raw.iloc[:, col_idx]
+        if col_values.notna().any():
+            last_col = col_idx
+            break
+
+    records: list[dict[str, object]] = []
+    for i in range(agg_row, min(agg_row + 12, len(df_raw))):
+        label = str(df_raw.iloc[i, 1]).strip() if pd.notna(df_raw.iloc[i, 1]) else ""
+        if "decile" not in label.lower():
+            continue
+
+        try:
+            wealth_m = float(df_raw.iloc[i, last_col])
+        except (ValueError, TypeError):
+            continue
+
+        # Convert the ONS decile label to a shorter, user-friendly form.
+        short = _shorten_decile_label(label)
+        records.append({
+            "decile": short,
+            "total_wealth_bn": round(wealth_m / 1000, 1),
+        })
+
+    if len(records) != 10:
+        print(f"  Warning: expected 10 decile rows, found {len(records)}.")
+        if not records:
+            return None
+
+    return pd.DataFrame(records)
+
+
+def _shorten_decile_label(label: str) -> str:
+    """Turn 'Total Wealth Decile 1 (lowest)' into '1st (poorest)' etc."""
+    m = re.search(r"Decile\s+(\d+)", label, re.IGNORECASE)
+    if not m:
+        return label
+
+    n = int(m.group(1))
+    suffix = {1: "st", 2: "nd", 3: "rd"}.get(n, "th")
+    short = f"{n}{suffix}"
+
+    if "lowest" in label.lower():
+        short += " (poorest)"
+    elif "highest" in label.lower():
+        short += " (richest)"
+
+    return short
+
+
+def _find_decile_header_row(df_raw: pd.DataFrame) -> int | None:
+    """Scan the first 20 rows for a row containing decile labels."""
+    for i in range(min(20, len(df_raw))):
+        row_vals = [str(v).lower() for v in df_raw.iloc[i].values if pd.notna(v)]
+        row_str = " ".join(row_vals)
+        if "decile" in row_str or ("1st" in row_str and "10th" in row_str):
+            return i
+    return None
+
+
 def _parse_decile_data(df_raw: pd.DataFrame, header_row: int) -> pd.DataFrame:
-    """Parse decile wealth data from the raw XLSX starting at header_row."""
-    records = []
+    """Parse decile wealth data from the raw XLSX starting at header_row.
+
+    This is the legacy parser for older XLSX layouts where data runs down
+    columns 0 (label) and 1 (value).
+    """
+    records: list[dict[str, object]] = []
     for i in range(header_row + 1, min(header_row + 15, len(df_raw))):
         label = str(df_raw.iloc[i, 0]).strip()
         if not label or label == "nan":
@@ -144,12 +284,15 @@ def _parse_decile_data(df_raw: pd.DataFrame, header_row: int) -> pd.DataFrame:
 
 
 def _build_fallback_data() -> pd.DataFrame:
-    """ONS WAS April 2018 to March 2020 — total net wealth by decile (£bn).
+    """ONS WAS April 2020 to March 2022 — total net wealth by decile (£bn).
 
-    Source: ONS Total Wealth in Great Britain, April 2018 to March 2020.
-    Table: Total net wealth by decile group.
-    URL: https://www.ons.gov.uk/peoplepopulationandcommunity/personalandhouseholdfinances/incomeandwealth/bulletins/totalwealthingreatbritain/april2018tomarch2020
-    Accessed: 2026-05-14
+    Source: ONS Total Wealth in Great Britain, Table 2.2.
+    Edition: July 2006 to June 2016 / April 2014 to March 2022.
+    URL: https://www.ons.gov.uk/peoplepopulationandcommunity/personalandhouseholdfinances/incomeandwealth/datasets/totalwealthwealthingreatbritain
+    Accessed: 2026-05-15
+
+    Values are the April 2020-March 2022 column from Table 2.2, converted
+    from £ millions to £ billions.
     """
     return pd.DataFrame({
         "decile": [
@@ -157,8 +300,8 @@ def _build_fallback_data() -> pd.DataFrame:
             "6th", "7th", "8th", "9th", "10th (richest)",
         ],
         "total_wealth_bn": [
-            -3.1, 27.8, 96.3, 194.3, 324.6,
-            492.3, 697.3, 990.7, 1476.0, 3467.5,
+            13.9, 78.4, 195.6, 392.5, 652.0,
+            955.2, 1323.0, 1805.6, 2628.5, 5523.2,
         ],
     })
 
@@ -211,7 +354,7 @@ def build_chart(df: pd.DataFrame) -> None:
         annotations=[
             dict(
                 text=(
-                    f"Source: ONS Wealth and Assets Survey, April 2018 to March 2020 · "
+                    f"Source: ONS Wealth and Assets Survey, April 2020 to March 2022 · "
                     f"OGL v3.0 · Accessed {ACCESS_DATE}<br>"
                     f"The richest 10% hold £{df['total_wealth_bn'].iloc[-1]:,.0f}bn "
                     f"({top_decile_share:.0f}% of total). "
