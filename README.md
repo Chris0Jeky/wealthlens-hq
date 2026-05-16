@@ -65,7 +65,7 @@ wealthlens-hq/
 
 ## How to contribute
 
-We welcome contributions. See [CONTRIBUTING.md](projects/wealthlens-dashboard/CONTRIBUTING.md) for guidelines.
+We welcome contributions. See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 **Good first contributions:**
 - Add or verify a data source record in the registry
