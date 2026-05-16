@@ -1,0 +1,24 @@
+{
+  "dataset": "boe_rates",
+  "description": "Bank of England base rate and CPI annual inflation rate over time.",
+  "sources": [
+    {
+      "name": "Bank of England",
+      "publication": "Official Bank Rate history",
+      "url": "https://www.bankofengland.co.uk/boeapps/database/Bank-Rate.asp",
+      "licence": "OGL v3.0"
+    },
+    {
+      "name": "ONS",
+      "publication": "Consumer price inflation, UK",
+      "url": "https://www.ons.gov.uk/economy/inflationandpriceindices/bulletins/consumerpriceinflation/latest",
+      "licence": "OGL v3.0"
+    }
+  ],
+  "access_date": "2026-05-15",
+  "columns": {
+    "date": "Date (YYYY-MM-DD)",
+    "bank_rate": "Bank of England base rate (%)",
+    "cpi_annual": "CPI annual rate of change (%)"
+  }
+}

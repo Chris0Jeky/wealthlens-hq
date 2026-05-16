@@ -1,0 +1,23 @@
+{
+  "dataset": "hmrc_cgt_concentration",
+  "description": "Capital gains distribution by size of gain, showing concentration among top taxpayers.",
+  "sources": [
+    {
+      "name": "HMRC",
+      "publication": "Capital Gains Tax statistics",
+      "url": "https://www.gov.uk/government/statistics/capital-gains-tax-statistics",
+      "licence": "OGL v3.0"
+    }
+  ],
+  "access_date": "2026-05-14",
+  "columns": {
+    "gain_band": "Size-of-gain band label",
+    "band_lower": "Lower bound of gain band in GBP",
+    "num_taxpayers_thousands": "Number of taxpayers in band (thousands)",
+    "total_gains_millions": "Total gains in band (millions GBP)",
+    "share_of_gains_pct": "Percentage of total gains in this band",
+    "share_of_taxpayers_pct": "Percentage of total taxpayers in this band",
+    "cumul_gains_from_top_pct": "Cumulative share of gains from top",
+    "cumul_taxpayers_from_top_pct": "Cumulative share of taxpayers from top"
+  }
+}

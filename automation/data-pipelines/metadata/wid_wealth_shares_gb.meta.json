@@ -1,0 +1,19 @@
+{
+  "dataset": "wid_wealth_shares_gb",
+  "description": "Top 1% and top 10% wealth shares in Great Britain over time.",
+  "sources": [
+    {
+      "name": "World Inequality Database",
+      "publication": "Top wealth shares, Great Britain",
+      "url": "https://wid.world/",
+      "licence": "CC-BY"
+    }
+  ],
+  "access_date": "2026-05-14",
+  "columns": {
+    "variable": "WID variable code (e.g. shweal_p99p100)",
+    "country": "ISO country code",
+    "year": "Calendar year",
+    "value": "Share of total wealth (0-1)"
+  }
+}
