@@ -13,6 +13,11 @@ const router = createRouter({
       name: "chart",
       component: () => import("@/views/ChartView.vue"),
     },
+    {
+      path: "/:pathMatch(.*)*",
+      name: "not-found",
+      component: () => import("@/views/NotFoundView.vue"),
+    },
   ],
 });
 

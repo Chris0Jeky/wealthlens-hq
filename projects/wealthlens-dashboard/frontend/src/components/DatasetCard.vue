@@ -4,6 +4,7 @@ const SUPPORTED_CHARTS = new Set([
   'wealth-shares',
   'housing-affordability',
   'cgt-concentration',
+  'wealth-by-decile',
 ])
 
 const props = defineProps<{

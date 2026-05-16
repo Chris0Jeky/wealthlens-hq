@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { RouterView } from 'vue-router'
+import ErrorBoundary from '@/components/ErrorBoundary.vue'
 </script>
 
 <template>
@@ -28,7 +29,9 @@ import { RouterView } from 'vue-router'
       </div>
     </header>
     <main id="main-content" tabindex="-1">
-      <RouterView />
+      <ErrorBoundary>
+        <RouterView />
+      </ErrorBoundary>
     </main>
     <footer
       role="contentinfo"
