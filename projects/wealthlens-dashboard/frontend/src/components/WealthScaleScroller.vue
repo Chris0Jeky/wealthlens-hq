@@ -199,16 +199,20 @@ let resizeObserver: ResizeObserver | null = null;
 
 onMounted(() => {
   updateContainerWidth();
-  if (scrollContainer.value) {
+  if (scrollContainer.value && typeof ResizeObserver !== "undefined") {
     resizeObserver = new ResizeObserver(updateContainerWidth);
     resizeObserver.observe(scrollContainer.value);
+    return;
   }
+
+  window.addEventListener("resize", updateContainerWidth);
 });
 
 onBeforeUnmount(() => {
   if (resizeObserver) {
     resizeObserver.disconnect();
   }
+  window.removeEventListener("resize", updateContainerWidth);
 });
 </script>
 
