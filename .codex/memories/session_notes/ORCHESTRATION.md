@@ -11,7 +11,7 @@
 > 5. Pick up from the **Current Phase** section below.
 > 6. After completing work, UPDATE this file before the next compaction risk.
 
-Last updated: 2026-05-15 (wave 6 complete — 28 PRs total, 6 waves, all reviewed x2)
+Last updated: 2026-05-16 (wave 13 complete — 26 PRs total this session, #39-#64)
 
 ## Workflow Design
 
@@ -39,7 +39,7 @@ main
 
 ## Current Phase
 
-**Phase: WAVE 6 COMPLETE** — 28 PRs total (waves 1-6), all reviewed x2 with fixes applied.
+**Phase: WAVE 13 COMPLETE** — PRs #39-#64 (waves 7-13). All reviewed x2 (or R1 clean). Wave 14 in progress.
 
 ### Work Stream Status
 
@@ -78,6 +78,14 @@ main
 24. [DONE] Build wave 6 PRs (2 PRs: #37, #38)
 25. [DONE] Wave 6 review round 1 + fixes
 26. [DONE] Wave 6 review round 2 — both PRs verified LGTM
+27. [DONE] Build waves 7-8 PRs (#39-#52)
+28. [DONE] Waves 7-8 review rounds 1+2
+29. [DONE] Build waves 9-11 PRs (#53-#58)
+30. [DONE] Waves 9-11 review rounds 1+2
+31. [DONE] Audit for wave 12, seed tasks
+32. [DONE] Build wave 12 PRs (#59-#62), R1+R2 all pass
+33. [DONE] Build wave 13 PRs (#63-#64), R1+R2 all pass
+34. [IN PROGRESS] Build wave 14 PRs (backend API tests, CONTRIBUTING.md, mypy strictness)
 
 ## Decisions Log
 
@@ -252,6 +260,60 @@ fix/store-error-handling (#33)
 
 main
  └── feat/ci-backend (NEW, independent)
+```
+
+## Waves 7-11 — Summary (PRs #39-#58)
+
+Waves 7-11 created 20 PRs spanning: broadsheet design tokens (#39), masthead/footer (#42), chart page redesign (#43), landing hero (#44), wealth calculator (#45), landing sections (#46), tax composition pipeline (#47), BoE rates pipeline (#48), dark theme toggle (#49), OG meta tags (#50), mobile responsive (#51), component tests (#52), tax rate calculator (#53), about/methodology pages (#54), child poverty pipeline (#55), generational wealth gap (#56), Plausible analytics (#57), WCAG 2.2 AA audit (#58).
+
+All 20 PRs reviewed x2 (R1 + fixes + R2 verification). Key fixes included: PA taper tax bug, CGT rate labels, XSS prevention in chart HTML, analytics queue shim, silent-failure hardening, heading hierarchy, contrast ratios, and focus management.
+
+## Wave 12 — Seeded from audit (data integrity, CI, config)
+
+| # | Stream | Branch | Base | PR | Status |
+|---|--------|--------|------|----|--------|
+| 29 | Dataset meta sidecars + licences | `chore/dataset-meta-sidecars` | main | #59 | R2 PASS |
+| 30 | CI test fixtures | `fix/ci-test-fixtures` | main | #60 | R2 PASS |
+| 31 | Configurable API URL | `feat/configurable-api-url` | main | #61 | R2 PASS |
+| 32 | CI frontend lint enforcement | `fix/ci-frontend-lint-enforcement` | main | #62 | R1 CLEAN — no issues |
+
+### Wave 12 stacking
+```
+main
+ ├── chore/dataset-meta-sidecars (#59, independent)
+ ├── fix/ci-test-fixtures (#60, independent)
+ ├── feat/configurable-api-url (#61, independent)
+ └── fix/ci-frontend-lint-enforcement (#62, independent)
+```
+
+## Wave 13 — Docs: SECURITY.md, ARCHITECTURE.md
+
+| # | Stream | Branch | Base | PR | Status |
+|---|--------|--------|------|----|--------|
+| 33 | Security policy | `docs/security-policy` | main | #63 | R2 PASS |
+| 34 | Architecture overview | `docs/architecture` | main | #64 | R2 PASS |
+
+### Wave 13 stacking
+```
+main
+ ├── docs/security-policy (#63, independent)
+ └── docs/architecture (#64, independent)
+```
+
+## Wave 14 — Backend API tests, CONTRIBUTING.md, mypy strictness
+
+| # | Stream | Branch | Base | PR | Status |
+|---|--------|--------|------|----|--------|
+| 35 | Backend API endpoint tests | `test/backend-api-endpoints` | main | TBD | IN PROGRESS |
+| 36 | Root CONTRIBUTING.md | `docs/contributing` | main | TBD | PENDING |
+| 37 | Mypy strictness for automation/ | `chore/mypy-strict-automation` | main | TBD | PENDING |
+
+### Wave 14 stacking
+```
+main
+ ├── test/backend-api-endpoints (NEW, independent)
+ ├── docs/contributing (NEW, independent)
+ └── chore/mypy-strict-automation (NEW, independent)
 ```
 
 ## Notes
