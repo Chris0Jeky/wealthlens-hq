@@ -60,7 +60,7 @@ class TimeoutMiddleware:
                 self.app(scope, receive, send_wrapper),
                 timeout=self.timeout_seconds,
             )
-        except asyncio.TimeoutError:
+        except TimeoutError:
             if not response_started:
                 response = JSONResponse(
                     status_code=504,

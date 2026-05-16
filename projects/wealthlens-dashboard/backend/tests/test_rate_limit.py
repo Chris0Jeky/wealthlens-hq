@@ -10,10 +10,9 @@ Verifies that the RateLimitMiddleware correctly:
 
 from __future__ import annotations
 
+from app.rate_limit import RateLimitMiddleware
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-
-from app.rate_limit import RateLimitMiddleware
 
 
 def _create_app(requests_per_minute: int = 5, trust_forwarded_for: bool = False) -> FastAPI:

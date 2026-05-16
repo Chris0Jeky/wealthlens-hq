@@ -5,10 +5,9 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-from fastapi.testclient import TestClient
-
 from app.main import app
 from app.routers import data as data_mod
+from fastapi.testclient import TestClient
 
 CSV_CONTENT = """year,value,region
 2020,100.5,London

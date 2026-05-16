@@ -10,10 +10,9 @@ directory. They will be skipped in CI if the files are not present.
 from __future__ import annotations
 
 import pytest
-from fastapi.testclient import TestClient
-
 from app.main import app
 from app.routers.data import DATA_DIR, DATASETS
+from fastapi.testclient import TestClient
 
 client = TestClient(app)
 

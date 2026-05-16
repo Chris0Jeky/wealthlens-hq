@@ -8,11 +8,10 @@ from __future__ import annotations
 import asyncio
 from collections.abc import AsyncGenerator
 
+from app.timeout_middleware import TimeoutMiddleware
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from starlette.responses import StreamingResponse
-
-from app.timeout_middleware import TimeoutMiddleware
 
 # ---------------------------------------------------------------------------
 # Test app with a deliberately short timeout for fast tests.

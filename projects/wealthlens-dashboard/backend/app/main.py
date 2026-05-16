@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import os
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -104,6 +104,6 @@ def health() -> dict:
     return {
         "status": "ok",
         "version": app.version,
-        "started_at_utc": datetime.fromtimestamp(_started_at, tz=timezone.utc).isoformat(),
+        "started_at_utc": datetime.fromtimestamp(_started_at, tz=UTC).isoformat(),
         "uptime_seconds": int(time.time() - _started_at),
     }

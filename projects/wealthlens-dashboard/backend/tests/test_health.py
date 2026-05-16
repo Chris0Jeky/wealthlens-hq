@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
-
-from fastapi.testclient import TestClient
+from datetime import UTC, datetime
 
 from app.main import app
+from fastapi.testclient import TestClient
 
 client = TestClient(app)
 
@@ -43,4 +42,4 @@ def test_health_started_at_is_valid_iso_datetime() -> None:
     data = response.json()
     # Should parse without raising
     parsed = datetime.fromisoformat(data["started_at_utc"])
-    assert parsed.tzinfo == timezone.utc
+    assert parsed.tzinfo == UTC

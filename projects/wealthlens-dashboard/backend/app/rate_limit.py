@@ -25,7 +25,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
     def __init__(
         self,
-        app,  # noqa: ANN001
+        app,
         requests_per_minute: int = DEFAULT_REQUESTS_PER_MINUTE,
         trust_forwarded_for: bool = False,
     ) -> None:

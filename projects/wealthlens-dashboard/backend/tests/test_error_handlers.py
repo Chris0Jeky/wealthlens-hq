@@ -10,10 +10,9 @@ Verifies that:
 
 from __future__ import annotations
 
+from app.error_handlers import register_error_handlers
 from fastapi import FastAPI, HTTPException
 from fastapi.testclient import TestClient
-
-from app.error_handlers import register_error_handlers
 
 
 def _make_app() -> FastAPI:

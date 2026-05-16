@@ -12,10 +12,9 @@ the processed data directory is missing or empty.
 from __future__ import annotations
 
 import pytest
-from fastapi.testclient import TestClient
-
 from app.main import app
 from app.routers.data import DATA_DIR, DATASETS
+from fastapi.testclient import TestClient
 
 client = TestClient(app)
 
