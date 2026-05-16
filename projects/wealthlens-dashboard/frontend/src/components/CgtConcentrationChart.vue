@@ -22,6 +22,7 @@ import {
 } from "echarts/components";
 import VChart from "vue-echarts";
 import { useDataStore, type DatasetRow } from "@/stores/data";
+import ChartSkeleton from "@/components/ChartSkeleton.vue";
 
 // Register only the ECharts modules we need (tree-shaking)
 use([
@@ -207,9 +208,7 @@ const option = computed(() => {
 
 <template>
   <!-- Loading state -->
-  <div v-if="loading" class="flex items-center justify-center py-20">
-    <p class="text-gray-500 text-lg">Loading chart data...</p>
-  </div>
+  <ChartSkeleton v-if="loading" />
 
   <!-- Error state -->
   <div v-else-if="error" class="py-10 text-center">
