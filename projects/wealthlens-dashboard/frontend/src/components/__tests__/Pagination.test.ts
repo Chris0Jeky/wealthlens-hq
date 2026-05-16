@@ -14,16 +14,22 @@ describe('Pagination', () => {
     expect(wrapper.find('nav').attributes('aria-label')).toBe('Pagination')
   })
 
-  it('disables previous button on first page', () => {
+  it('uses list semantics for page items', () => {
     const wrapper = mount(Pagination, { props: { page: 1, totalPages: 5 } })
-    const prev = wrapper.find('button[aria-label="Previous page"]')
-    expect(prev.attributes('disabled')).toBeDefined()
+    expect(wrapper.find('ul[role="list"]').exists()).toBe(true)
+    expect(wrapper.findAll('li').length).toBeGreaterThan(0)
   })
 
-  it('disables next button on last page', () => {
+  it('marks previous as aria-disabled on first page', () => {
+    const wrapper = mount(Pagination, { props: { page: 1, totalPages: 5 } })
+    const prev = wrapper.find('button[aria-label="Previous page"]')
+    expect(prev.attributes('aria-disabled')).toBe('true')
+  })
+
+  it('marks next as aria-disabled on last page', () => {
     const wrapper = mount(Pagination, { props: { page: 5, totalPages: 5 } })
     const next = wrapper.find('button[aria-label="Next page"]')
-    expect(next.attributes('disabled')).toBeDefined()
+    expect(next.attributes('aria-disabled')).toBe('true')
   })
 
   it('marks current page with aria-current', () => {
@@ -65,6 +71,28 @@ describe('Pagination', () => {
     const wrapper = mount(Pagination, { props: { page: 3, totalPages: 5 } })
     const current = wrapper.find('[aria-current="page"]')
     await current.trigger('click')
+    expect(wrapper.emitted('update:page')).toBeUndefined()
+  })
+
+  it('shows both pages when totalPages is 2', () => {
+    const wrapper = mount(Pagination, { props: { page: 1, totalPages: 2 } })
+    const buttons = wrapper.findAll('button[aria-label^="Page"]')
+    expect(buttons).toHaveLength(2)
+    expect(buttons[0].text()).toBe('1')
+    expect(buttons[1].text()).toBe('2')
+  })
+
+  it('clamps page to totalPages for aria-current', () => {
+    const wrapper = mount(Pagination, { props: { page: 99, totalPages: 5 } })
+    const current = wrapper.find('[aria-current="page"]')
+    expect(current.exists()).toBe(true)
+    expect(current.text()).toBe('5')
+  })
+
+  it('does not emit on aria-disabled prev click', async () => {
+    const wrapper = mount(Pagination, { props: { page: 1, totalPages: 5 } })
+    const prev = wrapper.find('button[aria-label="Previous page"]')
+    await prev.trigger('click')
     expect(wrapper.emitted('update:page')).toBeUndefined()
   })
 })
