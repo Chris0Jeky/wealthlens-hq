@@ -10,6 +10,26 @@ describe("useMinLoadingTime", () => {
     expect(showing.value).toBe(true);
   });
 
+  it("enforces minimum duration when loading starts true", async () => {
+    vi.useFakeTimers();
+    const loading = ref(true);
+    const { showing } = useMinLoadingTime(loading, 300);
+
+    loading.value = false;
+    await nextTick();
+    expect(showing.value).toBe(true);
+
+    vi.advanceTimersByTime(299);
+    await nextTick();
+    expect(showing.value).toBe(true);
+
+    vi.advanceTimersByTime(1);
+    await nextTick();
+    expect(showing.value).toBe(false);
+
+    vi.useRealTimers();
+  });
+
   it("keeps showing=true for minimum duration even if loading goes false quickly", async () => {
     vi.useFakeTimers();
     const loading = ref(false);

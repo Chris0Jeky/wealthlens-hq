@@ -26,7 +26,7 @@ export function useMinLoadingTime(loading: Ref<boolean>, minMs = 300) {
         showing.value = false;
       }
     }
-  });
+  }, { immediate: true });
 
   onUnmounted(() => {
     if (timer) {

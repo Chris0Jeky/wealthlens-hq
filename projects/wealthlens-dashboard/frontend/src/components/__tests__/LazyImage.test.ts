@@ -53,6 +53,15 @@ describe("LazyImage", () => {
     expect(wrapper.find("img").classes()).toContain("lazy-img--loaded");
   });
 
+  it("marks failed images as loaded so they are not hidden forever", async () => {
+    const wrapper = mount(LazyImage, {
+      props: { src: "/missing.png", alt: "Missing image" },
+    });
+    await wrapper.find("img").trigger("error");
+    expect(wrapper.find("img").classes()).toContain("lazy-img--loaded");
+    expect(wrapper.find("img").attributes("aria-busy")).toBe("false");
+  });
+
   it("passes width and height attributes", () => {
     const wrapper = mount(LazyImage, {
       props: { src: "/img.png", alt: "Img", width: 600, height: 400 },

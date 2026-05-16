@@ -11,6 +11,11 @@ const props = defineProps<{
 
 const imgRef = ref<HTMLImageElement | null>(null);
 const loaded = ref(false);
+const failed = ref(false);
+
+function finishLoading() {
+  loaded.value = true;
+}
 
 const { isVisible: inView } = useIntersectionObserver(imgRef, {
   rootMargin: "200px",
@@ -26,10 +31,11 @@ const { isVisible: inView } = useIntersectionObserver(imgRef, {
     :alt="props.alt"
     :width="props.width"
     :height="props.height"
-    :class="['lazy-img', { 'lazy-img--loaded': loaded }]"
+    :class="['lazy-img', { 'lazy-img--loaded': loaded, 'lazy-img--failed': failed }]"
     :aria-busy="!loaded"
     loading="lazy"
-    @load="loaded = true"
+    @load="finishLoading"
+    @error="failed = true; finishLoading()"
   />
 </template>
 
