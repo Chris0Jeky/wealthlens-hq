@@ -1008,7 +1008,7 @@ export const chartConfigs: Record<string, ChartConfig> = {
         {
           heading: "What this chart shows",
           paragraphs: [
-            'Median total household wealth at equivalent age milestones (30, 40, 50, 60) for three generations: Baby Boomers (born 1946���64), Generation X (born 1965–80), and Millennials (born 1981–96). All values are adjusted to 2022 real terms so that generational comparisons are like-for-like. Faded bars indicate projected or estimated values where that generation has not yet reached the milestone.',
+            'Median total household wealth at equivalent age milestones (30, 40, 50, 60) for three generations: Baby Boomers (born 1946–64), Generation X (born 1965–80), and Millennials (born 1981–96). All values are adjusted to 2022 real terms so that generational comparisons are like-for-like. Faded bars indicate projected or estimated values where that generation has not yet reached the milestone.',
           ],
         },
         {
