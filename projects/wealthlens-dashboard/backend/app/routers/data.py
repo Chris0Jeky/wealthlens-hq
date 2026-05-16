@@ -50,6 +50,7 @@ DATASETS: dict[str, str] = {
     "cgt-concentration": "hmrc_cgt_concentration.csv",
     "productivity-pay": "productivity_pay_gap.csv",
     "gdhi-by-region": "ons_gdhi_by_region.csv",
+    "tax-composition": "tax_composition.csv",
 }
 
 # Source citations — every dataset must document where the data came from.
@@ -102,6 +103,15 @@ DATASET_META: dict[str, dict[str, str]] = {
             "https://www.ons.gov.uk/economy/regionalaccounts/"
             "grossdisposablehouseholdincome/datasets/"
             "regionalgrossdisposablehouseholdincomegdhi"
+        ),
+        "access_date": "2026-05-16",
+    },
+    "tax-composition": {
+        "description": "UK tax revenue composition: work taxes vs wealth taxes",
+        "source": "HMRC Tax and NIC Receipts",
+        "source_url": (
+            "https://www.gov.uk/government/statistics/"
+            "hmrc-tax-and-nics-receipts-for-the-uk"
         ),
         "access_date": "2026-05-16",
     },
