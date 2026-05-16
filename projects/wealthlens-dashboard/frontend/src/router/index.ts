@@ -2,6 +2,13 @@ import { createRouter, createWebHistory } from "vue-router";
 
 const SITE_TITLE = "WealthLens UK";
 
+const CHART_TITLES: Record<string, string> = {
+  "wealth-shares": "Wealth Shares",
+  "housing-affordability": "Housing Affordability",
+  "wealth-by-decile": "Wealth by Decile",
+  "cgt-concentration": "CGT Concentration",
+};
+
 const router = createRouter({
   history: createWebHistory(),
   routes: [
@@ -15,7 +22,6 @@ const router = createRouter({
       path: "/charts/:name",
       name: "chart",
       component: () => import("@/views/ChartView.vue"),
-      meta: { title: "Chart" },
     },
     {
       path: "/:pathMatch(.*)*",
@@ -27,7 +33,10 @@ const router = createRouter({
 });
 
 router.afterEach((to) => {
-  const pageTitle = to.meta.title as string | undefined;
+  let pageTitle = to.meta.title;
+  if (to.name === "chart" && typeof to.params.name === "string") {
+    pageTitle = CHART_TITLES[to.params.name] ?? "Chart";
+  }
   document.title = pageTitle ? `${pageTitle} — ${SITE_TITLE}` : SITE_TITLE;
 });
 
