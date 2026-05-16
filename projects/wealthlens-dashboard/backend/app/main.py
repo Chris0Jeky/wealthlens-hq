@@ -12,6 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.logging_config import setup_logging
 from app.routers import data
+from app.timeout_middleware import TimeoutMiddleware
 
 setup_logging(os.environ.get("LOG_LEVEL", "INFO"))
 
@@ -51,6 +52,8 @@ app = FastAPI(
     },
     openapi_tags=tags_metadata,
 )
+
+app.add_middleware(TimeoutMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
