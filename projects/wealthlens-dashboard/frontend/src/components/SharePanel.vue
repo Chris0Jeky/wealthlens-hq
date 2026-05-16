@@ -18,42 +18,34 @@
  */
 import { ref, computed, onBeforeUnmount } from "vue";
 import EmbedCode from "@/components/EmbedCode.vue";
+import { CHARTS_BASE_URL } from "@/constants/urls";
 
 const props = defineProps<{
-  /** The chart route name, e.g. "wealth-shares" */
   chartName: string;
-  /** The chart title for social share text */
   chartTitle: string;
 }>();
 
-/** Base URL for the deployed site. */
-const baseUrl = "https://chris0jeky.github.io/wealthlens-hq/charts";
-
-/** Full URL for this chart page. */
-const chartUrl = computed(() => `${baseUrl}/${props.chartName}`);
-
-/** Encoded URL for share links. */
+const chartUrl = computed(() => `${CHARTS_BASE_URL}/${props.chartName}`);
 const encodedUrl = computed(() => encodeURIComponent(chartUrl.value));
-
-/** Encoded title text for share links. */
 const encodedTitle = computed(
   () => encodeURIComponent(`${props.chartTitle} — WealthLens UK`),
 );
 
-/** Social share URL patterns. */
 const shareLinks = computed(() => ({
   twitter: `https://twitter.com/intent/tweet?url=${encodedUrl.value}&text=${encodedTitle.value}`,
   linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl.value}`,
   bluesky: `https://bsky.app/intent/compose?text=${encodedTitle.value}+${encodedUrl.value}`,
 }));
 
-/** Open a share URL in a new window. */
 function openShare(platform: "twitter" | "linkedin" | "bluesky"): void {
-  window.open(shareLinks.value[platform], "_blank", "noopener,noreferrer");
+  const win = window.open(shareLinks.value[platform], "_blank", "noopener,noreferrer");
+  if (!win) {
+    window.location.href = shareLinks.value[platform];
+  }
 }
 
-/* Copy link logic */
 const linkCopied = ref(false);
+const copyError = ref(false);
 let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
 function clearTimer(): void {
@@ -63,19 +55,31 @@ function clearTimer(): void {
   }
 }
 
+const isClipboardSupported = computed(
+  () => typeof navigator !== "undefined" && !!navigator.clipboard,
+);
+
 async function copyLink(): Promise<void> {
-  if (typeof navigator === "undefined" || !navigator.clipboard) return;
+  if (!isClipboardSupported.value) {
+    copyError.value = true;
+    clearTimer();
+    timeoutId = setTimeout(() => { copyError.value = false; timeoutId = null; }, 3000);
+    return;
+  }
 
   try {
     await navigator.clipboard.writeText(chartUrl.value);
     linkCopied.value = true;
+    copyError.value = false;
     clearTimer();
     timeoutId = setTimeout(() => {
       linkCopied.value = false;
       timeoutId = null;
     }, 2000);
   } catch {
-    // Clipboard write failed — silently ignore.
+    copyError.value = true;
+    clearTimer();
+    timeoutId = setTimeout(() => { copyError.value = false; timeoutId = null; }, 3000);
   }
 }
 
@@ -151,12 +155,12 @@ onBeforeUnmount(clearTimer);
       <button
         type="button"
         class="share-panel__btn"
-        :class="{ 'share-panel__btn--success': linkCopied }"
-        :aria-label="linkCopied ? 'Link copied to clipboard' : 'Copy chart link'"
+        :class="{ 'share-panel__btn--success': linkCopied, 'share-panel__btn--error': copyError }"
+        :aria-label="copyError ? 'Copy failed — try again' : linkCopied ? 'Link copied to clipboard' : 'Copy chart link'"
         @click="copyLink"
       >
         <svg
-          v-if="!linkCopied"
+          v-if="!linkCopied && !copyError"
           viewBox="0 0 16 16"
           fill="none"
           stroke="currentColor"
@@ -168,7 +172,7 @@ onBeforeUnmount(clearTimer);
           <path d="M3 11V3a1 1 0 0 1 1-1h6" />
         </svg>
         <svg
-          v-else
+          v-else-if="linkCopied"
           viewBox="0 0 16 16"
           fill="none"
           stroke="currentColor"
@@ -178,13 +182,13 @@ onBeforeUnmount(clearTimer);
         >
           <path d="M3 8.5l3 3 7-7" />
         </svg>
-        {{ linkCopied ? "Copied!" : "Copy link" }}
+        {{ copyError ? "Copy failed" : linkCopied ? "Copied!" : "Copy link" }}
       </button>
     </nav>
 
     <!-- Live region for copy confirmation -->
     <span role="status" aria-live="polite" class="sr-only">
-      {{ linkCopied ? "Chart link copied to clipboard" : "" }}
+      {{ copyError ? "Copy failed — try selecting the URL manually" : linkCopied ? "Chart link copied to clipboard" : "" }}
     </span>
 
     <!-- Embed code section -->

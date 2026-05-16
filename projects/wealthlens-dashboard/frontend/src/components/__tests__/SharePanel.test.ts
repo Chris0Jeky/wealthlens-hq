@@ -1,5 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { mount, flushPromises } from "@vue/test-utils";
+
+vi.mock("@/constants/urls", () => ({
+  CHARTS_BASE_URL: "https://chris0jeky.github.io/wealthlens-hq/charts",
+}));
+
 import SharePanel from "@/components/SharePanel.vue";
 
 describe("SharePanel", () => {

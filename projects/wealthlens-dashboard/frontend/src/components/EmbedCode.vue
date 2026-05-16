@@ -9,32 +9,29 @@
  * <EmbedCode chart-name="wealth-shares" />
  */
 import { ref, computed, onBeforeUnmount } from "vue";
+import { CHARTS_BASE_URL } from "@/constants/urls";
 
 const props = defineProps<{
-  /** The chart route name, e.g. "wealth-shares" */
   chartName: string;
 }>();
 
-/** Available width options for the iframe embed. */
 const widthOptions = [
   { label: "600px", value: "600" },
   { label: "800px", value: "800" },
   { label: "100%", value: "100%" },
 ] as const;
 
-const selectedWidth = ref<string>("100%");
+type EmbedWidth = (typeof widthOptions)[number]["value"];
+const selectedWidth = ref<EmbedWidth>("100%");
 
-/** The base URL for chart embeds (GitHub Pages deployment). */
-const baseUrl = "https://chris0jeky.github.io/wealthlens-hq/charts";
-
-/** Computed iframe snippet based on selected width. */
 const embedSnippet = computed(() => {
   const widthAttr =
-    selectedWidth.value === "100%" ? '100%' : selectedWidth.value;
-  return `<iframe src="${baseUrl}/${props.chartName}" width="${widthAttr}" height="500" frameborder="0" title="WealthLens UK chart"></iframe>`;
+    selectedWidth.value === "100%" ? "100%" : selectedWidth.value;
+  return `<iframe src="${CHARTS_BASE_URL}/${props.chartName}" width="${widthAttr}" height="500" frameborder="0" sandbox="allow-scripts" title="WealthLens UK chart"></iframe>`;
 });
 
 const copied = ref(false);
+const copyError = ref(false);
 let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
 function clearTimer(): void {
@@ -44,19 +41,31 @@ function clearTimer(): void {
   }
 }
 
+const isClipboardSupported = computed(
+  () => typeof navigator !== "undefined" && !!navigator.clipboard,
+);
+
 async function copyEmbed(): Promise<void> {
-  if (typeof navigator === "undefined" || !navigator.clipboard) return;
+  if (!isClipboardSupported.value) {
+    copyError.value = true;
+    clearTimer();
+    timeoutId = setTimeout(() => { copyError.value = false; timeoutId = null; }, 3000);
+    return;
+  }
 
   try {
     await navigator.clipboard.writeText(embedSnippet.value);
     copied.value = true;
+    copyError.value = false;
     clearTimer();
     timeoutId = setTimeout(() => {
       copied.value = false;
       timeoutId = null;
     }, 2000);
   } catch {
-    // Clipboard write failed — silently ignore.
+    copyError.value = true;
+    clearTimer();
+    timeoutId = setTimeout(() => { copyError.value = false; timeoutId = null; }, 3000);
   }
 }
 
@@ -97,11 +106,12 @@ onBeforeUnmount(clearTimer);
     <button
       type="button"
       class="embed-code__copy"
-      :aria-label="copied ? 'Embed code copied' : 'Copy embed code'"
+      :class="{ 'embed-code__copy--error': copyError }"
+      :aria-label="copyError ? 'Copy failed — try again' : copied ? 'Embed code copied' : 'Copy embed code'"
       @click="copyEmbed"
     >
       <svg
-        v-if="!copied"
+        v-if="!copied && !copyError"
         viewBox="0 0 16 16"
         fill="none"
         stroke="currentColor"
@@ -113,7 +123,7 @@ onBeforeUnmount(clearTimer);
         <path d="M3 11V3a1 1 0 0 1 1-1h6" />
       </svg>
       <svg
-        v-else
+        v-else-if="copied"
         viewBox="0 0 16 16"
         fill="none"
         stroke="currentColor"
@@ -123,12 +133,12 @@ onBeforeUnmount(clearTimer);
       >
         <path d="M3 8.5l3 3 7-7" />
       </svg>
-      {{ copied ? "Copied!" : "Copy code" }}
+      {{ copyError ? "Copy failed" : copied ? "Copied!" : "Copy code" }}
     </button>
 
     <!-- Live region for screen readers -->
     <span role="status" aria-live="polite" class="sr-only">
-      {{ copied ? "Embed code copied to clipboard" : "" }}
+      {{ copyError ? "Copy failed — try selecting the code manually" : copied ? "Embed code copied to clipboard" : "" }}
     </span>
   </div>
 </template>
