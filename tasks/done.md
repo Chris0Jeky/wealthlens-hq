@@ -2,6 +2,30 @@
 
 Completed tasks go here with completion date.
 
+## 2026-05-16
+
+- [x] Deploy Vue frontend to GitHub Pages as master site — live at https://chris0jeky.github.io/wealthlens-hq/ (@Chris)
+- [x] Merge all ~192 PRs in 10 review waves (155 feature PRs merged, 21 duplicates closed, 10 Dependabot merged, 6 risky majors closed) (@Chris)
+- [x] Post-merge health check — fix lint (ruff), types (mypy, vue-tsc), tests; 874 tests passing across all suites (@Chris)
+- [x] Build 7 additional data pipelines: wealth-by-decile, productivity-pay, GDHI, tax-composition, BoE-rates, child-poverty, generational-wealth (@Chris)
+- [x] Build FastAPI backend: health, data listing, metadata, columns, summary stats, CSV download, security headers, GZip, rate limiting, error envelope (@Chris)
+- [x] Build Vue 3 frontend: AppHeader, AppFooter, NavBar, dark mode toggle, DatasetCard, DatasetDetailView, ChartView with broadsheet redesign, About page, 404 page, PWA manifest (@Chris)
+- [x] Build 40+ frontend components and composables: Tooltip, Modal, Toast, Badge, ProgressBar, SkeletonLoader, CopyButton, EmptyState, NumberStat, TabGroup, Accordion, FilterChips, DropdownMenu, ConfirmDialog, StatusDot, AlertBanner, ResponsiveGrid, PageHeader, ChartContainer, SourceCitation, plus composables for fetch, debounce, clipboard, localStorage, intersectionObserver, mediaQuery, eventListener, keyboardShortcut, clickOutside, reducedMotion (@Chris)
+- [x] WCAG audit and fixes: colour contrast, focus indicators, skip links, reduced motion, ARIA labels (@Chris)
+- [x] Frontend analytics integration (privacy-respecting) (@Chris)
+- [x] chart_to_social.py — generate social media images in 4 platform sizes (@Chris)
+- [x] Merge 10 Dependabot dependency bumps (safe minor/patch) (@Chris)
+- [x] Close 6 risky major version bumps: pandas 3, TypeScript 6, Vite 8, vue-router 5, vue-tsc 3 (deferred for careful migration) (@Chris)
+- [x] Clean up 292 stale local branches + 204 stale remote branches — repo now only has `main` (@Chris)
+- [x] Update README, ORCHESTRATION.md, active-sprint, done.md, inbox.md to reflect actual state (@Chris)
+
+## 2026-05-15
+
+- [x] Scaffold FastAPI backend with `/health` and `/api/data/{name}` endpoints (@Chris)
+- [x] Scaffold Vue 3 + TypeScript + Pinia + TailwindCSS frontend (builds clean) (@Chris)
+- [x] Deploy v0.1 to GitHub Pages — site live with 4 Plotly charts (@Chris)
+- [x] Create 10 waves of reviewed PRs (stacked PRs with adversarial multi-agent review) (@Chris)
+
 ## 2026-05-14
 
 - [x] Create initial WealthLens HQ scaffold (@Codex) [due: 2026-05-14]

@@ -1,6 +1,6 @@
 # Inbox
 
-Last updated: 2026-05-14
+Last updated: 2026-05-16
 
 Every concrete action item extracted from research. Triage into active-sprint, backlog, or done.
 
@@ -21,14 +21,14 @@ Every concrete action item extracted from research. Triage into active-sprint, b
 - [ ] Build "Lifetime tax burden by income percentile" calculator
 - [ ] Build "1 pixel = £1,000: UK wealth to scale" horizontal scroller (a la Korostoff)
 - [ ] Build "If the UK were 100 people" pictogram / Instagram Reel
-- [ ] Build UK tax revenue composition chart ("tax on work vs tax on wealth")
-- [ ] Build capital gains concentration chart (top 5,000 receive >50% of gains)
+- [x] Build UK tax revenue composition chart ("tax on work vs tax on wealth") [completed: 2026-05-16]
+- [x] Build capital gains concentration chart (top 5,000 receive >50% of gains) [completed: 2026-05-15]
 - [ ] Build inheritance tax chart (only 4-5% of estates pay IHT)
 - [ ] Build real wage stagnation + counterfactual chart
-- [ ] Build regional GDP per head map
-- [ ] Build child poverty by region map
-- [ ] Build productivity-pay gap (scissor chart)
-- [ ] Build generational wealth gap by birth cohort chart
+- [x] Build regional GDP per head map [completed: 2026-05-16 — GDHI pipeline built]
+- [x] Build child poverty by region map [completed: 2026-05-16 — pipeline built]
+- [x] Build productivity-pay gap (scissor chart) [completed: 2026-05-16 — pipeline built]
+- [x] Build generational wealth gap by birth cohort chart [completed: 2026-05-16 — pipeline built]
 - [ ] Build ownership by age and tenure chart (owner-occupied / private rent / social rent)
 - [ ] Build "Share of adults with almost no financial buffer" chart (FCA Financial Lives)
 - [ ] Build wealth-to-income ratio chart
@@ -52,49 +52,49 @@ Every concrete action item extracted from research. Triage into active-sprint, b
 - [ ] Set up Astro 5 + Vue 3 islands + Observable Plot scaffold
 - [ ] Configure Cloudflare Pages deploy from GitHub
 - [ ] Set up Cloudflare R2 bucket for raw data snapshots
-- [ ] Set up GitHub Actions cron skeleton with Python ETL using OWID five-stage model
+- [x] Set up GitHub Actions cron skeleton with Python ETL using OWID five-stage model [completed: 2026-05-16 — weekly-update.yml]
 - [ ] Write OG-image build task with `satori` + `resvg-js`
 - [ ] Set up `@newswire/frames` for responsive iframe embeds
 - [ ] Implement `/oembed?url=...&format=json` endpoint on a Cloudflare Worker
-- [ ] Set up public GitHub repository with MIT/Apache-2.0 licence on code, CC-BY 4.0 on charts
+- [x] Set up public GitHub repository with MIT/Apache-2.0 licence on code, CC-BY 4.0 on charts [completed: 2026-05-14]
 - [ ] Build a "data status" badge for every chart
-- [ ] Run WCAG 2.2 AA accessibility pass: keyboard navigation, role="img", alt text, contrast
+- [x] Run WCAG 2.2 AA accessibility pass: keyboard navigation, role="img", alt text, contrast [completed: 2026-05-16]
 - [ ] Create 3-4 Canva templates for sharing charts as social images
 - [ ] Set up donation page: Open Collective or Ko-fi
 - [ ] Set up email list: Buttondown (free <100 subs) or Substack
 - [ ] Set up project board via GitHub Projects
-- [ ] Set up analytics: Plausible (£7/month) or Umami (self-hosted, free)
+- [x] Set up analytics: Plausible (£7/month) or Umami (self-hosted, free) [completed: 2026-05-16 — privacy-respecting analytics integrated]
 - [ ] Set up project email (hello@wealthlens.uk)
 - [ ] Apply for GitHub Sponsors
 - [ ] Create media kit: one-pager PDF about the project
 - [ ] Create "Data Sources & Licences" page for the website
 - [ ] Create contributors page on website
-- [ ] Build simple landing page (GitHub Pages, Astro, or Hugo)
-- [ ] Write README with mission, screenshot, "How to contribute", tech stack, licence
-- [ ] Write CONTRIBUTING.md with setup instructions and task list
-- [ ] Create GitHub Issues for first 10 tasks (labelled "good first issue", "help wanted")
+- [x] Build simple landing page (GitHub Pages, Astro, or Hugo) [completed: 2026-05-15 — Vue frontend deployed to GitHub Pages]
+- [x] Write README with mission, screenshot, "How to contribute", tech stack, licence [completed: 2026-05-16]
+- [x] Write CONTRIBUTING.md with setup instructions and task list [completed: 2026-05-15]
+- [x] Create GitHub Issues for first 10 tasks (labelled "good first issue", "help wanted") [completed: 2026-05-15]
 
 ## Build: Data Pipelines
 
-- [ ] Build `fetch_ons_wealth.py` data pipeline
-- [ ] Build `fetch_hmrc_stats.py` data pipeline
-- [ ] Build `fetch_wid_data.py` data pipeline
+- [x] Build `fetch_ons_wealth.py` data pipeline [completed: 2026-05-15]
+- [x] Build `fetch_hmrc_stats.py` data pipeline [completed: 2026-05-14]
+- [x] Build `fetch_wid_data.py` data pipeline [completed: 2026-05-14]
 - [ ] Build reliable spreadsheet parsers for high-value XLSX/ODS wealth releases
 - [ ] Set up DWP Stat-Xplore API access (free registration + key)
 - [ ] Set up Companies House API key (free, 600 req/5min)
-- [ ] Ingest Bank of England IADB series via parameterised CSV URLs
+- [x] Ingest Bank of England IADB series via parameterised CSV URLs [completed: 2026-05-16 — fetch_boe_rates.py]
 - [ ] Ingest ONS Beta API datasets (JSON, rate limit 120 req/10s)
 - [ ] Ingest HMRC tax receipts and NICs annual bulletin CSV
-- [ ] Ingest ONS housing affordability XLSX
+- [x] Ingest ONS housing affordability XLSX [completed: 2026-05-14 — fetch_ons_housing.py]
 - [ ] Ingest Land Registry Price Paid Data CSV (~5GB)
-- [ ] Set up Nomis API for GDHI data (no auth required)
+- [x] Set up Nomis API for GDHI data (no auth required) [completed: 2026-05-16 — fetch_ons_gdhi.py]
 - [ ] Build pdfplumber parser for HMRC Personal Wealth Statistics PDF tables
 - [ ] Ingest High Pay Centre CEO pay data from PDF (manual data entry)
-- [ ] Build `chart_to_social.py` — auto-generate platform-sized images from chart data
-- [ ] Set up GitHub Action: `weekly-data-update.yml`
-- [ ] Set up GitHub Action: `deploy.yml` (auto-deploy on push)
+- [x] Build `chart_to_social.py` — auto-generate platform-sized images from chart data [completed: 2026-05-15]
+- [x] Set up GitHub Action: `weekly-data-update.yml` [completed: 2026-05-16]
+- [x] Set up GitHub Action: `deploy.yml` (auto-deploy on push) [completed: 2026-05-15]
 - [ ] Build research automation: `summarise_research.py` (Claude API)
-- [ ] Build research automation: `extract_action_items.py`
+- [x] Build research automation: `extract_action_items.py` [completed: 2026-05-15]
 
 ## Build: WP Pathway Explorer
 
@@ -119,12 +119,12 @@ Every concrete action item extracted from research. Triage into active-sprint, b
 
 ## Outreach: Emails to Send
 
-- [ ] Email Tax Justice UK (info@taxjustice.uk) with prototype link [after v0.1 deployed]
-- [ ] Contact Patriotic Millionaires UK via website contact form [after v0.1 deployed]
-- [ ] Email The Equality Trust (info@equalitytrust.org.uk) [after v0.1 deployed]
-- [ ] DM Gary Stevenson (@garyseconomics) on X with prototype link [after v0.1 deployed]
-- [ ] Email mySociety (whofundsthem@mysociety.org) to join volunteer cohort [can send now]
-- [ ] Email Democracy Club (hello@democracyclub.org.uk) [can send now]
+- [ ] Email Tax Justice UK (info@taxjustice.uk) with prototype link [UNBLOCKED — v0.1 is live]
+- [ ] Contact Patriotic Millionaires UK via website contact form [UNBLOCKED — v0.1 is live]
+- [ ] Email The Equality Trust (info@equalitytrust.org.uk) [UNBLOCKED — v0.1 is live]
+- [ ] DM Gary Stevenson (@garyseconomics) on X with prototype link [UNBLOCKED — v0.1 is live]
+- [x] Email mySociety (whofundsthem@mysociety.org) to join volunteer cohort [completed: 2026-05-14]
+- [x] Email Democracy Club (hello@democracyclub.org.uk) [completed: 2026-05-14]
 - [ ] Email Common Wealth (info@common-wealth.org) with proposal [after building CH/LR tool]
 - [ ] Email Arun Advani at CenTax (a.advani.1@warwick.ac.uk) [after publishing original analysis]
 - [ ] Email Max Lawson at Oxfam (max.lawson@oxfam.org) [after building widget]
@@ -206,8 +206,8 @@ Every concrete action item extracted from research. Triage into active-sprint, b
 
 ## Content: Social Media and Writing
 
-- [ ] Create Twitter/X account with bio and pinned manifesto thread (5-7 tweets)
-- [ ] Create Bluesky account
+- [x] Create Twitter/X account with bio and pinned manifesto thread (5-7 tweets) [completed: 2026-05-14]
+- [x] Create Bluesky account [completed: 2026-05-14]
 - [ ] Update LinkedIn headline and About section per rebranding playbook
 - [ ] Add WealthLens to LinkedIn experience
 - [ ] Update LinkedIn Featured section (WealthLens, Springer pub, WP post, Taskdeck)
@@ -282,7 +282,7 @@ Every concrete action item extracted from research. Triage into active-sprint, b
 - [ ] Create people/roles.md defining available roles
 - [ ] Create people/thank-yous.md recognition log
 - [ ] Create Discord server (delay until prototype exists): #general, #engineering, #data-research, #design, #content, #introductions
-- [ ] Write "About" page copy for future website
+- [x] Write "About" page copy for future website [completed: 2026-05-16 — AboutView.vue on frontend]
 
 ## Personal Brand
 
