@@ -1,0 +1,27 @@
+services:
+  backend:
+    build:
+      context: projects/wealthlens-dashboard/backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data/processed:/data/processed:ro
+      - ./projects/wealthlens-dashboard/backend/app:/app/app
+    environment:
+      - CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+
+  frontend:
+    build:
+      context: projects/wealthlens-dashboard/frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    # Note: Vite's dev proxy (/api -> 127.0.0.1:8000) won't work in Docker
+    # because 127.0.0.1 refers to the container itself. For Docker dev,
+    # access the backend API directly at http://localhost:8000.
+    environment:
+      - VITE_API_BASE_URL=http://localhost:8000
+    volumes:
+      - ./projects/wealthlens-dashboard/frontend/src:/app/src
+      - ./projects/wealthlens-dashboard/frontend/public:/app/public
