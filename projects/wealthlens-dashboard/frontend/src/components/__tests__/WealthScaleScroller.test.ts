@@ -10,7 +10,7 @@ const mockObserve = vi.fn();
 const mockDisconnect = vi.fn();
 
 class MockResizeObserver {
-  constructor(_cb: ResizeObserverCallback) {
+  constructor() {
     // no-op
   }
   observe = mockObserve;
