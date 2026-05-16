@@ -40,6 +40,11 @@ function mountNavBar() {
   })
 }
 
+function isMobileNavHidden(wrapper: ReturnType<typeof mount>) {
+  const nav = wrapper.find('#mobile-nav')
+  return nav.attributes('style')?.includes('display: none') ?? false
+}
+
 describe('NavBar', () => {
   it('renders the brand text', () => {
     setRoute('/')
@@ -74,43 +79,54 @@ describe('NavBar', () => {
     expect(texts).toContain('Dashboard')
   })
 
-  it('has a GitHub external link', () => {
-    setRoute('/')
+  it('does not mark a link as active on a prefix-only match', () => {
+    setRoute('/charts/wealth-shares-extended')
     const wrapper = mountNavBar()
-    const ghLink = wrapper.find('a[href*="github.com"]')
-    expect(ghLink.exists()).toBe(true)
-    expect(ghLink.attributes('target')).toBe('_blank')
-    expect(ghLink.attributes('rel')).toBe('noopener')
+    const links = wrapper.findAll('a[aria-current="page"]')
+    const texts = links.map((l) => l.text())
+    expect(texts).not.toContain('Wealth Shares')
   })
 
-  it('toggles mobile menu on button click', async () => {
+  it('has GitHub external links with correct rel attributes', () => {
+    setRoute('/')
+    const wrapper = mountNavBar()
+    const ghLinks = wrapper.findAll('a[href*="github.com"]')
+    expect(ghLinks.length).toBeGreaterThanOrEqual(2)
+    for (const link of ghLinks) {
+      expect(link.attributes('target')).toBe('_blank')
+      expect(link.attributes('rel')).toBe('noopener noreferrer')
+    }
+  })
+
+  it('toggles mobile menu visibility on button click', async () => {
     setRoute('/')
     const wrapper = mountNavBar()
     const btn = wrapper.find('button[aria-label="Toggle navigation menu"]')
     expect(btn.attributes('aria-expanded')).toBe('false')
-    expect(wrapper.find('#mobile-nav').exists()).toBe(false)
+    expect(isMobileNavHidden(wrapper)).toBe(true)
 
     await btn.trigger('click')
     expect(btn.attributes('aria-expanded')).toBe('true')
-    expect(wrapper.find('#mobile-nav').exists()).toBe(true)
+    expect(isMobileNavHidden(wrapper)).toBe(false)
   })
 
-  it('closes mobile menu when a mobile link is clicked', async () => {
+  it('hides mobile menu when a mobile link is clicked', async () => {
     setRoute('/')
     const wrapper = mountNavBar()
     const btn = wrapper.find('button[aria-label="Toggle navigation menu"]')
     await btn.trigger('click')
-    expect(wrapper.find('#mobile-nav').exists()).toBe(true)
+    expect(isMobileNavHidden(wrapper)).toBe(false)
 
     const mobileLinks = wrapper.findAll('#mobile-nav a')
     expect(mobileLinks.length).toBeGreaterThan(0)
     await mobileLinks[0].trigger('click')
-    expect(wrapper.find('#mobile-nav').exists()).toBe(false)
+    expect(isMobileNavHidden(wrapper)).toBe(true)
   })
 
-  it('has correct aria-controls on the mobile toggle button', () => {
+  it('mobile-nav always exists in DOM for aria-controls', () => {
     setRoute('/')
     const wrapper = mountNavBar()
+    expect(wrapper.find('#mobile-nav').exists()).toBe(true)
     const btn = wrapper.find('button[aria-label="Toggle navigation menu"]')
     expect(btn.attributes('aria-controls')).toBe('mobile-nav')
   })
@@ -121,5 +137,16 @@ describe('NavBar', () => {
     const desktopNav = wrapper.find('nav[aria-label="Main navigation"]')
     expect(desktopNav.classes()).toContain('hidden')
     expect(desktopNav.classes()).toContain('md:flex')
+  })
+
+  it('includes sr-only "opens in new tab" text for GitHub links', () => {
+    setRoute('/')
+    const wrapper = mountNavBar()
+    const ghLinks = wrapper.findAll('a[href*="github.com"]')
+    for (const link of ghLinks) {
+      const srOnly = link.find('.sr-only')
+      expect(srOnly.exists()).toBe(true)
+      expect(srOnly.text()).toBe('(opens in new tab)')
+    }
   })
 })

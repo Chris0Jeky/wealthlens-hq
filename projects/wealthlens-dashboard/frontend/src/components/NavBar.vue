@@ -15,7 +15,7 @@ const navLinks = [
 
 function isActive(to: string): boolean {
   if (to === '/') return route.path === '/'
-  return route.path.startsWith(to)
+  return route.path === to || route.path.startsWith(to + '/')
 }
 
 function closeMobile() {
@@ -56,17 +56,18 @@ function closeMobile() {
           <a
             href="https://github.com/Chris0Jeky/wealthlens-hq"
             target="_blank"
-            rel="noopener"
+            rel="noopener noreferrer"
             class="ml-2 px-3 py-1.5 text-sm text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
           >
             GitHub
+            <span class="sr-only">(opens in new tab)</span>
           </a>
         </nav>
 
         <button
           type="button"
           class="md:hidden p-2 rounded text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-          :aria-expanded="mobileOpen"
+          :aria-expanded="mobileOpen ? 'true' : 'false'"
           aria-controls="mobile-nav"
           aria-label="Toggle navigation menu"
           @click="mobileOpen = !mobileOpen"
@@ -97,7 +98,7 @@ function closeMobile() {
       </div>
 
       <nav
-        v-if="mobileOpen"
+        v-show="mobileOpen"
         id="mobile-nav"
         aria-label="Mobile navigation"
         class="md:hidden pb-3 space-y-1"
@@ -120,10 +121,11 @@ function closeMobile() {
         <a
           href="https://github.com/Chris0Jeky/wealthlens-hq"
           target="_blank"
-          rel="noopener"
+          rel="noopener noreferrer"
           class="block px-3 py-2 text-sm text-gray-500 hover:text-gray-900 dark:text-gray-400"
         >
           GitHub &nearr;
+          <span class="sr-only">(opens in new tab)</span>
         </a>
       </nav>
     </div>
