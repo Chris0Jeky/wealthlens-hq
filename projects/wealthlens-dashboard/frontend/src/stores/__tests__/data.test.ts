@@ -88,7 +88,7 @@ describe("useDataStore", () => {
       expect(store.datasets).toEqual([]);
     });
 
-    it("handles concurrent fetchDatasets calls (last wins)", async () => {
+    it("last-resolved fetch overwrites datasets (no cancellation)", async () => {
       let resolveFirst!: (v: Response) => void;
       let resolveSecond!: (v: Response) => void;
 
@@ -104,6 +104,7 @@ describe("useDataStore", () => {
       resolveFirst({ ok: true, json: async () => ({ datasets: ["first"] }) } as Response);
 
       await Promise.all([p1, p2]);
+      expect(store.datasets).toEqual(["first"]);
       expect(store.loading).toBe(false);
       expect(store.error).toBeNull();
     });
@@ -136,18 +137,17 @@ describe("useDataStore", () => {
       expect(store.loading).toBe(false);
     });
 
-    it("stores empty datasets array without error", async () => {
+    it("sets datasets to undefined when response lacks datasets key", async () => {
       vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ datasets: [] }),
+        json: async () => ({}),
       } as Response);
 
       const store = useDataStore();
       await store.fetchDatasets();
-
-      expect(store.datasets).toEqual([]);
+      // Store blindly assigns json.datasets — documents current behavior
+      expect(store.datasets).toBeUndefined();
       expect(store.error).toBeNull();
-      expect(store.loading).toBe(false);
     });
   });
 
@@ -194,16 +194,11 @@ describe("useDataStore", () => {
       );
     });
 
-    it("constructs correct URL for hyphenated dataset names", async () => {
-      vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ data: [] }),
-      } as Response);
+    it("propagates network errors to caller", async () => {
+      vi.spyOn(globalThis, "fetch").mockRejectedValueOnce(new Error("Network error"));
 
       const store = useDataStore();
-      await store.fetchDataset("housing-affordability");
-
-      expect(globalThis.fetch).toHaveBeenCalledWith("/api/data/housing-affordability");
+      await expect(store.fetchDataset("any-dataset")).rejects.toThrow("Network error");
     });
 
     it("returns empty data array without error", async () => {
