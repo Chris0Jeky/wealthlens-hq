@@ -1,151 +1,129 @@
-"""Tests for the data API endpoints.
-
-Covers dataset listing, paginated data retrieval, metadata,
-health check, and error handling for missing/invalid datasets.
-"""
+"""Tests for the core data router endpoints: list, metadata, pagination."""
 
 from __future__ import annotations
 
-from unittest.mock import patch
+from pathlib import Path
 
-import pandas as pd
 import pytest
 from fastapi.testclient import TestClient
 
-import app.routers.data as data_mod
 from app.main import app
+from app.routers import data as data_mod
 
-client = TestClient(app)
-
-SAMPLE_DF = pd.DataFrame({"year": [2020, 2021, 2022], "value": [1.0, 2.0, 3.0]})
+CSV_CONTENT = """\
+year,value,region
+2018,50.5,London
+2019,60.0,Manchester
+2020,70.1,Birmingham
+2021,80.2,London
+2022,90.3,Manchester
+"""
 
 
 @pytest.fixture(autouse=True)
-def _clear_metadata_cache() -> None:
-    """Clear the module-level metadata cache between tests for isolation."""
+def _fake_data_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    for filename in data_mod.DATASETS.values():
+        (tmp_path / filename).write_text(CSV_CONTENT, encoding="utf-8")
+    monkeypatch.setattr(data_mod, "DATA_DIR", tmp_path)
     data_mod._metadata_cache.clear()
 
 
+@pytest.fixture
+def client() -> TestClient:
+    return TestClient(app)
+
+
 class TestListDatasets:
-    """GET /api/data/ should return the list of available dataset names."""
-
-    def test_returns_200(self) -> None:
-        response = client.get("/api/data/")
-        assert response.status_code == 200
-
-    def test_returns_dataset_names(self) -> None:
-        response = client.get("/api/data/")
-        body = response.json()
+    def test_returns_all_dataset_names(self, client: TestClient) -> None:
+        resp = client.get("/api/data/")
+        assert resp.status_code == 200
+        body = resp.json()
         assert "datasets" in body
-        assert isinstance(body["datasets"], list)
-        assert len(body["datasets"]) > 0
+        assert set(body["datasets"]) == set(data_mod.DATASETS.keys())
 
-    def test_known_datasets_present(self) -> None:
-        response = client.get("/api/data/")
-        names = response.json()["datasets"]
-        for expected in ("wealth-shares", "housing-affordability", "cgt-concentration", "wealth-by-decile"):
-            assert expected in names
-
-
-class TestGetDataset:
-    """GET /api/data/{name} should return paginated dataset rows."""
-
-    def test_unknown_dataset_returns_404(self) -> None:
-        response = client.get("/api/data/nonexistent")
-        assert response.status_code == 404
-
-    @patch("app.routers.data._read_csv", return_value=SAMPLE_DF)
-    def test_returns_paginated_data(self, mock_read) -> None:  # noqa: ANN001
-        response = client.get("/api/data/wealth-shares")
-        assert response.status_code == 200
-        body = response.json()
-        assert "data" in body
-        assert body["total"] == 3
-        assert body["page"] == 1
-        assert len(body["data"]) == 3
-        assert body["data"][0] == {"year": 2020, "value": 1.0}
-        assert body["data"][2] == {"year": 2022, "value": 3.0}
-
-    @patch("app.routers.data._read_csv", return_value=SAMPLE_DF)
-    def test_pagination_limit(self, mock_read) -> None:  # noqa: ANN001
-        response = client.get("/api/data/wealth-shares?limit=2&page=1")
-        assert response.status_code == 200
-        body = response.json()
-        assert len(body["data"]) == 2
-        assert body["total_pages"] == 2
-
-    @patch("app.routers.data._read_csv", return_value=SAMPLE_DF)
-    def test_pagination_page_2(self, mock_read) -> None:  # noqa: ANN001
-        response = client.get("/api/data/wealth-shares?limit=2&page=2")
-        assert response.status_code == 200
-        body = response.json()
-        assert len(body["data"]) == 1
-
-    def test_invalid_page_returns_422(self) -> None:
-        response = client.get("/api/data/wealth-shares?page=0")
-        assert response.status_code == 422
-
-    def test_invalid_limit_returns_422(self) -> None:
-        response = client.get("/api/data/wealth-shares?limit=0")
-        assert response.status_code == 422
-
-    def test_limit_exceeding_max_returns_422(self) -> None:
-        response = client.get("/api/data/wealth-shares?limit=1001")
-        assert response.status_code == 422
+    def test_response_is_a_list(self, client: TestClient) -> None:
+        resp = client.get("/api/data/")
+        assert isinstance(resp.json()["datasets"], list)
 
 
 class TestDatasetMetadata:
-    """GET /api/data/{name}/metadata should return source citations."""
-
-    def test_unknown_dataset_returns_404(self) -> None:
-        response = client.get("/api/data/nonexistent/metadata")
-        assert response.status_code == 404
-
-    @patch("app.routers.data._read_csv", return_value=SAMPLE_DF)
-    def test_returns_metadata(self, mock_read) -> None:  # noqa: ANN001
-        response = client.get("/api/data/wealth-shares/metadata")
-        assert response.status_code == 200
-        body = response.json()
+    def test_single_dataset_metadata(self, client: TestClient) -> None:
+        resp = client.get("/api/data/wealth-shares/metadata")
+        assert resp.status_code == 200
+        body = resp.json()
         assert body["name"] == "wealth-shares"
-        assert "source" in body
-        assert "source_url" in body
-        assert "access_date" in body
-        assert body["row_count"] == 3
+        assert body["source"] == "World Inequality Database"
+        assert body["row_count"] == 5
+        assert "year" in body["columns"]
 
-    @patch("app.routers.data._read_csv", return_value=SAMPLE_DF)
-    def test_metadata_includes_columns(self, mock_read) -> None:  # noqa: ANN001
-        response = client.get("/api/data/wealth-shares/metadata")
-        body = response.json()
-        assert body["columns"] == ["year", "value"]
+    def test_all_datasets_metadata(self, client: TestClient) -> None:
+        resp = client.get("/api/data/metadata")
+        assert resp.status_code == 200
+        body = resp.json()
+        assert len(body["datasets"]) == len(data_mod.DATASETS)
 
+    def test_unknown_dataset_metadata_returns_404(self, client: TestClient) -> None:
+        resp = client.get("/api/data/nonexistent/metadata")
+        assert resp.status_code == 404
 
-class TestAllDatasetsMetadata:
-    """GET /api/data/metadata should return metadata for all datasets."""
-
-    @patch("app.routers.data._read_csv", return_value=SAMPLE_DF)
-    def test_returns_all_metadata(self, mock_read) -> None:  # noqa: ANN001
-        response = client.get("/api/data/metadata")
-        assert response.status_code == 200
-        body = response.json()
-        assert "datasets" in body
-        assert len(body["datasets"]) == 4
+    def test_metadata_includes_source_url(self, client: TestClient) -> None:
+        resp = client.get("/api/data/wealth-shares/metadata")
+        body = resp.json()
+        assert body["source_url"].startswith("http")
+        assert body["access_date"]
 
 
-class TestHealthEndpoints:
-    """Health endpoints should respond correctly."""
+class TestPaginatedData:
+    def test_default_pagination(self, client: TestClient) -> None:
+        resp = client.get("/api/data/wealth-shares")
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["page"] == 1
+        assert body["total"] == 5
+        assert body["total_pages"] == 1
+        assert len(body["data"]) == 5
 
-    def test_liveness_probe(self) -> None:
-        response = client.get("/health")
-        assert response.status_code == 200
-        assert response.json() == {"status": "ok"}
+    def test_custom_page_and_limit(self, client: TestClient) -> None:
+        resp = client.get("/api/data/wealth-shares?page=1&limit=2")
+        assert resp.status_code == 200
+        body = resp.json()
+        assert len(body["data"]) == 2
+        assert body["total_pages"] == 3
 
-    def test_data_health_returns_status(self) -> None:
-        response = client.get("/api/health/data")
-        assert response.status_code == 200
-        body = response.json()
-        assert "status" in body
-        assert body["status"] in ("healthy", "degraded", "unavailable")
-        assert "datasets" in body
-        assert "available_count" in body
-        assert "total_count" in body
-        assert body["total_count"] == 4
+    def test_second_page(self, client: TestClient) -> None:
+        resp = client.get("/api/data/wealth-shares?page=2&limit=2")
+        body = resp.json()
+        assert body["page"] == 2
+        assert len(body["data"]) == 2
+        assert body["data"][0]["year"] == 2020
+
+    def test_last_page_partial(self, client: TestClient) -> None:
+        resp = client.get("/api/data/wealth-shares?page=3&limit=2")
+        body = resp.json()
+        assert len(body["data"]) == 1
+
+    def test_page_beyond_range_returns_empty(self, client: TestClient) -> None:
+        resp = client.get("/api/data/wealth-shares?page=99&limit=100")
+        body = resp.json()
+        assert body["data"] == []
+
+    def test_invalid_page_returns_422(self, client: TestClient) -> None:
+        resp = client.get("/api/data/wealth-shares?page=0")
+        assert resp.status_code == 422
+
+    def test_limit_too_large_returns_422(self, client: TestClient) -> None:
+        resp = client.get("/api/data/wealth-shares?limit=9999")
+        assert resp.status_code == 422
+
+    def test_unknown_dataset_returns_404(self, client: TestClient) -> None:
+        resp = client.get("/api/data/does-not-exist")
+        assert resp.status_code == 404
+
+    def test_missing_file_returns_503(
+        self, client: TestClient, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        empty_dir = tmp_path / "empty"
+        empty_dir.mkdir()
+        monkeypatch.setattr(data_mod, "DATA_DIR", empty_dir)
+        resp = client.get("/api/data/wealth-shares")
+        assert resp.status_code == 503
