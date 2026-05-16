@@ -18,6 +18,7 @@ from app.lifespan import lifespan
 from app.logging_config import setup_logging
 from app.logging_middleware import RequestLoggingMiddleware
 from app.middleware import SecurityHeadersMiddleware
+from app.rate_limit import RateLimitMiddleware
 from app.routers import data
 from app.timeout_middleware import TimeoutMiddleware
 
@@ -63,6 +64,10 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.add_middleware(
+    RateLimitMiddleware,
+    requests_per_minute=int(os.environ.get("RATE_LIMIT_RPM", "60")),
+)
 app.add_middleware(TimeoutMiddleware)
 
 app.add_middleware(

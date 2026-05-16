@@ -3,11 +3,16 @@
 from __future__ import annotations
 
 import importlib
+import os
 import sys
 from pathlib import Path
 from types import ModuleType
 
 import pytest
+
+# Disable rate limiting during tests — the test client fires many requests
+# from a single IP within a single second.
+os.environ.setdefault("RATE_LIMIT_RPM", "10000")
 
 
 @pytest.fixture()
