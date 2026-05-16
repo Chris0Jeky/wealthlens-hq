@@ -21,7 +21,7 @@ ANALYSIS_DIR := automation/analysis
 
 .PHONY: help install lint format test dev-backend dev-frontend \
         ci-quick ci-full \
-        frontend-install frontend-build frontend-dev frontend-lint frontend-typecheck \
+        frontend-install frontend-build frontend-dev frontend-lint frontend-typecheck frontend-test \
         backend-install backend-test backend-lint backend-format \
         pipeline-test pipelines clean
 
@@ -63,6 +63,9 @@ frontend-lint: ## Lint frontend with ESLint + Prettier
 frontend-typecheck: ## Type-check frontend with vue-tsc
 	cd $(FRONTEND_DIR) && npx vue-tsc --noEmit 2>/dev/null || echo "No frontend code yet"
 
+frontend-test: ## Run frontend vitest suite
+	cd $(FRONTEND_DIR) && npm run test 2>/dev/null || echo "No frontend tests yet"
+
 # ── Data pipelines ────────────────────────────────────────────────────────
 pipeline-test: ## Test data pipeline scripts
 	$(PYTHON) $(PIPELINE_DIR)/fetch_ons_wealth.py 2>/dev/null || echo "Pipeline stubs only"
@@ -83,7 +86,7 @@ install: backend-install frontend-install ## Install all dependencies
 
 lint: backend-lint ## Run all linters
 format: backend-format ## Auto-format all code
-test: backend-test ## Run all tests
+test: backend-test frontend-test ## Run all tests
 
 dev-frontend: ## Alias for frontend dev server
 	cd $(FRONTEND_DIR) && npm run dev
@@ -92,7 +95,7 @@ dev-frontend: ## Alias for frontend dev server
 ci-quick: backend-lint backend-test ## Pre-push gate (~60s, no external deps)
 	@echo "ci-quick passed"
 
-ci-full: backend-lint backend-test frontend-build frontend-typecheck ## Full CI (~3 min)
+ci-full: backend-lint backend-test frontend-test frontend-build frontend-typecheck ## Full CI (~3 min)
 	@echo "ci-full passed"
 
 # ── Hooks ─────────────────────────────────────────────────────────────────
