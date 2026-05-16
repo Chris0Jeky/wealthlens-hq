@@ -8,9 +8,19 @@ describe('ProgressBar', () => {
     expect(wrapper.find('[role="progressbar"]').exists()).toBe(true)
   })
 
-  it('sets aria-valuenow to the value prop', () => {
+  it('sets aria-valuenow to clamped value', () => {
     const wrapper = mount(ProgressBar, { props: { value: 42 } })
     expect(wrapper.find('[role="progressbar"]').attributes('aria-valuenow')).toBe('42')
+  })
+
+  it('clamps aria-valuenow when value exceeds max', () => {
+    const wrapper = mount(ProgressBar, { props: { value: 200, max: 100 } })
+    expect(Number(wrapper.find('[role="progressbar"]').attributes('aria-valuenow'))).toBeLessThanOrEqual(100)
+  })
+
+  it('clamps aria-valuenow when value is negative', () => {
+    const wrapper = mount(ProgressBar, { props: { value: -10, max: 100 } })
+    expect(Number(wrapper.find('[role="progressbar"]').attributes('aria-valuenow'))).toBeGreaterThanOrEqual(0)
   })
 
   it('sets aria-valuemax to the max prop', () => {
@@ -24,10 +34,16 @@ describe('ProgressBar', () => {
     expect(bar.attributes('style')).toContain('width: 50%')
   })
 
-  it('clamps percentage to 0-100', () => {
+  it('clamps width to 0-100%', () => {
     const wrapper = mount(ProgressBar, { props: { value: 200 } })
     const bar = wrapper.find('[role="progressbar"] > div')
     expect(bar.attributes('style')).toContain('width: 100%')
+  })
+
+  it('clamps to 0% when value is negative', () => {
+    const wrapper = mount(ProgressBar, { props: { value: -5, max: 100 } })
+    const bar = wrapper.find('[role="progressbar"] > div')
+    expect(bar.attributes('style')).toContain('width: 0%')
   })
 
   it('handles zero max gracefully', () => {
@@ -46,10 +62,17 @@ describe('ProgressBar', () => {
     expect(wrapper.text()).not.toContain('75%')
   })
 
-  it('shows label when provided', () => {
+  it('uses aria-labelledby when label is provided', () => {
     const wrapper = mount(ProgressBar, { props: { value: 30, label: 'Loading data' } })
     expect(wrapper.text()).toContain('Loading data')
-    expect(wrapper.find('[role="progressbar"]').attributes('aria-label')).toBe('Loading data')
+    const bar = wrapper.find('[role="progressbar"]')
+    expect(bar.attributes('aria-labelledby')).toBeTruthy()
+    expect(bar.attributes('aria-label')).toBeUndefined()
+  })
+
+  it('uses aria-label fallback when no label provided', () => {
+    const wrapper = mount(ProgressBar, { props: { value: 30 } })
+    expect(wrapper.find('[role="progressbar"]').attributes('aria-label')).toBe('Progress')
   })
 
   it('applies size class', () => {
