@@ -21,7 +21,7 @@ import {
 } from "echarts/components";
 import VChart from "vue-echarts";
 import { useChartData } from "@/composables/useChartData";
-import { escapeHtml, safeMinMax } from "@/utils/chart";
+import { escapeHtml, safeMinMax, warnIfSignificantDataLoss } from "@/utils/chart";
 
 // Register only the ECharts modules we need (tree-shaking)
 use([
@@ -48,14 +48,16 @@ const COLOR_CPI = "#dc2626"; // Red — ~4.6:1
 
 /** Sorted data extracted from rows. */
 const chartData = computed(() => {
-  const sorted = rows.value
-    .map((r) => ({
-      date: String(r.date ?? ""),
-      bankRate: Number(r.bank_rate),
-      cpi: Number(r.cpi_annual),
-    }))
+  const mapped = rows.value.map((r) => ({
+    date: String(r.date ?? ""),
+    bankRate: Number(r.bank_rate),
+    cpi: Number(r.cpi_annual),
+  }));
+  const sorted = mapped
     .filter((r) => r.date && !isNaN(r.bankRate) && !isNaN(r.cpi))
     .sort((a, b) => a.date.localeCompare(b.date));
+
+  warnIfSignificantDataLoss("boe-rates", mapped.length, sorted.length);
 
   return {
     dates: sorted.map((r) => {

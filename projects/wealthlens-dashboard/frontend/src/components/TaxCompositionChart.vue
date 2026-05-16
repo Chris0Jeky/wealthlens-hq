@@ -21,7 +21,7 @@ import {
 } from "echarts/components";
 import VChart from "vue-echarts";
 import { useChartData } from "@/composables/useChartData";
-import { escapeHtml } from "@/utils/chart";
+import { escapeHtml, warnIfSignificantDataLoss } from "@/utils/chart";
 
 // Register only the ECharts modules we need (tree-shaking)
 use([
@@ -51,18 +51,19 @@ const COLOR_SDLT = "#b45309"; // Amber — ~4.7:1
 
 /** Sorted data extracted from rows. */
 const chartData = computed(() => {
-  const sorted = rows.value
-    .map((r) => ({
-      year: String(r.year ?? ""),
-      incomeTax: Number(r.income_tax_bn),
-      nics: Number(r.nics_bn),
-      cgt: Number(r.cgt_bn),
-      iht: Number(r.iht_bn),
-      sdlt: Number(r.sdlt_bn),
-      workPct: Number(r.work_pct),
-      wealthPct: Number(r.wealth_pct),
-    }))
-    .filter((r) => r.year && !isNaN(r.incomeTax));
+  const mapped = rows.value.map((r) => ({
+    year: String(r.year ?? ""),
+    incomeTax: Number(r.income_tax_bn),
+    nics: Number(r.nics_bn),
+    cgt: Number(r.cgt_bn),
+    iht: Number(r.iht_bn),
+    sdlt: Number(r.sdlt_bn),
+    workPct: Number(r.work_pct),
+    wealthPct: Number(r.wealth_pct),
+  }));
+  const sorted = mapped.filter((r) => r.year && !isNaN(r.incomeTax));
+
+  warnIfSignificantDataLoss("tax-composition", mapped.length, sorted.length);
 
   return {
     years: sorted.map((r) => r.year),

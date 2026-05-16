@@ -21,7 +21,7 @@ import {
 } from "echarts/components";
 import VChart from "vue-echarts";
 import { useChartData } from "@/composables/useChartData";
-import { escapeHtml, safeMinMax } from "@/utils/chart";
+import { escapeHtml, safeMinMax, warnIfSignificantDataLoss } from "@/utils/chart";
 
 // Register only the ECharts modules we need (tree-shaking)
 use([
@@ -50,15 +50,17 @@ const COLOR_NATIONAL_AVG = "#374151"; // Dark gray for reference line
 
 /** Sorted data extracted from rows (sorted by poverty rate descending). */
 const chartData = computed(() => {
-  const sorted = rows.value
-    .map((r) => ({
-      region: String(r.region ?? ""),
-      povertyPct: Number(r.child_poverty_pct),
-      childrenInPoverty: Number(r.children_in_poverty),
-      aboveAvg: Boolean(r.above_national_avg),
-    }))
+  const mapped = rows.value.map((r) => ({
+    region: String(r.region ?? ""),
+    povertyPct: Number(r.child_poverty_pct),
+    childrenInPoverty: Number(r.children_in_poverty),
+    aboveAvg: Boolean(r.above_national_avg),
+  }));
+  const sorted = mapped
     .filter((r) => r.region && !isNaN(r.povertyPct))
     .sort((a, b) => b.povertyPct - a.povertyPct);
+
+  warnIfSignificantDataLoss("child-poverty", mapped.length, sorted.length);
 
   // Extract national average from the first row (all rows have same value)
   const nationalAvg = rows.value.length > 0 ? Number(rows.value[0].national_avg_pct) : 0;

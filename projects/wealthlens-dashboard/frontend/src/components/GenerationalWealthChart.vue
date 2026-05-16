@@ -21,7 +21,7 @@ import {
 } from "echarts/components";
 import VChart from "vue-echarts";
 import { useChartData } from "@/composables/useChartData";
-import { escapeHtml, safeMinMax } from "@/utils/chart";
+import { escapeHtml, safeMinMax, warnIfSignificantDataLoss } from "@/utils/chart";
 
 // Register only the ECharts modules we need (tree-shaking)
 use([
@@ -52,6 +52,7 @@ const chartData = computed(() => {
   // Group by generation
   const generations = new Map<string, { age: number; wealth: number; projected: boolean }[]>();
   const generationOrder: string[] = [];
+  let skippedRows = 0;
 
   for (const row of rows.value) {
     const gen = String(row.generation ?? "");
@@ -59,7 +60,10 @@ const chartData = computed(() => {
     const wealth = Number(row.median_wealth_gbp);
     const projected = Boolean(row.projected);
 
-    if (!gen || isNaN(age) || isNaN(wealth)) continue;
+    if (!gen || isNaN(age) || isNaN(wealth)) {
+      skippedRows++;
+      continue;
+    }
 
     if (!generations.has(gen)) {
       generations.set(gen, []);
@@ -67,6 +71,8 @@ const chartData = computed(() => {
     }
     generations.get(gen)!.push({ age, wealth, projected });
   }
+
+  warnIfSignificantDataLoss("generational-wealth", rows.value.length, rows.value.length - skippedRows);
 
   // Sort each generation by age
   for (const data of generations.values()) {

@@ -21,7 +21,7 @@ import {
 } from "echarts/components";
 import VChart from "vue-echarts";
 import { useChartData } from "@/composables/useChartData";
-import { escapeHtml, safeMinMax } from "@/utils/chart";
+import { escapeHtml, safeMinMax, warnIfSignificantDataLoss } from "@/utils/chart";
 
 // Register only the ECharts modules we need (tree-shaking)
 use([
@@ -49,13 +49,15 @@ const COLOR_UK_AVG = "#b91c1c"; // Red-700 — ~5.7:1
 
 /** Sorted data extracted from rows (sorted by GDHI descending). */
 const chartData = computed(() => {
-  const sorted = rows.value
-    .map((r) => ({
-      region: String(r.region ?? ""),
-      gdhi: Number(r.gdhi_per_head),
-    }))
+  const mapped = rows.value.map((r) => ({
+    region: String(r.region ?? ""),
+    gdhi: Number(r.gdhi_per_head),
+  }));
+  const sorted = mapped
     .filter((r) => r.region && !isNaN(r.gdhi) && r.region !== "United Kingdom")
     .sort((a, b) => b.gdhi - a.gdhi);
+
+  warnIfSignificantDataLoss("gdhi-by-region", mapped.length, sorted.length);
 
   // Extract the UK average for reference line
   const ukRow = rows.value.find((r) => String(r.region) === "United Kingdom");
