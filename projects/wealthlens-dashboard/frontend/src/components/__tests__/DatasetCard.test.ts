@@ -84,4 +84,10 @@ describe('DatasetCard', () => {
     const wrapper = factory({ name: 'unknown', description: 'D', hasChart: true })
     expect(wrapper.text()).toContain('View Chart')
   })
+
+  it("renders a details link to the dataset page", () => {
+    const wrapper = factory();
+    expect(wrapper.text()).toContain("Details");
+    expect(wrapper.html()).toContain('/datasets/wealth-shares');
+  });
 });

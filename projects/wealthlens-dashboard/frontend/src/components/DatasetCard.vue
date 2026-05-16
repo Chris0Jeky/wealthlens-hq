@@ -25,6 +25,12 @@ const downloadUrl = `/api/data/${props.name}/download`
     <p class="text-sm text-[var(--wl-ink-muted)] mb-3">{{ description }}</p>
     <div class="flex items-center gap-4">
       <router-link
+        :to="`/datasets/${name}`"
+        class="inline-flex items-center text-sm font-medium text-[var(--wl-ink-muted)] hover:text-[var(--wl-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--wl-red)] focus:ring-offset-2 rounded"
+      >
+        Details
+      </router-link>
+      <router-link
         v-if="chartAvailable"
         :to="`/charts/${name}`"
         :aria-label="`View ${name} chart`"
