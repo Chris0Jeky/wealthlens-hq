@@ -18,6 +18,7 @@ from fastapi import APIRouter, HTTPException, Query
 
 from app.routers.schemas import (
     AllDatasetsMetadataResponse,
+    DatasetColumnsResponse,
     DatasetListResponse,
     DatasetMetadataResponse,
     PaginatedDatasetResponse,
@@ -233,6 +234,26 @@ def dataset_metadata(dataset_name: str) -> dict[str, Any]:
     if dataset_name not in DATASETS:
         raise HTTPException(status_code=404, detail=f"Unknown dataset: {dataset_name}")
     return _build_metadata(dataset_name)
+
+
+@router.get("/{dataset_name}/columns", response_model=DatasetColumnsResponse)
+def dataset_columns(dataset_name: str) -> dict[str, Any]:
+    """Return per-column metadata: dtype, null count, unique count."""
+    if dataset_name not in DATASETS:
+        raise HTTPException(status_code=404, detail=f"Unknown dataset: {dataset_name}")
+
+    df = _read_csv(dataset_name)
+    columns = []
+    for col in df.columns:
+        columns.append(
+            {
+                "name": col,
+                "dtype": str(df[col].dtype),
+                "null_count": int(df[col].isna().sum()),
+                "unique_count": int(df[col].nunique()),
+            }
+        )
+    return {"dataset": dataset_name, "row_count": len(df), "columns": columns}
 
 
 @router.get(
