@@ -90,6 +90,15 @@ describe('useChartDimensions', () => {
     wrapper.unmount()
   })
 
+  it('handles zero-width container gracefully', () => {
+    const wrapper = mount(createTestComponent())
+    simulateResize(0)
+    const dims = wrapper.vm.dimensions
+    expect(dims.width).toBe(0)
+    expect(dims.height).toBe(300)
+    wrapper.unmount()
+  })
+
   it('disconnects observer on unmount', () => {
     const wrapper = mount(createTestComponent())
     wrapper.unmount()

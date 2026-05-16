@@ -29,6 +29,7 @@ export function useChartDimensions(
   onMounted(() => {
     const el = containerRef.value
     if (!el) return
+    if (typeof ResizeObserver === 'undefined') return
 
     observer = new ResizeObserver((entries) => {
       const entry = entries[0]
