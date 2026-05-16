@@ -6,9 +6,20 @@ updates:
       interval: "weekly"
       day: "monday"
     open-pull-requests-limit: 5
-    labels:
-      - "dependencies"
-      - "python"
+
+  - package-ecosystem: "pip"
+    directory: "/projects/wealthlens-dashboard/backend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: "pip"
+    directory: "/automation/data-pipelines"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
 
   - package-ecosystem: "npm"
     directory: "/projects/wealthlens-dashboard/frontend"
@@ -16,9 +27,6 @@ updates:
       interval: "weekly"
       day: "monday"
     open-pull-requests-limit: 5
-    labels:
-      - "dependencies"
-      - "javascript"
 
   - package-ecosystem: "github-actions"
     directory: "/"
@@ -26,6 +34,3 @@ updates:
       interval: "weekly"
       day: "monday"
     open-pull-requests-limit: 3
-    labels:
-      - "dependencies"
-      - "ci"
