@@ -5,6 +5,7 @@ import type {
   DatasetRow,
   PaginatedDatasetResponse,
 } from '@/types/api'
+import { fetchWithRetry } from '@/utils/fetchWithRetry'
 
 // Re-export so existing component imports from '@/stores/data' keep working.
 export type { DatasetRow } from '@/types/api'
@@ -32,7 +33,7 @@ const BASE_URL = '/api/data'
 async function request<T>(path: string): Promise<T> {
   let res: Response
   try {
-    res = await fetch(`${BASE_URL}${path}`)
+    res = await fetchWithRetry(`${BASE_URL}${path}`)
   } catch {
     throw new Error('Could not reach the server')
   }
