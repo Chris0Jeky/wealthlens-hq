@@ -49,7 +49,14 @@ def run_pipelines() -> list[str]:
 def run_validation() -> bool:
     """Run the validation module; returns True if all checks pass."""
     logger.info("Validating processed datasets")
-    result = subprocess.run([sys.executable, str(PIPELINE_DIR / "validate.py")])
+    try:
+        result = subprocess.run(
+            [sys.executable, str(PIPELINE_DIR / "validate.py")],
+            timeout=SCRIPT_TIMEOUT_SECONDS,
+        )
+    except subprocess.TimeoutExpired:
+        logger.error("TIMEOUT: validate.py exceeded %ds", SCRIPT_TIMEOUT_SECONDS)
+        return False
     return result.returncode == 0
 
 
