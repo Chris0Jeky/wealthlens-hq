@@ -36,6 +36,7 @@ STATIC_ROUTES: list[dict[str, str | float]] = [
     {"path": "/", "changefreq": "weekly", "priority": 1.0},
     {"path": "/about", "changefreq": "monthly", "priority": 0.6},
     {"path": "/methodology", "changefreq": "monthly", "priority": 0.6},
+    {"path": "/data-sources", "changefreq": "weekly", "priority": 0.7},
     {"path": "/contribute", "changefreq": "monthly", "priority": 0.6},
     {"path": "/tools/wealth-calculator", "changefreq": "monthly", "priority": 0.6},
 ]
@@ -45,6 +46,12 @@ CHART_NAMES: list[str] = [
     "housing-affordability",
     "wealth-by-decile",
     "cgt-concentration",
+    "productivity-pay",
+    "gdhi-by-region",
+    "tax-composition",
+    "boe-rates",
+    "child-poverty",
+    "generational-wealth",
 ]
 
 DATASET_SLUGS: list[str] = [
