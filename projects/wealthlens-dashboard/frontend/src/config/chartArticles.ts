@@ -170,7 +170,7 @@ export const chartConfigs: Record<string, ChartConfig> = {
         },
         {
           heading: "Why it",
-          headlineEmphasis: "matters",
+          headingEmphasis: "matters",
           paragraphs: [
             'Wealth, not income, is the dominant determinant of life outcomes in the UK in 2026. It funds deposits on first homes, university choices, business creation, and old-age security. When wealth is concentrated, opportunity is too — and the rate of inter-generational mobility falls. The "left-behind town" isn\'t a metaphor. It\'s a balance sheet.',
           ],
@@ -319,7 +319,7 @@ export const chartConfigs: Record<string, ChartConfig> = {
         },
         {
           heading: "Why it",
-          headlineEmphasis: "matters",
+          headingEmphasis: "matters",
           paragraphs: [
             'If pay had kept pace with productivity since 1997, the average UK worker would earn significantly more today. The gap represents value created by labour that flows instead to profits, rents, and capital income. It is a structural driver of wealth inequality — and it hits hardest in regions and sectors where workers have the least bargaining power.',
           ],
@@ -458,7 +458,7 @@ export const chartConfigs: Record<string, ChartConfig> = {
         },
         {
           heading: "Why it",
-          headlineEmphasis: "matters",
+          headingEmphasis: "matters",
           paragraphs: [
             'Regional income inequality drives unequal access to housing, services, education, and opportunity. It is not just a North-South divide — pockets of low income exist within otherwise affluent regions. Policy interventions (levelling up, devolution, investment zones) are measured against exactly this kind of data.',
           ],
@@ -600,7 +600,7 @@ export const chartConfigs: Record<string, ChartConfig> = {
         },
         {
           heading: "Why it",
-          headlineEmphasis: "matters",
+          headingEmphasis: "matters",
           paragraphs: [
             'A tax system that falls heavily on work and lightly on wealth has consequences: it redistributes from younger, working-age populations to older, asset-rich generations. It makes it harder to accumulate wealth through labour alone. And it means the fiscal system does little to reduce the concentration of wealth documented elsewhere on this site.',
           ],
@@ -741,7 +741,7 @@ export const chartConfigs: Record<string, ChartConfig> = {
         },
         {
           heading: "Why it",
-          headlineEmphasis: "matters",
+          headingEmphasis: "matters",
           paragraphs: [
             'Interest rates are the mechanism through which monetary policy reaches households. A 5.25% rate means a typical £200,000 mortgage costs roughly £500/month more than at 0.1%. Savers benefit, but homeowners and renters (via landlord costs) bear the burden. The interaction between rates and inflation also determines real wage growth — when CPI outstrips pay rises, workers get poorer even in a "growing" economy.',
           ],
@@ -879,7 +879,7 @@ export const chartConfigs: Record<string, ChartConfig> = {
         },
         {
           heading: "Why it",
-          headlineEmphasis: "matters",
+          headingEmphasis: "matters",
           paragraphs: [
             'Child poverty is the single strongest predictor of poor outcomes in education, health, and lifetime earnings. It is also the most tractable form of inequality — targeted benefit increases (e.g. child benefit, universal credit child elements) have historically reduced child poverty rates rapidly. The regional variation shows that poverty is not evenly distributed: it clusters in areas already affected by deindustrialisation, low GDHI, and poor housing.',
           ],
@@ -1019,7 +1019,7 @@ export const chartConfigs: Record<string, ChartConfig> = {
         },
         {
           heading: "Why it",
-          headlineEmphasis: "matters",
+          headingEmphasis: "matters",
           paragraphs: [
             'Wealth at key life stages determines access to home ownership, financial security, and retirement adequacy. If Millennials and Gen Z cannot accumulate wealth at the same rate as their parents did, the UK faces a future where prosperity depends almost entirely on inheritance rather than work. This makes inter-generational mobility impossible without structural policy change — and makes the distribution of inherited wealth a defining political question of the coming decades.',
           ],
