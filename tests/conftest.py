@@ -2,9 +2,13 @@
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 
 import pytest
+
+# Allow direct imports from automation/analysis/ (e.g. extract_action_items)
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "automation" / "analysis"))
 
 
 @pytest.fixture

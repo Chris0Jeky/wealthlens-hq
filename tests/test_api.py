@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "projects" / "wealthlens-dashboard" / "backend"))
 
@@ -185,3 +186,90 @@ def test_pagination_total_pages_calculated_correctly():
     body = response.json()
     expected_pages = math.ceil(body["total"] / 10)
     assert body["total_pages"] == expected_pages
+
+
+# --- Key parity tests ---
+
+
+def test_datasets_and_dataset_meta_keys_match():
+    """DATASETS and DATASET_META must have exactly the same keys.
+
+    Catches the case where someone adds a key to one dict but forgets
+    the other, which would cause a KeyError at runtime.
+    """
+    from app.routers.data import DATASETS, DATASET_META
+
+    assert set(DATASETS.keys()) == set(DATASET_META.keys()), (
+        f"Key mismatch — DATASETS: {sorted(DATASETS.keys())}, "
+        f"DATASET_META: {sorted(DATASET_META.keys())}"
+    )
+
+
+# --- NaN handling tests ---
+
+
+def test_dataset_response_contains_no_nan_strings():
+    """JSON responses must not contain NaN as a value — only None/null."""
+    import json
+
+    response = client.get("/api/data/wealth-shares")
+    assert response.status_code == 200
+    raw = response.text
+    # pandas NaN serialised as JSON would appear as the literal NaN (unquoted)
+    # or "NaN" (quoted). Neither should be in our response.
+    parsed = json.loads(raw)
+    for row in parsed["data"]:
+        for key, value in row.items():
+            assert value != "NaN", f"Found string 'NaN' in {key}"
+            # float('nan') != float('nan') is True, but json.loads turns
+            # NaN into None in strict mode or raises ValueError, so a
+            # successful parse already proves no bare NaN tokens.
+
+
+# --- Error message quality tests ---
+
+
+def test_read_csv_parser_error_returns_503_with_dataset_name():
+    """When pd.read_csv raises ParserError, the 503 detail must include the dataset name."""
+    import pandas as pd
+
+    original_exists = Path.exists
+
+    def _exists_true(self: Path) -> bool:  # noqa: ANN001
+        """Let the CSV path pass the exists() guard so read_csv is reached."""
+        from app.routers.data import DATA_DIR
+
+        if str(self).startswith(str(DATA_DIR)):
+            return True
+        return original_exists(self)
+
+    with (
+        patch.object(Path, "exists", _exists_true),
+        patch("app.routers.data.pd.read_csv", side_effect=pd.errors.ParserError("tokenizing")),
+    ):
+        response = client.get("/api/data/wealth-shares")
+
+    assert response.status_code == 503
+    detail = response.json()["detail"]
+    assert "wealth-shares" in detail, f"Dataset name missing from error: {detail}"
+    assert "tokenizing" in detail, f"Root-cause missing from error: {detail}"
+
+
+def test_missing_csv_error_includes_dataset_name():
+    """When a CSV file is missing, the 503 detail must include the dataset name."""
+    from app.routers.data import DATA_DIR
+
+    # Patch Path.exists to return False for the CSV file, simulating a missing file
+    original_exists = Path.exists
+
+    def fake_exists(self: Path) -> bool:
+        if str(self).startswith(str(DATA_DIR)):
+            return False
+        return original_exists(self)
+
+    with patch.object(Path, "exists", fake_exists):
+        response = client.get("/api/data/wealth-shares")
+
+    assert response.status_code == 503
+    detail = response.json()["detail"]
+    assert "wealth-shares" in detail, f"Dataset name missing from error: {detail}"

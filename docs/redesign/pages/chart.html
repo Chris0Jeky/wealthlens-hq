@@ -1,0 +1,834 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Who owns wealth in the UK? — WealthLens UK</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700;800&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,500;1,6..72,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../tokens.css" />
+<style>
+  body { background: var(--wl-bg); }
+
+  /* ============================================================ */
+  /* MASTHEAD                                                      */
+  /* ============================================================ */
+  .masthead {
+    position: sticky; top: 0; z-index: 50;
+    background: var(--wl-bg);
+    border-bottom: 1px solid var(--wl-ink);
+  }
+  .masthead-band {
+    background: var(--wl-ink); color: var(--wl-paper);
+    font-family: var(--wl-mono); font-size: 11px;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 6px 32px;
+  }
+  .masthead-band .left { display: flex; gap: 24px; align-items: center; }
+  .masthead-band .live { display: inline-flex; align-items: center; gap: 8px; }
+  .masthead-band .live .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--wl-red); animation: pulse 2s infinite; }
+  .masthead-band .right { display: flex; gap: 18px; opacity: 0.7; }
+  @keyframes pulse { 0%,100% { opacity: 1 } 50% { opacity: 0.35 } }
+
+  .nav-inner {
+    max-width: 1320px; margin: 0 auto; padding: 18px 32px;
+    display: flex; align-items: center; gap: 32px;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+  .brand-mark { width: 32px; height: 32px; }
+  .brand-text {
+    font-family: var(--wl-serif); font-weight: 700; font-size: 24px;
+    letter-spacing: -0.025em; color: var(--wl-ink); line-height: 1;
+  }
+  .brand-uk {
+    font-family: var(--wl-mono); font-size: 10px;
+    letter-spacing: 0.22em; color: var(--wl-ink-muted);
+    text-transform: uppercase; padding: 2px 6px;
+    border: 1px solid var(--wl-rule-strong);
+  }
+  .nav-links { display: flex; gap: 2px; margin-left: 28px; }
+  .nav-link {
+    padding: 8px 14px; font-size: 14px; text-decoration: none;
+    color: var(--wl-ink-body); font-weight: 500;
+  }
+  .nav-link:hover { color: var(--wl-red); }
+  .nav-link.active { color: var(--wl-ink); border-bottom: 2px solid var(--wl-red); padding-bottom: 6px; }
+  .nav-right { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+
+  /* ============================================================ */
+  /* BREADCRUMB                                                    */
+  /* ============================================================ */
+  .crumb {
+    max-width: 1320px; margin: 0 auto; padding: 18px 32px 0;
+    font-family: var(--wl-mono); font-size: 11px;
+    color: var(--wl-ink-muted); letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .crumb a { color: var(--wl-ink-muted); text-decoration: none; }
+  .crumb a:hover { color: var(--wl-red); }
+  .crumb .sep { margin: 0 8px; color: var(--wl-rule-strong); }
+  .crumb .current { color: var(--wl-ink); }
+
+  /* ============================================================ */
+  /* ARTICLE HEAD — front-page style                              */
+  /* ============================================================ */
+  .article-head {
+    max-width: 1320px; margin: 24px auto 32px; padding: 0 32px;
+    display: grid; grid-template-columns: 1fr 360px;
+    gap: 56px; align-items: end;
+    padding-bottom: 28px; border-bottom: 2px solid var(--wl-ink);
+  }
+  .article-head .tag-row {
+    display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap;
+  }
+  .pill {
+    font-family: var(--wl-mono); font-size: 10px;
+    letter-spacing: 0.12em; padding: 4px 10px;
+    background: var(--wl-bg); border: 1px solid var(--wl-rule-strong);
+    color: var(--wl-ink-muted); text-transform: uppercase;
+  }
+  .pill--accent {
+    background: var(--wl-red); border-color: var(--wl-red);
+    color: #fff; font-weight: 600;
+  }
+  .article-head h1 {
+    font-family: var(--wl-serif);
+    font-size: clamp(48px, 6vw, 84px);
+    font-weight: 600; line-height: 0.96;
+    letter-spacing: -0.025em;
+    margin: 0 0 24px; color: var(--wl-ink);
+    max-width: 14ch; text-wrap: balance;
+  }
+  .article-head h1 em {
+    font-style: italic; color: var(--wl-red); font-weight: 500;
+  }
+  .article-head .lede {
+    font-size: 20px; color: var(--wl-ink-body);
+    line-height: 1.5; max-width: 50ch; margin: 0;
+  }
+  .article-head .lede strong {
+    color: var(--wl-red); font-weight: 600;
+    background: var(--wl-red-soft); padding: 1px 4px;
+  }
+
+  .article-head .meta-card {
+    background: var(--wl-card); border: 1px solid var(--wl-ink);
+    padding: 24px; font-family: var(--wl-mono); font-size: 12px;
+  }
+  .meta-card h4 {
+    margin: 0 0 16px; font-size: 10px; font-weight: 500;
+    letter-spacing: 0.16em; color: var(--wl-ink-muted);
+    text-transform: uppercase; padding-bottom: 12px;
+    border-bottom: 1px solid var(--wl-rule);
+  }
+  .meta-card dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 10px 18px; }
+  .meta-card dt { color: var(--wl-ink-muted); }
+  .meta-card dd { margin: 0; color: var(--wl-ink); font-weight: 500; }
+  .meta-card dd a { color: var(--wl-red); text-decoration: none; border-bottom: 1px solid var(--wl-red); }
+
+  /* ============================================================ */
+  /* HEADLINE STAT STRIP — the big finding, bold and big          */
+  /* ============================================================ */
+  .stat-strip {
+    max-width: 1320px; margin: 0 auto 32px;
+    padding: 0 32px;
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px;
+    background: var(--wl-ink);
+    border: 1px solid var(--wl-ink);
+  }
+  .stat-strip > div {
+    background: var(--wl-card); padding: 28px 24px;
+    display: flex; flex-direction: column; gap: 8px;
+    position: relative;
+  }
+  .stat-strip > div.headline { background: var(--wl-red); color: #fff; }
+  .stat-strip > div.headline .label { color: rgba(255,255,255,0.75); }
+  .stat-strip > div.headline .v { color: #fff; }
+  .stat-strip .label {
+    font-family: var(--wl-mono); font-size: 10px;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--wl-ink-muted); font-weight: 500;
+  }
+  .stat-strip .v {
+    font-family: var(--wl-serif);
+    font-size: clamp(36px, 4vw, 56px);
+    font-weight: 600; line-height: 1;
+    letter-spacing: -0.022em; color: var(--wl-ink);
+    font-variant-numeric: tabular-nums;
+  }
+  .stat-strip .v sup {
+    font-family: var(--wl-mono); font-size: 14px;
+    font-weight: 500; vertical-align: top;
+    position: relative; top: 6px; margin-left: 2px;
+    opacity: 0.6;
+  }
+  .stat-strip .desc {
+    font-size: 12px; color: var(--wl-ink-muted);
+    line-height: 1.5; margin-top: 4px;
+  }
+  .stat-strip > div.headline .desc { color: rgba(255,255,255,0.8); }
+
+  /* ============================================================ */
+  /* MAIN CHART AREA                                              */
+  /* ============================================================ */
+  .chart-wrap { max-width: 1320px; margin: 0 auto; padding: 0 32px; }
+  .chart-card {
+    background: var(--wl-card); border: 1px solid var(--wl-ink);
+    overflow: hidden;
+  }
+  .chart-toolbar {
+    display: flex; align-items: center; padding: 16px 24px;
+    border-bottom: 1px solid var(--wl-rule); gap: 18px;
+    font-family: var(--wl-mono); font-size: 12px;
+    flex-wrap: wrap;
+  }
+  .chart-toolbar .left { display: flex; gap: 22px; align-items: center; flex-wrap: wrap; }
+  .chart-toolbar .tag { color: var(--wl-ink-muted); display: inline-flex; align-items: center; gap: 6px; }
+  .chart-toolbar .tag b { color: var(--wl-ink); font-weight: 600; }
+  .chart-toolbar .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .chart-toolbar .ranges {
+    display: flex; gap: 0; margin-left: auto;
+    border: 1px solid var(--wl-ink);
+  }
+  .range {
+    padding: 6px 14px; border: 0; border-left: 1px solid var(--wl-rule);
+    background: var(--wl-card); color: var(--wl-ink-muted);
+    font-family: var(--wl-mono); font-size: 11px; cursor: pointer;
+    letter-spacing: 0.04em;
+  }
+  .range:first-child { border-left: 0; }
+  .range:hover { color: var(--wl-ink); }
+  .range.active { background: var(--wl-ink); color: var(--wl-paper); }
+
+  .chart-stage { padding: 40px 28px 16px; }
+  .chart-svg { width: 100%; height: 600px; display: block; }
+
+  .chart-source-bar {
+    padding: 14px 24px; border-top: 1px solid var(--wl-rule);
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    background: var(--wl-bg-muted); font-family: var(--wl-mono); font-size: 11px;
+    color: var(--wl-ink-muted); flex-wrap: wrap;
+  }
+  .chart-source-bar .src-left { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .chart-source-bar a {
+    color: var(--wl-ink); text-decoration: none;
+    border-bottom: 1px solid var(--wl-rule-strong);
+  }
+  .chart-source-bar a:hover { color: var(--wl-red); border-color: var(--wl-red); }
+
+  /* ============================================================ */
+  /* SHARE BAR                                                     */
+  /* ============================================================ */
+  .share-bar {
+    max-width: 1320px; margin: 24px auto 0; padding: 16px 24px;
+    background: var(--wl-card); border: 1px solid var(--wl-ink);
+    display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+  }
+  .share-bar .label {
+    font-family: var(--wl-mono); font-size: 10px;
+    color: var(--wl-ink-muted); text-transform: uppercase;
+    letter-spacing: 0.14em; padding-right: 12px;
+    border-right: 1px solid var(--wl-rule);
+    margin-right: 4px; font-weight: 500;
+  }
+  .share-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 12px; background: var(--wl-card);
+    border: 1px solid var(--wl-rule-strong);
+    font-family: var(--wl-mono); font-size: 11px;
+    color: var(--wl-ink-body); cursor: pointer; text-decoration: none;
+    letter-spacing: 0.04em;
+  }
+  .share-btn:hover { background: var(--wl-ink); color: var(--wl-paper); border-color: var(--wl-ink); }
+  .share-btn svg { width: 14px; height: 14px; }
+  .share-bar .grow { flex: 1; }
+
+  /* ============================================================ */
+  /* ARTICLE BODY                                                  */
+  /* ============================================================ */
+  .article-body { max-width: 760px; margin: 64px auto 0; padding: 0 32px; }
+  .article-body h2 {
+    font-family: var(--wl-serif);
+    font-size: 36px; font-weight: 600;
+    letter-spacing: -0.018em; color: var(--wl-ink);
+    margin: 48px 0 18px; line-height: 1.1;
+  }
+  .article-body h2 em { font-style: italic; color: var(--wl-red); font-weight: 500; }
+  .article-body p {
+    font-size: 18px; line-height: 1.7;
+    color: var(--wl-ink-body); margin: 0 0 18px;
+  }
+  .article-body p strong { color: var(--wl-ink); font-weight: 600; }
+  .article-body p em { font-family: var(--wl-serif); font-style: italic; }
+
+  .article-body .pull {
+    margin: 36px 0;
+    padding: 28px 32px;
+    border-top: 4px solid var(--wl-red);
+    border-bottom: 1px solid var(--wl-rule);
+    background: var(--wl-paper-tint);
+  }
+  .article-body .pull .label {
+    font-family: var(--wl-mono); font-size: 10px;
+    letter-spacing: 0.16em; color: var(--wl-red);
+    text-transform: uppercase; font-weight: 600;
+    margin: 0 0 12px;
+  }
+  .article-body .pull p {
+    font-family: var(--wl-serif); font-style: italic;
+    font-size: 24px; line-height: 1.35;
+    color: var(--wl-ink); margin: 0;
+    letter-spacing: -0.01em;
+  }
+  .article-body .pull p strong {
+    font-style: normal; background: var(--wl-red); color: #fff;
+    padding: 2px 6px; font-weight: 600;
+  }
+
+  /* ============================================================ */
+  /* METHODOLOGY                                                   */
+  /* ============================================================ */
+  details.method {
+    background: var(--wl-card); border: 1px solid var(--wl-ink);
+    padding: 0; margin: 32px 0;
+  }
+  details.method summary {
+    list-style: none; padding: 20px 24px; cursor: pointer;
+    display: flex; align-items: center; gap: 12px;
+    font-weight: 600; font-size: 16px; color: var(--wl-ink);
+    font-family: var(--wl-sans);
+  }
+  details.method summary::-webkit-details-marker { display: none; }
+  details.method summary::before {
+    content: "+"; width: 22px; height: 22px;
+    border: 1px solid var(--wl-ink);
+    display: inline-flex; align-items: center; justify-content: center;
+    color: var(--wl-ink); font-family: var(--wl-mono);
+    transition: transform 0.2s ease;
+  }
+  details.method[open] summary::before { content: "−"; }
+  details.method[open] summary { border-bottom: 1px solid var(--wl-rule); background: var(--wl-paper-tint); }
+  details.method .body {
+    padding: 24px; font-size: 15px;
+    color: var(--wl-ink-body); line-height: 1.65;
+  }
+  details.method .body p { margin: 0 0 14px; }
+  details.method .body ul { padding-left: 18px; margin: 8px 0 12px; }
+  details.method .body li { margin-bottom: 6px; }
+  details.method .body table {
+    width: 100%; font-family: var(--wl-mono); font-size: 12px;
+    border-collapse: collapse; margin-top: 12px;
+  }
+  details.method .body th, details.method .body td {
+    border-bottom: 1px solid var(--wl-rule); padding: 10px 12px; text-align: left;
+  }
+  details.method .body th {
+    color: var(--wl-ink-muted); font-weight: 500;
+    letter-spacing: 0.08em; text-transform: uppercase; font-size: 10px;
+  }
+
+  /* ============================================================ */
+  /* RELATED                                                       */
+  /* ============================================================ */
+  .related { max-width: 1320px; margin: 96px auto 0; padding: 0 32px; }
+  .related h3 {
+    font-size: 12px; font-family: var(--wl-mono);
+    letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--wl-red); margin: 0 0 24px; font-weight: 600;
+  }
+  .related-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 1px; background: var(--wl-ink);
+    border: 1px solid var(--wl-ink);
+  }
+  .related-card {
+    background: var(--wl-card); padding: 24px;
+    display: flex; flex-direction: column; gap: 12px;
+    text-decoration: none; color: inherit;
+    transition: background 0.15s ease; min-height: 220px;
+  }
+  .related-card:hover { background: var(--wl-paper-tint); }
+  .related-card .domain {
+    font-family: var(--wl-mono); font-size: 10px;
+    color: var(--wl-red); text-transform: uppercase;
+    letter-spacing: 0.12em; font-weight: 600;
+  }
+  .related-card .title {
+    font-family: var(--wl-serif); font-weight: 600;
+    font-size: 20px; color: var(--wl-ink);
+    line-height: 1.2; letter-spacing: -0.012em;
+  }
+  .related-card .find { font-size: 13px; color: var(--wl-ink-muted); line-height: 1.5; }
+  .related-card .mini { height: 60px; margin-top: auto; }
+
+  /* ============================================================ */
+  /* FOOTER                                                        */
+  /* ============================================================ */
+  .foot {
+    border-top: 1px solid var(--wl-ink);
+    padding: 32px 0; background: var(--wl-bg); margin-top: 96px;
+  }
+  .foot-inner {
+    max-width: 1320px; margin: 0 auto; padding: 0 32px;
+    display: flex; justify-content: space-between; gap: 24px;
+    font-family: var(--wl-mono); font-size: 11px;
+    color: var(--wl-ink-muted); flex-wrap: wrap;
+    letter-spacing: 0.04em;
+  }
+  .foot-inner a { color: var(--wl-red); text-decoration: none; }
+
+  /* ============================================================ */
+  /* Chart tooltip                                                 */
+  /* ============================================================ */
+  #chartTooltip {
+    position: fixed; pointer-events: none; display: none;
+    background: var(--wl-ink); border: 1px solid var(--wl-ink);
+    padding: 12px 16px;
+    font: 12px/1.6 var(--wl-mono); color: var(--wl-paper);
+    box-shadow: var(--wl-shadow-lg); white-space: nowrap; z-index: 100;
+  }
+  #chartTooltip .y {
+    font-family: var(--wl-serif); font-weight: 600; font-size: 18px;
+    color: var(--wl-paper); margin-bottom: 8px;
+    border-bottom: 1px solid rgba(244,239,230,0.2); padding-bottom: 6px;
+  }
+  #chartTooltip .row {
+    display: flex; gap: 16px; justify-content: space-between;
+    align-items: center; min-width: 200px;
+  }
+  #chartTooltip .row .v { font-weight: 600; }
+  #chartTooltip .row.hi { color: #fff; }
+  #chartTooltip .row.hi .v { color: var(--wl-red); font-size: 14px; }
+
+  /* ============================================================ */
+  /* Annotations                                                   */
+  /* ============================================================ */
+  .annot-pill {
+    fill: var(--wl-bg); stroke: var(--wl-ink); stroke-width: 1;
+  }
+</style>
+</head>
+<body>
+
+  <nav class="masthead">
+    <div class="masthead-band">
+      <div class="left">
+        <span class="live"><span class="dot"></span>Live · Chart WL-W-001</span>
+        <span>Issue №07</span>
+      </div>
+      <div class="right">
+        <span>CC-BY 4.0 · WID.world</span>
+        <span>Updated 14 May 2026</span>
+      </div>
+    </div>
+    <div class="nav-inner">
+      <a href="landing.html" class="brand" aria-label="WealthLens UK">
+        <svg class="brand-mark" viewBox="0 0 68 68" fill="none">
+          <circle cx="34" cy="34" r="26" stroke="var(--wl-ink)" stroke-width="3" fill="none"/>
+          <path d="M 8 60 Q 32 60 44 50 Q 56 36 60 8" stroke="var(--wl-red)" stroke-width="2.8" fill="none" stroke-linecap="round"/>
+          <line x1="52" y1="52" x2="62" y2="62" stroke="var(--wl-ink)" stroke-width="3.5" stroke-linecap="round"/>
+        </svg>
+        <span class="brand-text">WealthLens</span>
+        <span class="brand-uk">UK</span>
+      </a>
+      <div class="nav-links">
+        <a href="landing.html" class="nav-link">Front page</a>
+        <a href="#" class="nav-link active">The data</a>
+        <a href="#" class="nav-link">Methodology</a>
+        <a href="#" class="nav-link">About</a>
+        <a href="#" class="nav-link">Contribute</a>
+      </div>
+      <div class="nav-right">
+        <a href="#" class="wl-btn wl-btn--ghost wl-btn--sm">⌘K · Search</a>
+        <a href="#" class="wl-btn wl-btn--red wl-btn--sm">Embed →</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="crumb">
+    <a href="landing.html">Home</a><span class="sep">/</span>
+    <a href="#">The data</a><span class="sep">/</span>
+    <a href="#">Wealth</a><span class="sep">/</span>
+    <span class="current">Who owns wealth in the UK?</span>
+  </div>
+
+  <header class="article-head" data-screen-label="02 Chart — Header">
+    <div>
+      <div class="tag-row">
+        <span class="pill pill--accent">Wealth</span>
+        <span class="pill">Historical · 1820–2023</span>
+        <span class="pill">United Kingdom</span>
+        <span class="pill">Updated 14 May 2026</span>
+      </div>
+      <h1>Who owns wealth in the UK? <em>Same lot, mostly.</em></h1>
+      <p class="lede">For at least two centuries, the top 10% have held over <strong>half of all UK personal wealth</strong>. The post-war squeeze was real, but partial. The slide back has been steady since 1980. We're now at 1910 levels — without the empire to explain it.</p>
+    </div>
+    <aside class="meta-card">
+      <h4>Chart facts</h4>
+      <dl>
+        <dt>Source</dt><dd><a href="#">WID.world</a></dd>
+        <dt>Series</dt><dd>UK · Net personal wealth</dd>
+        <dt>Coverage</dt><dd>1820 — 2023</dd>
+        <dt>Updated</dt><dd>14 May 2026</dd>
+        <dt>Licence</dt><dd>CC-BY 4.0</dd>
+        <dt>Data points</dt><dd class="wl-num">22</dd>
+        <dt>Chart ID</dt><dd class="wl-num">WL-W-001</dd>
+      </dl>
+    </aside>
+  </header>
+
+  <!-- HEADLINE STAT STRIP -->
+  <section class="stat-strip" data-screen-label="02 Chart — Headline numbers">
+    <div class="headline">
+      <span class="label">↑ The headline</span>
+      <span class="v">57<sup>%</sup></span>
+      <span class="desc">Share of UK personal wealth owned by the top 10% in 2023</span>
+    </div>
+    <div>
+      <span class="label">Top 1% alone</span>
+      <span class="v">28<sup>%</sup></span>
+      <span class="desc">More than the bottom 70% combined</span>
+    </div>
+    <div>
+      <span class="label">Bottom 50%</span>
+      <span class="v">6<sup>%</sup></span>
+      <span class="desc">Half the country splits one-sixteenth of the wealth</span>
+    </div>
+    <div>
+      <span class="label">Postwar low (1980)</span>
+      <span class="v">50<sup>%</sup></span>
+      <span class="desc">The least concentrated it's ever been — and still half</span>
+    </div>
+  </section>
+
+  <div class="chart-wrap" data-screen-label="02 Chart — Visualization">
+    <div class="chart-card">
+      <div class="chart-toolbar">
+        <div class="left">
+          <span class="tag"><b>Share of net personal wealth</b> (%)</span>
+          <span class="tag"><span class="dot" style="background: var(--wl-red);"></span><b>Top 10%</b></span>
+          <span class="tag"><span class="dot" style="background: var(--wl-ink);"></span>Top 1%</span>
+          <span class="tag"><span class="dot" style="background: var(--wl-ink-faint);"></span>Middle 40%</span>
+          <span class="tag"><span class="dot" style="background: var(--wl-ink-faint);"></span>Bottom 50%</span>
+        </div>
+        <div class="ranges" role="tablist">
+          <button class="range active" data-range="200">200y</button>
+          <button class="range" data-range="100">100y</button>
+          <button class="range" data-range="50">50y</button>
+          <button class="range" data-range="25">25y</button>
+        </div>
+      </div>
+      <div class="chart-stage">
+        <svg id="bigChart" class="chart-svg" viewBox="0 0 1200 600" preserveAspectRatio="xMidYMid meet" aria-label="Share of net personal wealth in the UK, 1820–2023"></svg>
+      </div>
+      <div class="chart-source-bar">
+        <div class="src-left">
+          <span>Source: <a href="#">World Inequality Database (wid.world)</a></span>
+          <span>·</span>
+          <span>CC-BY 4.0</span>
+          <span>·</span>
+          <span>Accessed 2026-05-14</span>
+        </div>
+        <span>WealthLens UK · WL-W-001</span>
+      </div>
+    </div>
+
+    <div class="share-bar">
+      <span class="label">Share</span>
+      <button class="share-btn">⌐ Copy link</button>
+      <button class="share-btn">&lt;/&gt; Embed</button>
+      <span class="label" style="border-left: 1px solid var(--wl-rule); padding-left: 12px; margin-left: 4px;">Download</span>
+      <button class="share-btn">↓ PNG</button>
+      <button class="share-btn">↓ SVG</button>
+      <button class="share-btn">↓ CSV</button>
+      <div class="grow"></div>
+      <button class="share-btn">→ Bluesky</button>
+      <button class="share-btn">→ LinkedIn</button>
+      <button class="share-btn">→ X</button>
+    </div>
+  </div>
+
+  <article class="article-body" data-screen-label="02 Chart — Article">
+    <h2>What this chart shows</h2>
+    <p>The share of <em>net personal wealth</em> held by four percentile groups in the United Kingdom, from 1820 to 2023. Net personal wealth is the sum of all financial assets (savings, investments, pensions) and non-financial assets (mainly housing) — minus debts.</p>
+
+    <div class="pull">
+      <p class="label">↑ The takeaway</p>
+      <p>In two hundred years of data, the top 10% have <strong>never</strong> held less than 49% of UK personal wealth. The post-war compression was real — but partial. Since 1980, the trend has been steady re-concentration.</p>
+    </div>
+
+    <p>The shape tells a story in three acts. From 1820 to 1914, the UK was the most unequal large economy in the world by some measures — a tiny aristocratic and capitalist class held almost 90% of all personal wealth. Two world wars, progressive taxation, and the postwar welfare settlement compressed this dramatically: by 1980, the bottom 50% held 8% of wealth, and the top 10% had fallen to 50%. Since then the curve has bent the other way.</p>
+
+    <h2>Why it <em>matters</em></h2>
+    <p>Wealth, not income, is the dominant determinant of life outcomes in the UK in 2026. It funds deposits on first homes, university choices, business creation, and old-age security. When wealth is concentrated, opportunity is too — and the rate of inter-generational mobility falls. The "left-behind town" isn't a metaphor. It's a balance sheet.</p>
+
+    <details class="method">
+      <summary>Methodology &amp; data quality</summary>
+      <div class="body">
+        <p>The data are drawn from the World Inequality Database (WID.world), which harmonises a range of national wealth estimates to produce comparable cross-country series. For the UK, WID combines:</p>
+        <ul>
+          <li>HMRC estate-multiplier estimates (1809 onward)</li>
+          <li>ONS Wealth and Assets Survey microdata (2006 onward)</li>
+          <li>National accounts household balance sheets</li>
+          <li>Forbes/Sunday Times Rich List rich-list calibration at the very top</li>
+        </ul>
+        <p>The series uses <em>net personal wealth</em> — financial &amp; non-financial assets minus debts, on an individual basis (not household). Pension wealth is included where defined-contribution; defined-benefit entitlements are excluded in this series.</p>
+
+        <table>
+          <thead><tr><th>Year span</th><th>Primary method</th><th>Confidence</th></tr></thead>
+          <tbody>
+            <tr><td>1820 – 1900</td><td>Estate multiplier</td><td>Moderate</td></tr>
+            <tr><td>1900 – 1960</td><td>Estate multiplier + tax tabulations</td><td>High</td></tr>
+            <tr><td>1960 – 2006</td><td>Tax tabulations + survey</td><td>High</td></tr>
+            <tr><td>2006 – 2023</td><td>WAS microdata + admin</td><td>Very high</td></tr>
+          </tbody>
+        </table>
+
+        <p style="margin-top: 16px;"><strong>Known caveats:</strong> wealth at the very top is historically under-counted; offshore holdings are largely invisible to estate records; pension reform changes mean pre-2006 and post-2006 series are not strictly comparable for the bottom 50%.</p>
+      </div>
+    </details>
+  </article>
+
+  <section class="related">
+    <h3>↓ More from the wealth pillar</h3>
+    <div class="related-grid">
+      <a class="related-card" href="#">
+        <div class="domain">Wealth · UK</div>
+        <div class="title">Composition of household wealth, 1995–2023</div>
+        <div class="find">Housing is now <b>36%</b> of all household wealth — up from 22% in 1995.</div>
+        <svg class="mini" viewBox="0 0 220 60" preserveAspectRatio="none">
+          <path d="M 0 48 L 30 46 L 60 40 L 90 32 L 120 26 L 150 22 L 180 18 L 220 14" stroke="var(--wl-red)" stroke-width="2.5" fill="none"/>
+        </svg>
+      </a>
+      <a class="related-card" href="#">
+        <div class="domain">Tax · UK</div>
+        <div class="title">Capital gains concentration by decile</div>
+        <div class="find"><b>92%</b> of taxable gains accrue to the top 1% of recipients.</div>
+        <svg class="mini" viewBox="0 0 220 60" preserveAspectRatio="none">
+          <rect x="10"  y="52" width="18" height="4"  fill="var(--wl-ink-faint)"/>
+          <rect x="32"  y="50" width="18" height="6"  fill="var(--wl-ink-faint)"/>
+          <rect x="54"  y="48" width="18" height="8"  fill="var(--wl-ink-faint)"/>
+          <rect x="76"  y="46" width="18" height="10" fill="var(--wl-ink-faint)"/>
+          <rect x="98"  y="44" width="18" height="12" fill="var(--wl-ink-faint)"/>
+          <rect x="120" y="40" width="18" height="16" fill="var(--wl-ink)"/>
+          <rect x="142" y="34" width="18" height="22" fill="var(--wl-ink)"/>
+          <rect x="164" y="26" width="18" height="30" fill="var(--wl-ink)"/>
+          <rect x="186" y="8"  width="18" height="48" fill="var(--wl-red)"/>
+        </svg>
+      </a>
+      <a class="related-card" href="#">
+        <div class="domain">Housing · UK</div>
+        <div class="title">House price to earnings ratio, 1969–2024</div>
+        <div class="find">UK ratio is <b>8.6×</b> — the highest since records began.</div>
+        <svg class="mini" viewBox="0 0 220 60" preserveAspectRatio="none">
+          <path d="M 0 50 L 20 49 L 40 46 L 60 42 L 80 38 L 100 32 L 120 24 L 140 18 L 160 14 L 180 10 L 220 6" stroke="var(--wl-red)" stroke-width="2.5" fill="none"/>
+        </svg>
+      </a>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <div class="foot-inner">
+      <span>© 2026 WealthLens UK · MIT licensed · chart-id WL-W-001</span>
+      <span><a href="#">Suggest a chart →</a></span>
+    </div>
+  </footer>
+
+  <div id="chartTooltip"></div>
+
+  <script>
+  /* ------------ Chart data (illustrative WID-style) ------------ */
+  const DATA = [
+    [1820, 60, 86,  13, 1],
+    [1840, 61, 87,  12, 1],
+    [1860, 62, 88,  11, 1],
+    [1880, 63, 89,  10, 1],
+    [1900, 64, 90,   9, 1],
+    [1910, 65, 90,   9, 1],
+    [1920, 60, 85,  13, 2],
+    [1930, 55, 81,  16, 3],
+    [1940, 48, 75,  21, 4],
+    [1950, 40, 70,  25, 5],
+    [1960, 32, 63,  31, 6],
+    [1970, 26, 56,  37, 7],
+    [1980, 21, 50,  42, 8],
+    [1985, 19, 49,  43, 8],
+    [1990, 20, 50,  42, 8],
+    [1995, 21, 52,  41, 7],
+    [2000, 23, 54,  40, 6],
+    [2005, 25, 56,  38, 6],
+    [2010, 26, 58,  37, 5],
+    [2015, 27, 58,  37, 5],
+    [2020, 28, 57,  37, 6],
+    [2023, 28, 57,  37, 6],
+  ];
+
+  // SERIES — top 10% is the hero in red; everything else is ink in varying weights
+  const COLOR = {
+    top10: 'var(--wl-red)',
+    top1:  'var(--wl-ink)',
+    mid40: 'var(--wl-ink-faint)',
+    bot50: 'var(--wl-ink-faint)',
+  };
+
+  const SERIES = [
+    { idx: 2, key: 'top10', color: COLOR.top10, label: 'Top 10%',     w: 4,   hero: true,  dash: null  },
+    { idx: 1, key: 'top1',  color: COLOR.top1,  label: 'Top 1%',      w: 2.4, hero: false, dash: null  },
+    { idx: 3, key: 'mid40', color: COLOR.mid40, label: 'Middle 40%',  w: 1.5, hero: false, dash: '4 3' },
+    { idx: 4, key: 'bot50', color: COLOR.bot50, label: 'Bottom 50%',  w: 1.5, hero: false, dash: '2 2' },
+  ];
+
+  function drawChart(range) {
+    const svg = document.getElementById('bigChart');
+    const W = 1200, H = 600;
+    const padL = 84, padR = 220, padT = 80, padB = 72;
+    const minYear = range === 200 ? 1820 : range === 100 ? 1925 : range === 50 ? 1975 : 2000;
+    const data = DATA.filter(d => d[0] >= minYear);
+    const xMin = data[0][0], xMax = data[data.length - 1][0];
+
+    const x = y => padL + ((y - xMin) / (xMax - xMin)) * (W - padL - padR);
+    const yScale = v => padT + (1 - v / 100) * (H - padT - padB);
+
+    // Era bands
+    const eras = [
+      { from: minYear, to: Math.min(1945, xMax), label: 'Aristocratic era', shade: false },
+      { from: Math.max(1945, minYear), to: Math.min(1980, xMax), label: 'Post-war compression', shade: true },
+      { from: Math.max(1980, minYear), to: xMax, label: 'Re-concentration', shade: false },
+    ].filter(e => e.from < e.to);
+    const eraBands = eras.map(e => {
+      const x0 = x(e.from), x1 = x(e.to);
+      if (x1 - x0 < 40) return '';
+      return `
+        ${e.shade ? `<rect x="${x0}" y="${padT}" width="${x1 - x0}" height="${H - padT - padB}" fill="var(--wl-paper-deep)" opacity="0.5"/>` : ''}
+        <text x="${(x0 + x1) / 2}" y="${padT - 28}" text-anchor="middle"
+              font-family="IBM Plex Mono" font-size="10" fill="var(--wl-ink-muted)"
+              letter-spacing="1.5">${e.label.toUpperCase()}</text>
+        <line x1="${x0}" x2="${x1}" y1="${padT - 16}" y2="${padT - 16}" stroke="var(--wl-rule-strong)" stroke-width="1"/>
+      `;
+    }).join('');
+
+    // Gridlines
+    const yTicks = [0, 25, 50, 75, 100];
+    const grid = yTicks.map(t => `
+      <line x1="${padL}" x2="${W - padR}" y1="${yScale(t)}" y2="${yScale(t)}"
+        stroke="var(--wl-rule)" stroke-width="1"/>
+      <text x="${padL - 14}" y="${yScale(t) + 4}" text-anchor="end"
+        font-family="IBM Plex Mono" font-size="12" fill="var(--wl-ink-muted)">${t}%</text>
+    `).join('');
+
+    // 50% floor — emphasised
+    const floor = `
+      <line x1="${padL}" x2="${W - padR}" y1="${yScale(50)}" y2="${yScale(50)}"
+        stroke="var(--wl-ink)" stroke-width="1" stroke-dasharray="4 4"/>
+      <text x="${W - padR - 8}" y="${yScale(50) - 6}" text-anchor="end"
+        font-family="IBM Plex Mono" font-size="10" fill="var(--wl-ink-muted)"
+        letter-spacing="1.4">50% LINE · TOP 10% NEVER FELL BELOW</text>
+    `;
+
+    // X ticks
+    const n = Math.min(8, data.length);
+    const tickYears = Array.from({ length: n }, (_, i) => data[Math.round(i * (data.length - 1) / (n - 1))][0]);
+    const xAxis = tickYears.map(t => `
+      <line x1="${x(t)}" x2="${x(t)}" y1="${H - padB}" y2="${H - padB + 6}" stroke="var(--wl-ink)" stroke-width="1"/>
+      <text x="${x(t)}" y="${H - padB + 24}" text-anchor="middle"
+        font-family="IBM Plex Mono" font-size="12" fill="var(--wl-ink-muted)">${t}</text>
+    `).join('');
+
+    // Series paths — dim ones first, ink, red on top
+    const ordered = [...SERIES].sort((a, b) => (a.hero ? 1 : 0) - (b.hero ? 1 : 0));
+    function path(idx) {
+      return data.map((d, i) => `${i === 0 ? 'M' : 'L'} ${x(d[0]).toFixed(2)} ${yScale(d[idx]).toFixed(2)}`).join(' ');
+    }
+    const paths = ordered.map(s => `
+      <path d="${path(s.idx)}" stroke="${s.color}" stroke-width="${s.w}" fill="none"
+        stroke-linejoin="round" stroke-linecap="round"
+        ${s.dash ? `stroke-dasharray="${s.dash}" opacity="0.7"` : ''}
+        data-series="${s.key}"/>
+    `).join('');
+
+    // Big endpoint dot for top 10%
+    const last = data[data.length - 1];
+    const heroEndpoint = `
+      <circle cx="${x(last[0])}" cy="${yScale(last[2])}" r="6" fill="var(--wl-red)"/>
+      <circle cx="${x(last[0])}" cy="${yScale(last[2])}" r="10" fill="none" stroke="var(--wl-red)" stroke-width="1" opacity="0.4"/>
+    `;
+
+    // Direct labels
+    const labels = SERIES.map(s => `
+      <g transform="translate(${W - padR + 18} ${yScale(last[s.idx])})">
+        <line x1="-12" x2="0" y1="0" y2="0" stroke="${s.color}" stroke-width="${s.w}"/>
+        <text x="10" y="4" font-family="IBM Plex Sans" font-size="${s.hero ? 14 : 13}" font-weight="600" fill="${s.color}">${s.label}</text>
+        <text x="10" y="22" font-family="IBM Plex Mono" font-size="${s.hero ? 13 : 11}" font-weight="${s.hero ? 600 : 400}" fill="${s.hero ? s.color : 'var(--wl-ink-muted)'}">${last[s.idx]}% · ${last[0]}</text>
+      </g>
+    `).join('');
+
+    // Y axis title
+    const yTitle = `<text x="${padL}" y="36" font-family="IBM Plex Mono" font-size="11" fill="var(--wl-ink-muted)" letter-spacing="2">SHARE OF NET PERSONAL WEALTH (%)</text>
+    <text x="${padL}" y="54" font-family="IBM Plex Mono" font-size="10" fill="var(--wl-ink-faint)" letter-spacing="1.5">${xMin}–${xMax} · UK · Source WID.world</text>`;
+
+    svg.innerHTML = `
+      <defs><clipPath id="clip"><rect x="${padL}" y="${padT}" width="${W - padL - padR}" height="${H - padT - padB}"/></clipPath></defs>
+      ${eraBands}
+      ${grid}${xAxis}${yTitle}${floor}
+      <g clip-path="url(#clip)">${paths}</g>
+      ${heroEndpoint}
+      ${labels}
+      <line x1="${padL}" x2="${padL}" y1="${padT}" y2="${H - padB}" stroke="var(--wl-ink)" stroke-width="1"/>
+      <line x1="${padL}" x2="${W - padR}" y1="${H - padB}" y2="${H - padB}" stroke="var(--wl-ink)" stroke-width="1"/>
+      <g id="hover" style="display:none; pointer-events:none;">
+        <line x1="0" x2="0" y1="${padT}" y2="${H - padB}" stroke="var(--wl-ink)" stroke-width="1" stroke-dasharray="2 2" opacity="0.5"/>
+        <g id="hoverDots"></g>
+      </g>
+      <rect id="hit" class="hit" x="${padL}" y="${padT}" width="${W - padL - padR}" height="${H - padT - padB}" fill="transparent"/>
+    `;
+
+    const hit = svg.querySelector('#hit');
+    const hover = svg.querySelector('#hover');
+    const hoverDots = svg.querySelector('#hoverDots');
+    const tt = document.getElementById('chartTooltip');
+
+    hit.addEventListener('mousemove', (e) => {
+      const rect = svg.getBoundingClientRect();
+      const px = ((e.clientX - rect.left) / rect.width) * W;
+      const yearAt = xMin + ((px - padL) / (W - padL - padR)) * (xMax - xMin);
+      const point = data.reduce((acc, d) => Math.abs(d[0] - yearAt) < Math.abs(acc[0] - yearAt) ? d : acc);
+      const cx = x(point[0]);
+
+      hover.style.display = '';
+      hover.setAttribute('transform', `translate(${cx},0)`);
+
+      hoverDots.innerHTML = SERIES.map(s => `
+        <circle cx="0" cy="${yScale(point[s.idx])}" r="${s.hero ? 6 : 4.5}" fill="${s.color}" stroke="var(--wl-bg)" stroke-width="2"/>
+      `).join('');
+
+      tt.style.display = 'block';
+      tt.style.left = (e.clientX + 16) + 'px';
+      tt.style.top = (e.clientY - 24) + 'px';
+      tt.innerHTML = `
+        <div class="y">${point[0]}</div>
+        <div class="row hi"><span style="color:${COLOR.top10};">● Top 10%</span><span class="v">${point[2]}%</span></div>
+        <div class="row"><span style="color:#fff;">● Top 1%</span><span class="v" style="color:#fff;">${point[1]}%</span></div>
+        <div class="row"><span style="color:rgba(255,255,255,0.6);">● Middle 40%</span><span class="v" style="color:rgba(255,255,255,0.7);">${point[3]}%</span></div>
+        <div class="row"><span style="color:rgba(255,255,255,0.6);">● Bottom 50%</span><span class="v" style="color:rgba(255,255,255,0.7);">${point[4]}%</span></div>
+      `;
+    });
+    hit.addEventListener('mouseleave', () => {
+      hover.style.display = 'none';
+      tt.style.display = 'none';
+    });
+  }
+
+  document.querySelectorAll('.range').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.range').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      drawChart(parseInt(btn.dataset.range, 10));
+    });
+  });
+
+  drawChart(200);
+  </script>
+</body>
+</html>

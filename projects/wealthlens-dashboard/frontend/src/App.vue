@@ -28,7 +28,7 @@ import ErrorBoundary from "@/components/ErrorBoundary.vue";
         </nav>
       </div>
     </header>
-    <main id="main-content">
+    <main id="main-content" tabindex="-1">
       <ErrorBoundary>
         <RouterView />
       </ErrorBoundary>
