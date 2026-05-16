@@ -28,10 +28,28 @@ cors_origins = [o.strip() for o in _raw.split(",") if o.strip()]
 if not cors_origins:
     cors_origins = [o.strip() for o in _default_origins.split(",")]
 
+tags_metadata = [
+    {"name": "data", "description": "Dataset access and metadata endpoints"},
+    {"name": "health", "description": "Service health and availability checks"},
+]
+
 app = FastAPI(
     title="WealthLens UK API",
     version="0.1.0",
-    description="Open API for UK wealth inequality data",
+    description=(
+        "Open API for UK wealth inequality data. "
+        "Serves processed datasets from the World Inequality Database, "
+        "ONS, and HMRC as paginated JSON."
+    ),
+    contact={
+        "name": "WealthLens UK",
+        "url": "https://github.com/Chris0Jeky/wealthlens-hq",
+    },
+    license_info={
+        "name": "MIT",
+        "url": "https://opensource.org/licenses/MIT",
+    },
+    openapi_tags=tags_metadata,
 )
 
 app.add_middleware(
@@ -45,13 +63,20 @@ app.add_middleware(
 app.include_router(data.router, prefix="/api/data", tags=["data"])
 
 
-@app.get("/api/health/data", tags=["health"])
+@app.get("/api/health/data", tags=["health"], summary="Dataset availability check")
 def health_data() -> dict:
-    """Dataset availability check — delegates to the data module."""
+    """Check which CSV datasets are present and readable.
+
+    Returns overall status (healthy / degraded / unavailable) plus
+    per-dataset availability and file size.
+    """
     return data.health_data()
 
 
-@app.get("/health")
+@app.get("/health", tags=["health"], summary="Liveness probe")
 def health() -> dict[str, str]:
-    """Liveness probe."""
+    """Minimal liveness check for load balancers and uptime monitors.
+
+    Returns ``{"status": "ok"}`` when the process is running.
+    """
     return {"status": "ok"}

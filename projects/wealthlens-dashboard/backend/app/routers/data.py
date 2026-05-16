@@ -192,33 +192,69 @@ def health_data() -> dict[str, Any]:
     }
 
 
-@router.get("/", response_model=DatasetListResponse)
+@router.get("/", response_model=DatasetListResponse, summary="List available datasets")
 def list_datasets() -> dict[str, list[str]]:
-    """Return available dataset names."""
+    """Return the names of all configured datasets.
+
+    The returned list can be used to build URLs for the paginated data
+    and metadata endpoints.
+    """
     return {"datasets": list(DATASETS.keys())}
 
 
-@router.get("/metadata", response_model=AllDatasetsMetadataResponse)
+@router.get(
+    "/metadata",
+    response_model=AllDatasetsMetadataResponse,
+    summary="Metadata for all datasets",
+)
 def all_datasets_metadata() -> dict[str, list[dict[str, Any]]]:
-    """Return metadata with source citations for every dataset."""
+    """Return metadata with source citations for every dataset.
+
+    Each entry includes the dataset description, data source name and URL,
+    access date, row count, and column names.
+    """
     return {"datasets": [_build_metadata(name) for name in DATASETS]}
 
 
-@router.get("/{dataset_name}/metadata", response_model=DatasetMetadataResponse)
+@router.get(
+    "/{dataset_name}/metadata",
+    response_model=DatasetMetadataResponse,
+    summary="Metadata for one dataset",
+)
 def dataset_metadata(dataset_name: str) -> dict[str, Any]:
-    """Return metadata with source citation for a single dataset."""
+    """Return metadata with source citation for a single dataset.
+
+    Args:
+        dataset_name: Slug identifying the dataset (e.g. ``wealth-shares``).
+
+    Raises:
+        HTTPException 404: If *dataset_name* is not recognised.
+    """
     if dataset_name not in DATASETS:
         raise HTTPException(status_code=404, detail=f"Unknown dataset: {dataset_name}")
     return _build_metadata(dataset_name)
 
 
-@router.get("/{dataset_name}", response_model=PaginatedDatasetResponse)
+@router.get(
+    "/{dataset_name}",
+    response_model=PaginatedDatasetResponse,
+    summary="Get paginated dataset rows",
+)
 def get_dataset(
     dataset_name: str,
     page: int = Query(default=1, ge=1, description="Page number (1-indexed)"),
     limit: int = Query(default=100, ge=1, le=1000, description="Rows per page (max 1000)"),
 ) -> dict[str, Any]:
-    """Return a processed dataset as a paginated list of row objects."""
+    """Return a processed dataset as a paginated list of row objects.
+
+    Args:
+        dataset_name: Slug identifying the dataset (e.g. ``wealth-shares``).
+        page: 1-indexed page number.  Defaults to ``1``.
+        limit: Number of rows per page, between 1 and 1000.  Defaults to ``100``.
+
+    Raises:
+        HTTPException 404: If *dataset_name* is not recognised.
+    """
     if dataset_name not in DATASETS:
         raise HTTPException(status_code=404, detail=f"Unknown dataset: {dataset_name}")
 
