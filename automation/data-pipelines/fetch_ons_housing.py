@@ -83,9 +83,9 @@ def process(xlsx_path: Path) -> pd.DataFrame:
             continue
 
         for year, col_idx in zip(years, year_cols, strict=True):
-            val = df_raw.iloc[i, col_idx]
+            cell: object = df_raw.iloc[i, col_idx]
             try:
-                ratio = float(val)
+                ratio = float(cell)  # type: ignore[arg-type]
                 records.append({"region": region, "year": year, "ratio": ratio})
             except (ValueError, TypeError):
                 continue

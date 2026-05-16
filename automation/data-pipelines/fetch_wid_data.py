@@ -13,6 +13,7 @@ import os
 import sys
 from datetime import date
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 import plotly.graph_objects as go
@@ -47,7 +48,7 @@ VARIABLES = [
 ]
 
 
-def fetch() -> dict:
+def fetch() -> dict[str, Any]:
     """Download top wealth share data from WID API."""
     RAW_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -59,11 +60,13 @@ def fetch() -> dict:
         timeout=REQUEST_TIMEOUT_SECONDS,
     )
     resp.raise_for_status()
-    raw_data = resp.json()
+    raw_data: dict[str, Any] = resp.json()
 
     # API may return an S3 download URL for large payloads
     if isinstance(raw_data, dict) and "download_url" in raw_data:
-        resp2 = requests.get(raw_data["download_url"], timeout=REQUEST_TIMEOUT_SECONDS)
+        resp2 = requests.get(
+            str(raw_data["download_url"]), timeout=REQUEST_TIMEOUT_SECONDS,
+        )
         resp2.raise_for_status()
         raw_data = resp2.json()
 
@@ -74,7 +77,7 @@ def fetch() -> dict:
     return raw_data
 
 
-def process(raw_data: dict) -> pd.DataFrame:
+def process(raw_data: dict[str, Any]) -> pd.DataFrame:
     """Clean WID API response into a tidy DataFrame.
 
     API returns: {variable: [{country: {meta: {...}, values: [{y, v}, ...]}}]}
