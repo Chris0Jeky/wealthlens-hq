@@ -17,6 +17,7 @@ import {
   TooltipComponent,
   TitleComponent,
   LegendComponent,
+  MarkLineComponent,
 } from "echarts/components";
 import VChart from "vue-echarts";
 import { useChartData } from "@/composables/useChartData";
@@ -30,6 +31,7 @@ use([
   TooltipComponent,
   TitleComponent,
   LegendComponent,
+  MarkLineComponent,
 ]);
 
 const { rows, loading, error } = useChartData("child-poverty");
@@ -42,7 +44,7 @@ const prefersReducedMotion =
   window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 // WCAG AA high-contrast colors
-const COLOR_ABOVE_AVG = "#dc2626"; // Red — ~4.6:1 (above national avg)
+const COLOR_ABOVE_AVG = "#b91c1c"; // Red-700 — ~5.7:1 (above national avg)
 const COLOR_BELOW_AVG = "#1a56db"; // Blue — ~7.2:1 (below national avg)
 const COLOR_NATIONAL_AVG = "#374151"; // Dark gray for reference line
 
@@ -118,7 +120,9 @@ const option = computed(() => {
         color: "#374151",
         formatter: "{value}%",
       },
-      max: 45,
+      max: data.values.length > 0
+        ? Math.ceil(Math.max(...data.values) * 1.1 / 5) * 5
+        : 45,
     },
     yAxis: {
       type: "category" as const,

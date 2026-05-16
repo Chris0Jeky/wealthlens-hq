@@ -52,6 +52,7 @@ vi.mock("echarts/components", () => ({
   TooltipComponent: {},
   TitleComponent: {},
   LegendComponent: {},
+  MarkLineComponent: {},
 }));
 
 // Now import the chart components (after mocks are set up)

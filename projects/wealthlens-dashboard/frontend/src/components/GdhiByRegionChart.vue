@@ -17,6 +17,7 @@ import {
   TooltipComponent,
   TitleComponent,
   LegendComponent,
+  MarkLineComponent,
 } from "echarts/components";
 import VChart from "vue-echarts";
 import { useChartData } from "@/composables/useChartData";
@@ -30,6 +31,7 @@ use([
   TooltipComponent,
   TitleComponent,
   LegendComponent,
+  MarkLineComponent,
 ]);
 
 const { rows, loading, error } = useChartData("gdhi-by-region");
@@ -43,7 +45,7 @@ const prefersReducedMotion =
 
 // WCAG AA high-contrast colors
 const COLOR_BAR = "#1a56db"; // Blue — ~7.2:1
-const COLOR_UK_AVG = "#dc2626"; // Red — ~4.6:1
+const COLOR_UK_AVG = "#b91c1c"; // Red-700 — ~5.7:1
 
 /** Sorted data extracted from rows (sorted by GDHI descending). */
 const chartData = computed(() => {
@@ -125,14 +127,14 @@ const option = computed(() => {
       {
         name: "GDHI per head",
         type: "bar" as const,
-        data: [...data.values].reverse(),
-        itemStyle: {
-          color: (params: { dataIndex: number }) => {
-            // Highlight bars above UK average differently
-            const idx = data.regions.length - 1 - params.dataIndex;
-            return data.values[idx] >= data.ukAvg ? COLOR_BAR : "#6b7280";
+        data: [...data.values].reverse().map((val, i) => ({
+          value: val,
+          itemStyle: {
+            color: data.values[data.regions.length - 1 - i] >= data.ukAvg
+              ? COLOR_BAR
+              : "#6b7280",
           },
-        },
+        })),
         barMaxWidth: 24,
         markLine: data.ukAvg
           ? {
