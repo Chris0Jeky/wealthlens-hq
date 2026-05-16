@@ -178,8 +178,10 @@ def process(raw_path: Path) -> pd.DataFrame:
         logger.error("No DATE column found in BoE data. Columns: %s", list(df_raw.columns))
         raise ValueError(f"No DATE column in BoE raw data: {list(df_raw.columns)}")
 
-    # Parse dates — BoE uses DD/Mon/YYYY (e.g. 02 Jan 2000) or ISO format
-    df_raw[date_col] = pd.to_datetime(df_raw[date_col], dayfirst=True, format="mixed")
+    # Parse dates — BoE live uses "02 Jan 2000"; fallback uses "2000-01-01".
+    # format="mixed" handles both; dayfirst omitted to avoid swapping
+    # month/day on ISO dates.
+    df_raw[date_col] = pd.to_datetime(df_raw[date_col], format="mixed")
 
     # Extract Bank Rate and CPI columns
     bank_rate_col = None
