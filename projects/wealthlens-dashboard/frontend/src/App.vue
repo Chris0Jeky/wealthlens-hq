@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { RouterView } from "vue-router";
-import ErrorBoundary from "@/components/ErrorBoundary.vue";
+import { RouterView } from 'vue-router'
+import ErrorBoundary from '@/components/ErrorBoundary.vue'
 </script>
 
 <template>
@@ -33,9 +33,13 @@ import ErrorBoundary from "@/components/ErrorBoundary.vue";
         <RouterView />
       </ErrorBoundary>
     </main>
-    <footer role="contentinfo" class="border-t border-gray-200 px-6 py-6 mt-12 text-center text-sm text-gray-500">
+    <footer
+      role="contentinfo"
+      class="border-t border-gray-200 px-6 py-6 mt-12 text-center text-sm text-gray-500"
+    >
       <p>
-        WealthLens UK &middot; Open source &middot; Data cited from ONS, WID, HMRC
+        WealthLens UK &middot; Open source &middot; Data cited from ONS, WID,
+        HMRC
       </p>
     </footer>
   </div>

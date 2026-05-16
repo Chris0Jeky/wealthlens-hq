@@ -1,20 +1,29 @@
 <script setup lang="ts">
 /** Dataset names that have a chart implementation. */
-const SUPPORTED_CHARTS = new Set(["wealth-shares", "housing-affordability", "cgt-concentration", "wealth-by-decile"]);
+const SUPPORTED_CHARTS = new Set([
+  'wealth-shares',
+  'housing-affordability',
+  'cgt-concentration',
+  'wealth-by-decile',
+])
 
 const props = defineProps<{
-  name: string;
-  description: string;
+  name: string
+  description: string
   /** Override chart availability. When omitted, checks SUPPORTED_CHARTS. */
-  hasChart?: boolean;
-}>();
+  hasChart?: boolean
+}>()
 
 const chartAvailable =
-  props.hasChart !== undefined ? props.hasChart : SUPPORTED_CHARTS.has(props.name);
+  props.hasChart !== undefined
+    ? props.hasChart
+    : SUPPORTED_CHARTS.has(props.name)
 </script>
 
 <template>
-  <div class="rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow">
+  <div
+    class="rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow"
+  >
     <h3 class="text-lg font-semibold mb-2">{{ name }}</h3>
     <p class="text-sm text-gray-600 mb-3">{{ description }}</p>
     <router-link
