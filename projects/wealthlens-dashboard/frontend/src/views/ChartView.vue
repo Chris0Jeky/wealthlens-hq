@@ -17,8 +17,10 @@ import { useRoute } from "vue-router";
 import StatStrip from "@/components/StatStrip.vue";
 import ChartToolbar from "@/components/ChartToolbar.vue";
 import ShareBar from "@/components/ShareBar.vue";
+import SharePanel from "@/components/SharePanel.vue";
 import RelatedCharts from "@/components/RelatedCharts.vue";
 import { useAnalytics } from "@/composables/useAnalytics";
+import { usePageMeta } from "@/composables/usePageMeta";
 import ChartSkeleton from "@/components/ChartSkeleton.vue";
 import ChartLoadError from "@/components/ChartLoadError.vue";
 import { chartConfigs, simpleChartTitles } from "@/config/chartArticles";
@@ -136,8 +138,24 @@ watch(
   { immediate: true },
 );
 
+/** Whether the share panel is visible. */
+const sharePanelOpen = ref(false);
+
+function toggleSharePanel(): void {
+  sharePanelOpen.value = !sharePanelOpen.value;
+}
+
 function onRangeChange(range: string) {
   activeRange.value = range;
+}
+
+/** Convert legacy hardcoded HTML snippets to display/meta-safe plain text. */
+function toPlainText(html: string): string {
+  if (typeof DOMParser === "undefined") {
+    return html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+  }
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  return doc.body.textContent?.replace(/\s+/g, " ").trim() ?? "";
 }
 
 /** Track chart views when the chart name changes. */
@@ -146,6 +164,40 @@ watch(chartName, (name) => {
     trackEvent("view_chart", { chart: name });
   }
 }, { immediate: true });
+
+/* ------------------------------------------------------------------ */
+/* Page meta (OpenGraph / Twitter Card)                                */
+/* ------------------------------------------------------------------ */
+
+const chartTitle = computed(() => {
+  if (config.value) return config.value.headline;
+  return simpleChartTitles[chartName.value] ?? chartName.value;
+});
+
+const chartDescription = computed(() => {
+  if (config.value) {
+    return toPlainText(config.value.lede);
+  }
+  return `UK wealth inequality data — ${chartTitle.value}`;
+});
+
+const chartOgImage = computed(
+  () => `https://chris0jeky.github.io/wealthlens-hq/og/${chartName.value}.png`,
+);
+
+const chartUrl = computed(
+  () => `https://chris0jeky.github.io/wealthlens-hq/charts/${chartName.value}`,
+);
+
+usePageMeta({
+  title: chartTitle,
+  description: chartDescription,
+  url: chartUrl,
+  image: chartOgImage,
+  imageAlt: computed(() => `${chartTitle.value} — WealthLens UK chart`),
+  ogType: "article",
+  twitterCard: "summary_large_image",
+});
 </script>
 
 <template>
@@ -196,8 +248,7 @@ watch(chartName, (name) => {
             {{ config.headlineEmphasis }}
           </em>
         </h1>
-        <!-- eslint-disable-next-line vue/no-v-html -- trusted hardcoded config, not user input -->
-        <p class="article-head__lede" v-html="config.lede"></p>
+        <p class="article-head__lede">{{ toPlainText(config.lede) }}</p>
       </div>
       <aside class="meta-card" aria-label="Chart metadata">
         <h2 class="meta-card__heading">Chart facts</h2>
@@ -272,8 +323,37 @@ watch(chartName, (name) => {
         </div>
       </div>
 
-      <!-- Share bar -->
-      <ShareBar :chart-id="config.source.chartId" />
+      <!-- Share bar with toggle button -->
+      <ShareBar :chart-id="config.source.chartId">
+        <template #append>
+          <button
+            type="button"
+            class="share-toggle-btn"
+            :aria-expanded="sharePanelOpen"
+            aria-controls="share-panel"
+            @click="toggleSharePanel"
+          >
+            <svg
+              viewBox="0 0 16 16"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              aria-hidden="true"
+            >
+              <path d="M4 9a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM12 5a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM12 15a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM5.7 8.2l4.6-2.4M5.7 7.8l4.6 2.4" />
+            </svg>
+            {{ sharePanelOpen ? "Close" : "Share & Embed" }}
+          </button>
+        </template>
+      </ShareBar>
+
+      <!-- Share panel (toggled) -->
+      <SharePanel
+        v-if="sharePanelOpen"
+        id="share-panel"
+        :chart-name="chartName"
+        :chart-title="config.headline"
+      />
     </div>
 
     <!-- Article body -->
@@ -296,23 +376,23 @@ watch(chartName, (name) => {
           class="article-body__pull"
         >
           <p class="article-body__pull-label">&uarr; The takeaway</p>
-          <!-- eslint-disable-next-line vue/no-v-html -- trusted hardcoded config -->
-          <p v-html="config.article.pullQuote.text"></p>
+          <p>{{ toPlainText(config.article.pullQuote.text) }}</p>
         </div>
 
-        <!-- eslint-disable-next-line vue/no-v-html -- trusted hardcoded config -->
         <p
           v-for="(para, j) in section.paragraphs"
           :key="`p-${i}-${j}`"
-          v-html="para"
-        ></p>
+        >
+          {{ toPlainText(para) }}
+        </p>
       </template>
 
       <!-- Methodology accordion -->
       <details class="method">
         <summary>Methodology &amp; data quality</summary>
-        <!-- eslint-disable-next-line vue/no-v-html -- trusted hardcoded methodology HTML with tables -->
-        <div class="method__body" v-html="config.methodology"></div>
+        <div class="method__body method__body--plain">
+          {{ toPlainText(config.methodology) }}
+        </div>
       </details>
     </article>
 
@@ -375,6 +455,35 @@ watch(chartName, (name) => {
             />
           </div>
         </div>
+
+        <!-- Share toggle for simple layout -->
+        <div class="simple-share-row">
+          <button
+            type="button"
+            class="share-toggle-btn"
+            :aria-expanded="sharePanelOpen"
+            aria-controls="share-panel-simple"
+            @click="toggleSharePanel"
+          >
+            <svg
+              viewBox="0 0 16 16"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              aria-hidden="true"
+            >
+              <path d="M4 9a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM12 5a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM12 15a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM5.7 8.2l4.6-2.4M5.7 7.8l4.6 2.4" />
+            </svg>
+            {{ sharePanelOpen ? "Close" : "Share & Embed" }}
+          </button>
+        </div>
+
+        <SharePanel
+          v-if="sharePanelOpen"
+          id="share-panel-simple"
+          :chart-name="chartName"
+          :chart-title="simpleChartTitles[chartName] || chartName"
+        />
       </div>
     </div>
   </template>
@@ -848,6 +957,46 @@ watch(chartName, (name) => {
   font-size: 18px;
   color: var(--wl-ink-muted);
   margin: 0 0 32px;
+}
+
+/* ============================================================ */
+/* SIMPLE SHARE ROW                                              */
+/* ============================================================ */
+.simple-share-row {
+  margin-top: 16px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* ============================================================ */
+/* SHARE TOGGLE BUTTON                                           */
+/* ============================================================ */
+.share-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  background: var(--wl-red);
+  border: 1px solid var(--wl-red);
+  font-family: var(--wl-mono);
+  font-size: 11px;
+  color: #fff;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+  margin-left: 8px;
+}
+.share-toggle-btn:hover {
+  background: var(--wl-ink);
+  border-color: var(--wl-ink);
+}
+.share-toggle-btn:focus-visible {
+  outline: 2px solid var(--wl-red);
+  outline-offset: 2px;
+}
+.share-toggle-btn svg {
+  width: 14px;
+  height: 14px;
 }
 
 /* ============================================================ */
