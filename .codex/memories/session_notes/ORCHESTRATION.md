@@ -11,7 +11,7 @@
 > 5. Pick up from the **Current Phase** section below.
 > 6. After completing work, UPDATE this file before the next compaction risk.
 
-Last updated: 2026-05-16 (wave 13 complete — 26 PRs total this session, #39-#64)
+Last updated: 2026-05-16 (wave 14 complete — 29 PRs total this session, #39-#67)
 
 ## Workflow Design
 
@@ -39,7 +39,7 @@ main
 
 ## Current Phase
 
-**Phase: WAVE 13 COMPLETE** — PRs #39-#64 (waves 7-13). All reviewed x2 (or R1 clean). Wave 14 in progress.
+**Phase: WAVE 14 COMPLETE** — PRs #39-#67 (waves 7-14). All reviewed x2. Wave 15 next.
 
 ### Work Stream Status
 
@@ -85,7 +85,8 @@ main
 31. [DONE] Audit for wave 12, seed tasks
 32. [DONE] Build wave 12 PRs (#59-#62), R1+R2 all pass
 33. [DONE] Build wave 13 PRs (#63-#64), R1+R2 all pass
-34. [IN PROGRESS] Build wave 14 PRs (backend API tests, CONTRIBUTING.md, mypy strictness)
+34. [DONE] Build wave 14 PRs (#65-#67), R1+R2 all pass
+35. [IN PROGRESS] Seed and build wave 15
 
 ## Decisions Log
 
@@ -304,9 +305,9 @@ main
 
 | # | Stream | Branch | Base | PR | Status |
 |---|--------|--------|------|----|--------|
-| 35 | Backend API endpoint tests | `test/backend-api-endpoints` | main | TBD | IN PROGRESS |
-| 36 | Root CONTRIBUTING.md | `docs/contributing` | main | TBD | PENDING |
-| 37 | Mypy strictness for automation/ | `chore/mypy-strict-automation` | main | TBD | PENDING |
+| 35 | Backend API endpoint tests | `test/backend-api-endpoints` | main | #66 | R2 PASS |
+| 36 | Root CONTRIBUTING.md | `docs/contributing` | main | #65 | R2 PASS |
+| 37 | Mypy strictness for automation/ | `chore/mypy-strict-automation` | main | #67 | R2 PASS |
 
 ### Wave 14 stacking
 ```
@@ -314,6 +315,22 @@ main
  ├── test/backend-api-endpoints (NEW, independent)
  ├── docs/contributing (NEW, independent)
  └── chore/mypy-strict-automation (NEW, independent)
+```
+
+## Wave 15 — EditorConfig, frontend chart tests, py.typed
+
+| # | Stream | Branch | Base | PR | Status |
+|---|--------|--------|------|----|--------|
+| 38 | EditorConfig | `chore/editorconfig` | main | TBD | IN PROGRESS |
+| 39 | Frontend chart component tests | `test/frontend-chart-components` | main | TBD | IN PROGRESS |
+| 40 | py.typed marker + backend __init__ | `chore/py-typed` | main | TBD | IN PROGRESS |
+
+### Wave 15 stacking
+```
+main
+ ├── chore/editorconfig (NEW, independent)
+ ├── test/frontend-chart-components (NEW, independent)
+ └── chore/py-typed (NEW, independent)
 ```
 
 ## Notes
