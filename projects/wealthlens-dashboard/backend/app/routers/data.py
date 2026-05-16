@@ -311,6 +311,9 @@ def dataset_columns(
     if dataset_name not in DATASETS:
         raise HTTPException(status_code=404, detail=f"Unknown dataset: {dataset_name}")
 
+    if dataset_name in _columns_cache:
+        return _columns_cache[dataset_name]
+
     df = _read_csv(dataset_name)
     columns = []
     for col in df.columns:
@@ -322,8 +325,12 @@ def dataset_columns(
                 "unique_count": int(df[col].nunique()),
             }
         )
-    return {"dataset": dataset_name, "row_count": len(df), "columns": columns}
+    result: dict[str, Any] = {"dataset": dataset_name, "row_count": len(df), "columns": columns}
+    _columns_cache[dataset_name] = result
+    return result
 
+
+_columns_cache: dict[str, dict[str, Any]] = {}
 
 _summary_cache: dict[str, dict[str, Any]] = {}
 
