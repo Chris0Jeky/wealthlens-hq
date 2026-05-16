@@ -174,6 +174,26 @@ def test_parse_table_2_2_friendly_labels() -> None:
     assert result.iloc[1]["decile"] == "2nd"
 
 
+def test_parse_table_2_2_skips_trailing_nan_columns() -> None:
+    """Parser should skip trailing NaN columns (common openpyxl artefact)."""
+    import numpy as np
+
+    df_raw = _build_mock_table_2_2()
+
+    # Append two trailing columns filled with NaN, simulating openpyxl
+    # reading empty columns from the XLSX file.
+    df_raw[4] = np.nan
+    df_raw[5] = np.nan
+
+    result = fetch_ons_wealth._parse_table_2_2(df_raw)
+    assert result is not None
+    assert len(result) == 10
+    # Values should come from column 3 (the last real data column),
+    # not from the trailing NaN columns 4 or 5.
+    assert result.iloc[-1]["total_wealth_bn"] == pytest.approx(5523.2, abs=0.1)
+    assert result.iloc[0]["total_wealth_bn"] == pytest.approx(13.9, abs=0.1)
+
+
 # ---------------------------------------------------------------------------
 # Unit tests for fetch() fallback mechanism
 # ---------------------------------------------------------------------------

@@ -14,6 +14,7 @@ These caveats are noted on the chart output.
 from __future__ import annotations
 
 import logging
+import re
 import zipfile
 from datetime import date
 from pathlib import Path
@@ -220,8 +221,16 @@ def _parse_table_2_2(df_raw: pd.DataFrame) -> pd.DataFrame | None:
     if agg_row is None:
         return None
 
-    # The last data column holds the most recent survey wave.
+    # The last data column holds the most recent survey wave.  However,
+    # openpyxl often reads trailing empty columns as NaN-filled, so we
+    # walk backwards from the rightmost column to find the first one that
+    # contains any actual numeric data.
     last_col = len(df_raw.columns) - 1
+    for col_idx in range(len(df_raw.columns) - 1, 0, -1):
+        col_values = df_raw.iloc[:, col_idx]
+        if col_values.notna().any():
+            last_col = col_idx
+            break
 
     records: list[dict[str, object]] = []
     for i in range(agg_row, min(agg_row + 12, len(df_raw))):
@@ -252,8 +261,6 @@ def _parse_table_2_2(df_raw: pd.DataFrame) -> pd.DataFrame | None:
 
 def _shorten_decile_label(label: str) -> str:
     """Turn 'Total Wealth Decile 1 (lowest)' into '1st (poorest)' etc."""
-    import re
-
     m = re.search(r"Decile\s+(\d+)", label, re.IGNORECASE)
     if not m:
         return label
