@@ -20,6 +20,12 @@ import ErrorBoundary from '@/components/ErrorBoundary.vue'
           WealthLens<span class="text-[var(--wl-red)]"> UK</span>
         </router-link>
         <nav aria-label="Main navigation" class="flex gap-6 text-sm">
+          <router-link
+            to="/tools/wealth-calculator"
+            class="text-[var(--wl-ink-muted)] hover:text-[var(--wl-ink)]"
+          >
+            Wealth Calculator
+          </router-link>
           <a
             href="https://github.com/Chris0Jeky/wealthlens-hq"
             target="_blank"
