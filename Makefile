@@ -21,7 +21,7 @@ ANALYSIS_DIR := automation/analysis
 
 .PHONY: help install lint format test dev-backend dev-frontend \
         ci-quick ci-full \
-        frontend-install frontend-build frontend-dev frontend-lint frontend-typecheck frontend-test \
+        frontend-install frontend-build frontend-dev frontend-lint frontend-test frontend-typecheck \
         backend-install backend-test backend-lint backend-format \
         pipeline-test pipelines clean
 
