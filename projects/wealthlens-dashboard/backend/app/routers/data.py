@@ -321,6 +321,24 @@ def get_dataset(
     }
 
 
+@router.get("/{dataset_name}/download")
+def download_dataset(dataset_name: str) -> Response:
+    """Download a dataset as a CSV file."""
+    if dataset_name not in DATASETS:
+        raise HTTPException(status_code=404, detail=f"Unknown dataset: {dataset_name}")
+
+    df = _read_csv(dataset_name)
+    csv_content = df.to_csv(index=False)
+
+    return Response(
+        content=csv_content,
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": f'attachment; filename="{dataset_name}.csv"',
+        },
+    )
+
+
 # --- Module-level guard ---
 # Fail fast at import time if someone adds a dataset to one dict but not the other.
 assert set(DATASETS.keys()) == set(DATASET_META.keys()), (
