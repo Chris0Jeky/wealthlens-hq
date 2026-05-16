@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { ref, nextTick } from 'vue'
 import { RouterLink } from 'vue-router'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const mobileMenuOpen = ref(false)
 const hamburgerBtn = ref<HTMLButtonElement | null>(null)
@@ -97,19 +100,19 @@ const today = new Date().toLocaleDateString('en-GB', {
       <!-- Desktop nav links -->
       <div class="nav-links">
         <RouterLink to="/" class="nav-link" active-class="active" @click="closeMenu()">
-          Front page
+          {{ $t('nav.home') }}
         </RouterLink>
         <RouterLink to="/charts/wealth-shares" class="nav-link" active-class="active" @click="closeMenu()">
-          The data
+          {{ $t('nav.data') }}
         </RouterLink>
         <RouterLink to="/methodology" class="nav-link" active-class="active" @click="closeMenu()">
-          Methodology
+          {{ $t('nav.methodology') }}
         </RouterLink>
         <RouterLink to="/about" class="nav-link" active-class="active" @click="closeMenu()">
-          About
+          {{ $t('nav.about') }}
         </RouterLink>
         <RouterLink to="/contribute" class="nav-link" active-class="active" @click="closeMenu()">
-          Contribute
+          {{ $t('nav.contribute') }}
         </RouterLink>
       </div>
 
@@ -121,10 +124,10 @@ const today = new Date().toLocaleDateString('en-GB', {
           rel="noopener"
           class="wl-btn wl-btn--ghost wl-btn--sm"
         >
-          View source ↗
+          {{ $t('nav.viewSource') }} ↗
         </a>
         <RouterLink to="/charts/wealth-shares" class="wl-btn wl-btn--red wl-btn--sm">
-          Read the data →
+          {{ $t('nav.readTheData') }} →
         </RouterLink>
       </div>
 
@@ -153,19 +156,19 @@ const today = new Date().toLocaleDateString('en-GB', {
       @keydown="onMenuKeydown"
     >
       <RouterLink to="/" class="mobile-link" active-class="active" @click="closeMenu()">
-        Front page
+        {{ $t('nav.home') }}
       </RouterLink>
       <RouterLink to="/charts/wealth-shares" class="mobile-link" active-class="active" @click="closeMenu()">
-        The data
+        {{ $t('nav.data') }}
       </RouterLink>
       <RouterLink to="/methodology" class="mobile-link" active-class="active" @click="closeMenu()">
-        Methodology
+        {{ $t('nav.methodology') }}
       </RouterLink>
       <RouterLink to="/about" class="mobile-link" active-class="active" @click="closeMenu()">
-        About
+        {{ $t('nav.about') }}
       </RouterLink>
       <RouterLink to="/contribute" class="mobile-link" active-class="active" @click="closeMenu()">
-        Contribute
+        {{ $t('nav.contribute') }}
       </RouterLink>
       <div class="mobile-actions">
         <a
@@ -174,10 +177,10 @@ const today = new Date().toLocaleDateString('en-GB', {
           rel="noopener"
           class="wl-btn wl-btn--ghost wl-btn--sm"
         >
-          View source ↗
+          {{ $t('nav.viewSource') }} ↗
         </a>
         <RouterLink to="/charts/wealth-shares" class="wl-btn wl-btn--red wl-btn--sm" @click="closeMenu()">
-          Read the data →
+          {{ $t('nav.readTheData') }} →
         </RouterLink>
       </div>
     </div>
