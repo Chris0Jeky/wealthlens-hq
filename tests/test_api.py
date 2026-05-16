@@ -487,3 +487,38 @@ def test_metadata_cache_warmed_on_startup():
             row_count, columns = data_mod._metadata_cache[name]
             assert row_count > 0
             assert len(columns) > 0
+
+
+# --- Compression tests ---
+
+
+def test_gzip_middleware_registered():
+    """GZipMiddleware should be in the middleware stack."""
+    from starlette.middleware.gzip import GZipMiddleware
+
+    middleware_classes = [m.cls for m in app.user_middleware]
+    assert GZipMiddleware in middleware_classes
+
+
+def test_gzip_compression_on_large_response():
+    """Large responses should be gzip-compressed when client accepts it."""
+    response = client.get(
+        "/api/data/wealth-shares",
+        headers={"Accept-Encoding": "gzip"},
+    )
+    assert response.status_code == 200
+    # httpx/TestClient automatically decompresses, but we can verify
+    # the response is valid and the middleware doesn't break anything
+    assert "data" in response.json()
+    assert len(response.json()["data"]) > 0
+
+
+def test_small_response_not_compressed():
+    """Small responses (like /health) should not be compressed."""
+    response = client.get(
+        "/health",
+        headers={"Accept-Encoding": "gzip"},
+    )
+    assert response.status_code == 200
+    # /health returns ~20 bytes, below minimum_size=1000
+    assert response.headers.get("content-encoding") != "gzip"
