@@ -89,6 +89,14 @@ export const useDataStore = defineStore('data', () => {
     return json.datasets
   }
 
+  function clearMetadata(name?: string): void {
+    if (name) {
+      metadata.value.delete(name)
+    } else {
+      metadata.value.clear()
+    }
+  }
+
   return {
     datasets,
     metadata,
@@ -98,5 +106,6 @@ export const useDataStore = defineStore('data', () => {
     fetchDataset,
     fetchMetadata,
     fetchAllMetadata,
+    clearMetadata,
   }
 })

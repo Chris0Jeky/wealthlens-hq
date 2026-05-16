@@ -229,4 +229,29 @@ describe('useDataStore', () => {
       expect(store.metadata.get('b')).toEqual(mockDatasets[1])
     })
   })
+
+  describe('clearMetadata', () => {
+    it('clears a single entry by name', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ name: 'x', description: '', source: '', source_url: '', access_date: '', row_count: 0, columns: [] }),
+      } as Response)
+
+      const store = useDataStore()
+      await store.fetchMetadata('x')
+      expect(store.metadata.get('x')).toBeDefined()
+
+      store.clearMetadata('x')
+      expect(store.metadata.get('x')).toBeUndefined()
+    })
+
+    it('clears all entries when no name given', async () => {
+      const store = useDataStore()
+      store.metadata.set('a', { name: 'a', description: '', source: '', source_url: '', access_date: '', row_count: 0, columns: [] })
+      store.metadata.set('b', { name: 'b', description: '', source: '', source_url: '', access_date: '', row_count: 0, columns: [] })
+
+      store.clearMetadata()
+      expect(store.metadata.size).toBe(0)
+    })
+  })
 })
