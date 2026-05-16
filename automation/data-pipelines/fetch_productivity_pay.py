@@ -27,6 +27,7 @@ Both indices are normalised to 100 at the chosen base year (1997).
 
 from __future__ import annotations
 
+import json
 import logging
 from datetime import date
 from pathlib import Path
@@ -68,17 +69,6 @@ CPIH_URL = (
     "https://www.ons.gov.uk/economy/inflationandpriceindices/"
     "timeseries/l55o/mm23/data"
 )
-
-# --- Source metadata dict (used by the backend data router) ---
-SOURCE_META = {
-    "description": "UK productivity vs. real pay, indexed to 100 at 1997",
-    "source": "ONS Labour Productivity (LZVD) & ONS AWE (KAB9) deflated by CPIH (L55O)",
-    "source_url": (
-        "https://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/"
-        "labourproductivity/timeseries/lzvd/prdy"
-    ),
-    "access_date": ACCESS_DATE,
-}
 
 
 def _fetch_ons_timeseries(url: str, label: str) -> pd.DataFrame | None:
@@ -151,6 +141,22 @@ def fetch() -> tuple[pd.DataFrame | None, pd.DataFrame | None, pd.DataFrame | No
             logger.info("Raw data saved to %s", path)
 
     return prod_df, awe_df, cpih_df
+
+
+def _write_sidecar_meta(csv_path: Path, *, is_fallback: bool) -> None:
+    """Write a .meta.json sidecar next to the CSV indicating data provenance.
+
+    This lets downstream consumers (charts, tests, the API) know whether
+    the data is live ONS data or illustrative fallback data.
+    """
+    meta_path = csv_path.with_suffix(".meta.json")
+    meta = {
+        "data_type": "illustrative_fallback" if is_fallback else "live_ons",
+        "generated": date.today().isoformat(),
+        "csv_file": csv_path.name,
+    }
+    meta_path.write_text(json.dumps(meta, indent=2) + "\n", encoding="utf-8")
+    logger.info("Sidecar metadata written to %s", meta_path)
 
 
 def _build_fallback_data() -> pd.DataFrame:
@@ -230,10 +236,13 @@ def process(
     prod_df: pd.DataFrame | None,
     awe_df: pd.DataFrame | None,
     cpih_df: pd.DataFrame | None,
-) -> pd.DataFrame:
+) -> tuple[pd.DataFrame, bool]:
     """Process raw ONS data into normalised productivity vs. pay indices.
 
     If any input is None, falls back to illustrative data.
+
+    Returns (df, is_fallback) where is_fallback is True when illustrative
+    data was used instead of live ONS data.
     """
     PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -245,12 +254,36 @@ def process(
         df = _build_fallback_data()
         out_path = PROCESSED_DIR / "productivity_pay_gap.csv"
         df.to_csv(out_path, index=False)
+        _write_sidecar_meta(out_path, is_fallback=True)
         logger.info("Processed data saved to %s", out_path)
         logger.info("%d rows", len(df))
-        return df
+        return df, True
 
     # Deflate nominal AWE to real terms using CPIH
     merged = awe_df.merge(cpih_df, on="year", suffixes=("_awe", "_cpih"))
+
+    # Guard against division by zero / NaN in CPIH values
+    bad_cpih = (merged["value_cpih"].isna()) | (merged["value_cpih"] <= 0)
+    if bad_cpih.any():
+        bad_years = merged.loc[bad_cpih, "year"].tolist()
+        logger.warning(
+            "Dropping %d rows with invalid CPIH values (<=0 or NaN): years %s",
+            bad_cpih.sum(),
+            bad_years,
+        )
+        merged = merged[~bad_cpih].copy()
+
+    if merged.empty:
+        logger.warning(
+            "No valid rows after filtering CPIH. "
+            "Using illustrative fallback data."
+        )
+        df = _build_fallback_data()
+        out_path = PROCESSED_DIR / "productivity_pay_gap.csv"
+        df.to_csv(out_path, index=False)
+        _write_sidecar_meta(out_path, is_fallback=True)
+        return df, True
+
     # Real AWE = nominal AWE / (CPIH / 100)
     merged["real_awe"] = merged["value_awe"] / (merged["value_cpih"] / 100)
 
@@ -270,8 +303,9 @@ def process(
         df = _build_fallback_data()
         out_path = PROCESSED_DIR / "productivity_pay_gap.csv"
         df.to_csv(out_path, index=False)
+        _write_sidecar_meta(out_path, is_fallback=True)
         logger.info("Processed data saved to %s", out_path)
-        return df
+        return df, True
 
     prod_base = float(base_row["productivity"].iloc[0])
     pay_base = float(base_row["real_awe"].iloc[0])
@@ -291,18 +325,17 @@ def process(
 
     out_path = PROCESSED_DIR / "productivity_pay_gap.csv"
     df.to_csv(out_path, index=False)
+    _write_sidecar_meta(out_path, is_fallback=False)
     logger.info("Processed data saved to %s", out_path)
     logger.info("%d rows", len(df))
 
-    return df
+    return df, False
 
 
-def build_chart(df: pd.DataFrame) -> None:
+def build_chart(df: pd.DataFrame, *, is_fallback: bool = False) -> None:
     """Generate the productivity vs. pay 'scissors chart'."""
     CHART_DIR.mkdir(parents=True, exist_ok=True)
 
-    # Determine whether we are using fallback data (check if 1970 is present)
-    is_fallback = len(df) > 40  # real ONS data would typically be shorter
     data_caveat = (
         " Data is ILLUSTRATIVE — derived from ONS bulletins, not exact"
         " time-series values. Replace with live ONS data before publication."
@@ -421,8 +454,13 @@ def build_chart(df: pd.DataFrame) -> None:
 def main() -> None:
     """Fetch productivity and pay data, process, and generate chart."""
     prod_df, awe_df, cpih_df = fetch()
-    df = process(prod_df, awe_df, cpih_df)
-    build_chart(df)
+    df, is_fallback = process(prod_df, awe_df, cpih_df)
+    if is_fallback:
+        logger.warning(
+            "Pipeline used ILLUSTRATIVE fallback data. "
+            "Charts will be marked accordingly."
+        )
+    build_chart(df, is_fallback=is_fallback)
     logger.info("Done. Open the chart HTML in a browser to view.")
 
 

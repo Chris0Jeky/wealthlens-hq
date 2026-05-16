@@ -1,46 +1,73 @@
 """Tests for the productivity-pay dataset endpoint.
 
 Verifies that the /api/data/productivity-pay endpoint returns the
-expected structure, metadata, and pagination behaviour — both when
-the CSV exists and when it does not.
+expected structure, metadata, and pagination behaviour.
+
+Tests use a temporary CSV fixture so they always run, even when the
+pipeline has not been executed (no silent 503 skips).
 """
 
 from __future__ import annotations
 
 import importlib
+import textwrap
+from pathlib import Path
+from types import ModuleType
+from unittest.mock import patch
 
+import pytest
 from fastapi.testclient import TestClient
 
+# Sample CSV content with the expected schema.
+_SAMPLE_CSV = textwrap.dedent("""\
+    year,productivity_index,pay_index,gap_pct
+    1997,100.0,100.0,0.0
+    1998,102.5,102.5,0.0
+    1999,105.0,105.0,0.0
+    2000,108.0,107.0,0.9
+    2001,110.5,110.0,0.5
+    2002,113.0,112.0,0.9
+    2003,116.0,113.5,2.2
+    2004,118.5,114.5,3.5
+    2005,120.0,115.0,4.3
+    2006,122.5,116.0,5.6
+""")
 
-def _make_client() -> TestClient:
-    """Create a fresh test client with reloaded app module."""
-    import app.main as main_mod
 
-    importlib.reload(main_mod)
-    return TestClient(main_mod.app)
+@pytest.fixture()
+def csv_client(tmp_path: Path) -> TestClient:
+    """Create a test client with a temporary productivity-pay CSV.
+
+    Patches the data router's DATA_DIR to point at the temp directory
+    so tests exercise real logic without needing pipeline output.
+    """
+    # Write the sample CSV into the temp dir
+    csv_path = tmp_path / "productivity_pay_gap.csv"
+    csv_path.write_text(_SAMPLE_CSV, encoding="utf-8")
+
+    # Patch DATA_DIR and clear the metadata cache, then reload
+    import app.routers.data as data_mod
+
+    with patch.object(data_mod, "DATA_DIR", tmp_path):
+        data_mod._metadata_cache.clear()
+        import app.main as main_mod
+        importlib.reload(main_mod)
+        yield TestClient(main_mod.app)
 
 
 class TestProductivityPayMetadata:
     """Metadata endpoint tests for productivity-pay dataset."""
 
-    def test_dataset_in_list(self) -> None:
+    def test_dataset_in_list(self, csv_client: TestClient) -> None:
         """productivity-pay should appear in the dataset listing."""
-        client = _make_client()
-        response = client.get("/api/data/")
+        response = csv_client.get("/api/data/")
         assert response.status_code == 200
         data = response.json()
         assert "productivity-pay" in data["datasets"]
 
-    def test_metadata_returns_source_citation(self) -> None:
+    def test_metadata_returns_source_citation(self, csv_client: TestClient) -> None:
         """Metadata should include source, source_url, and access_date."""
-        client = _make_client()
-        response = client.get("/api/data/productivity-pay/metadata")
-
-        # If the CSV has not been generated yet, we get a 503 — that's
-        # expected in CI where pipelines haven't run.
-        if response.status_code == 503:
-            return
-
+        response = csv_client.get("/api/data/productivity-pay/metadata")
         assert response.status_code == 200
         meta = response.json()
         assert meta["name"] == "productivity-pay"
@@ -50,14 +77,9 @@ class TestProductivityPayMetadata:
         assert "columns" in meta
         assert "row_count" in meta
 
-    def test_metadata_columns_match_schema(self) -> None:
+    def test_metadata_columns_match_schema(self, csv_client: TestClient) -> None:
         """Metadata columns should include the expected CSV columns."""
-        client = _make_client()
-        response = client.get("/api/data/productivity-pay/metadata")
-
-        if response.status_code == 503:
-            return
-
+        response = csv_client.get("/api/data/productivity-pay/metadata")
         assert response.status_code == 200
         meta = response.json()
         expected = {"year", "productivity_index", "pay_index", "gap_pct"}
@@ -67,30 +89,20 @@ class TestProductivityPayMetadata:
 class TestProductivityPayData:
     """Data retrieval tests for the productivity-pay dataset."""
 
-    def test_returns_paginated_data(self) -> None:
+    def test_returns_paginated_data(self, csv_client: TestClient) -> None:
         """GET /api/data/productivity-pay should return paginated rows."""
-        client = _make_client()
-        response = client.get("/api/data/productivity-pay")
-
-        if response.status_code == 503:
-            return
-
+        response = csv_client.get("/api/data/productivity-pay")
         assert response.status_code == 200
         body = response.json()
         assert "data" in body
         assert "page" in body
         assert "total" in body
         assert body["page"] == 1
-        assert body["total"] > 0
+        assert body["total"] == 10
 
-    def test_row_structure(self) -> None:
+    def test_row_structure(self, csv_client: TestClient) -> None:
         """Each row should have year, productivity_index, pay_index, gap_pct."""
-        client = _make_client()
-        response = client.get("/api/data/productivity-pay")
-
-        if response.status_code == 503:
-            return
-
+        response = csv_client.get("/api/data/productivity-pay")
         assert response.status_code == 200
         rows = response.json()["data"]
         assert len(rows) > 0
@@ -101,32 +113,63 @@ class TestProductivityPayData:
         assert "pay_index" in row
         assert "gap_pct" in row
 
-    def test_pagination_limit(self) -> None:
+    def test_pagination_limit(self, csv_client: TestClient) -> None:
         """Setting limit=5 should return at most 5 rows."""
-        client = _make_client()
-        response = client.get("/api/data/productivity-pay?limit=5")
-
-        if response.status_code == 503:
-            return
-
+        response = csv_client.get("/api/data/productivity-pay?limit=5")
         assert response.status_code == 200
         body = response.json()
-        assert len(body["data"]) <= 5
+        assert len(body["data"]) == 5
         assert body["limit"] == 5
 
 
 class TestProductivityPayMissing:
     """Behaviour when the CSV has not been generated yet."""
 
-    def test_returns_503_when_csv_missing(self) -> None:
+    def test_returns_503_when_csv_missing(self, tmp_path: Path) -> None:
         """Should return 503 with helpful message when CSV does not exist."""
-        client = _make_client()
+        # Point DATA_DIR at an empty tmp dir (no CSV)
+        import app.routers.data as data_mod
 
-        # The data router checks DATA_DIR / filename. We verify the error
-        # handling by ensuring we get either 200 (CSV exists) or 503 (not yet).
-        response = client.get("/api/data/productivity-pay")
-        assert response.status_code in (200, 503)
+        with patch.object(data_mod, "DATA_DIR", tmp_path):
+            data_mod._metadata_cache.clear()
+            import app.main as main_mod
+            importlib.reload(main_mod)
+            client = TestClient(main_mod.app)
 
-        if response.status_code == 503:
+            response = client.get("/api/data/productivity-pay")
+            assert response.status_code == 503
             detail = response.json()["detail"]
             assert "productivity-pay" in detail
+
+
+class TestProcessLogic:
+    """Unit tests for the pipeline process() function."""
+
+    def test_process_returns_fallback_when_inputs_none(
+        self, pipeline_module: ModuleType,
+    ) -> None:
+        """process() should return fallback data when any input is None."""
+        df, is_fallback = pipeline_module.process(None, None, None)
+        assert is_fallback is True
+        assert len(df) > 0
+        assert "year" in df.columns
+        assert "productivity_index" in df.columns
+        assert "pay_index" in df.columns
+        assert "gap_pct" in df.columns
+
+    def test_process_handles_zero_cpih(
+        self, pipeline_module: ModuleType,
+    ) -> None:
+        """process() should not produce inf when CPIH is 0."""
+        import pandas as pd
+
+        prod_df = pd.DataFrame({"year": [1997, 1998], "value": [100.0, 105.0]})
+        awe_df = pd.DataFrame({"year": [1997, 1998], "value": [400.0, 420.0]})
+        # CPIH with a zero value — should be dropped, not cause inf
+        cpih_df = pd.DataFrame({"year": [1997, 1998], "value": [100.0, 0.0]})
+
+        df, _is_fallback = pipeline_module.process(prod_df, awe_df, cpih_df)
+        # With only one valid CPIH row (1997), the base year exists so we
+        # get a 1-row result with the base year normalised to 100.
+        assert not df["productivity_index"].isin([float("inf")]).any()
+        assert not df["pay_index"].isin([float("inf")]).any()
