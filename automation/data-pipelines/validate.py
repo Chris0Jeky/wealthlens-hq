@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import logging
 import sys
+from datetime import date
 from pathlib import Path
 
 import pandas as pd
@@ -29,7 +30,7 @@ CHECKS: list[dict] = [
         "columns": {"variable", "country", "year", "value"},
         "min_rows": 50,
         "dtypes": {"year": "int", "value": "float"},
-        "ranges": {"year": (1800, 2030), "value": (0.0, 1.0)},
+        "ranges": {"year": (1800, date.today().year + 5), "value": (0.0, 1.0)},
         "unique_keys": ["year", "variable"],
     },
     {
@@ -37,7 +38,7 @@ CHECKS: list[dict] = [
         "columns": {"region", "year", "ratio"},
         "min_rows": 100,
         "dtypes": {"year": "int", "ratio": "float"},
-        "ranges": {"year": (1990, 2030), "ratio": (0.0, 50.0)},
+        "ranges": {"year": (1990, date.today().year + 5), "ratio": (0.0, 50.0)},
         "unique_keys": ["year", "region"],
     },
     {
@@ -96,8 +97,13 @@ def validate_all() -> list[str]:
             for col, (lo, hi) in check["ranges"].items():
                 if col in df.columns:
                     vals = pd.to_numeric(df[col], errors="coerce")
-                    below = (vals < lo).sum()
-                    above = (vals > hi).sum()
+                    coerced_nan = int(vals.isna().sum() - df[col].isna().sum())
+                    if coerced_nan > 0:
+                        errors.append(
+                            f"COERCE: {check['file']}.{col} has {coerced_nan} non-numeric values"
+                        )
+                    below = int((vals < lo).sum())
+                    above = int((vals > hi).sum())
                     if below > 0:
                         errors.append(f"RANGE: {check['file']}.{col} has {below} values below {lo}")
                     if above > 0:
@@ -106,7 +112,7 @@ def validate_all() -> list[str]:
         if "unique_keys" in check:
             keys = check["unique_keys"]
             if all(k in df.columns for k in keys):
-                dupes = df.duplicated(subset=keys, keep=False).sum()
+                dupes = int(df.duplicated(subset=keys, keep="first").sum())
                 if dupes > 0:
                     errors.append(f"DUPES: {check['file']} has {dupes} duplicate rows on {keys}")
 
