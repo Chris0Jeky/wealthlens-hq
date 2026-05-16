@@ -1,15 +1,27 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import CopyButton from '@/components/CopyButton.vue'
 
 describe('CopyButton', () => {
+  let originalClipboard: Clipboard
+
   beforeEach(() => {
     vi.useFakeTimers()
-    Object.assign(navigator, {
-      clipboard: {
-        writeText: vi.fn().mockResolvedValue(undefined),
-      },
+    originalClipboard = navigator.clipboard
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { writeText: vi.fn().mockResolvedValue(undefined) },
+      configurable: true,
+      writable: true,
     })
+  })
+
+  afterEach(() => {
+    Object.defineProperty(navigator, 'clipboard', {
+      value: originalClipboard,
+      configurable: true,
+      writable: true,
+    })
+    vi.useRealTimers()
   })
 
   it('renders a button', () => {
@@ -57,5 +69,47 @@ describe('CopyButton', () => {
     vi.advanceTimersByTime(2000)
     await wrapper.vm.$nextTick()
     expect(wrapper.text()).toContain('Copy')
+  })
+
+  it('updates aria-label to copied state', async () => {
+    const wrapper = mount(CopyButton, { props: { text: 'x' } })
+    await wrapper.find('button').trigger('click')
+    await Promise.resolve()
+    await wrapper.vm.$nextTick()
+    expect(wrapper.find('button').attributes('aria-label')).toBe('Copied to clipboard')
+  })
+
+  it('announces copied state via live region', async () => {
+    const wrapper = mount(CopyButton, { props: { text: 'x' } })
+    await wrapper.find('button').trigger('click')
+    await Promise.resolve()
+    await wrapper.vm.$nextTick()
+    const status = wrapper.find('[role="status"]')
+    expect(status.text()).toContain('Copied!')
+  })
+
+  it('does nothing when clipboard API is unavailable', async () => {
+    Object.defineProperty(navigator, 'clipboard', {
+      value: undefined,
+      configurable: true,
+      writable: true,
+    })
+    const wrapper = mount(CopyButton, { props: { text: 'x' } })
+    await wrapper.find('button').trigger('click')
+    await wrapper.vm.$nextTick()
+    expect(wrapper.text()).toContain('Copy')
+  })
+
+  it('shows error state when writeText rejects', async () => {
+    ;(navigator.clipboard.writeText as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+      new Error('denied'),
+    )
+    const wrapper = mount(CopyButton, { props: { text: 'x' } })
+    await wrapper.find('button').trigger('click')
+    await Promise.resolve()
+    await wrapper.vm.$nextTick()
+    expect(wrapper.text()).not.toContain('Copied!')
+    const status = wrapper.find('[role="status"]')
+    expect(status.text()).toContain('Copy failed')
   })
 })

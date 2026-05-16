@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onUnmounted } from 'vue'
 
 const props = defineProps<{
   text: string
@@ -7,7 +7,15 @@ const props = defineProps<{
 }>()
 
 const copied = ref(false)
+const error = ref(false)
 let timeout: ReturnType<typeof setTimeout> | null = null
+
+function resetTimer() {
+  if (timeout) {
+    clearTimeout(timeout)
+    timeout = null
+  }
+}
 
 async function handleCopy() {
   if (typeof navigator === 'undefined' || !navigator.clipboard) return
@@ -15,20 +23,28 @@ async function handleCopy() {
   try {
     await navigator.clipboard.writeText(props.text)
     copied.value = true
-    if (timeout) clearTimeout(timeout)
+    error.value = false
+    resetTimer()
     timeout = setTimeout(() => {
       copied.value = false
     }, 2000)
   } catch {
     copied.value = false
+    error.value = true
+    resetTimer()
+    timeout = setTimeout(() => {
+      error.value = false
+    }, 2000)
   }
 }
+
+onUnmounted(resetTimer)
 </script>
 
 <template>
   <button
     type="button"
-    :aria-label="label ?? 'Copy to clipboard'"
+    :aria-label="copied ? (label ? label + ' — copied' : 'Copied to clipboard') : (label ?? 'Copy to clipboard')"
     class="inline-flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
     @click="handleCopy"
   >
@@ -36,4 +52,7 @@ async function handleCopy() {
     <span v-else aria-hidden="true">&#128203;</span>
     <span class="sr-only sm:not-sr-only">{{ copied ? 'Copied!' : 'Copy' }}</span>
   </button>
+  <span role="status" aria-live="polite" class="sr-only">
+    {{ copied ? 'Copied!' : error ? 'Copy failed' : '' }}
+  </span>
 </template>
