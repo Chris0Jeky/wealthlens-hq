@@ -38,6 +38,7 @@ DATASETS: dict[str, str] = {
     "housing-affordability": "ons_housing_affordability_by_region.csv",
     "wealth-by-decile": "ons_wealth_by_decile.csv",
     "cgt-concentration": "hmrc_cgt_concentration.csv",
+    "productivity-pay": "productivity_pay_gap.csv",
 }
 
 # Source citations — every dataset must document where the data came from.
@@ -73,6 +74,15 @@ DATASET_META: dict[str, dict[str, str]] = {
         "source": "HMRC",
         "source_url": "https://www.gov.uk/government/statistics/capital-gains-tax-statistics",
         "access_date": "2026-05-14",
+    },
+    "productivity-pay": {
+        "description": "UK productivity vs. real pay, indexed to 100 at 1997",
+        "source": "ONS Labour Productivity (LZVD) & ONS AWE (KAB9) deflated by CPIH (L55O)",
+        "source_url": (
+            "https://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/"
+            "labourproductivity/timeseries/lzvd/prdy"
+        ),
+        "access_date": "2026-05-16",
     },
 }
 
