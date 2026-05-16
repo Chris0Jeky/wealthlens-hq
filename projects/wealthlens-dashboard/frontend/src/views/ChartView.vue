@@ -15,17 +15,15 @@
 import { computed, defineAsyncComponent, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import StatStrip from "@/components/StatStrip.vue";
-import type { StatItem } from "@/components/StatStrip.vue";
 import ChartToolbar from "@/components/ChartToolbar.vue";
-import type { SeriesLegendItem } from "@/components/ChartToolbar.vue";
 import ShareBar from "@/components/ShareBar.vue";
 import SharePanel from "@/components/SharePanel.vue";
 import RelatedCharts from "@/components/RelatedCharts.vue";
-import type { RelatedChartItem } from "@/components/RelatedCharts.vue";
 import { useAnalytics } from "@/composables/useAnalytics";
 import { usePageMeta } from "@/composables/usePageMeta";
 import ChartSkeleton from "@/components/ChartSkeleton.vue";
 import ChartLoadError from "@/components/ChartLoadError.vue";
+import { chartConfigs, simpleChartTitles } from "@/config/chartArticles";
 
 /**
  * Lazy-load chart components to avoid bundling ECharts on every route.
@@ -108,240 +106,6 @@ const route = useRoute();
 const { trackEvent } = useAnalytics();
 const chartName = computed(() => route.params.name as string);
 
-/* ------------------------------------------------------------------ */
-/* Chart content configuration                                         */
-/* ------------------------------------------------------------------ */
-
-/**
- * Full article configuration for a chart page. Charts without a full
- * config entry fall back to a simpler layout with just title + chart.
- */
-interface ChartConfig {
-  /** Breadcrumb trail segments (last is the current page, not a link). */
-  breadcrumb: { label: string; to?: string }[];
-  /** Tag pills shown above the headline. */
-  pills: { text: string; accent?: boolean }[];
-  /** Headline text. Supports one <em> for italic red emphasis. */
-  headline: string;
-  /** Italicised emphasis portion of headline (rendered in red). */
-  headlineEmphasis?: string;
-  /** Lede paragraph (HTML allowed for <strong> tags). */
-  lede: string;
-  /** Metadata card key-value pairs. */
-  meta: { label: string; value: string; href?: string }[];
-  /** Headline stats for the stat strip. */
-  stats: StatItem[];
-  /** Chart toolbar configuration. */
-  toolbar: {
-    title: string;
-    unit: string;
-    series: SeriesLegendItem[];
-    ranges: string[];
-    defaultRange: string;
-  };
-  /** Source bar content. */
-  source: {
-    name: string;
-    url: string;
-    licence: string;
-    accessed: string;
-    chartId: string;
-  };
-  /** Article body sections. */
-  article: {
-    sections: {
-      heading: string;
-      headingEmphasis?: string;
-      paragraphs: string[];
-    }[];
-    pullQuote?: {
-      text: string;
-    };
-  };
-  /** Methodology accordion content (HTML allowed). */
-  methodology: string;
-  /** Related charts for the bottom grid. */
-  related: RelatedChartItem[];
-}
-
-/** Simple fallback config for charts without full article content. */
-const simpleChartTitles: Record<string, string> = {
-  "housing-affordability":
-    "Housing Affordability — Price-to-Earnings Ratios by Region",
-  "cgt-concentration":
-    "Capital Gains Tax — Concentration by Size of Gain",
-  "wealth-by-decile": "Total Household Wealth by Decile",
-  "productivity-pay":
-    "Productivity vs Pay — The Growing Divergence",
-  "gdhi-by-region":
-    "Gross Disposable Household Income by Region",
-  "tax-composition":
-    "UK Tax Revenue — Work vs Wealth",
-  "boe-rates":
-    "Bank of England Base Rate vs CPI Inflation",
-  "child-poverty":
-    "Child Poverty Rate by UK Region",
-  "generational-wealth":
-    "Median Wealth by Generation at Key Ages",
-};
-
-/**
- * Full chart configurations. Wealth-shares is the primary example,
- * matching the broadsheet design reference exactly.
- */
-const chartConfigs: Record<string, ChartConfig> = {
-  "wealth-shares": {
-    breadcrumb: [
-      { label: "Home", to: "/" },
-      { label: "The data", to: "/" },
-      /* Future pillar routes: link to pillar index when it exists */
-      { label: "Wealth", to: "#" },
-      { label: "Who owns wealth in the UK?" },
-    ],
-    pills: [
-      { text: "Wealth", accent: true },
-      { text: "Historical · 1820–2023" },
-      { text: "United Kingdom" },
-      /* Display date: human-readable format is intentional for UI pills */
-      { text: "Updated 14 May 2026" },
-    ],
-    headline: "Who owns wealth in the UK?",
-    headlineEmphasis: "Same lot, mostly.",
-    lede: 'For at least two centuries, the top 10% have held over <strong>half of all UK personal wealth</strong>. The post-war squeeze was real, but partial. The slide back has been steady since 1980. We’re now at 1910 levels — without the empire to explain it.',
-    meta: [
-      { label: "Source", value: "WID.world", href: "https://wid.world" },
-      { label: "Series", value: "UK · Net personal wealth" },
-      { label: "Coverage", value: "1820 — 2023" },
-      /* Display date: human-readable format is intentional for the meta card */
-      { label: "Updated", value: "14 May 2026" },
-      { label: "Licence", value: "CC-BY 4.0" },
-      { label: "Data points", value: "22" },
-      { label: "Chart ID", value: "WL-W-001" },
-    ],
-    stats: [
-      {
-        label: "The headline",
-        value: "57",
-        unit: "%",
-        description:
-          "Share of UK personal wealth owned by the top 10% in 2023",
-        headline: true,
-      },
-      {
-        label: "Top 1% alone",
-        value: "28",
-        unit: "%",
-        description: "More than the bottom 70% combined",
-      },
-      {
-        label: "Bottom 50%",
-        value: "6",
-        unit: "%",
-        description:
-          "Half the country splits one-sixteenth of the wealth",
-      },
-      {
-        label: "Postwar low (1980)",
-        value: "50",
-        unit: "%",
-        description:
-          "The least concentrated it’s ever been — and still half",
-      },
-    ],
-    toolbar: {
-      title: "Share of net personal wealth",
-      unit: "%",
-      series: [
-        { label: "Top 10%", color: "var(--wl-red)", bold: true },
-        { label: "Top 1%", color: "var(--wl-ink)" },
-        { label: "Middle 40%", color: "var(--wl-ink-faint)" },
-        { label: "Bottom 50%", color: "var(--wl-ink-faint)" },
-      ],
-      ranges: ["200y", "100y", "50y", "25y"],
-      defaultRange: "200y",
-    },
-    source: {
-      name: "World Inequality Database (wid.world)",
-      url: "https://wid.world",
-      licence: "CC-BY 4.0",
-      accessed: "2026-05-14",
-      chartId: "WL-W-001",
-    },
-    article: {
-      sections: [
-        {
-          heading: "What this chart shows",
-          paragraphs: [
-            'The share of <em>net personal wealth</em> held by four percentile groups in the United Kingdom, from 1820 to 2023. Net personal wealth is the sum of all financial assets (savings, investments, pensions) and non-financial assets (mainly housing) — minus debts.',
-          ],
-        },
-        {
-          heading: "",
-          paragraphs: [
-            'The shape tells a story in three acts. From 1820 to 1914, the UK was the most unequal large economy in the world by some measures — a tiny aristocratic and capitalist class held almost 90% of all personal wealth. Two world wars, progressive taxation, and the postwar welfare settlement compressed this dramatically: by 1980, the bottom 50% held 8% of wealth, and the top 10% had fallen to 50%. Since then the curve has bent the other way.',
-          ],
-        },
-        {
-          heading: "Why it",
-          headingEmphasis: "matters",
-          paragraphs: [
-            'Wealth, not income, is the dominant determinant of life outcomes in the UK in 2026. It funds deposits on first homes, university choices, business creation, and old-age security. When wealth is concentrated, opportunity is too — and the rate of inter-generational mobility falls. The “left-behind town” isn’t a metaphor. It’s a balance sheet.',
-          ],
-        },
-      ],
-      pullQuote: {
-        text: 'In two hundred years of data, the top 10% have <strong>never</strong> held less than 49% of UK personal wealth. The post-war compression was real — but partial. Since 1980, the trend has been steady re-concentration.',
-      },
-    },
-    methodology: `
-      <p>The data are drawn from the World Inequality Database (WID.world), which harmonises a range of national wealth estimates to produce comparable cross-country series. For the UK, WID combines:</p>
-      <ul>
-        <li>HMRC estate-multiplier estimates (1809 onward)</li>
-        <li>ONS Wealth and Assets Survey microdata (2006 onward)</li>
-        <li>National accounts household balance sheets</li>
-        <li>Forbes/Sunday Times Rich List rich-list calibration at the very top</li>
-      </ul>
-      <p>The series uses <em>net personal wealth</em> — financial &amp; non-financial assets minus debts, on an individual basis (not household). Pension wealth is included where defined-contribution; defined-benefit entitlements are excluded in this series.</p>
-      <table>
-        <thead><tr><th>Year span</th><th>Primary method</th><th>Confidence</th></tr></thead>
-        <tbody>
-          <tr><td>1820 – 1900</td><td>Estate multiplier</td><td>Moderate</td></tr>
-          <tr><td>1900 – 1960</td><td>Estate multiplier + tax tabulations</td><td>High</td></tr>
-          <tr><td>1960 – 2006</td><td>Tax tabulations + survey</td><td>High</td></tr>
-          <tr><td>2006 – 2023</td><td>WAS microdata + admin</td><td>Very high</td></tr>
-        </tbody>
-      </table>
-      <p><strong>Known caveats:</strong> wealth at the very top is historically under-counted; offshore holdings are largely invisible to estate records; pension reform changes mean pre-2006 and post-2006 series are not strictly comparable for the bottom 50%.</p>
-    `,
-    related: [
-      {
-        domain: "Wealth · UK",
-        title: "Composition of household wealth, 1995–2023",
-        finding:
-          'Housing is now <b>36%</b> of all household wealth — up from 22% in 1995.',
-        to: "/charts/wealth-by-decile",
-        sparkType: "line",
-      },
-      {
-        domain: "Tax · UK",
-        title: "Capital gains concentration by decile",
-        finding:
-          '<b>92%</b> of taxable gains accrue to the top 1% of recipients.',
-        to: "/charts/cgt-concentration",
-        sparkType: "bar",
-      },
-      {
-        domain: "Housing · UK",
-        title: "House price to earnings ratio, 1969–2024",
-        finding:
-          'UK ratio is <b>8.6×</b> — the highest since records began.',
-        to: "/charts/housing-affordability",
-        sparkType: "line",
-      },
-    ],
-  },
-};
-
 /** Whether the current chart has a full article config. */
 const hasFullConfig = computed(
   () => chartName.value in chartConfigs,
@@ -358,7 +122,21 @@ const isSupported = computed(
 );
 
 /** Active range for toolbar (local UI state). */
-const activeRange = ref("200y");
+const activeRange = ref("");
+
+/**
+ * Reset activeRange to the chart's default when navigating between charts.
+ * This prevents stale range selections from persisting across pages
+ * (e.g. "200y" showing on a chart that only has ["All", "10y", "5y"]).
+ */
+watch(
+  () => chartName.value,
+  (name) => {
+    const cfg = chartConfigs[name];
+    activeRange.value = cfg?.toolbar.defaultRange ?? "";
+  },
+  { immediate: true },
+);
 
 /** Whether the share panel is visible. */
 const sharePanelOpen = ref(false);
@@ -515,6 +293,12 @@ usePageMeta({
         />
         <div class="chart-stage">
           <WealthSharesChart v-if="chartName === 'wealth-shares'" />
+          <ProductivityPayChart v-else-if="chartName === 'productivity-pay'" />
+          <GdhiByRegionChart v-else-if="chartName === 'gdhi-by-region'" />
+          <TaxCompositionChart v-else-if="chartName === 'tax-composition'" />
+          <BoeRatesChart v-else-if="chartName === 'boe-rates'" />
+          <ChildPovertyChart v-else-if="chartName === 'child-poverty'" />
+          <GenerationalWealthChart v-else-if="chartName === 'generational-wealth'" />
         </div>
         <div class="chart-source-bar">
           <div class="chart-source-bar__left">
@@ -664,28 +448,10 @@ usePageMeta({
               v-if="chartName === 'housing-affordability'"
             />
             <CgtConcentrationChart
-              v-if="chartName === 'cgt-concentration'"
+              v-else-if="chartName === 'cgt-concentration'"
             />
             <WealthByDecileChart
-              v-if="chartName === 'wealth-by-decile'"
-            />
-            <ProductivityPayChart
-              v-if="chartName === 'productivity-pay'"
-            />
-            <GdhiByRegionChart
-              v-if="chartName === 'gdhi-by-region'"
-            />
-            <TaxCompositionChart
-              v-if="chartName === 'tax-composition'"
-            />
-            <BoeRatesChart
-              v-if="chartName === 'boe-rates'"
-            />
-            <ChildPovertyChart
-              v-if="chartName === 'child-poverty'"
-            />
-            <GenerationalWealthChart
-              v-if="chartName === 'generational-wealth'"
+              v-else-if="chartName === 'wealth-by-decile'"
             />
           </div>
         </div>
