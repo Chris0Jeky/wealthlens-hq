@@ -1,29 +1,23 @@
-import { ref, onMounted, onBeforeUnmount, type Ref } from 'vue'
+import { ref, onMounted, onUnmounted, type Ref } from 'vue'
 
 export interface ChartDimensions {
   width: number
   height: number
 }
 
-const MIN_HEIGHT = 300
+const MIN_HEIGHT = 200
 const MAX_HEIGHT = 600
-const ASPECT_RATIO = 0.56
+const ASPECT_RATIO = 0.5
 
-/**
- * Tracks container width via ResizeObserver and computes a responsive chart
- * height using a fixed aspect ratio clamped between MIN_HEIGHT and MAX_HEIGHT.
- */
 export function useChartDimensions(
   containerRef: Ref<HTMLElement | null>,
 ): { dimensions: Ref<ChartDimensions> } {
   const dimensions = ref<ChartDimensions>({ width: 0, height: MIN_HEIGHT })
   let observer: ResizeObserver | null = null
 
-  function update(width: number): void {
-    const height = Math.round(
-      Math.min(MAX_HEIGHT, Math.max(MIN_HEIGHT, width * ASPECT_RATIO)),
-    )
-    dimensions.value = { width: Math.round(width), height }
+  function update(width: number) {
+    const h = Math.min(MAX_HEIGHT, Math.max(MIN_HEIGHT, Math.round(width * ASPECT_RATIO)))
+    dimensions.value = { width, height: h }
   }
 
   onMounted(() => {
@@ -32,19 +26,16 @@ export function useChartDimensions(
     if (typeof ResizeObserver === 'undefined') return
 
     observer = new ResizeObserver((entries) => {
-      const entry = entries[0]
-      if (entry) {
+      for (const entry of entries) {
         update(entry.contentRect.width)
       }
     })
     observer.observe(el)
-
     update(el.clientWidth)
   })
 
-  onBeforeUnmount(() => {
+  onUnmounted(() => {
     observer?.disconnect()
-    observer = null
   })
 
   return { dimensions }
