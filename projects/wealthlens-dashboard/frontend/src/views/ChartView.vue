@@ -22,6 +22,7 @@ import ShareBar from "@/components/ShareBar.vue";
 import RelatedCharts from "@/components/RelatedCharts.vue";
 import type { RelatedChartItem } from "@/components/RelatedCharts.vue";
 import { useAnalytics } from "@/composables/useAnalytics";
+import { usePageMeta } from "@/composables/usePageMeta";
 
 /** Lazy-load chart components to avoid bundling ECharts on every route. */
 const WealthSharesChart = defineAsyncComponent(
@@ -291,6 +292,41 @@ watch(chartName, (name) => {
     trackEvent("view_chart", { chart: name });
   }
 }, { immediate: true });
+
+/* ------------------------------------------------------------------ */
+/* Page meta (OpenGraph / Twitter Card)                                */
+/* ------------------------------------------------------------------ */
+
+const chartTitle = computed(() => {
+  if (config.value) return config.value.headline;
+  return simpleChartTitles[chartName.value] ?? chartName.value;
+});
+
+const chartDescription = computed(() => {
+  if (config.value) {
+    // Strip HTML tags from lede for meta description
+    return config.value.lede.replace(/<[^>]*>/g, "");
+  }
+  return `UK wealth inequality data — ${chartTitle.value}`;
+});
+
+const chartOgImage = computed(
+  () => `https://chris0jeky.github.io/wealthlens-hq/og/${chartName.value}.png`,
+);
+
+const chartUrl = computed(
+  () => `https://chris0jeky.github.io/wealthlens-hq/charts/${chartName.value}`,
+);
+
+usePageMeta({
+  title: chartTitle,
+  description: chartDescription,
+  url: chartUrl,
+  image: chartOgImage,
+  imageAlt: computed(() => `${chartTitle.value} — WealthLens UK chart`),
+  ogType: "article",
+  twitterCard: "summary_large_image",
+});
 </script>
 
 <template>
