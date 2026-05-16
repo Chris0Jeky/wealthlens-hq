@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import importlib
 import textwrap
+from collections.abc import Generator
 from pathlib import Path
 from types import ModuleType
 from unittest.mock import patch
@@ -35,7 +36,7 @@ _SAMPLE_CSV = textwrap.dedent("""\
 
 
 @pytest.fixture()
-def csv_client(tmp_path: Path) -> TestClient:
+def csv_client(tmp_path: Path) -> Generator[TestClient, None, None]:
     """Create a test client with a temporary productivity-pay CSV.
 
     Patches the data router's DATA_DIR to point at the temp directory
