@@ -18,7 +18,6 @@ marked as such.
 from __future__ import annotations
 
 import logging
-import sys
 from datetime import date
 from pathlib import Path
 
@@ -97,7 +96,7 @@ def _try_parse_live(xlsx_path: Path) -> pd.DataFrame | None:
     """
     try:
         xl = pd.ExcelFile(xlsx_path)
-    except Exception as exc:  # noqa: BLE001 — graceful fallback
+    except Exception as exc:
         logger.warning("Could not open XLSX: %s", exc)
         return None
 
@@ -119,7 +118,7 @@ def _try_parse_live(xlsx_path: Path) -> pd.DataFrame | None:
     logger.info("Reading sheet: '%s'", annual_sheet)
     try:
         df_raw = pd.read_excel(xlsx_path, sheet_name=annual_sheet, header=None)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.warning("Could not read sheet '%s': %s", annual_sheet, exc)
         return None
 
