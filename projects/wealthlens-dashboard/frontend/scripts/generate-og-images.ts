@@ -79,7 +79,11 @@ async function loadFonts(): Promise<
   const playfairBoldPath = join(fontCacheDir, "PlayfairDisplay-Bold.ttf");
 
   // Download fonts if not cached
-  if (!existsSync(interRegularPath)) {
+  if (
+    !existsSync(interRegularPath) ||
+    !existsSync(interBoldPath) ||
+    !existsSync(playfairBoldPath)
+  ) {
     console.log("Downloading fonts (first run only)...");
     await downloadFont(
       "https://cdn.jsdelivr.net/fontsource/fonts/inter@latest/latin-400-normal.ttf",

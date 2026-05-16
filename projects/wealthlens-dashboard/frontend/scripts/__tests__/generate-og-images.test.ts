@@ -9,13 +9,16 @@
 
 import { describe, it, expect } from "vitest";
 import { existsSync, readFileSync } from "fs";
-import { resolve, join } from "path";
+import { resolve, join, dirname } from "path";
+import { fileURLToPath } from "url";
 import { VALID_CHART_NAMES } from "../../src/constants/charts";
 import {
   OG_METADATA,
   getChartsMissingOgMetadata,
 } from "../../src/constants/ogMetadata";
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 const OUTPUT_DIR = resolve(__dirname, "../../public/og");
 
 // PNG magic bytes: 137 80 78 71 13 10 26 10

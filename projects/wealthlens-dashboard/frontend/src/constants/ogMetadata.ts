@@ -26,28 +26,28 @@ export const OG_METADATA: Record<string, OgMetadataEntry> = {
     title: "Who Owns the UK?",
     subtitle: "The top 10% hold 57% of all household wealth",
     source: "World Inequality Database (WID)",
-    sourceAccessDate: "2025-05-14",
+    sourceAccessDate: "2026-05-14",
   },
   "housing-affordability": {
     title: "The Housing Crisis in Numbers",
     subtitle:
       "House prices are 8.3x average earnings — up from 3.5x in 1997",
     source: "ONS Housing Affordability Dataset",
-    sourceAccessDate: "2025-05-14",
+    sourceAccessDate: "2026-05-14",
   },
   "wealth-by-decile": {
     title: "Wealth by Decile",
     subtitle:
       "The bottom 50% of households hold just 9% of total wealth",
     source: "ONS Wealth and Assets Survey",
-    sourceAccessDate: "2025-05-14",
+    sourceAccessDate: "2026-05-14",
   },
   "cgt-concentration": {
     title: "Who Pays Capital Gains Tax?",
     subtitle:
       "78% of CGT is paid by just 5,000 individuals each year",
     source: "HMRC Capital Gains Tax Statistics",
-    sourceAccessDate: "2025-05-14",
+    sourceAccessDate: "2026-05-14",
   },
 };
 
