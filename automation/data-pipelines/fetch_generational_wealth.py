@@ -25,11 +25,9 @@ from pathlib import Path
 
 import pandas as pd
 import plotly.graph_objects as go
-import requests
 from chart_html import write_accessible_chart
 
 logger = logging.getLogger(__name__)
-REQUEST_TIMEOUT_SECONDS = 60
 
 ROOT = Path(__file__).resolve().parents[2]
 DATA_DIR = ROOT / "projects" / "wealthlens-dashboard" / "data"
@@ -38,14 +36,6 @@ PROCESSED_DIR = DATA_DIR / "processed"
 CHART_DIR = ROOT / "projects" / "wealthlens-dashboard" / "charts"
 
 ACCESS_DATE = date.today().isoformat()
-
-# Resolution Foundation data page — they publish some open data alongside
-# their reports.  The exact download URL changes with each edition, so we
-# try the latest known URL and fall back to hardcoded data if it fails.
-RF_DATA_URL = (
-    "https://www.resolutionfoundation.org/app/uploads/2024/10/"
-    "Intergenerational-Audit-2024-Data.xlsx"
-)
 
 # Well-documented median household wealth figures by generation at
 # equivalent ages, compiled from Resolution Foundation / ONS WAS
@@ -124,7 +114,7 @@ FALLBACK_DATA = [
         "age_milestone": 50,
         "median_wealth_gbp": 210000,
         "year_measured": 2025,
-        "projected": False,
+        "projected": True,
     },
     # Median total household wealth at age 60
     {
@@ -138,41 +128,28 @@ FALLBACK_DATA = [
 ]
 
 
-def fetch() -> Path | None:
-    """Try to download Resolution Foundation intergenerational data.
+def fetch() -> pd.DataFrame:
+    """Return generational wealth data from curated published figures.
 
-    Returns the path to the downloaded file, or None if the download
-    fails (in which case the pipeline falls back to hardcoded data
-    compiled from published figures).
+    Resolution Foundation's XLSX uses complex multi-sheet layouts that
+    change between editions, so we rely on manually verified figures
+    from their published reports and the ONS WAS.  A future enhancement
+    could parse the XLSX directly if the format stabilises.
     """
     RAW_DIR.mkdir(parents=True, exist_ok=True)
-    out_path = RAW_DIR / "rf_intergenerational_audit.xlsx"
 
-    logger.info("Attempting to download Resolution Foundation data...")
-    try:
-        resp = requests.get(RF_DATA_URL, timeout=REQUEST_TIMEOUT_SECONDS)
-        resp.raise_for_status()
-    except requests.RequestException as exc:
-        logger.warning("Resolution Foundation download failed: %s", exc)
-        logger.info("Falling back to hardcoded data from published figures.")
-        return None
+    logger.info("Using curated data from Resolution Foundation / ONS WAS publications.")
+    df = pd.DataFrame(FALLBACK_DATA)
 
-    try:
-        out_path.write_bytes(resp.content)
-    except OSError as exc:
-        logger.warning("Could not write file (%s: %s)", type(exc).__name__, exc)
-        return None
+    raw_path = RAW_DIR / "generational_wealth_gap_fallback.csv"
+    df.to_csv(raw_path, index=False)
+    logger.info("Raw fallback data saved to %s", raw_path)
 
-    logger.info("Saved to %s (%d KB)", out_path, len(resp.content) // 1024)
-    return out_path
+    return df
 
 
-def process(xlsx_path: Path | None) -> pd.DataFrame:
+def process(df_raw: pd.DataFrame) -> pd.DataFrame:
     """Process generational wealth data into a clean CSV.
-
-    If an XLSX was downloaded, attempts to parse it for cohort wealth
-    data.  Falls back to well-documented hardcoded data compiled from
-    Resolution Foundation and ONS WAS publications.
 
     Output columns:
         generation, birth_years, age_milestone, median_wealth_gbp,
@@ -180,15 +157,7 @@ def process(xlsx_path: Path | None) -> pd.DataFrame:
     """
     PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
 
-    if xlsx_path is not None:
-        logger.info("XLSX downloaded but cohort extraction not implemented — "
-                     "using curated fallback data from published figures.")
-
-    # Use the well-documented fallback data in all cases.  The XLSX from
-    # Resolution Foundation uses complex multi-sheet layouts that change
-    # between editions, so we rely on manually verified figures from their
-    # published reports and the ONS WAS.
-    df = pd.DataFrame(FALLBACK_DATA)
+    df = df_raw.copy()
 
     # Sort by generation order then age milestone for clean output
     gen_order = {"Baby Boomers": 0, "Generation X": 1, "Millennials": 2}
@@ -402,8 +371,8 @@ def build_chart(df: pd.DataFrame) -> None:
 
 def main() -> None:
     """Fetch generational wealth data, process it, and generate chart."""
-    xlsx_path = fetch()
-    df = process(xlsx_path)
+    df_raw = fetch()
+    df = process(df_raw)
     build_chart(df)
     logger.info("Done. Open charts/generational_wealth_gap.html in a browser to view.")
 
