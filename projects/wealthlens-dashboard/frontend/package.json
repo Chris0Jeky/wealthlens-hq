@@ -13,7 +13,9 @@
     "format:check": "prettier --check .",
     "typecheck": "vue-tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed"
   },
   "dependencies": {
     "echarts": "^6.0.0",
@@ -25,6 +27,7 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@pinia/testing": "^1.0.3",
+    "@playwright/test": "^1.60.0",
     "@tailwindcss/vite": "^4.1.0",
     "@types/node": "^25.8.0",
     "@vitejs/plugin-vue": "^6.0.7",
