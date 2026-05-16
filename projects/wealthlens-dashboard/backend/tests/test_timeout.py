@@ -6,9 +6,11 @@ Uses a minimal FastAPI app with a very short timeout (0.1s) to keep tests fast.
 from __future__ import annotations
 
 import asyncio
+from collections.abc import AsyncGenerator
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+from starlette.responses import StreamingResponse
 
 from app.timeout_middleware import TimeoutMiddleware
 
@@ -32,6 +34,17 @@ def _make_app(timeout: float = 0.1) -> FastAPI:
         """Sleeps longer than the timeout — should trigger 504."""
         await asyncio.sleep(1.0)
         return {"status": "done"}
+
+    @test_app.get("/streaming-slow")
+    async def streaming_slow() -> StreamingResponse:
+        """Starts sending chunks then stalls — tests partial-send timeout."""
+
+        async def generate() -> AsyncGenerator[str, None]:
+            yield "chunk1"
+            await asyncio.sleep(1.0)
+            yield "chunk2"
+
+        return StreamingResponse(generate(), media_type="text/plain")
 
     @test_app.get("/health")
     async def health() -> dict[str, str]:
@@ -98,3 +111,22 @@ class TestHealthEndpointsExempt:
         response = client.get("/api/health/data")
         assert response.status_code == 200
         assert response.json() == {"status": "ok"}
+
+
+class TestStreamingTimeout:
+    """When headers are already sent, the middleware must not send a second response."""
+
+    def test_streaming_timeout_does_not_corrupt_response(self) -> None:
+        """A streaming endpoint that stalls mid-body should not produce a 504 JSON response."""
+        client = TestClient(_make_app(timeout=0.1))
+        response = client.get("/streaming-slow")
+        # Headers were already sent (200) so middleware cannot override to 504.
+        # The client sees whatever was sent before the timeout (partial or 200).
+        assert response.status_code == 200
+
+    def test_streaming_timeout_no_error_envelope(self) -> None:
+        """A streaming timeout must not inject a JSON error envelope into the body."""
+        client = TestClient(_make_app(timeout=0.1))
+        response = client.get("/streaming-slow")
+        assert "Request timed out" not in response.text
+        assert "chunk2" not in response.text

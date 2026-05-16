@@ -47,20 +47,29 @@ class TimeoutMiddleware:
             await self.app(scope, receive, send)
             return
 
+        response_started = False
+
+        async def send_wrapper(message: dict) -> None:  # type: ignore[type-arg]
+            nonlocal response_started
+            if message["type"] == "http.response.start":
+                response_started = True
+            await send(message)
+
         try:
             await asyncio.wait_for(
-                self.app(scope, receive, send),
+                self.app(scope, receive, send_wrapper),
                 timeout=self.timeout_seconds,
             )
         except asyncio.TimeoutError:
-            response = JSONResponse(
-                status_code=504,
-                content={
-                    "error": {
-                        "code": 504,
-                        "message": "Request timed out",
-                        "type": "timeout",
-                    }
-                },
-            )
-            await response(scope, receive, send)
+            if not response_started:
+                response = JSONResponse(
+                    status_code=504,
+                    content={
+                        "error": {
+                            "code": 504,
+                            "message": "Request timed out",
+                            "type": "timeout",
+                        }
+                    },
+                )
+                await response(scope, receive, send)
