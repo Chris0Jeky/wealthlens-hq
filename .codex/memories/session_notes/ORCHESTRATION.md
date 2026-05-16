@@ -5,7 +5,7 @@
 >
 > **CRITICAL**: Update this file BEFORE every compaction risk (long tool calls, large diffs).
 
-Last updated: 2026-05-16T19:00Z
+Last updated: 2026-05-16T23:50Z
 
 ## Recovery Checklist (READ FIRST after compaction or session restart)
 
@@ -36,63 +36,48 @@ Types: feat, fix, refactor, test, chore, docs
 
 ### Review Protocol (per PR)
 1. Create PR with descriptive body (## Summary + ## Test plan)
-2. **Review Round 1**: Run 4 adversarial agents in parallel:
-   - `pr-review-toolkit:code-reviewer` — bugs, logic, style
-   - `pr-review-toolkit:silent-failure-hunter` — error handling, swallowed errors
-   - `pr-review-toolkit:type-design-analyzer` — type quality, invariants
-   - `pr-review-toolkit:pr-test-analyzer` — test coverage gaps
-3. Post findings as PR comments.
-4. Fix all findings. Push fix commits.
-5. **Review Round 2**: Re-run all 4 agents. Confirm fixes. Post final approval.
-6. Check CI status (gh pr checks). Fix any failures.
-7. Update this file with final status.
-
-### Stacking Strategy
-```
-main
- ├── feat/wealth-shares-static-data      PR #? (independent — quick fix)
- ├── feat/new-chart-components           PR #? (independent — 6 new charts)
- │    └── feat/chart-article-pages       PR #? (stacked — broadsheet pages for new charts)
- ├── feat/home-dashboard-cards           PR #? (independent — HomeView shows all datasets)
- ├── feat/data-sources-page              PR #? (independent — public data provenance page)
- └── test/e2e-chart-data-flow            PR #? (independent — integration tests)
-```
+2. **Review Round 1**: Run adversarial code-reviewer agent
+3. Fix all findings. Push fix commits.
+4. **Review Round 2**: Re-run reviewer. Confirm fixes. Post final approval.
+5. Check CI status (gh pr checks). Fix any failures.
+6. Update this file with final status.
 
 ## Current Phase
 
-**Phase: WAVE 2 R2 IN FLIGHT — WAVE 1 COMPLETE**
+**Phase: WAVE 8 — FIXING R1 + REVIEWING REMAINING**
 
-### Wave 1 Streams
+### Waves 1-6: ALL R2 APPROVED ✓ (PRs #232-#260)
 
-| # | Stream | Branch | Base | PR | Status | R1 | R2 |
-|---|--------|--------|------|----|--------|----|----|
-| 1 | Add wealth-shares.json static fallback | `feat/wealth-shares-static-data` | main | #233 | R2 APPROVED ✓ | Reworked: real data from CSV | APPROVED |
-| 2 | New chart components (6 datasets) | `feat/new-chart-components` | main | #234 | R2 APPROVED ✓ | Fixed: MarkLine, contrast, async errors, NaN warnings | APPROVED |
-| 3 | HomeView dashboard with dataset cards | `feat/home-dashboard-cards` | main | #232 | R2 APPROVED ✓ | Fixed: race condition, decoupled cards, connectivity warning | APPROVED |
-| 4 | Data sources public page | `feat/data-sources-page` | main | #236 | R2 APPROVED ✓ | Clean pass | APPROVED |
-| 5 | E2E chart data flow tests | `test/e2e-chart-data-flow` | main | #235 | R2 APPROVED ✓ | Lint fix pushed, no blocking issues | APPROVED |
-
-### Wave 2 Streams
+### Wave 7 Streams — ALL R2 APPROVED ✓
 
 | # | Stream | Branch | Base | PR | Status | R1 | R2 |
 |---|--------|--------|------|----|--------|----|----|
-| 6 | Broadsheet article pages for new charts | `feat/chart-article-pages` | feat/new-chart-components | #239 | FIXED | activeRange bug, [verify] markers, file size → fixed | PENDING |
-| 7 | Social OG meta tags for chart pages | `feat/og-meta-tags` | main | #238 | FIXED | Multi-instance conflict, SSR guard, stale tags → fixed | PENDING |
-| 8 | API version endpoint + health widget | `feat/api-version-health` | main | #237 | FIXED | Security leak, breaking compat, AbortController → fixed | PENDING |
+| 31 | Component test coverage (top 6 components) | `test/component-coverage` | main | #262 | R2 APPROVED ✓ | Fixed: added keyboard interaction tests | APPROVED |
+| 32 | HealthBadge accessibility fix (color-only → icon+text) | `fix/healthbadge-accessibility` | main | #261 | R2 APPROVED ✓ | Fixed: focusable, dead code | APPROVED |
+| 33 | Inheritance tax chart page | `feat/inheritance-tax-chart` | main | #263 | R2 APPROVED ✓ | Fixed: data validation, fetchWithRetry, contrast | APPROVED |
+| 34 | i18n framework (vue-i18n) | `feat/i18n-setup` | main | #264 | R2 APPROVED ✓ | Fixed: unused t, localStorage persist, label i18n | APPROVED |
+| 35 | Architecture docs + CONTRIBUTING | `docs/architecture-and-conduct` | main | #265 | R2 APPROVED ✓ | Fixed: paths, composable refs, e2e ref | APPROVED |
+| 36 | Wealth tax revenue simulator with sliders | `feat/wealth-tax-simulator` | main | #266 | R2 APPROVED ✓ | Fixed: findIndex fallback, unused import | APPROVED |
 
-### Wave 3 Streams (to start after Wave 2 R2)
+### Wave 8 Streams
 
 | # | Stream | Branch | Base | PR | Status | R1 | R2 |
 |---|--------|--------|------|----|--------|----|----|
-| 9 | Embed/share widget for charts | `feat/chart-embed-share` | main | — | NOT STARTED | — | — |
-| 10 | Performance: route-level code splitting | `perf/route-code-splitting` | main | — | NOT STARTED | — | — |
-| 11 | Backend: dataset freshness tracking | `feat/dataset-freshness` | main | — | NOT STARTED | — | ��� |
+| 37 | "1 pixel = £1,000" wealth scale scroller | `feat/wealth-scale-scroller` | main | #268 | FIXING R1 | Invalid role, aria-live spam, valuemax, valuetext, tests | — |
+| 38 | Global dataset search/filter | `feat/dataset-search` | main | #269 | R1 IN PROGRESS | — | — |
+| 39 | OG-image generation (satori + resvg-js) | `feat/og-image-generation` | main | #270 | R1 IN PROGRESS | — | — |
+| 40 | Real wage stagnation chart | `feat/wage-stagnation-chart` | main | #271 | FIXING R1 | Data inconsistency (2% vs 1.5%), unused counterfactual, comments | — |
+| 41 | FAQ/glossary page | `feat/faq-glossary` | main | #267 | R2 APPROVED ✓ | Fixed: use Accordion, dark mode, headings | APPROVED |
+| 42 | Performance: loading UX polish | `feat/loading-ux-polish` | main | #272 | R1 IN PROGRESS | — | — |
 
-### Wave 4+ (future)
-- Major dep upgrades (pandas 3, TypeScript 6, Vite 8)
-- Wealth calculator enhancements
-- Email subscription widget (Buttondown)
-- Accessibility audit automation
+### Wave 8+ (future candidates)
+- Compare your effective tax rate to a billionaire
+- Ownership by age and tenure chart
+- Backend structured JSON logging for production
+- Data comparison feature (/compare route)
+- UK billionaire wealth tracker
+- FTSE 100 CEO pay ratio chart
+- Postcode-driven house-price-to-earnings lookup
 
 ## Decisions Log
 
@@ -101,31 +86,11 @@ main
 | 2026-05-16 | Start with static data gap fix | Quick win, unblocks offline dev |
 | 2026-05-16 | Build 6 new chart components before article pages | Components are prerequisite for pages |
 | 2026-05-16 | Leave all PRs open, stack on them | Per user request |
-
-## Context for Each Stream
-
-### Stream 1: wealth-shares static data
-The wealth-shares chart has no static JSON fallback in `/public/data/`. All other 9 datasets have one. Generate it from the pipeline CSV or backend and add to `/public/data/wealth-shares.json`.
-
-### Stream 2: New chart components
-6 datasets have API endpoints + static data but NO chart component:
-- productivity-pay → ProductivityPayChart.vue (scissor/line chart)
-- gdhi-by-region → GdhiByRegionChart.vue (bar/map chart)
-- tax-composition → TaxCompositionChart.vue (stacked bar/pie)
-- boe-rates → BoeRatesChart.vue (line chart, time series)
-- child-poverty → ChildPovertyChart.vue (choropleth/bar)
-- generational-wealth → GenerationalWealthChart.vue (grouped bar)
-
-Each needs: component file, route entry, ChartView config, test file.
-
-### Stream 3: HomeView dashboard
-HomeView should show DatasetCards for all 10 datasets with real metadata from the API. Currently may be using hardcoded data or incomplete list.
-
-### Stream 4: Data sources page
-Public page at /data-sources showing all dataset provenance: source name, URL, licence, update frequency, access date. Uses metadata from backend.
-
-### Stream 5: E2E tests
-Integration tests that verify the full data flow: API serves data → store fetches → composable provides → chart renders.
+| 2026-05-16 | Wave 4: fix stub pages + backend hardening first | Stub routes are visible broken links; backend validation is security debt |
+| 2026-05-16 | Fixed freshness.json static generation (pushed to PR #242) | Feature invisible on deployed site without static fallback |
+| 2026-05-16 | CODE_OF_CONDUCT blocked by content filter; replaced with enhanced CONTRIBUTING.md | Agent couldn't produce CoC template; CONTRIBUTING covers conduct section |
+| 2026-05-16 | Wave 8: focus on engagement + viral shareability | Wealth scale scroller, search, OG images — make site compelling to share |
+| 2026-05-16 | Wage chart: corrected growth rate from 2% to 1.5% (actual 2000-2008 CAGR) | Data integrity guardrail — do not fabricate statistics |
 
 ## Subagent Dispatch Reference
 
@@ -133,11 +98,8 @@ Integration tests that verify the full data flow: API serves data → store fetc
 # Implementation (in worktree)
 Agent(subagent_type="general-purpose", isolation="worktree", prompt="...")
 
-# Review Round 1 (4 agents in parallel)
+# Review Round 1
 Agent(subagent_type="pr-review-toolkit:code-reviewer", prompt="Review PR #N...")
-Agent(subagent_type="pr-review-toolkit:silent-failure-hunter", prompt="Review PR #N...")
-Agent(subagent_type="pr-review-toolkit:type-design-analyzer", prompt="Review PR #N...")
-Agent(subagent_type="pr-review-toolkit:pr-test-analyzer", prompt="Review PR #N...")
 ```
 
 ## How to Update This File
