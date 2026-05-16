@@ -63,5 +63,3 @@ jobs:
 
       - name: Pytest
         run: pytest -q tests/
-        # TODO: remove continue-on-error once fixture data or test markers are in place
-        continue-on-error: true
