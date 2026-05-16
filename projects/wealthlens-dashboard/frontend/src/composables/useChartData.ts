@@ -1,9 +1,9 @@
-import { onMounted, ref } from "vue";
+import { onMounted, ref, shallowRef } from "vue";
 import { useDataStore, type DatasetRow } from "@/stores/data";
 
 export function useChartData(datasetName: string) {
   const store = useDataStore();
-  const rows = ref<DatasetRow[]>([]);
+  const rows = shallowRef<DatasetRow[]>([]);
   const loading = ref(true);
   const error = ref<string | null>(null);
 
