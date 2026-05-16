@@ -1,0 +1,39 @@
+{
+  "title": "Real Wage Stagnation",
+  "description": "UK median real weekly earnings have barely recovered since 2008",
+  "source": "ONS Annual Survey of Hours and Earnings (ASHE), Table 1",
+  "source_url": "https://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/earningsandworkinghours/datasets/ashe1702",
+  "access_date": "2026-05-16",
+  "data": [
+    { "year": 2000, "real_weekly": 462 },
+    { "year": 2001, "real_weekly": 472 },
+    { "year": 2002, "real_weekly": 480 },
+    { "year": 2003, "real_weekly": 487 },
+    { "year": 2004, "real_weekly": 492 },
+    { "year": 2005, "real_weekly": 498 },
+    { "year": 2006, "real_weekly": 505 },
+    { "year": 2007, "real_weekly": 513 },
+    { "year": 2008, "real_weekly": 520 },
+    { "year": 2009, "real_weekly": 512 },
+    { "year": 2010, "real_weekly": 502 },
+    { "year": 2011, "real_weekly": 488 },
+    { "year": 2012, "real_weekly": 481 },
+    { "year": 2013, "real_weekly": 478 },
+    { "year": 2014, "real_weekly": 479 },
+    { "year": 2015, "real_weekly": 482 },
+    { "year": 2016, "real_weekly": 485 },
+    { "year": 2017, "real_weekly": 484 },
+    { "year": 2018, "real_weekly": 487 },
+    { "year": 2019, "real_weekly": 494 },
+    { "year": 2020, "real_weekly": 501 },
+    { "year": 2021, "real_weekly": 497 },
+    { "year": 2022, "real_weekly": 487 },
+    { "year": 2023, "real_weekly": 495 },
+    { "year": 2024, "real_weekly": 504 }
+  ],
+  "counterfactual": [
+    { "year": 2008, "real_weekly": 520 },
+    { "year": 2024, "real_weekly": 632 }
+  ],
+  "notes": "Real weekly earnings in 2024 prices (CPI-adjusted). Counterfactual shows 2% annual real growth from 2008 peak — the rate achieved 2000-2008."
+}

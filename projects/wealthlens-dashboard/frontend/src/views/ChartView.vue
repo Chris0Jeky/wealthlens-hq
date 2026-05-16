@@ -36,6 +36,9 @@ const CgtConcentrationChart = defineAsyncComponent(
 const WealthByDecileChart = defineAsyncComponent(
   () => import("@/components/WealthByDecileChart.vue"),
 );
+const WageStagChart = defineAsyncComponent(
+  () => import("@/components/WageStagChart.vue"),
+);
 
 const route = useRoute();
 const { trackEvent } = useAnalytics();
@@ -104,6 +107,8 @@ const simpleChartTitles: Record<string, string> = {
   "cgt-concentration":
     "Capital Gains Tax — Concentration by Size of Gain",
   "wealth-by-decile": "Total Household Wealth by Decile",
+  "wage-stagnation":
+    "Real Wage Stagnation — UK Median Earnings Since 2008",
 };
 
 /**
@@ -511,6 +516,9 @@ watch(chartName, (name) => {
             />
             <WealthByDecileChart
               v-if="chartName === 'wealth-by-decile'"
+            />
+            <WageStagChart
+              v-if="chartName === 'wage-stagnation'"
             />
           </div>
         </div>

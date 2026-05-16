@@ -52,6 +52,8 @@ vi.mock("echarts/components", () => ({
   TooltipComponent: {},
   TitleComponent: {},
   LegendComponent: {},
+  MarkPointComponent: {},
+  MarkLineComponent: {},
 }));
 
 // Now import the chart components (after mocks are set up)
@@ -59,6 +61,7 @@ import WealthSharesChart from "@/components/WealthSharesChart.vue";
 import HousingAffordabilityChart from "@/components/HousingAffordabilityChart.vue";
 import CgtConcentrationChart from "@/components/CgtConcentrationChart.vue";
 import WealthByDecileChart from "@/components/WealthByDecileChart.vue";
+import WageStagChart from "@/components/WageStagChart.vue";
 
 /**
  * Chart component test matrix.
@@ -70,6 +73,7 @@ const chartComponents = [
   { name: "HousingAffordabilityChart", component: HousingAffordabilityChart, dataset: "housing-affordability" },
   { name: "CgtConcentrationChart", component: CgtConcentrationChart, dataset: "cgt-concentration" },
   { name: "WealthByDecileChart", component: WealthByDecileChart, dataset: "wealth-by-decile" },
+  { name: "WageStagChart", component: WageStagChart, dataset: "wage-stagnation" },
 ] as const;
 
 describe("Chart components", () => {
