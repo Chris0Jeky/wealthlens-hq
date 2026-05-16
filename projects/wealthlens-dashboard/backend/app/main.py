@@ -32,6 +32,8 @@ app = FastAPI(
     description="Open API for UK wealth inequality data",
 )
 
+app.add_middleware(TimeoutMiddleware)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins,
@@ -39,8 +41,6 @@ app.add_middleware(
     allow_methods=["GET"],
     allow_headers=["*"],
 )
-
-app.add_middleware(TimeoutMiddleware)
 
 app.include_router(data.router, prefix="/api/data", tags=["data"])
 

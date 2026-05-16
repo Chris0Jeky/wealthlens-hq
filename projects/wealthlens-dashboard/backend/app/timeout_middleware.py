@@ -1,8 +1,9 @@
 """Request timeout middleware for the WealthLens backend.
 
-Wraps each incoming request with an asyncio timeout to prevent long-running
-handlers from tying up workers indefinitely.  Returns a 504 Gateway Timeout
-JSON response if the handler exceeds the configured threshold.
+Pure ASGI middleware that wraps each incoming request with an asyncio timeout
+to prevent long-running handlers from tying up workers indefinitely.  Returns
+a 504 Gateway Timeout JSON response if the handler exceeds the configured
+threshold.
 
 Configuration:
     REQUEST_TIMEOUT env var — timeout in seconds (float).  Default: 30.0
@@ -16,39 +17,43 @@ from __future__ import annotations
 import asyncio
 import os
 
-from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.requests import Request
-from starlette.responses import JSONResponse, Response
-from starlette.types import ASGIApp
+from starlette.responses import JSONResponse
+from starlette.types import ASGIApp, Receive, Scope, Send
 
-# Paths that should never be subject to timeout enforcement.
-_EXEMPT_PATHS: set[str] = {"/health", "/api/health/data"}
+_EXEMPT_PATHS: frozenset[str] = frozenset({"/health", "/api/health/data"})
 
 
-class TimeoutMiddleware(BaseHTTPMiddleware):
+class TimeoutMiddleware:
     """Enforce a per-request timeout on all non-exempt endpoints."""
 
     def __init__(self, app: ASGIApp, timeout_seconds: float | None = None) -> None:
-        super().__init__(app)
+        self.app = app
         if timeout_seconds is not None:
             self.timeout_seconds = timeout_seconds
         else:
-            self.timeout_seconds = float(
-                os.environ.get("REQUEST_TIMEOUT", "30.0")
-            )
+            raw = os.environ.get("REQUEST_TIMEOUT", "30.0")
+            try:
+                self.timeout_seconds = float(raw)
+            except ValueError:
+                self.timeout_seconds = 30.0
 
-    async def dispatch(self, request: Request, call_next) -> Response:  # noqa: ANN001
-        """Wrap the downstream handler with an asyncio timeout."""
-        if request.url.path in _EXEMPT_PATHS:
-            return await call_next(request)
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        path = scope.get("path", "")
+        if path.rstrip("/") in _EXEMPT_PATHS:
+            await self.app(scope, receive, send)
+            return
 
         try:
-            response: Response = await asyncio.wait_for(
-                call_next(request),
+            await asyncio.wait_for(
+                self.app(scope, receive, send),
                 timeout=self.timeout_seconds,
             )
         except asyncio.TimeoutError:
-            return JSONResponse(
+            response = JSONResponse(
                 status_code=504,
                 content={
                     "error": {
@@ -58,5 +63,4 @@ class TimeoutMiddleware(BaseHTTPMiddleware):
                     }
                 },
             )
-
-        return response
+            await response(scope, receive, send)
