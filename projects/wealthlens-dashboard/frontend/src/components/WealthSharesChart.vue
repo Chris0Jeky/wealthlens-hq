@@ -172,12 +172,12 @@ const option = computed(() => {
 
 <template>
   <!-- Loading state -->
-  <div v-if="loading" class="flex items-center justify-center py-20">
+  <div v-if="loading" class="flex items-center justify-center py-20" role="status" aria-live="polite">
     <p class="text-[var(--wl-ink-muted)] text-lg">Loading chart data...</p>
   </div>
 
   <!-- Error state -->
-  <div v-else-if="error" class="py-10 text-center">
+  <div v-else-if="error" class="py-10 text-center" role="alert">
     <p class="text-[var(--wl-red)] font-medium">{{ error }}</p>
     <p class="text-[var(--wl-ink-muted)] text-sm mt-2">
       Make sure the backend API is running on port 8000.
@@ -185,7 +185,7 @@ const option = computed(() => {
   </div>
 
   <!-- No data state -->
-  <div v-else-if="!hasData" class="py-10 text-center">
+  <div v-else-if="!hasData" class="py-10 text-center" role="status">
     <p class="text-[var(--wl-ink-muted)] text-lg">No data available for this chart.</p>
   </div>
 
@@ -211,9 +211,9 @@ const option = computed(() => {
         href="https://wid.world"
         target="_blank"
         rel="noopener"
-        class="underline hover:text-[var(--wl-ink)]"
+        class="underline hover:text-[var(--wl-ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--wl-red)] rounded"
       >
-        World Inequality Database (wid.world)</a>, accessed 2026-05-14
+        World Inequality Database (wid.world)<span class="sr-only"> (opens in new tab)</span></a>, accessed 2026-05-14
     </p>
   </div>
 </template>
