@@ -22,6 +22,7 @@ import ShareBar from "@/components/ShareBar.vue";
 import RelatedCharts from "@/components/RelatedCharts.vue";
 import type { RelatedChartItem } from "@/components/RelatedCharts.vue";
 import { useAnalytics } from "@/composables/useAnalytics";
+import { usePageMeta } from "@/composables/usePageMeta";
 import ChartSkeleton from "@/components/ChartSkeleton.vue";
 import ChartLoadError from "@/components/ChartLoadError.vue";
 
@@ -362,12 +363,55 @@ function onRangeChange(range: string) {
   activeRange.value = range;
 }
 
+/** Convert legacy hardcoded HTML snippets to display/meta-safe plain text. */
+function toPlainText(html: string): string {
+  if (typeof DOMParser === "undefined") {
+    return html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+  }
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  return doc.body.textContent?.replace(/\s+/g, " ").trim() ?? "";
+}
+
 /** Track chart views when the chart name changes. */
 watch(chartName, (name) => {
   if (name && isSupported.value) {
     trackEvent("view_chart", { chart: name });
   }
 }, { immediate: true });
+
+/* ------------------------------------------------------------------ */
+/* Page meta (OpenGraph / Twitter Card)                                */
+/* ------------------------------------------------------------------ */
+
+const chartTitle = computed(() => {
+  if (config.value) return config.value.headline;
+  return simpleChartTitles[chartName.value] ?? chartName.value;
+});
+
+const chartDescription = computed(() => {
+  if (config.value) {
+    return toPlainText(config.value.lede);
+  }
+  return `UK wealth inequality data — ${chartTitle.value}`;
+});
+
+const chartOgImage = computed(
+  () => `https://chris0jeky.github.io/wealthlens-hq/og/${chartName.value}.png`,
+);
+
+const chartUrl = computed(
+  () => `https://chris0jeky.github.io/wealthlens-hq/charts/${chartName.value}`,
+);
+
+usePageMeta({
+  title: chartTitle,
+  description: chartDescription,
+  url: chartUrl,
+  image: chartOgImage,
+  imageAlt: computed(() => `${chartTitle.value} — WealthLens UK chart`),
+  ogType: "article",
+  twitterCard: "summary_large_image",
+});
 </script>
 
 <template>
@@ -418,8 +462,7 @@ watch(chartName, (name) => {
             {{ config.headlineEmphasis }}
           </em>
         </h1>
-        <!-- eslint-disable-next-line vue/no-v-html -- trusted hardcoded config, not user input -->
-        <p class="article-head__lede" v-html="config.lede"></p>
+        <p class="article-head__lede">{{ toPlainText(config.lede) }}</p>
       </div>
       <aside class="meta-card" aria-label="Chart metadata">
         <h2 class="meta-card__heading">Chart facts</h2>
@@ -512,23 +555,23 @@ watch(chartName, (name) => {
           class="article-body__pull"
         >
           <p class="article-body__pull-label">&uarr; The takeaway</p>
-          <!-- eslint-disable-next-line vue/no-v-html -- trusted hardcoded config -->
-          <p v-html="config.article.pullQuote.text"></p>
+          <p>{{ toPlainText(config.article.pullQuote.text) }}</p>
         </div>
 
-        <!-- eslint-disable-next-line vue/no-v-html -- trusted hardcoded config -->
         <p
           v-for="(para, j) in section.paragraphs"
           :key="`p-${i}-${j}`"
-          v-html="para"
-        ></p>
+        >
+          {{ toPlainText(para) }}
+        </p>
       </template>
 
       <!-- Methodology accordion -->
       <details class="method">
         <summary>Methodology &amp; data quality</summary>
-        <!-- eslint-disable-next-line vue/no-v-html -- trusted hardcoded methodology HTML with tables -->
-        <div class="method__body" v-html="config.methodology"></div>
+        <div class="method__body method__body--plain">
+          {{ toPlainText(config.methodology) }}
+        </div>
       </details>
     </article>
 
