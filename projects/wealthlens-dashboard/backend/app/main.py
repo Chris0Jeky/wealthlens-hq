@@ -11,6 +11,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.routers import data
+from app.timeout_middleware import TimeoutMiddleware
 
 # ---------------------------------------------------------------------------
 # CORS configuration
@@ -38,6 +39,8 @@ app.add_middleware(
     allow_methods=["GET"],
     allow_headers=["*"],
 )
+
+app.add_middleware(TimeoutMiddleware)
 
 app.include_router(data.router, prefix="/api/data", tags=["data"])
 
