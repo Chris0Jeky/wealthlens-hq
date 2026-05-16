@@ -112,7 +112,7 @@ const datasets: DatasetSource[] = [
 </script>
 
 <template>
-  <main class="methodology-page">
+  <div class="methodology-page">
     <!-- Breadcrumb -->
     <nav class="crumb" aria-label="Breadcrumb">
       <ol class="crumb__list">
@@ -221,7 +221,7 @@ const datasets: DatasetSource[] = [
               </div>
               <div class="source-card__row">
                 <dt>Accessed</dt>
-                <dd class="wl-source">{{ ds.accessDate }}</dd>
+                <dd class="source-card__date">{{ ds.accessDate }}</dd>
               </div>
               <div class="source-card__row">
                 <dt>Updates</dt>
@@ -396,7 +396,7 @@ const datasets: DatasetSource[] = [
         </ul>
       </section>
     </article>
-  </main>
+  </div>
 </template>
 
 <style scoped>
@@ -599,6 +599,15 @@ const datasets: DatasetSource[] = [
 .source-card__link:hover {
   text-decoration: underline;
 }
+.source-card__link:focus-visible {
+  outline: 2px solid var(--wl-red);
+  outline-offset: 2px;
+}
+.source-card__date {
+  font-family: var(--wl-mono);
+  font-size: 12px;
+  color: var(--wl-ink-muted);
+}
 
 /* --- Lists (quality, limitations, verification, privacy) --- */
 .quality-list,
@@ -648,6 +657,10 @@ const datasets: DatasetSource[] = [
 }
 .inline-link:hover {
   text-decoration: underline;
+}
+.inline-link:focus-visible {
+  outline: 2px solid var(--wl-red);
+  outline-offset: 2px;
 }
 
 /* --- Responsive --- */
