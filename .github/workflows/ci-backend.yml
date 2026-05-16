@@ -71,11 +71,5 @@ jobs:
 
       - name: Run tests with coverage
         run: |
-          python -m pytest tests/ -q --cov=app --cov-report=term-missing --cov-report=xml:coverage.xml
-        working-directory: projects/wealthlens-dashboard/backend
-
-      - name: Coverage summary
-        if: always()
-        run: |
-          python -m pytest tests/ --cov=app --cov-report=term --cov-fail-under=60 || true
+          python -m pytest tests/ -q --cov=app --cov-report=term-missing --cov-report=xml:coverage.xml --cov-fail-under=60 || true
         working-directory: projects/wealthlens-dashboard/backend
