@@ -13,6 +13,7 @@ These caveats are noted on the chart output.
 
 from __future__ import annotations
 
+import logging
 import re
 import zipfile
 from datetime import date
@@ -22,6 +23,8 @@ import pandas as pd
 import plotly.graph_objects as go
 import requests
 from chart_html import write_accessible_chart
+
+logger = logging.getLogger(__name__)
 
 try:
     from openpyxl.utils.exceptions import InvalidFileException
@@ -75,30 +78,30 @@ def fetch() -> Path | None:
     ]
 
     for label, url in urls:
-        print(f"Downloading ONS Total Wealth data ({label} URL)...")
+        logger.info("Downloading ONS Total Wealth data (%s URL)...", label)
         try:
             resp = requests.get(url, timeout=60)
             resp.raise_for_status()
         except requests.RequestException as exc:
-            print(f"  {label.capitalize()} download failed: {exc}")
+            logger.warning("%s download failed: %s", label.capitalize(), exc)
             continue
 
         try:
             out_path.write_bytes(resp.content)
         except (OSError, IOError) as exc:
-            print(f"  Warning: could not write file ({type(exc).__name__}: {exc})")
+            logger.warning("Could not write file (%s: %s)", type(exc).__name__, exc)
             continue
-        print(f"  Saved to {out_path} ({len(resp.content) // 1024} KB)")
+        logger.info("Saved to %s (%d KB)", out_path, len(resp.content) // 1024)
         return out_path
 
-    print(
-        "  ERROR: Both primary and fallback ONS download URLs failed.\n"
-        "  The ONS may have reorganised their download paths again.\n"
-        "  Check the dataset page for updated links:\n"
-        "    https://www.ons.gov.uk/peoplepopulationandcommunity/"
+    logger.error(
+        "Both primary and fallback ONS download URLs failed. "
+        "The ONS may have reorganised their download paths again. "
+        "Check the dataset page for updated links: "
+        "https://www.ons.gov.uk/peoplepopulationandcommunity/"
         "personalandhouseholdfinances/incomeandwealth/datasets/"
-        "totalwealthwealthingreatbritain\n"
-        "  Falling back to hard-coded data from the ONS bulletin."
+        "totalwealthwealthingreatbritain — "
+        "Falling back to hard-coded data from the ONS bulletin."
     )
     return None
 
@@ -119,12 +122,12 @@ def process(xlsx_path: Path | None) -> pd.DataFrame:
     PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
 
     if xlsx_path is None:
-        print("  No XLSX available, using fallback data.")
+        logger.info("No XLSX available, using fallback data.")
         df = _build_fallback_data()
         out_path = PROCESSED_DIR / "ons_wealth_by_decile.csv"
         df.to_csv(out_path, index=False)
-        print(f"  Processed data saved to {out_path}")
-        print(f"  {len(df)} rows")
+        logger.info("Processed data saved to %s", out_path)
+        logger.info("%d rows", len(df))
         return df
 
     # Guard against corrupt / truncated XLSX files (e.g. partial download,
@@ -132,16 +135,16 @@ def process(xlsx_path: Path | None) -> pd.DataFrame:
     try:
         xl = pd.ExcelFile(xlsx_path, engine="openpyxl")
     except (zipfile.BadZipFile, InvalidFileException, ValueError, OSError) as exc:
-        print(f"  Warning: cannot open XLSX ({type(exc).__name__}: {exc})")
-        print("  Falling back to hard-coded data.")
+        logger.warning("Cannot open XLSX (%s: %s)", type(exc).__name__, exc)
+        logger.warning("Falling back to hard-coded data.")
         df = _build_fallback_data()
         out_path = PROCESSED_DIR / "ons_wealth_by_decile.csv"
         df.to_csv(out_path, index=False)
-        print(f"  Processed data saved to {out_path}")
-        print(f"  {len(df)} rows")
+        logger.info("Processed data saved to %s", out_path)
+        logger.info("%d rows", len(df))
         return df
 
-    print(f"  Available sheets: {xl.sheet_names}")
+    logger.info("Available sheets: %s", xl.sheet_names)
 
     # Prefer "Table 2.2" (aggregate total wealth by decile).  Fall back to
     # the old heuristic if the sheet name changed in a future edition.
@@ -159,19 +162,19 @@ def process(xlsx_path: Path | None) -> pd.DataFrame:
     if target_sheet is None:
         target_sheet = xl.sheet_names[0]
 
-    print(f"  Reading sheet: '{target_sheet}'")
+    logger.info("Reading sheet: '%s'", target_sheet)
     try:
         df_raw = pd.read_excel(
             xlsx_path, sheet_name=target_sheet, header=None, engine="openpyxl",
         )
     except (zipfile.BadZipFile, InvalidFileException, ValueError, OSError) as exc:
-        print(f"  Warning: cannot read sheet ({type(exc).__name__}: {exc})")
-        print("  Falling back to hard-coded data.")
+        logger.warning("Cannot read sheet (%s: %s)", type(exc).__name__, exc)
+        logger.warning("Falling back to hard-coded data.")
         df = _build_fallback_data()
         out_path = PROCESSED_DIR / "ons_wealth_by_decile.csv"
         df.to_csv(out_path, index=False)
-        print(f"  Processed data saved to {out_path}")
-        print(f"  {len(df)} rows")
+        logger.info("Processed data saved to %s", out_path)
+        logger.info("%d rows", len(df))
         return df
 
     df = _parse_table_2_2(df_raw)
@@ -181,17 +184,17 @@ def process(xlsx_path: Path | None) -> pd.DataFrame:
         if header_row is not None:
             df = _parse_decile_data(df_raw, header_row)
         else:
-            print("  Could not locate decile data.  Dumping first 20 rows:")
+            logger.warning("Could not locate decile data. Dumping first 20 rows:")
             for i in range(min(20, len(df_raw))):
                 vals = [str(v)[:50] for v in df_raw.iloc[i].values if pd.notna(v)]
-                print(f"    Row {i}: {vals}")
-            print("  Falling back to hard-coded data.")
+                logger.debug("Row %d: %s", i, vals)
+            logger.warning("Falling back to hard-coded data.")
             df = _build_fallback_data()
 
     out_path = PROCESSED_DIR / "ons_wealth_by_decile.csv"
     df.to_csv(out_path, index=False)
-    print(f"  Processed data saved to {out_path}")
-    print(f"  {len(df)} rows")
+    logger.info("Processed data saved to %s", out_path)
+    logger.info("%d rows", len(df))
 
     return df
 
@@ -248,7 +251,7 @@ def _parse_table_2_2(df_raw: pd.DataFrame) -> pd.DataFrame | None:
         })
 
     if len(records) != 10:
-        print(f"  Warning: expected 10 decile rows, found {len(records)}.")
+        logger.warning("Expected 10 decile rows, found %d.", len(records))
         # Partial decile data is unreliable — reject so the caller can fall
         # back to the next parser or hard-coded data.
         return None
@@ -416,8 +419,12 @@ def main() -> None:
     xlsx_path = fetch()
     df = process(xlsx_path)
     build_chart(df)
-    print("\nDone. Open the chart HTML in a browser to view.")
+    logger.info("Done. Open the chart HTML in a browser to view.")
 
 
 if __name__ == "__main__":
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(levelname)s: %(message)s",
+    )
     main()

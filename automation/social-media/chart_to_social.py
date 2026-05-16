@@ -10,10 +10,13 @@ Usage: python automation/social-media/chart_to_social.py [--chart NAME]
 from __future__ import annotations
 
 import argparse
+import logging
 from pathlib import Path
 
 import pandas as pd
 import plotly.graph_objects as go
+
+logger = logging.getLogger(__name__)
 
 ROOT = Path(__file__).resolve().parents[2]
 DATA_DIR = ROOT / "projects" / "wealthlens-dashboard" / "data" / "processed"
@@ -132,7 +135,7 @@ def export(chart_name: str, sizes: dict[str, tuple[int, int]] | None = None) -> 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
 
     if chart_name not in CHARTS:
-        print(f"Unknown chart: {chart_name}. Available: {', '.join(CHARTS)}")
+        logger.error("Unknown chart: %s. Available: %s", chart_name, ", ".join(CHARTS))
         return []
 
     fig, name = CHARTS[chart_name]()
@@ -141,7 +144,7 @@ def export(chart_name: str, sizes: dict[str, tuple[int, int]] | None = None) -> 
     for size_name, (w, h) in sizes.items():
         out_path = OUT_DIR / f"{name}_{size_name}.png"
         fig.write_image(str(out_path), width=w, height=h, scale=2)
-        print(f"  {out_path.name} ({w}x{h} @2x)")
+        logger.info("%s (%dx%d @2x)", out_path.name, w, h)
         exported.append(out_path)
 
     return exported
@@ -157,12 +160,16 @@ def main() -> None:
 
     total = 0
     for chart_name in charts:
-        print(f"\n=== {chart_name} ===")
+        logger.info("=== %s ===", chart_name)
         exported = export(chart_name)
         total += len(exported)
 
-    print(f"\nGenerated {total} images in {OUT_DIR}")
+    logger.info("Generated %d images in %s", total, OUT_DIR)
 
 
 if __name__ == "__main__":
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(levelname)s: %(message)s",
+    )
     main()

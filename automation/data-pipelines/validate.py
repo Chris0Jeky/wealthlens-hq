@@ -7,10 +7,13 @@ Run standalone or from Makefile: make validate
 
 from __future__ import annotations
 
+import logging
 import sys
 from pathlib import Path
 
 import pandas as pd
+
+logger = logging.getLogger(__name__)
 
 DATA_DIR = (
     Path(__file__).resolve().parents[2]
@@ -76,11 +79,15 @@ def validate_all() -> list[str]:
 
 
 if __name__ == "__main__":
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(levelname)s: %(message)s",
+    )
     errors = validate_all()
     if errors:
-        print("Validation FAILED:")
+        logger.error("Validation FAILED:")
         for e in errors:
-            print(f"  - {e}")
+            logger.error("- %s", e)
         sys.exit(1)
     else:
-        print(f"All {len(CHECKS)} datasets validated OK.")
+        logger.info("All %d datasets validated OK.", len(CHECKS))
