@@ -153,6 +153,27 @@ const { rentPaid, elapsed } = useRentTicker()
   .rent-ticker-aside {
     text-align: left;
     font-size: 10px;
+    white-space: normal;
+  }
+}
+
+/* 375px narrow phones */
+@media (max-width: 375px) {
+  .rent-ticker-inner {
+    padding: 16px 12px;
+    gap: 12px;
+  }
+
+  .rent-ticker-body {
+    font-size: 16px;
+  }
+
+  .rent-ticker-num {
+    font-size: 22px;
+  }
+
+  .rent-ticker-label {
+    font-size: 9px;
   }
 }
 </style>
