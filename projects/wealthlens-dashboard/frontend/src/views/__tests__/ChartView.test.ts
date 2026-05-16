@@ -3,7 +3,7 @@ import { mount, RouterLinkStub } from "@vue/test-utils";
 import { createRouter, createMemoryHistory } from "vue-router";
 import ChartView from "@/views/ChartView.vue";
 
-function createMockRouter(chartName: string) {
+function createMockRouter() {
   return createRouter({
     history: createMemoryHistory(),
     routes: [
@@ -14,7 +14,7 @@ function createMockRouter(chartName: string) {
 }
 
 async function mountChartView(chartName: string) {
-  const router = createMockRouter(chartName);
+  const router = createMockRouter();
   router.push(`/charts/${chartName}`);
   await router.isReady();
 
@@ -73,5 +73,22 @@ describe("ChartView", () => {
   it("displays the chart name in the not-found message", async () => {
     const wrapper = await mountChartView("bad-name");
     expect(wrapper.find(".font-mono").text()).toBe("bad-name");
+  });
+
+  it("shows return-to-dashboard link for unsupported charts", async () => {
+    const wrapper = await mountChartView("unknown-chart");
+    const links = wrapper.findAllComponents(RouterLinkStub);
+    const returnLink = links.find((l) => l.text().includes("Return to dashboard"));
+    expect(returnLink).toBeDefined();
+    expect(returnLink!.props("to")).toBe("/");
+  });
+
+  it.each([
+    ["housing-affordability", "Housing Affordability"],
+    ["cgt-concentration", "Capital Gains Tax"],
+    ["wealth-by-decile", "Total Household Wealth"],
+  ])("renders correct title for %s", async (name, titleFragment) => {
+    const wrapper = await mountChartView(name);
+    expect(wrapper.find("h1").text()).toContain(titleFragment);
   });
 });
