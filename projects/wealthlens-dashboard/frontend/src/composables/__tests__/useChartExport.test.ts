@@ -8,10 +8,10 @@ describe('useChartExport', () => {
     setOption: ReturnType<typeof vi.fn>
     getDataURL: ReturnType<typeof vi.fn>
     getConnectedDataURL: ReturnType<typeof vi.fn>
+    renderToSVGString?: ReturnType<typeof vi.fn>
   }
 
   let linkClicked: boolean
-  let linkHref: string
   let linkDownload: string
 
   beforeEach(() => {
@@ -19,14 +19,12 @@ describe('useChartExport', () => {
       getOption: vi.fn(() => ({ graphic: [] })),
       setOption: vi.fn(),
       getDataURL: vi.fn(() => 'data:image/png;base64,fakedata'),
-      getConnectedDataURL: vi.fn(() => 'data:image/svg+xml;charset=UTF-8,<svg></svg>'),
+      getConnectedDataURL: vi.fn(() => 'data:image/svg+xml;charset=UTF-8,%3Csvg%3E%3C/svg%3E'),
     }
 
     linkClicked = false
-    linkHref = ''
     linkDownload = ''
 
-    // Mock document.createElement for the <a> download trick
     vi.spyOn(document, 'createElement').mockImplementation((tag: string) => {
       if (tag === 'a') {
         const el = {
@@ -35,7 +33,6 @@ describe('useChartExport', () => {
           style: { display: '' },
           click: () => {
             linkClicked = true
-            linkHref = el.href
             linkDownload = el.download
           },
         }
@@ -47,7 +44,6 @@ describe('useChartExport', () => {
     vi.spyOn(document.body, 'appendChild').mockImplementation(() => null as any)
     vi.spyOn(document.body, 'removeChild').mockImplementation(() => null as any)
 
-    // Mock URL.createObjectURL and revokeObjectURL
     vi.stubGlobal('URL', {
       ...URL,
       createObjectURL: vi.fn(() => 'blob:http://localhost/fake-blob'),
@@ -61,12 +57,15 @@ describe('useChartExport', () => {
   })
 
   describe('exportPNG', () => {
-    it('calls getDataURL on the chart instance with correct options', () => {
+    it('returns true and triggers download on success', () => {
       const chartRef = ref({ chart: mockChart })
       const { exportPNG } = useChartExport(chartRef)
 
-      exportPNG({ filename: 'test-chart' })
+      const result = exportPNG({ filename: 'test-chart' })
 
+      expect(result).toBe(true)
+      expect(linkClicked).toBe(true)
+      expect(linkDownload).toBe('test-chart.png')
       expect(mockChart.getDataURL).toHaveBeenCalledWith({
         type: 'png',
         pixelRatio: 2,
@@ -74,31 +73,28 @@ describe('useChartExport', () => {
       })
     })
 
-    it('triggers a download with the correct filename', () => {
+    it('uses custom pixelRatio and backgroundColor', () => {
       const chartRef = ref({ chart: mockChart })
       const { exportPNG } = useChartExport(chartRef)
 
-      exportPNG({ filename: 'wealth-shares' })
-
-      expect(linkClicked).toBe(true)
-      expect(linkDownload).toBe('wealth-shares.png')
-    })
-
-    it('uses custom pixelRatio and backgroundColor when provided', () => {
-      const chartRef = ref({ chart: mockChart })
-      const { exportPNG } = useChartExport(chartRef)
-
-      exportPNG({
-        filename: 'test',
-        pixelRatio: 3,
-        backgroundColor: '#000',
-      })
+      exportPNG({ filename: 'test', pixelRatio: 3, backgroundColor: '#000' })
 
       expect(mockChart.getDataURL).toHaveBeenCalledWith({
         type: 'png',
         pixelRatio: 3,
         backgroundColor: '#000',
       })
+    })
+
+    it('clamps pixelRatio to minimum of 1', () => {
+      const chartRef = ref({ chart: mockChart })
+      const { exportPNG } = useChartExport(chartRef)
+
+      exportPNG({ filename: 'test', pixelRatio: -1 })
+
+      expect(mockChart.getDataURL).toHaveBeenCalledWith(
+        expect.objectContaining({ pixelRatio: 1 }),
+      )
     })
 
     it('adds and removes watermark during export', () => {
@@ -107,52 +103,94 @@ describe('useChartExport', () => {
 
       exportPNG({ filename: 'test', source: 'WID.world' })
 
-      // setOption called at least twice: once to add watermark, once to remove
       expect(mockChart.setOption).toHaveBeenCalledTimes(2)
-
-      // First call adds the watermark graphic
       const addCall = mockChart.setOption.mock.calls[0][0]
-      expect(addCall.graphic).toBeDefined()
       expect(addCall.graphic[0].style.text).toContain('WealthLens UK')
       expect(addCall.graphic[0].style.text).toContain('WID.world')
     })
 
-    it('does not throw when chart ref is null', () => {
+    it('removes watermark even when getDataURL throws', () => {
+      mockChart.getDataURL.mockImplementation(() => { throw new Error('Canvas tainted') })
+      const chartRef = ref({ chart: mockChart })
+      const { exportPNG } = useChartExport(chartRef)
+
+      const result = exportPNG({ filename: 'test' })
+
+      expect(result).toBe(false)
+      // Watermark removal still attempted (second setOption call)
+      const removeCalls = mockChart.setOption.mock.calls.filter(
+        (call: any[]) => call[0]?.graphic?.[0]?.$action === 'remove'
+      )
+      expect(removeCalls.length).toBe(1)
+    })
+
+    it('restores previous graphic elements after export', () => {
+      const existingGraphic = [{ id: 'existing-annotation', type: 'text' }]
+      mockChart.getOption.mockReturnValue({ graphic: existingGraphic })
+      const chartRef = ref({ chart: mockChart })
+      const { exportPNG } = useChartExport(chartRef)
+
+      exportPNG({ filename: 'test' })
+
+      // Should call setOption 3 times: add watermark, remove watermark, restore previous
+      expect(mockChart.setOption).toHaveBeenCalledTimes(3)
+      const restoreCall = mockChart.setOption.mock.calls[2][0]
+      expect(restoreCall.graphic).toEqual(existingGraphic)
+    })
+
+    it('returns false when chart ref is null', () => {
       const chartRef = ref(null)
       const { exportPNG } = useChartExport(chartRef)
 
-      expect(() => exportPNG({ filename: 'test' })).not.toThrow()
+      expect(exportPNG({ filename: 'test' })).toBe(false)
     })
 
-    it('does not throw when chart instance is null', () => {
+    it('returns false when chart instance is null', () => {
       const chartRef = ref({ chart: null })
       const { exportPNG } = useChartExport(chartRef)
 
-      expect(() => exportPNG({ filename: 'test' })).not.toThrow()
+      expect(exportPNG({ filename: 'test' })).toBe(false)
+    })
+
+    it('returns false for empty filename', () => {
+      const chartRef = ref({ chart: mockChart })
+      const { exportPNG } = useChartExport(chartRef)
+
+      expect(exportPNG({ filename: '' })).toBe(false)
+    })
+
+    it('returns false when getDataURL returns invalid data', () => {
+      mockChart.getDataURL.mockReturnValue('')
+      const chartRef = ref({ chart: mockChart })
+      const { exportPNG } = useChartExport(chartRef)
+
+      expect(exportPNG({ filename: 'test' })).toBe(false)
+    })
+
+    it('sanitizes filename by stripping special characters', () => {
+      const chartRef = ref({ chart: mockChart })
+      const { exportPNG } = useChartExport(chartRef)
+
+      exportPNG({ filename: 'wealth../../etc/passwd' })
+
+      expect(linkDownload).toBe('wealthetcpasswd.png')
     })
   })
 
   describe('exportSVG', () => {
-    it('calls getConnectedDataURL on the chart instance', () => {
+    it('returns true and triggers download on success', () => {
       const chartRef = ref({ chart: mockChart })
       const { exportSVG } = useChartExport(chartRef)
 
-      exportSVG({ filename: 'test-chart' })
+      const result = exportSVG({ filename: 'test-chart' })
 
+      expect(result).toBe(true)
+      expect(linkClicked).toBe(true)
+      expect(linkDownload).toBe('test-chart.svg')
       expect(mockChart.getConnectedDataURL).toHaveBeenCalledWith({ type: 'svg' })
     })
 
-    it('triggers a download with .svg extension', () => {
-      const chartRef = ref({ chart: mockChart })
-      const { exportSVG } = useChartExport(chartRef)
-
-      exportSVG({ filename: 'wealth-shares' })
-
-      expect(linkClicked).toBe(true)
-      expect(linkDownload).toBe('wealth-shares.svg')
-    })
-
-    it('creates a blob for download', () => {
+    it('creates and revokes a blob URL', () => {
       const chartRef = ref({ chart: mockChart })
       const { exportSVG } = useChartExport(chartRef)
 
@@ -162,21 +200,77 @@ describe('useChartExport', () => {
       expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:http://localhost/fake-blob')
     })
 
-    it('does not throw when chart ref is null', () => {
+    it('handles base64-encoded SVG data URLs', () => {
+      const svgContent = '<svg><text>hello</text></svg>'
+      const base64 = btoa(svgContent)
+      mockChart.getConnectedDataURL.mockReturnValue(`data:image/svg+xml;base64,${base64}`)
+      const chartRef = ref({ chart: mockChart })
+      const { exportSVG } = useChartExport(chartRef)
+
+      const result = exportSVG({ filename: 'test' })
+
+      expect(result).toBe(true)
+    })
+
+    it('uses renderToSVGString when getConnectedDataURL is unavailable', () => {
+      const chart = {
+        ...mockChart,
+        getConnectedDataURL: undefined,
+        renderToSVGString: vi.fn(() => '<svg></svg>'),
+      }
+      const chartRef = ref({ chart })
+      const { exportSVG } = useChartExport(chartRef)
+
+      const result = exportSVG({ filename: 'test' })
+
+      expect(result).toBe(true)
+      expect(chart.renderToSVGString).toHaveBeenCalled()
+    })
+
+    it('returns false when neither SVG method is available', () => {
+      const chart = {
+        ...mockChart,
+        getConnectedDataURL: undefined,
+        renderToSVGString: undefined,
+      }
+      const chartRef = ref({ chart })
+      const { exportSVG } = useChartExport(chartRef)
+
+      const result = exportSVG({ filename: 'test' })
+
+      expect(result).toBe(false)
+    })
+
+    it('removes watermark even when getConnectedDataURL throws', () => {
+      mockChart.getConnectedDataURL.mockImplementation(() => { throw new Error('fail') })
+      const chartRef = ref({ chart: mockChart })
+      const { exportSVG } = useChartExport(chartRef)
+
+      const result = exportSVG({ filename: 'test' })
+
+      expect(result).toBe(false)
+      const removeCalls = mockChart.setOption.mock.calls.filter(
+        (call: any[]) => call[0]?.graphic?.[0]?.$action === 'remove'
+      )
+      expect(removeCalls.length).toBe(1)
+    })
+
+    it('returns false when getConnectedDataURL returns invalid format', () => {
+      mockChart.getConnectedDataURL.mockReturnValue('invalid-no-comma')
+      const chartRef = ref({ chart: mockChart })
+      const { exportSVG } = useChartExport(chartRef)
+
+      expect(exportSVG({ filename: 'test' })).toBe(false)
+    })
+
+    it('returns false when chart ref is null', () => {
       const chartRef = ref(null)
       const { exportSVG } = useChartExport(chartRef)
 
-      expect(() => exportSVG({ filename: 'test' })).not.toThrow()
+      expect(exportSVG({ filename: 'test' })).toBe(false)
     })
 
-    it('does not throw when chart instance is null', () => {
-      const chartRef = ref({ chart: null })
-      const { exportSVG } = useChartExport(chartRef)
-
-      expect(() => exportSVG({ filename: 'test' })).not.toThrow()
-    })
-
-    it('adds watermark with source citation during SVG export', () => {
+    it('adds watermark with source citation', () => {
       const chartRef = ref({ chart: mockChart })
       const { exportSVG } = useChartExport(chartRef)
 

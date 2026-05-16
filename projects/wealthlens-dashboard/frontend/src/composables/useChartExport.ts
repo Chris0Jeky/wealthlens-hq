@@ -1,37 +1,25 @@
 import { type Ref } from 'vue'
 
-/**
- * Options for chart image export.
- */
+export type ExportFormat = 'png' | 'svg'
+
+export interface EChartsExportable {
+  getOption(): { graphic?: unknown[] }
+  setOption(option: Record<string, unknown>): void
+  getDataURL(opts: { type: string; pixelRatio: number; backgroundColor: string }): string
+  getConnectedDataURL?(opts: { type: string }): string
+  renderToSVGString?(): string
+}
+
+export type ChartComponentRef = { chart: EChartsExportable | null } | null
+
 export interface ExportOptions {
-  /** Filename without extension (extension is appended automatically). */
   filename: string
-  /** Background color for PNG export. Defaults to '#fff'. */
   backgroundColor?: string
-  /** Pixel ratio for PNG export. Defaults to 2 for retina. */
   pixelRatio?: number
-  /** Source citation to include in the watermark. */
   source?: string
 }
 
-/**
- * Composable for exporting ECharts instances as PNG or SVG images.
- *
- * Accepts a ref to a vue-echarts component (which exposes a `.chart` property
- * giving access to the underlying ECharts instance).
- *
- * @example
- * ```ts
- * const chartRef = ref<InstanceType<typeof VChart> | null>(null)
- * const { exportPNG, exportSVG } = useChartExport(chartRef)
- *
- * exportPNG({ filename: 'wealth-shares', source: 'WID.world' })
- * ```
- */
-export function useChartExport(chartRef: Ref<{ chart: any } | null>) {
-  /**
-   * Build watermark text for the exported image.
-   */
+export function useChartExport(chartRef: Ref<ChartComponentRef>) {
   function buildWatermark(source?: string): string {
     let text = 'WealthLens UK · wealthlens.uk'
     if (source) {
@@ -40,57 +28,48 @@ export function useChartExport(chartRef: Ref<{ chart: any } | null>) {
     return text
   }
 
-  /**
-   * Add a text watermark graphic element to the chart instance.
-   * Returns the previous graphic option so it can be restored after export.
-   */
-  function addWatermark(chart: any, source?: string): any {
+  function addWatermark(chart: EChartsExportable, source?: string): unknown[] {
     const currentOption = chart.getOption()
-    const previousGraphic = currentOption.graphic || []
-
-    const watermarkGraphic = {
-      type: 'text',
-      id: 'wl-export-watermark',
-      left: 'center',
-      bottom: 8,
-      style: {
-        text: buildWatermark(source),
-        fontSize: 11,
-        fontFamily: 'monospace',
-        fill: '#999',
-        textAlign: 'center',
-      },
-      z: 100,
-    }
+    if (!currentOption) return []
+    const previousGraphic = (currentOption.graphic as unknown[]) || []
 
     chart.setOption({
-      graphic: [watermarkGraphic],
+      graphic: [{
+        type: 'text',
+        id: 'wl-export-watermark',
+        left: 'center',
+        bottom: 8,
+        style: {
+          text: buildWatermark(source),
+          fontSize: 11,
+          fontFamily: 'monospace',
+          fill: '#999',
+          textAlign: 'center',
+        },
+        z: 100,
+      }],
     })
 
     return previousGraphic
   }
 
-  /**
-   * Remove the export watermark and restore previous graphic state.
-   */
-  function removeWatermark(chart: any, previousGraphic: any): void {
-    // Remove the watermark by setting it invisible, then restore previous
-    chart.setOption({
-      graphic: [{
-        id: 'wl-export-watermark',
-        $action: 'remove',
-      }],
-    })
+  function removeWatermark(chart: EChartsExportable, previousGraphic: unknown[] | null): void {
+    try {
+      chart.setOption({
+        graphic: [{
+          id: 'wl-export-watermark',
+          $action: 'remove',
+        }],
+      })
 
-    // Restore any previous graphic elements
-    if (previousGraphic && previousGraphic.length > 0) {
-      chart.setOption({ graphic: previousGraphic })
+      if (previousGraphic && previousGraphic.length > 0) {
+        chart.setOption({ graphic: previousGraphic })
+      }
+    } catch {
+      // Best-effort cleanup — chart may be disposed
     }
   }
 
-  /**
-   * Trigger a file download in the browser using a temporary anchor element.
-   */
   function triggerDownload(url: string, filename: string): void {
     const link = document.createElement('a')
     link.href = url
@@ -101,70 +80,91 @@ export function useChartExport(chartRef: Ref<{ chart: any } | null>) {
     document.body.removeChild(link)
   }
 
-  /**
-   * Export the chart as a PNG image.
-   *
-   * Adds a watermark, captures the chart as a data URL, triggers a download,
-   * then removes the watermark.
-   */
-  function exportPNG(options: ExportOptions): void {
+  function sanitizeFilename(name: string): string {
+    return name.replace(/[^a-zA-Z0-9_-]/g, '') || 'chart'
+  }
+
+  function exportPNG(options: ExportOptions): boolean {
     const instance = chartRef.value
-    if (!instance?.chart) return
+    if (!instance?.chart) {
+      console.warn('[useChartExport] exportPNG: chart instance unavailable')
+      return false
+    }
+    if (!options.filename) return false
 
     const chart = instance.chart
     const { filename, backgroundColor = '#fff', pixelRatio = 2, source } = options
+    const safeName = sanitizeFilename(filename)
 
-    const previousGraphic = addWatermark(chart, source)
-
+    let previousGraphic: unknown[] | null = null
     try {
+      previousGraphic = addWatermark(chart, source)
       const dataUrl = chart.getDataURL({
         type: 'png',
-        pixelRatio,
+        pixelRatio: Math.max(1, pixelRatio),
         backgroundColor,
       })
-      triggerDownload(dataUrl, `${filename}.png`)
+      if (!dataUrl || !dataUrl.startsWith('data:')) {
+        console.error('[useChartExport] getDataURL returned invalid result')
+        return false
+      }
+      triggerDownload(dataUrl, `${safeName}.png`)
+      return true
+    } catch (err) {
+      console.error('[useChartExport] PNG export failed:', err)
+      return false
     } finally {
       removeWatermark(chart, previousGraphic)
     }
   }
 
-  /**
-   * Export the chart as an SVG file.
-   *
-   * Uses getConnectedDataURL for SVG output, falling back to renderToSVGString
-   * if available. Triggers a blob download.
-   */
-  function exportSVG(options: ExportOptions): void {
+  function exportSVG(options: ExportOptions): boolean {
     const instance = chartRef.value
-    if (!instance?.chart) return
+    if (!instance?.chart) {
+      console.warn('[useChartExport] exportSVG: chart instance unavailable')
+      return false
+    }
+    if (!options.filename) return false
 
     const chart = instance.chart
     const { filename, source } = options
+    const safeName = sanitizeFilename(filename)
 
-    const previousGraphic = addWatermark(chart, source)
-
+    let previousGraphic: unknown[] | null = null
     try {
+      previousGraphic = addWatermark(chart, source)
       let svgContent: string
 
-      // Try getConnectedDataURL first (works with both canvas and svg renderers)
       if (typeof chart.getConnectedDataURL === 'function') {
         const dataUrl = chart.getConnectedDataURL({ type: 'svg' })
-        // Data URL format: data:image/svg+xml;charset=UTF-8,...
-        // Decode it to get the raw SVG
-        const encoded = dataUrl.split(',')[1]
-        svgContent = decodeURIComponent(encoded)
+        if (!dataUrl || !dataUrl.includes(',')) {
+          console.error('[useChartExport] getConnectedDataURL returned invalid result')
+          return false
+        }
+        const [header, payload] = dataUrl.split(',')
+        if (header.includes(';base64')) {
+          svgContent = atob(payload)
+        } else {
+          svgContent = decodeURIComponent(payload)
+        }
       } else if (typeof chart.renderToSVGString === 'function') {
         svgContent = chart.renderToSVGString()
       } else {
-        // Fallback: use PNG export if SVG is not available
-        exportPNG({ ...options, filename })
-        return
+        console.warn('[useChartExport] SVG export unavailable — chart may use canvas renderer')
+        return false
       }
 
       const blob = new Blob([svgContent], { type: 'image/svg+xml;charset=utf-8' })
       const url = URL.createObjectURL(blob)
-      triggerDownload(url, `${filename}.svg`)
-      URL.revokeObjectURL(url)
+      try {
+        triggerDownload(url, `${safeName}.svg`)
+      } finally {
+        URL.revokeObjectURL(url)
+      }
+      return true
+    } catch (err) {
+      console.error('[useChartExport] SVG export failed:', err)
+      return false
     } finally {
       removeWatermark(chart, previousGraphic)
     }

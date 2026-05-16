@@ -23,7 +23,7 @@ import RelatedCharts from "@/components/RelatedCharts.vue";
 import type { RelatedChartItem } from "@/components/RelatedCharts.vue";
 import ExportButton from "@/components/ExportButton.vue";
 import { useAnalytics } from "@/composables/useAnalytics";
-import { useChartExport } from "@/composables/useChartExport";
+import { useChartExport, type ExportFormat } from "@/composables/useChartExport";
 
 /** Lazy-load chart components to avoid bundling ECharts on every route. */
 const WealthSharesChart = defineAsyncComponent(
@@ -47,18 +47,27 @@ const chartName = computed(() => route.params.name as string);
 const chartComponentRef = ref<{ chart: any } | null>(null);
 const { exportPNG, exportSVG } = useChartExport(chartComponentRef);
 
-/** Handle export button format selection. */
-function onExport(format: "png" | "svg") {
+const simpleChartSources: Record<string, string> = {
+  "housing-affordability": "ONS",
+  "cgt-concentration": "HMRC",
+  "wealth-by-decile": "ONS Wealth and Assets Survey",
+};
+
+watch(chartName, () => {
+  chartComponentRef.value = null;
+});
+
+function onExport(format: ExportFormat) {
   const name = chartName.value || "chart";
-  const sourceText = config.value?.source?.name;
+  const sourceText =
+    config.value?.source?.name || simpleChartSources[name] || undefined;
   const opts = { filename: `wealthlens-${name}`, source: sourceText };
 
-  if (format === "png") {
-    exportPNG(opts);
-  } else {
-    exportSVG(opts);
+  const success =
+    format === "png" ? exportPNG(opts) : exportSVG(opts);
+  if (success) {
+    trackEvent("export_chart", { chart: name, format });
   }
-  trackEvent("export_chart", { chart: name, format });
 }
 
 /* ------------------------------------------------------------------ */
