@@ -387,6 +387,20 @@ const RIGHT_SIDE: SideData = {
 }
 
 /* --- Responsive --------------------------------------------- */
+@media (max-width: 1024px) {
+  .two-b-split {
+    perspective: 900px;
+  }
+
+  .two-b-side--left {
+    transform: rotateY(4deg);
+  }
+
+  .two-b-side--right {
+    transform: rotateY(-4deg);
+  }
+}
+
 @media (max-width: 768px) {
   .two-b {
     padding: 48px 0;
@@ -423,6 +437,37 @@ const RIGHT_SIDE: SideData = {
   .two-b-side h3 {
     font-size: 22px;
     max-width: none;
+  }
+
+  .two-b-head h2 {
+    font-size: clamp(28px, 6vw, 42px);
+  }
+
+  .two-b-quote {
+    max-width: none;
+  }
+}
+
+/* 320px narrow phones */
+@media (max-width: 375px) {
+  .two-b-side {
+    padding: 20px 16px;
+  }
+
+  .two-b-stat-big {
+    font-size: 28px;
+  }
+
+  .two-b-side h3 {
+    font-size: 20px;
+  }
+
+  .two-b-day-list li {
+    font-size: 14px;
+  }
+
+  .two-b-quote {
+    font-size: 15px;
   }
 }
 </style>

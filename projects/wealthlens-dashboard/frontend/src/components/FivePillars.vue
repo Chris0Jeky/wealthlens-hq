@@ -552,13 +552,36 @@ const pillarColumns = computed(() =>
   }
 
   .pillars-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
     padding: 0 16px;
   }
 
   .pillar {
     min-height: auto;
     padding: 20px;
+  }
+
+  .pillar-chart-wrap {
+    height: 50px;
+  }
+
+  .pillar-chart {
+    height: 50px;
+  }
+}
+
+/* 480px and below — single column */
+@media (max-width: 480px) {
+  .pillars-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .pillar {
+    padding: 20px 16px;
+  }
+
+  .pillar-find {
+    min-height: auto;
   }
 }
 </style>
