@@ -49,6 +49,19 @@ describe('HealthBadge', () => {
     expect(wrapper.find('span').classes()).toContain('bg-gray-100')
   })
 
+  it('shows unavailable state with red badge', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ status: 'unavailable', available_count: 0, total_count: 4 }),
+    } as Response)
+
+    const wrapper = mount(HealthBadge)
+    await flushPromises()
+
+    expect(wrapper.text()).toBe('0/4 datasets')
+    expect(wrapper.find('span').classes()).toContain('bg-red-100')
+  })
+
   it('has accessible role and aria-label', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
       ok: true,
