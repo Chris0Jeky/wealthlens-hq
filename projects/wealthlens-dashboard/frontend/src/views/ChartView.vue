@@ -286,6 +286,15 @@ function onRangeChange(range: string) {
   activeRange.value = range;
 }
 
+/** Convert legacy hardcoded HTML snippets to display/meta-safe plain text. */
+function toPlainText(html: string): string {
+  if (typeof DOMParser === "undefined") {
+    return html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+  }
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  return doc.body.textContent?.replace(/\s+/g, " ").trim() ?? "";
+}
+
 /** Track chart views when the chart name changes. */
 watch(chartName, (name) => {
   if (name && isSupported.value) {
@@ -304,8 +313,7 @@ const chartTitle = computed(() => {
 
 const chartDescription = computed(() => {
   if (config.value) {
-    // Strip HTML tags from lede for meta description
-    return config.value.lede.replace(/<[^>]*>/g, "");
+    return toPlainText(config.value.lede);
   }
   return `UK wealth inequality data — ${chartTitle.value}`;
 });
@@ -377,8 +385,7 @@ usePageMeta({
             {{ config.headlineEmphasis }}
           </em>
         </h1>
-        <!-- eslint-disable-next-line vue/no-v-html -- trusted hardcoded config, not user input -->
-        <p class="article-head__lede" v-html="config.lede"></p>
+        <p class="article-head__lede">{{ toPlainText(config.lede) }}</p>
       </div>
       <aside class="meta-card" aria-label="Chart metadata">
         <h2 class="meta-card__heading">Chart facts</h2>
@@ -471,23 +478,23 @@ usePageMeta({
           class="article-body__pull"
         >
           <p class="article-body__pull-label">&uarr; The takeaway</p>
-          <!-- eslint-disable-next-line vue/no-v-html -- trusted hardcoded config -->
-          <p v-html="config.article.pullQuote.text"></p>
+          <p>{{ toPlainText(config.article.pullQuote.text) }}</p>
         </div>
 
-        <!-- eslint-disable-next-line vue/no-v-html -- trusted hardcoded config -->
         <p
           v-for="(para, j) in section.paragraphs"
           :key="`p-${i}-${j}`"
-          v-html="para"
-        ></p>
+        >
+          {{ toPlainText(para) }}
+        </p>
       </template>
 
       <!-- Methodology accordion -->
       <details class="method">
         <summary>Methodology &amp; data quality</summary>
-        <!-- eslint-disable-next-line vue/no-v-html -- trusted hardcoded methodology HTML with tables -->
-        <div class="method__body" v-html="config.methodology"></div>
+        <div class="method__body method__body--plain">
+          {{ toPlainText(config.methodology) }}
+        </div>
       </details>
     </article>
 
