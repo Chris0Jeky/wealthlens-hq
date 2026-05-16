@@ -22,17 +22,17 @@ const chartAvailable =
 
 <template>
   <div
-    class="rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow"
+    class="rounded-lg border border-[var(--wl-rule)] p-6 hover:shadow-md transition-shadow"
   >
     <h3 class="text-lg font-semibold mb-2">{{ name }}</h3>
-    <p class="text-sm text-gray-600 mb-3">{{ description }}</p>
+    <p class="text-sm text-[var(--wl-ink-muted)] mb-3">{{ description }}</p>
     <router-link
       v-if="chartAvailable"
       :to="`/charts/${name}`"
-      class="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded"
+      class="inline-flex items-center text-sm font-medium text-[var(--wl-red)] hover:text-[var(--wl-red-deep)] focus:outline-none focus:ring-2 focus:ring-[var(--wl-red)] focus:ring-offset-2 rounded"
     >
       View Chart &rarr;
     </router-link>
-    <span v-else class="text-sm text-gray-400 italic">Chart coming soon</span>
+    <span v-else class="text-sm text-[var(--wl-ink-faint)] italic">Chart coming soon</span>
   </div>
 </template>

@@ -252,20 +252,20 @@ const option = computed(() => {
 <template>
   <!-- Loading state -->
   <div v-if="loading" class="flex items-center justify-center py-20">
-    <p class="text-gray-500 text-lg">Loading chart data...</p>
+    <p class="text-[var(--wl-ink-muted)] text-lg">Loading chart data...</p>
   </div>
 
   <!-- Error state -->
   <div v-else-if="error" class="py-10 text-center">
-    <p class="text-red-600 font-medium">{{ error }}</p>
-    <p class="text-gray-500 text-sm mt-2">
+    <p class="text-[var(--wl-red)] font-medium">{{ error }}</p>
+    <p class="text-[var(--wl-ink-muted)] text-sm mt-2">
       Make sure the backend API is running on port 8000.
     </p>
   </div>
 
   <!-- No data state -->
   <div v-else-if="!hasData" class="py-10 text-center">
-    <p class="text-gray-500 text-lg">No data available for this chart.</p>
+    <p class="text-[var(--wl-ink-muted)] text-lg">No data available for this chart.</p>
   </div>
 
   <!-- Chart -->
@@ -286,20 +286,20 @@ const option = computed(() => {
     <!-- Note when regions are truncated -->
     <p
       v-if="regionData.tooManyRegions"
-      class="text-sm text-gray-500 mt-2 text-center italic"
+      class="text-sm text-[var(--wl-ink-muted)] mt-2 text-center italic"
     >
       Showing top {{ MAX_REGIONS }} least-affordable regions. Additional regions
       are available in the full dataset.
     </p>
 
     <!-- Source citation -->
-    <p class="text-sm text-gray-500 mt-4 text-center">
+    <p class="text-sm text-[var(--wl-ink-muted)] mt-4 text-center">
       Source:
       <a
         href="https://www.ons.gov.uk/peoplepopulationandcommunity/housing/datasets/ratioofhousepricetoworkplacebasedearningslowerquartileandmedian"
         target="_blank"
         rel="noopener"
-        class="underline hover:text-gray-700"
+        class="underline hover:text-[var(--wl-ink)]"
       >
         ONS Housing Affordability</a>, accessed 2026-05-14
     </p>

@@ -30,11 +30,11 @@ onErrorCaptured((err: Error) => {
     class="max-w-2xl mx-auto px-6 py-10 text-center focus:outline-none"
     role="alert"
   >
-    <h2 class="text-xl font-semibold text-red-600 mb-3">Something went wrong</h2>
-    <p class="text-gray-600 mb-4">{{ error.message }}</p>
+    <h2 class="text-xl font-semibold text-[var(--wl-red)] mb-3">Something went wrong</h2>
+    <p class="text-[var(--wl-ink-muted)] mb-4">{{ error.message }}</p>
     <button
       v-if="retryCount < MAX_RETRIES"
-      class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+      class="px-4 py-2 bg-[var(--wl-red)] text-white rounded hover:bg-[var(--wl-red-deep)] transition-colors"
       @click="reset"
     >
       Try again
@@ -42,7 +42,7 @@ onErrorCaptured((err: Error) => {
     <router-link
       v-else
       to="/"
-      class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+      class="inline-flex items-center px-4 py-2 bg-[var(--wl-red)] text-white rounded hover:bg-[var(--wl-red-deep)] transition-colors"
     >
       &larr; Back to dashboard
     </router-link>

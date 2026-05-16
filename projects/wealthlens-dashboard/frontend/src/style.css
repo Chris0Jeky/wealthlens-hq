@@ -1,1 +1,53 @@
+/* WealthLens UK — Global Stylesheet
+   Tailwind v4 (CSS-first config via @theme) + broadsheet design tokens. */
+
 @import 'tailwindcss';
+@import './assets/tokens.css';
+
+/* ---------------------------------------------------------------------------
+   Tailwind v4 theme extension — maps WealthLens design tokens to utility
+   classes like bg-wl-paper, text-wl-ink, font-wl-serif, etc.
+   These reference CSS custom properties so data-theme switching works.
+   --------------------------------------------------------------------------- */
+
+@theme inline {
+  /* Colour tokens — `inline` preserves var() references in output CSS
+     so that data-theme switching works at runtime. */
+  --color-wl-paper:       var(--wl-paper);
+  --color-wl-paper-tint:  var(--wl-paper-tint);
+  --color-wl-paper-deep:  var(--wl-paper-deep);
+  --color-wl-ink:         var(--wl-ink);
+  --color-wl-ink-body:    var(--wl-ink-body);
+  --color-wl-ink-muted:   var(--wl-ink-muted);
+  --color-wl-ink-faint:   var(--wl-ink-faint);
+  --color-wl-rule:        var(--wl-rule);
+  --color-wl-rule-strong: var(--wl-rule-strong);
+  --color-wl-bg:          var(--wl-bg);
+  --color-wl-bg-muted:    var(--wl-bg-muted);
+  --color-wl-bg-section:  var(--wl-bg-section);
+  --color-wl-card:        var(--wl-card);
+  --color-wl-red:         var(--wl-red);
+  --color-wl-red-deep:    var(--wl-red-deep);
+  --color-wl-red-soft:    var(--wl-red-soft);
+  --color-wl-gold:        var(--wl-gold);
+  --color-wl-gold-soft:   var(--wl-gold-soft);
+  --color-wl-teal:        var(--wl-teal);
+
+  /* Font families */
+  --font-wl-serif: "Newsreader", "Source Serif Pro", Georgia, "Times New Roman", serif;
+  --font-wl-sans:  "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
+  --font-wl-mono:  "IBM Plex Mono", "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* Border radius */
+  --radius-wl:    3px;
+  --radius-wl-sm: 2px;
+  --radius-wl-lg: 4px;
+
+  /* Shadows */
+  --shadow-wl-sm: 0 1px 0 rgba(17,17,17,0.06);
+  --shadow-wl:    0 1px 2px rgba(17,17,17,0.08);
+  --shadow-wl-lg: 0 8px 24px rgba(17,17,17,0.10), 0 2px 6px rgba(17,17,17,0.06);
+
+  /* Layout */
+  --container-wl: 1280px;
+}

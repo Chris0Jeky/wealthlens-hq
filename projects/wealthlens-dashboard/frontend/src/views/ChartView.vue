@@ -42,7 +42,7 @@ const isSupported = computed(() => chartName.value in chartTitles);
     <!-- Back link -->
     <router-link
       to="/"
-      class="inline-flex items-center text-sm text-blue-600 hover:text-blue-800 mb-6"
+      class="inline-flex items-center text-sm text-[var(--wl-red)] hover:text-[var(--wl-red-deep)] mb-6"
     >
       &larr; Back to datasets
     </router-link>
@@ -60,12 +60,12 @@ const isSupported = computed(() => chartName.value in chartTitles);
     <!-- Unsupported chart name -->
     <div v-else class="py-10 text-center">
       <h1 class="text-2xl font-bold mb-3">Chart not found</h1>
-      <p class="text-gray-600">
+      <p class="text-[var(--wl-ink-muted)]">
         No chart is available for "<span class="font-mono">{{ chartName }}</span>".
       </p>
       <router-link
         to="/"
-        class="inline-block mt-4 text-blue-600 hover:text-blue-800 underline"
+        class="inline-block mt-4 text-[var(--wl-red)] hover:text-[var(--wl-red-deep)] underline"
       >
         Return to dashboard
       </router-link>
