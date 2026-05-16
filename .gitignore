@@ -8,6 +8,7 @@
 !.env.example
 .venv/
 venv/
+.uv/
 __pycache__/
 *.py[cod]
 *.egg-info/
@@ -40,5 +41,11 @@ projects/wealthlens-dashboard/social-assets/
 .DS_Store
 Thumbs.db
 *.log
+*.swp
+*.swo
 /temp
 /.playwright-mcp
+
+# IDE
+.idea/
+.vscode/
