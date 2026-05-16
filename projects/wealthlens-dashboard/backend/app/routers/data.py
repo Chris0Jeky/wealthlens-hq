@@ -15,6 +15,7 @@ from typing import Any
 
 import pandas as pd
 from fastapi import APIRouter, HTTPException, Path, Query, Response
+from fastapi.responses import StreamingResponse
 
 from app.routers.schemas import (
     AllDatasetsMetadataResponse,
@@ -268,6 +269,35 @@ def dataset_columns(dataset_name: str) -> dict[str, Any]:
             }
         )
     return {"dataset": dataset_name, "row_count": len(df), "columns": columns}
+
+
+@router.get("/{dataset_name}/download", summary="Download dataset as CSV")
+def download_dataset(dataset_name: str) -> StreamingResponse:
+    """Download a dataset as a CSV file streamed directly from disk."""
+    if dataset_name not in DATASETS:
+        raise HTTPException(status_code=404, detail=f"Unknown dataset: {dataset_name}")
+
+    csv_path = DATA_DIR / DATASETS[dataset_name]
+    if not csv_path.exists():
+        raise HTTPException(
+            status_code=503,
+            detail=f"Dataset file not found: {dataset_name} — run the pipeline first",
+        )
+
+    size = csv_path.stat().st_size
+
+    def iterfile():
+        with open(csv_path, "rb") as f:
+            yield from f
+
+    return StreamingResponse(
+        iterfile(),
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": f'attachment; filename="{dataset_name}.csv"',
+            "Content-Length": str(size),
+        },
+    )
 
 
 @router.get(
