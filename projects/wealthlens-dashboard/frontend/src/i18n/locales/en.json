@@ -17,7 +17,8 @@
     "error": "Something went wrong",
     "source": "Source",
     "lastUpdated": "Last updated",
-    "backToHome": "Back to home"
+    "backToHome": "Back to home",
+    "selectLanguage": "Select language"
   },
   "calculator": {
     "title": "Where Do You Fit in UK Wealth?",

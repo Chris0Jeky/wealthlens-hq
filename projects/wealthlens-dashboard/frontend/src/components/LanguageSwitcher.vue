@@ -1,12 +1,9 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
+import { LOCALE_STORAGE_KEY } from '@/i18n'
 
 const { locale } = useI18n()
 
-/**
- * Available languages for the dashboard.
- * Currently English only — Welsh and Scots Gaelic planned for future.
- */
 const languages = [
   { code: 'en', label: 'English' },
   // { code: 'cy', label: 'Cymraeg' },   // Welsh — future
@@ -15,12 +12,13 @@ const languages = [
 
 function setLocale(code: string) {
   locale.value = code
+  localStorage.setItem(LOCALE_STORAGE_KEY, code)
 }
 </script>
 
 <template>
   <div class="lang-switcher">
-    <label for="lang-select" class="sr-only">Select language</label>
+    <label for="lang-select" class="sr-only">{{ $t('common.selectLanguage') }}</label>
     <select
       id="lang-select"
       :value="locale"

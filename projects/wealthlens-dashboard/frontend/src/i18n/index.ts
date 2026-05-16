@@ -1,16 +1,14 @@
 import { createI18n } from 'vue-i18n'
 import en from './locales/en.json'
 
-/**
- * Vue I18n instance configured for the WealthLens dashboard.
- *
- * - Composition API mode (legacy: false)
- * - Global injection enabled ($t available in all templates)
- * - English as default and fallback locale
- * - Additional locales can be added to ./locales/ and registered here
- */
+const LOCALE_STORAGE_KEY = 'wl-locale'
+
+const savedLocale = typeof window !== 'undefined'
+  ? localStorage.getItem(LOCALE_STORAGE_KEY) || 'en'
+  : 'en'
+
 const i18n = createI18n({
-  locale: 'en',
+  locale: savedLocale,
   fallbackLocale: 'en',
   legacy: false,
   globalInjection: true,
@@ -19,4 +17,5 @@ const i18n = createI18n({
   },
 })
 
+export { LOCALE_STORAGE_KEY }
 export default i18n

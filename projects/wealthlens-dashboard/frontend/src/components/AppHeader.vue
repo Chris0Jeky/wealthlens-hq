@@ -1,9 +1,6 @@
 <script setup lang="ts">
 import { ref, nextTick } from 'vue'
 import { RouterLink } from 'vue-router'
-import { useI18n } from 'vue-i18n'
-
-const { t } = useI18n()
 
 const mobileMenuOpen = ref(false)
 const hamburgerBtn = ref<HTMLButtonElement | null>(null)
