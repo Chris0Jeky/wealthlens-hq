@@ -27,7 +27,9 @@ export const useDataStore = defineStore("data", () => {
 
   async function fetchDataset(name: string): Promise<DatasetRow[]> {
     const res = await fetch(`/api/data/${name}`);
-    if (!res.ok) throw new Error(`Failed to fetch ${name}`);
+    if (!res.ok) {
+      throw new Error(`Failed to fetch ${name}: ${res.status} ${res.statusText}`);
+    }
     const json = await res.json();
     return json.data;
   }
