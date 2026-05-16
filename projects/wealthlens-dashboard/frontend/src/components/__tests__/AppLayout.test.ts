@@ -48,7 +48,7 @@ describe("App layout accessibility", () => {
     const nav = wrapper.find("nav");
 
     expect(nav.exists()).toBe(true);
-    expect(nav.attributes("aria-label")).toBe("Main navigation");
+    expect(nav.attributes("aria-label")).toBe("Site header");
   });
 
   it("external GitHub link opens in new tab with noopener", () => {

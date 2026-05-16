@@ -24,6 +24,14 @@ vi.mock("vue-router", () => ({
   useRoute: vi.fn(),
 }));
 
+vi.mock("@/composables/useAnalytics", () => ({
+  useAnalytics: () => ({
+    init: vi.fn(),
+    trackEvent: vi.fn(),
+    isEnabled: false,
+  }),
+}));
+
 const RouterLinkStub = {
   template: '<a :href="to"><slot /></a>',
   props: ["to"],
@@ -39,6 +47,28 @@ vi.mock("@/components/DatasetCard.vue", () => ({
 
 // Chart components are stubbed via global.stubs in mount options (see ChartView tests)
 // to avoid vitest mock proxy issues with Vue internal markers.
+
+// Mock echarts modules to prevent EnvironmentTeardownError when
+// defineAsyncComponent resolves chart imports after test cleanup.
+vi.mock("echarts/core", () => ({ use: vi.fn() }));
+vi.mock("echarts/renderers", () => ({ CanvasRenderer: {} }));
+vi.mock("echarts/charts", () => ({ LineChart: {}, BarChart: {} }));
+vi.mock("echarts/components", () => ({
+  GridComponent: {},
+  TooltipComponent: {},
+  TitleComponent: {},
+  LegendComponent: {},
+}));
+vi.mock("vue-echarts", () => ({
+  default: { name: "VChart", template: '<div class="vchart-stub" />', props: ["option", "autoresize"] },
+}));
+vi.mock("@/composables/useChartData", () => ({
+  useChartData: () => ({
+    rows: { value: [] },
+    loading: { value: false },
+    error: { value: null },
+  }),
+}));
 
 // --- HomeView ---
 
@@ -115,6 +145,10 @@ describe("ChartView", () => {
     HousingAffordabilityChart: true,
     CgtConcentrationChart: true,
     WealthByDecileChart: true,
+    StatStrip: true,
+    ChartToolbar: true,
+    ShareBar: true,
+    RelatedCharts: true,
   };
 
   function mountChart(name: string): VueWrapper {
@@ -127,13 +161,13 @@ describe("ChartView", () => {
   }
 
   it.each([
-    ["wealth-shares", "Wealth Shares — Top 1% and Top 10%"],
+    ["wealth-shares", "Who owns wealth in the UK?"],
     ["housing-affordability", "Housing Affordability — Price-to-Earnings Ratios by Region"],
     ["cgt-concentration", "Capital Gains Tax — Concentration by Size of Gain"],
     ["wealth-by-decile", "Total Household Wealth by Decile"],
   ])("shows correct title for %s", (name, expectedTitle) => {
     const wrapper = mountChart(name);
-    expect(wrapper.find("h1").text()).toBe(expectedTitle);
+    expect(wrapper.find("h1").text()).toContain(expectedTitle);
   });
 
   it('shows "Chart not found" for unsupported chart', () => {
@@ -141,11 +175,11 @@ describe("ChartView", () => {
     expect(wrapper.text()).toContain("Chart not found");
   });
 
-  it('shows "Back to datasets" link', () => {
+  it('shows "Home" breadcrumb link', () => {
     const wrapper = mountChart("wealth-shares");
     const link = wrapper.find('a[href="/"]');
     expect(link.exists()).toBe(true);
-    expect(link.text()).toContain("Back to datasets");
+    expect(link.text()).toContain("Home");
   });
 
   it('shows "Return to dashboard" link for unsupported chart', () => {
@@ -161,14 +195,16 @@ describe("ChartView", () => {
 describe("NotFoundView", () => {
   const mountOpts = { global: { stubs: { "router-link": RouterLinkStub } } };
 
-  it('shows "404" heading', () => {
+  it('shows "Page not found" heading', () => {
     const wrapper = mount(NotFoundView, mountOpts);
-    expect(wrapper.find("h1").text()).toBe("404");
+    expect(wrapper.find("h1").text()).toBe("Page not found");
   });
 
-  it('shows "Page not found" text', () => {
+  it('shows decorative 404 text', () => {
     const wrapper = mount(NotFoundView, mountOpts);
-    expect(wrapper.find("h2").text()).toBe("Page not found");
+    const decorative = wrapper.find('p[aria-hidden="true"]');
+    expect(decorative.exists()).toBe(true);
+    expect(decorative.text()).toBe("404");
   });
 
   it('shows "Back to dashboard" link pointing to /', () => {

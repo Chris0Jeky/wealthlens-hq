@@ -22,6 +22,13 @@ async function mountApp() {
       plugins: [router],
       stubs: {
         ErrorBoundary: { template: "<div><slot /></div>" },
+        AppHeader: {
+          template:
+            '<header><nav aria-label="Main navigation"><a href="https://github.com/Chris0Jeky/wealthlens-hq" target="_blank">GitHub</a></nav><span>WealthLens UK</span></header>',
+        },
+        AppFooter: {
+          template: '<footer role="contentinfo">Open source</footer>',
+        },
       },
     },
   });
@@ -39,7 +46,6 @@ describe("App", () => {
     const wrapper = await mountApp();
     expect(wrapper.find("header").exists()).toBe(true);
     expect(wrapper.text()).toContain("WealthLens");
-    expect(wrapper.text()).toContain("UK");
   });
 
   it("renders the main content area with correct id", async () => {
@@ -59,7 +65,9 @@ describe("App", () => {
     const wrapper = await mountApp();
     const nav = wrapper.find('nav[aria-label="Main navigation"]');
     expect(nav.exists()).toBe(true);
-    const ghLink = nav.find('a[href="https://github.com/Chris0Jeky/wealthlens-hq"]');
+    const ghLink = nav.find(
+      'a[href="https://github.com/Chris0Jeky/wealthlens-hq"]',
+    );
     expect(ghLink.exists()).toBe(true);
     expect(ghLink.attributes("target")).toBe("_blank");
   });

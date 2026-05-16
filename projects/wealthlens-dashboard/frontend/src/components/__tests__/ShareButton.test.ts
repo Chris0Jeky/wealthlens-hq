@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { mount } from "@vue/test-utils";
+import { mount, flushPromises } from "@vue/test-utils";
 import ShareButton from "@/components/ShareButton.vue";
 
 describe("ShareButton", () => {
@@ -51,12 +51,12 @@ describe("ShareButton", () => {
 
     const wrapper = mount(ShareButton);
     await wrapper.find("button").trigger("click");
-    await vi.runAllTicksAsync();
+    await flushPromises();
 
     expect(wrapper.text()).toContain("Copied!");
 
     vi.advanceTimersByTime(2000);
-    await vi.runAllTicksAsync();
+    await flushPromises();
 
     expect(wrapper.text()).toContain("Copy link");
   });
@@ -66,7 +66,7 @@ describe("ShareButton", () => {
 
     const wrapper = mount(ShareButton);
     await wrapper.find("button").trigger("click");
-    await vi.runAllTicksAsync();
+    await flushPromises();
 
     wrapper.unmount();
     vi.advanceTimersByTime(2000);

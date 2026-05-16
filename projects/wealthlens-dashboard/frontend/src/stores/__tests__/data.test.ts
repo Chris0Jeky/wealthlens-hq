@@ -1,5 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
+
+/**
+ * Mock fetchWithRetry so store tests don't trigger actual retry delays.
+ * The mock delegates to globalThis.fetch (which tests stub per-case),
+ * but without retry logic or setTimeout backoff.
+ */
+vi.mock('@/utils/fetchWithRetry', () => ({
+  fetchWithRetry: (...args: Parameters<typeof fetch>) => globalThis.fetch(...args),
+}))
+
 import { useDataStore } from '@/stores/data'
 
 describe('useDataStore', () => {

@@ -16,12 +16,14 @@ function mountWithRouter() {
 describe('NotFoundView', () => {
   it('renders 404 heading', () => {
     const wrapper = mountWithRouter()
-    expect(wrapper.find('h1').text()).toBe('404')
+    expect(wrapper.find('h1').text()).toBe('Page not found')
   })
 
-  it('renders descriptive subheading', () => {
+  it('renders decorative 404 text', () => {
     const wrapper = mountWithRouter()
-    expect(wrapper.find('h2').text()).toBe('Page not found')
+    const decorative = wrapper.find('p[aria-hidden="true"]')
+    expect(decorative.exists()).toBe(true)
+    expect(decorative.text()).toBe('404')
   })
 
   it('renders explanation text', () => {

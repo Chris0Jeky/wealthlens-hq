@@ -43,11 +43,12 @@ describe('DatasetCard', () => {
       props: { ...defaultProps, hasChart: true },
       global: { stubs: { RouterLink: RouterLinkStub } },
     });
-    const link = wrapper.findComponent(RouterLinkStub);
-    expect(link.exists()).toBe(true);
-    expect(link.attributes("aria-label")).toBe(
-      `View ${defaultProps.name} chart`,
+    const links = wrapper.findAllComponents(RouterLinkStub);
+    const chartLink = links.find(
+      (l) => l.attributes("aria-label") === `View ${defaultProps.name} chart`,
     );
+    expect(chartLink).toBeDefined();
+    expect(chartLink!.exists()).toBe(true);
   });
 
   it('uses an h3 for the dataset name', () => {

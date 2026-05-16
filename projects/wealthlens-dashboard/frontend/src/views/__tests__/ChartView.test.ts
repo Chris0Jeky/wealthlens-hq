@@ -4,6 +4,14 @@ import { createTestingPinia } from '@pinia/testing'
 import { createRouter, createMemoryHistory } from 'vue-router'
 import ChartView from '../ChartView.vue'
 
+vi.mock('@/composables/useAnalytics', () => ({
+  useAnalytics: () => ({
+    init: vi.fn(),
+    trackEvent: vi.fn(),
+    isEnabled: false,
+  }),
+}))
+
 async function createWrapper(chartName: string) {
   const router = createRouter({
     history: createMemoryHistory(),
@@ -27,6 +35,10 @@ async function createWrapper(chartName: string) {
         HousingAffordabilityChart: { template: '<div data-testid="housing-chart" />' },
         CgtConcentrationChart: { template: '<div data-testid="cgt-chart" />' },
         WealthByDecileChart: { template: '<div data-testid="decile-chart" />' },
+        StatStrip: true,
+        ChartToolbar: true,
+        ShareBar: true,
+        RelatedCharts: true,
       },
     },
   })
@@ -37,12 +49,12 @@ describe('ChartView', () => {
     const wrapper = await createWrapper('wealth-shares')
     const link = wrapper.find('a[href="/"]')
     expect(link.exists()).toBe(true)
-    expect(link.text()).toContain('Back to datasets')
+    expect(link.text()).toContain('Home')
   })
 
   it('renders chart title for known dataset', async () => {
     const wrapper = await createWrapper('wealth-shares')
-    expect(wrapper.find('h1').text()).toContain('Wealth Shares')
+    expect(wrapper.find('h1').text()).toContain('Who owns wealth in the UK?')
   })
 
   it('renders housing affordability title', async () => {
