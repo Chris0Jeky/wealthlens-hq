@@ -384,7 +384,10 @@ const datasets: DatasetSource[] = [
         <ul class="privacy-list">
           <li>No personal data is collected, stored, or processed.</li>
           <li>No cookies are used for tracking or advertising.</li>
-          <li>No third-party tracking scripts are loaded.</li>
+          <li>
+            No third-party tracking scripts are loaded unless privacy-respecting,
+            aggregate analytics are explicitly enabled for a deployment.
+          </li>
           <li>
             Analytics, if enabled, are privacy-respecting and aggregated — no
             individual user profiles are created.
