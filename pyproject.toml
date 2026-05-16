@@ -64,6 +64,10 @@ module = [
 ]
 disallow_untyped_defs = true
 
+[tool.bandit]
+exclude_dirs = ["tests"]
+skips = ["B101"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]

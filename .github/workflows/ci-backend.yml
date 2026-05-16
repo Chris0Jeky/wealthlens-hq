@@ -61,5 +61,11 @@ jobs:
           # mypy automation/
           # mypy tests/
 
+      - name: Bandit security scan
+        run: |
+          pip install bandit
+          bandit -r projects/wealthlens-dashboard/backend/ -c pyproject.toml || true
+          bandit -r automation/ -c pyproject.toml || true
+
       - name: Pytest
         run: pytest -q tests/
