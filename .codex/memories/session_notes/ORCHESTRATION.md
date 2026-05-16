@@ -11,7 +11,7 @@
 > 5. Pick up from the **Current Phase** section below.
 > 6. After completing work, UPDATE this file before the next compaction risk.
 
-Last updated: 2026-05-16 (wave 35 complete — PRs #11-#152, 152 total)
+Last updated: 2026-05-16 (wave 30 complete — 56 PRs total: #75-#130, seeding wave 31)
 
 ## Workflow Design
 
@@ -39,7 +39,7 @@ main
 
 ## Current Phase
 
-**Phase: WAVE 35 COMPLETE** — PRs #11-#152 total (152 open PRs). All R2 reviews pass for waves 33-34.
+**Phase: WAVE 31 SEEDING** — PRs #75-#130 (waves 17-30) all R2 PASS. Seeding wave 31 tasks.
 
 ### Work Stream Status
 
@@ -89,12 +89,16 @@ main
 35. [DONE] Build wave 15 PRs (#68-#70), R1+R2 all pass
 36. [DONE] Build wave 16 PRs (#71-#74), R1+R2 all pass
 37. [DONE] Build wave 17 PRs (#75-#78), R1+R2 all pass
-38. [DONE] Waves 18-30 PRs (#79-#130), R1+R2 all pass
-39. [DONE] Wave 31 PRs (#131-#134): about page, structured logging, dark mode, request timeout — R1+R2 all pass
-40. [DONE] Wave 32 PRs (#135-#138): CHANGELOG, PWA manifest, chart constants, nav a11y tests — R1+R2 all pass
-41. [DONE] Wave 33 PRs (#139-#141): data router logging, endpoint tests, route suspense — R1+R2 pass (logging R2 found 2 issues, fixed)
-42. [DONE] Wave 34 PRs (#142-#150): useChartDimensions, SourceCitation, API client, NotFoundView/HomeView/ChartView tests, generational wealth dataset+chart, SEO, useDocumentTitle — R1+R2 pass
-43. [DONE] Wave 35 PRs (#151-#152): Makefile frontend-test, DatasetCard generational-wealth — simple fixes, no review needed
+38. [DONE] Waves 18-22 PRs (#79-#98), R1+R2 all pass
+39. [DONE] Wave 23 PRs (#99-#102), R1+R2 all pass
+40. [DONE] Wave 24 PRs (#103-#106), R1+R2 all pass
+41. [DONE] Wave 25 PRs (#107-#110), R1+R2 all pass
+42. [DONE] Wave 26 PRs (#111-#114), R1+R2 all pass
+43. [DONE] Wave 27 PRs (#115-#118), R1+R2 all pass
+44. [DONE] Wave 28 PRs (#119-#122), R1+R2 all pass
+45. [DONE] Wave 29 PRs (#123-#126), R1+R2 all pass
+46. [DONE] Wave 30 PRs (#127-#130), R1+R2 all pass
+47. [IN PROGRESS] Seed wave 31, build PRs
 
 ## Decisions Log
 
@@ -376,28 +380,6 @@ main
  ├── test/frontend-store-edge-cases (#77, independent)
  └── chore/docker-support (#78, independent)
 ```
-
-## Waves 18-30 — Summary (PRs #79-#130)
-
-Waves 18-30 created 52 PRs spanning: CI enhancements, route guards, request logging, error boundary improvements, API endpoint tests, chart view tests, rate limiting, error responses, chart data composable, CORS max-age, meta/OG tags, accessible data table, dataset validation, health version, loading skeleton, share button, cache headers, and more. All reviewed R1+R2.
-
-## Wave 31 — About page, structured logging, dark mode, request timeout
-
-| # | Stream | Branch | Base | PR | Status |
-|---|--------|--------|------|----|--------|
-| 49 | About page | `feat/about-page` | main | #131 | R2 PASS |
-| 50 | Structured logging | `feat/structured-logging` | main | #132 | R2 PASS |
-| 51 | Dark mode toggle | `feat/dark-mode` | main | #133 | R2 PASS |
-| 52 | Request timeout | `feat/request-timeout` | main | #134 | R2 PASS (fix: ASGI send-wrapper) |
-
-## Wave 32 — CHANGELOG, PWA manifest, chart constants, nav tests
-
-| # | Stream | Branch | Base | PR | Status |
-|---|--------|--------|------|----|--------|
-| 53 | CHANGELOG | `docs/changelog-v2` | main | #135 | R1 running |
-| 54 | PWA manifest | `feat/pwa-manifest` | main | #136 | R1 running |
-| 55 | Chart constants | `refactor/chart-constants` | main | #137 | R1 running |
-| 56 | Nav a11y tests | `test/nav-keyboard-focus` | main | #138 | R1 running |
 
 ## Notes
 
