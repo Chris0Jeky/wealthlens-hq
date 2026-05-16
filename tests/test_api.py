@@ -273,3 +273,187 @@ def test_missing_csv_error_includes_dataset_name():
     assert response.status_code == 503
     detail = response.json()["detail"]
     assert "wealth-shares" in detail, f"Dataset name missing from error: {detail}"
+
+
+# --- Health data endpoint tests (/api/health/data) ---
+
+
+def test_health_data_returns_healthy_structure():
+    """GET /api/health/data returns all required keys and valid status.
+
+    When the data directory contains processed CSVs (as it does on the
+    default DATA_DIR used by CI), the status should be 'healthy' and
+    every dataset should be marked available with a file size.
+    """
+    from app.routers import data as data_module
+
+    response = client.get("/api/health/data")
+    assert response.status_code == 200
+
+    body = response.json()
+    assert body["status"] in ("healthy", "degraded", "unavailable")
+    assert "datasets" in body
+    assert "available_count" in body
+    assert "total_count" in body
+    assert body["total_count"] == len(data_module.DATASETS)
+
+    # Every configured dataset must appear in the response.
+    for name in data_module.DATASETS:
+        assert name in body["datasets"], f"Missing dataset '{name}' in health response"
+        ds = body["datasets"][name]
+        assert "file" in ds
+        assert "available" in ds
+
+
+def test_health_data_unavailable_when_no_csvs_exist(tmp_path):
+    """Status is 'unavailable' when DATA_DIR points to an empty directory."""
+    from app.routers import data as data_module
+
+    with patch.object(data_module, "DATA_DIR", tmp_path):
+        response = client.get("/api/health/data")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "unavailable"
+    assert body["available_count"] == 0
+    assert body["total_count"] == len(data_module.DATASETS)
+
+    for ds in body["datasets"].values():
+        assert ds["available"] is False
+        assert "error" in ds
+
+
+def test_health_data_degraded_when_partial_csvs_exist(tmp_path):
+    """Status is 'degraded' when only some CSV files are present."""
+    from app.routers import data as data_module
+
+    with patch.object(data_module, "DATA_DIR", tmp_path):
+        # Create just the first dataset file to get a mix of found/missing.
+        first_name = next(iter(data_module.DATASETS))
+        first_file = tmp_path / data_module.DATASETS[first_name]
+        first_file.write_text("col1,col2\n1,2\n")
+
+        response = client.get("/api/health/data")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "degraded"
+    assert body["available_count"] == 1
+
+    # The file we created should be available with a size.
+    assert body["datasets"][first_name]["available"] is True
+    assert body["datasets"][first_name]["size_bytes"] > 0
+
+
+def test_health_data_available_entries_include_size(tmp_path):
+    """Available datasets must report size_bytes; unavailable must report error."""
+    from app.routers import data as data_module
+
+    with patch.object(data_module, "DATA_DIR", tmp_path):
+        # Create all CSV files so the status is healthy.
+        for filename in data_module.DATASETS.values():
+            (tmp_path / filename).write_text("a,b\n1,2\n")
+
+        response = client.get("/api/health/data")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "healthy"
+    assert body["available_count"] == body["total_count"]
+
+    for ds in body["datasets"].values():
+        assert ds["available"] is True
+        assert "size_bytes" in ds
+        assert ds["size_bytes"] > 0
+
+
+# --- CORS preflight test ---
+
+
+def test_cors_preflight_options_returns_allow_headers():
+    """OPTIONS /api/data/ must return CORS preflight headers.
+
+    A browser sends an OPTIONS request before cross-origin fetches.
+    The middleware must reply with access-control-allow-methods and
+    access-control-allow-headers for the request to proceed.
+    """
+    response = client.options(
+        "/api/data/",
+        headers={
+            "Origin": "http://localhost:3000",
+            "Access-Control-Request-Method": "GET",
+            "Access-Control-Request-Headers": "content-type",
+        },
+    )
+    assert response.status_code == 200
+    assert "access-control-allow-methods" in response.headers
+    assert "access-control-allow-headers" in response.headers
+    assert "access-control-allow-origin" in response.headers
+
+
+# --- Pagination edge case tests ---
+
+
+def test_pagination_limit_zero_rejected():
+    """limit=0 should be rejected with a 422 validation error.
+
+    The Query parameter is defined with ge=1, so 0 is invalid.
+    """
+    response = client.get("/api/data/wealth-shares?limit=0")
+    assert response.status_code == 422
+
+
+def test_pagination_negative_page_rejected():
+    """page=-1 should be rejected with a 422 validation error.
+
+    The Query parameter is defined with ge=1, so negative values are invalid.
+    """
+    response = client.get("/api/data/wealth-shares?page=-1")
+    assert response.status_code == 422
+
+
+# --- Metadata caching test ---
+
+
+def test_metadata_caching_avoids_redundant_csv_reads(tmp_path):
+    """Calling /api/data/metadata twice should not re-read CSVs.
+
+    The _metadata_cache in data.py stores (row_count, columns) after the
+    first read.  We verify that pd.read_csv is called at most once per
+    dataset, even across two metadata requests.
+
+    Uses a tmp_path with stub CSVs so the test works without real pipeline
+    data.
+    """
+    import pandas as pd
+
+    from app.routers import data as data_module
+
+    # Seed stub CSVs in a temp directory so the endpoint can read them.
+    for filename in data_module.DATASETS.values():
+        (tmp_path / filename).write_text("col_a,col_b\n1,2\n3,4\n")
+
+    # Clear the cache so we start fresh for this test.
+    data_module._metadata_cache.clear()
+
+    with (
+        patch.object(data_module, "DATA_DIR", tmp_path),
+        patch("app.routers.data.pd.read_csv", wraps=pd.read_csv) as mock_read,
+    ):
+        response1 = client.get("/api/data/metadata")
+        assert response1.status_code == 200
+
+        first_call_count = mock_read.call_count
+        assert first_call_count == len(data_module.DATASETS), (
+            f"Expected {len(data_module.DATASETS)} read_csv calls on first request, "
+            f"got {first_call_count}"
+        )
+
+        response2 = client.get("/api/data/metadata")
+        assert response2.status_code == 200
+
+        # Second request should not trigger any additional read_csv calls.
+        assert mock_read.call_count == first_call_count, (
+            f"Expected no additional read_csv calls, but got "
+            f"{mock_read.call_count - first_call_count} extra"
+        )
