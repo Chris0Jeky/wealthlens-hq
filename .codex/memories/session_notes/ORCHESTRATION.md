@@ -11,7 +11,7 @@
 > 5. Pick up from the **Current Phase** section below.
 > 6. After completing work, UPDATE this file before the next compaction risk.
 
-Last updated: 2026-05-16 (wave 32 in progress — PRs #11-#138, 128 total)
+Last updated: 2026-05-16 (wave 35 complete — PRs #11-#152, 152 total)
 
 ## Workflow Design
 
@@ -39,7 +39,7 @@ main
 
 ## Current Phase
 
-**Phase: WAVE 32 IN PROGRESS** — PRs #11-#138 total. Wave 31 R2 complete. Wave 32 R1 running.
+**Phase: WAVE 35 COMPLETE** — PRs #11-#152 total (152 open PRs). All R2 reviews pass for waves 33-34.
 
 ### Work Stream Status
 
@@ -91,7 +91,10 @@ main
 37. [DONE] Build wave 17 PRs (#75-#78), R1+R2 all pass
 38. [DONE] Waves 18-30 PRs (#79-#130), R1+R2 all pass
 39. [DONE] Wave 31 PRs (#131-#134): about page, structured logging, dark mode, request timeout — R1+R2 all pass
-40. [IN PROGRESS] Wave 32 PRs (#135-#138): CHANGELOG, PWA manifest, chart constants, nav a11y tests — R1 running
+40. [DONE] Wave 32 PRs (#135-#138): CHANGELOG, PWA manifest, chart constants, nav a11y tests — R1+R2 all pass
+41. [DONE] Wave 33 PRs (#139-#141): data router logging, endpoint tests, route suspense — R1+R2 pass (logging R2 found 2 issues, fixed)
+42. [DONE] Wave 34 PRs (#142-#150): useChartDimensions, SourceCitation, API client, NotFoundView/HomeView/ChartView tests, generational wealth dataset+chart, SEO, useDocumentTitle — R1+R2 pass
+43. [DONE] Wave 35 PRs (#151-#152): Makefile frontend-test, DatasetCard generational-wealth — simple fixes, no review needed
 
 ## Decisions Log
 
