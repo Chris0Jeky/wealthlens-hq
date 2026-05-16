@@ -46,8 +46,12 @@ export function useTheme() {
   return { theme, toggleTheme }
 }
 
-export function _resetForTesting() {
-  theme.value = 'light'
+export function _resetForTesting(detectFromEnv = false) {
+  if (detectFromEnv) {
+    theme.value = getInitialTheme()
+  } else {
+    theme.value = 'light'
+  }
   if (typeof document !== 'undefined') {
     document.documentElement.removeAttribute('data-theme')
   }
