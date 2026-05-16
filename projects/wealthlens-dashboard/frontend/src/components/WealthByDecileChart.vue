@@ -34,6 +34,14 @@ use([
 
 const { rows, loading, error } = useChartData("wealth-by-decile");
 
+/**
+ * Respect prefers-reduced-motion (WCAG 2.3.3).
+ * Disables ECharts animations when the user has requested reduced motion.
+ */
+const prefersReducedMotion =
+  typeof window !== "undefined" &&
+  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
 // WCAG AA high-contrast colors against white
 // #1a56db (blue) contrast ratio ~7.2:1 — standard bars
 // #b91c1c (red-700) contrast ratio ~5.7:1 — negative value warning
@@ -73,6 +81,7 @@ const option = computed(() => {
   );
 
   return {
+    animation: !prefersReducedMotion,
     title: {
       text: "Total Household Wealth by Decile (GBP Billions)",
       left: "center",

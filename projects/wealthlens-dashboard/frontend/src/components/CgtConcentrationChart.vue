@@ -37,6 +37,14 @@ use([
 
 const { rows, loading, error } = useChartData("cgt-concentration");
 
+/**
+ * Respect prefers-reduced-motion (WCAG 2.3.3).
+ * Disables ECharts animations when the user has requested reduced motion.
+ */
+const prefersReducedMotion =
+  typeof window !== "undefined" &&
+  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
 // WCAG AA high-contrast colors against white
 // #1a56db (blue) contrast ratio ~7.2:1 — share of gains bars
 // #dc2626 (red)  contrast ratio ~4.6:1 — cumulative line
@@ -85,6 +93,7 @@ const option = computed(() => {
   const cumulValues = data.map((d) => d.cumulGainsFromTopPct);
 
   return {
+    animation: !prefersReducedMotion,
     title: {
       text: "Capital Gains Tax — Concentration by Size of Gain",
       left: "center",
@@ -172,7 +181,7 @@ const option = computed(() => {
         type: "line" as const,
         data: cumulValues,
         yAxisIndex: 1,
-        smooth: true,
+        smooth: !prefersReducedMotion,
         lineStyle: { width: 2.5, color: COLOR_LINE },
         itemStyle: { color: COLOR_LINE },
         symbol: "circle",

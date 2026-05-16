@@ -35,6 +35,15 @@ use([
 const { rows, loading, error } = useChartData("housing-affordability");
 
 /**
+ * Respect prefers-reduced-motion (WCAG 2.3.3).
+ * Disables ECharts smooth lines and animations when the user has
+ * requested reduced motion in their OS settings.
+ */
+const prefersReducedMotion =
+  typeof window !== "undefined" &&
+  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/**
  * WCAG AA high-contrast colors against white (#fff).
  * Each has at least 4.5:1 contrast ratio.
  */
@@ -137,7 +146,7 @@ const option = computed(() => {
       name: region,
       type: "line" as const,
       data,
-      smooth: true,
+      smooth: !prefersReducedMotion,
       lineStyle: { width: 2.5, color },
       itemStyle: { color },
       symbol: "circle",
@@ -147,6 +156,7 @@ const option = computed(() => {
   });
 
   return {
+    animation: !prefersReducedMotion,
     title: {
       text: "Housing Affordability — Price-to-Earnings Ratios by Region",
       left: "center",

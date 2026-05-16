@@ -53,3 +53,19 @@
 }
 
 @custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * WCAG 2.3.3 — Respect prefers-reduced-motion.
+ * Disables CSS transitions and animations globally when the user has
+ * requested reduced motion in their OS settings.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
