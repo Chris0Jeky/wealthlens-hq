@@ -14,6 +14,7 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 PIPELINE_DIR = Path(__file__).resolve().parent
+SCRIPT_TIMEOUT_SECONDS = 300
 
 SCRIPTS = [
     "fetch_wid_data.py",
@@ -29,10 +30,19 @@ def run_pipelines() -> list[str]:
     for script in SCRIPTS:
         path = PIPELINE_DIR / script
         logger.info("Running %s", script)
-        result = subprocess.run([sys.executable, str(path)], cwd=str(PIPELINE_DIR))
+        try:
+            result = subprocess.run(
+                [sys.executable, str(path)],
+                cwd=str(PIPELINE_DIR),
+                timeout=SCRIPT_TIMEOUT_SECONDS,
+            )
+        except subprocess.TimeoutExpired:
+            failed.append(script)
+            logger.error("TIMEOUT: %s exceeded %ds", script, SCRIPT_TIMEOUT_SECONDS)
+            continue
         if result.returncode != 0:
             failed.append(script)
-            logger.error("FAILED: %s", script)
+            logger.error("FAILED: %s (exit code %d)", script, result.returncode)
     return failed
 
 
