@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, nextTick } from 'vue'
 import { RouterLink } from 'vue-router'
+import ThemeToggle from '@/components/ThemeToggle.vue'
 
 const mobileMenuOpen = ref(false)
 const hamburgerBtn = ref<HTMLButtonElement | null>(null)
@@ -115,6 +116,7 @@ const today = new Date().toLocaleDateString('en-GB', {
 
       <!-- Desktop right-side buttons -->
       <div class="nav-right">
+        <ThemeToggle />
         <a
           href="https://github.com/Chris0Jeky/wealthlens-hq"
           target="_blank"
@@ -167,6 +169,9 @@ const today = new Date().toLocaleDateString('en-GB', {
       <RouterLink to="/contribute" class="mobile-link" active-class="active" @click="closeMenu()">
         Contribute
       </RouterLink>
+      <div class="mobile-theme">
+        <ThemeToggle />
+      </div>
       <div class="mobile-actions">
         <a
           href="https://github.com/Chris0Jeky/wealthlens-hq"
@@ -403,6 +408,11 @@ const today = new Date().toLocaleDateString('en-GB', {
 .mobile-link.active {
   color: var(--wl-red);
   font-weight: 600;
+}
+
+.mobile-theme {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--wl-rule);
 }
 
 .mobile-actions {
