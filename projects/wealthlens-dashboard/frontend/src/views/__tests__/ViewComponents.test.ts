@@ -9,13 +9,16 @@ import NotFoundView from "@/views/NotFoundView.vue";
 // --- Mocks ---
 
 const mockFetchDatasets = vi.fn();
+const mockFetchAllMetadata = vi.fn();
 const mockFetchFreshness = vi.fn();
 const mockStoreState = reactive({
   datasets: [] as string[],
+  metadata: new Map(),
+  freshness: {} as Record<string, unknown>,
   loading: false,
   error: null as string | null,
-  freshness: {} as Record<string, unknown>,
   fetchDatasets: mockFetchDatasets,
+  fetchAllMetadata: mockFetchAllMetadata,
   fetchFreshness: mockFetchFreshness,
 });
 
@@ -78,7 +81,11 @@ vi.mock("@/composables/useChartData", () => ({
 describe("HomeView", () => {
   beforeEach(() => {
     mockFetchDatasets.mockClear();
+    mockFetchAllMetadata.mockClear();
+    mockFetchFreshness.mockClear();
     mockStoreState.datasets = [];
+    mockStoreState.metadata = new Map();
+    mockStoreState.freshness = {};
     mockStoreState.loading = false;
     mockStoreState.error = null;
   });
@@ -93,45 +100,39 @@ describe("HomeView", () => {
     expect(mockFetchDatasets).toHaveBeenCalledOnce();
   });
 
-  it("shows loading message when store.loading is true", () => {
-    mockStoreState.loading = true;
-    const wrapper = mount(HomeView);
-    expect(wrapper.text()).toContain("Loading datasets...");
+  it("calls fetchAllMetadata on mount", () => {
+    mount(HomeView);
+    expect(mockFetchAllMetadata).toHaveBeenCalledOnce();
   });
 
-  it("shows error message when store.error is set", () => {
-    mockStoreState.error = "Something went wrong";
-    const wrapper = mount(HomeView);
-    expect(wrapper.text()).toContain("Something went wrong");
+  it("calls fetchFreshness on mount", () => {
+    mount(HomeView);
+    expect(mockFetchFreshness).toHaveBeenCalledOnce();
   });
 
-  it("renders a DatasetCard for each dataset", () => {
-    mockStoreState.datasets = ["wealth-shares", "housing-affordability"];
+  it("always renders all 10 hardcoded dataset cards", () => {
     const wrapper = mount(HomeView);
     const cards = wrapper.findAll(".dataset-card-stub");
-    expect(cards).toHaveLength(2);
-    expect(cards[0].text()).toBe("wealth-shares");
-    expect(cards[1].text()).toBe("housing-affordability");
+    expect(cards).toHaveLength(10);
+  });
+
+  it("renders cards even when store is loading", () => {
+    mockStoreState.loading = true;
+    const wrapper = mount(HomeView);
+    const cards = wrapper.findAll(".dataset-card-stub");
+    expect(cards).toHaveLength(10);
+  });
+
+  it("renders cards even when store has error", () => {
+    mockStoreState.error = "Something went wrong";
+    const wrapper = mount(HomeView);
+    const cards = wrapper.findAll(".dataset-card-stub");
+    expect(cards).toHaveLength(10);
   });
 
   it("uses role=list on the dataset grid", () => {
-    mockStoreState.datasets = ["wealth-shares"];
     const wrapper = mount(HomeView);
     expect(wrapper.find('[role="list"]').exists()).toBe(true);
-  });
-
-  it("does not render cards while loading", () => {
-    mockStoreState.loading = true;
-    mockStoreState.datasets = ["wealth-shares"];
-    const wrapper = mount(HomeView);
-    expect(wrapper.findAll(".dataset-card-stub")).toHaveLength(0);
-  });
-
-  it("does not render cards when error is set", () => {
-    mockStoreState.error = "Something failed";
-    mockStoreState.datasets = ["wealth-shares"];
-    const wrapper = mount(HomeView);
-    expect(wrapper.findAll(".dataset-card-stub")).toHaveLength(0);
   });
 });
 

@@ -22,20 +22,85 @@ import ShareBar from "@/components/ShareBar.vue";
 import RelatedCharts from "@/components/RelatedCharts.vue";
 import type { RelatedChartItem } from "@/components/RelatedCharts.vue";
 import { useAnalytics } from "@/composables/useAnalytics";
+import ChartSkeleton from "@/components/ChartSkeleton.vue";
+import ChartLoadError from "@/components/ChartLoadError.vue";
 
-/** Lazy-load chart components to avoid bundling ECharts on every route. */
-const WealthSharesChart = defineAsyncComponent(
-  () => import("@/components/WealthSharesChart.vue"),
-);
-const HousingAffordabilityChart = defineAsyncComponent(
-  () => import("@/components/HousingAffordabilityChart.vue"),
-);
-const CgtConcentrationChart = defineAsyncComponent(
-  () => import("@/components/CgtConcentrationChart.vue"),
-);
-const WealthByDecileChart = defineAsyncComponent(
-  () => import("@/components/WealthByDecileChart.vue"),
-);
+/**
+ * Lazy-load chart components to avoid bundling ECharts on every route.
+ * Each uses the object form of defineAsyncComponent with error handling,
+ * a loading skeleton, and a 10-second timeout to prevent silent failures
+ * when JS chunks fail to load (deploy race, network issue).
+ */
+const WealthSharesChart = defineAsyncComponent({
+  loader: () => import("@/components/WealthSharesChart.vue"),
+  loadingComponent: ChartSkeleton,
+  errorComponent: ChartLoadError,
+  delay: 200,
+  timeout: 10000,
+});
+const HousingAffordabilityChart = defineAsyncComponent({
+  loader: () => import("@/components/HousingAffordabilityChart.vue"),
+  loadingComponent: ChartSkeleton,
+  errorComponent: ChartLoadError,
+  delay: 200,
+  timeout: 10000,
+});
+const CgtConcentrationChart = defineAsyncComponent({
+  loader: () => import("@/components/CgtConcentrationChart.vue"),
+  loadingComponent: ChartSkeleton,
+  errorComponent: ChartLoadError,
+  delay: 200,
+  timeout: 10000,
+});
+const WealthByDecileChart = defineAsyncComponent({
+  loader: () => import("@/components/WealthByDecileChart.vue"),
+  loadingComponent: ChartSkeleton,
+  errorComponent: ChartLoadError,
+  delay: 200,
+  timeout: 10000,
+});
+const ProductivityPayChart = defineAsyncComponent({
+  loader: () => import("@/components/ProductivityPayChart.vue"),
+  loadingComponent: ChartSkeleton,
+  errorComponent: ChartLoadError,
+  delay: 200,
+  timeout: 10000,
+});
+const GdhiByRegionChart = defineAsyncComponent({
+  loader: () => import("@/components/GdhiByRegionChart.vue"),
+  loadingComponent: ChartSkeleton,
+  errorComponent: ChartLoadError,
+  delay: 200,
+  timeout: 10000,
+});
+const TaxCompositionChart = defineAsyncComponent({
+  loader: () => import("@/components/TaxCompositionChart.vue"),
+  loadingComponent: ChartSkeleton,
+  errorComponent: ChartLoadError,
+  delay: 200,
+  timeout: 10000,
+});
+const BoeRatesChart = defineAsyncComponent({
+  loader: () => import("@/components/BoeRatesChart.vue"),
+  loadingComponent: ChartSkeleton,
+  errorComponent: ChartLoadError,
+  delay: 200,
+  timeout: 10000,
+});
+const ChildPovertyChart = defineAsyncComponent({
+  loader: () => import("@/components/ChildPovertyChart.vue"),
+  loadingComponent: ChartSkeleton,
+  errorComponent: ChartLoadError,
+  delay: 200,
+  timeout: 10000,
+});
+const GenerationalWealthChart = defineAsyncComponent({
+  loader: () => import("@/components/GenerationalWealthChart.vue"),
+  loadingComponent: ChartSkeleton,
+  errorComponent: ChartLoadError,
+  delay: 200,
+  timeout: 10000,
+});
 
 const route = useRoute();
 const { trackEvent } = useAnalytics();
@@ -104,6 +169,18 @@ const simpleChartTitles: Record<string, string> = {
   "cgt-concentration":
     "Capital Gains Tax — Concentration by Size of Gain",
   "wealth-by-decile": "Total Household Wealth by Decile",
+  "productivity-pay":
+    "Productivity vs Pay — The Growing Divergence",
+  "gdhi-by-region":
+    "Gross Disposable Household Income by Region",
+  "tax-composition":
+    "UK Tax Revenue — Work vs Wealth",
+  "boe-rates":
+    "Bank of England Base Rate vs CPI Inflation",
+  "child-poverty":
+    "Child Poverty Rate by UK Region",
+  "generational-wealth":
+    "Median Wealth by Generation at Key Ages",
 };
 
 /**
@@ -511,6 +588,24 @@ watch(chartName, (name) => {
             />
             <WealthByDecileChart
               v-if="chartName === 'wealth-by-decile'"
+            />
+            <ProductivityPayChart
+              v-if="chartName === 'productivity-pay'"
+            />
+            <GdhiByRegionChart
+              v-if="chartName === 'gdhi-by-region'"
+            />
+            <TaxCompositionChart
+              v-if="chartName === 'tax-composition'"
+            />
+            <BoeRatesChart
+              v-if="chartName === 'boe-rates'"
+            />
+            <ChildPovertyChart
+              v-if="chartName === 'child-poverty'"
+            />
+            <GenerationalWealthChart
+              v-if="chartName === 'generational-wealth'"
             />
           </div>
         </div>

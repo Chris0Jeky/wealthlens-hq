@@ -1,11 +1,11 @@
 <script setup lang="ts">
 /**
- * WealthSharesChart — Interactive line chart showing top 1% and top 10%
- * wealth share in the UK over time.
+ * BoeRatesChart — Line chart showing Bank of England base rate and CPI
+ * inflation over time. Shows the relationship between monetary policy
+ * and cost of living.
  *
- * Data source: World Inequality Database (wid.world)
- * Columns: year, percentile, value
- * Percentile filters: p99p100 (top 1%), p90p100 (top 10%)
+ * Data source: Bank of England / ONS CPI
+ * Columns: date, bank_rate, cpi_annual
  *
  * Accessibility: WCAG AA high-contrast colors, aria-label, keyboard tooltip.
  */
@@ -33,77 +33,60 @@ use([
   LegendComponent,
 ]);
 
-const { rows, loading, error } = useChartData("wealth-shares");
+const { rows, loading, error } = useChartData("boe-rates");
 
 /**
  * Respect prefers-reduced-motion (WCAG 2.3.3).
- * Disables ECharts smooth lines and animations when the user has
- * requested reduced motion in their OS settings.
  */
 const prefersReducedMotion =
   typeof window !== "undefined" &&
   window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-/** Extract sorted year+value pairs for a given percentile key. */
-function seriesFor(percentile: string): { years: number[]; values: number[] } {
-  const matched = rows.value.filter((r) => r.percentile === percentile);
-  const mapped = matched.map((r) => ({
-    year: Number(r.year),
-    value: Number(r.value),
-  }));
-  const filtered = mapped
-    .filter((r) => !isNaN(r.year) && !isNaN(r.value))
-    .sort((a, b) => a.year - b.year);
+// WCAG AA high-contrast colors
+const COLOR_BANK_RATE = "#1a56db"; // Blue — ~7.2:1
+const COLOR_CPI = "#dc2626"; // Red — ~4.6:1
 
-  warnIfSignificantDataLoss(`wealth-shares[${percentile}]`, mapped.length, filtered.length);
+/** Sorted data extracted from rows. */
+const chartData = computed(() => {
+  const mapped = rows.value.map((r) => ({
+    date: String(r.date ?? ""),
+    bankRate: Number(r.bank_rate),
+    cpi: Number(r.cpi_annual),
+  }));
+  const sorted = mapped
+    .filter((r) => r.date && !isNaN(r.bankRate) && !isNaN(r.cpi))
+    .sort((a, b) => a.date.localeCompare(b.date));
+
+  warnIfSignificantDataLoss("boe-rates", mapped.length, sorted.length);
 
   return {
-    years: filtered.map((r) => r.year),
-    values: filtered.map((r) => r.value),
+    dates: sorted.map((r) => {
+      // Format date labels: extract year or year-month
+      const d = new Date(r.date);
+      if (isNaN(d.getTime())) return r.date;
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    }),
+    bankRate: sorted.map((r) => r.bankRate),
+    cpi: sorted.map((r) => r.cpi),
   };
-}
-
-// WCAG AA high-contrast colors against white background
-// #1a56db (blue) contrast ratio ~7.2:1 — top 10%
-// #dc2626 (red)  contrast ratio ~4.6:1 — top 1%
-const COLOR_TOP_10 = "#1a56db";
-const COLOR_TOP_1 = "#dc2626";
-
-/** Pre-computed series data for top 1% and top 10%. */
-const top1Data = computed(() => seriesFor("p99p100"));
-const top10Data = computed(() => seriesFor("p90p100"));
-
-/** True when the API returned actual data to display. */
-const hasData = computed(
-  () => top1Data.value.years.length > 0 || top10Data.value.years.length > 0,
-);
-
-/** Year range across all series, with empty-array guards. */
-const yearRange = computed(() => {
-  const years = [
-    ...top1Data.value.years,
-    ...top10Data.value.years,
-  ];
-  return safeMinMax(years);
 });
 
-/** Safe min/max for top 10% series values. */
-const top10Range = computed(() => safeMinMax(top10Data.value.values));
+/** True when the API returned actual data to display. */
+const hasData = computed(() => chartData.value.dates.length > 0);
 
-/** Safe min/max for top 1% series values. */
-const top1Range = computed(() => safeMinMax(top1Data.value.values));
+/** Bank rate range for aria-label. */
+const rateRange = computed(() => safeMinMax(chartData.value.bankRate));
+
+/** CPI range for aria-label. */
+const cpiRange = computed(() => safeMinMax(chartData.value.cpi));
 
 const option = computed(() => {
-  const top1 = top1Data.value;
-  const top10 = top10Data.value;
-
-  // Use the longer year array for the x-axis (they should match)
-  const years = top10.years.length >= top1.years.length ? top10.years : top1.years;
+  const data = chartData.value;
 
   return {
     animation: !prefersReducedMotion,
     title: {
-      text: "UK Wealth Concentration Over Time",
+      text: "Bank of England Base Rate vs CPI Inflation",
       left: "center",
       textStyle: {
         fontSize: 16,
@@ -118,15 +101,15 @@ const option = computed(() => {
         if (!Array.isArray(params) || params.length === 0) return "";
         let html = `<strong>${escapeHtml(String(params[0].axisValue))}</strong><br/>`;
         for (const p of params) {
-          const pct = typeof p.value === "number" ? p.value.toFixed(1) : String(p.value);
-          html += `${escapeHtml(String(p.seriesName))}: ${escapeHtml(pct)}%<br/>`;
+          const val = typeof p.value === "number" ? p.value.toFixed(2) : String(p.value);
+          html += `${escapeHtml(String(p.seriesName))}: ${escapeHtml(val)}%<br/>`;
         }
         return html;
       },
     },
     legend: {
       bottom: 0,
-      data: ["Top 10%", "Top 1%"],
+      data: ["Bank Rate", "CPI Inflation"],
       textStyle: { color: "#374151" },
     },
     grid: {
@@ -138,20 +121,21 @@ const option = computed(() => {
     },
     xAxis: {
       type: "category" as const,
-      data: years,
-      name: "Year",
+      data: data.dates,
+      name: "Date",
       nameLocation: "middle" as const,
       nameGap: 30,
       axisLabel: {
         color: "#374151",
-        rotate: years.length > 30 ? 45 : 0,
+        rotate: 45,
+        interval: Math.max(0, Math.floor(data.dates.length / 12)),
       },
     },
     yAxis: {
       type: "value" as const,
-      name: "Share of wealth (%)",
+      name: "Rate (%)",
       nameLocation: "middle" as const,
-      nameGap: 50,
+      nameGap: 40,
       axisLabel: {
         color: "#374151",
         formatter: "{value}%",
@@ -159,22 +143,23 @@ const option = computed(() => {
     },
     series: [
       {
-        name: "Top 10%",
+        name: "Bank Rate",
         type: "line" as const,
-        data: top10.values,
-        smooth: !prefersReducedMotion,
-        lineStyle: { width: 2.5, color: COLOR_TOP_10 },
-        itemStyle: { color: COLOR_TOP_10 },
+        data: data.bankRate,
+        smooth: false,
+        step: "end" as const,
+        lineStyle: { width: 2.5, color: COLOR_BANK_RATE },
+        itemStyle: { color: COLOR_BANK_RATE },
         symbol: "circle",
         symbolSize: 4,
       },
       {
-        name: "Top 1%",
+        name: "CPI Inflation",
         type: "line" as const,
-        data: top1.values,
+        data: data.cpi,
         smooth: !prefersReducedMotion,
-        lineStyle: { width: 2.5, color: COLOR_TOP_1 },
-        itemStyle: { color: COLOR_TOP_1 },
+        lineStyle: { width: 2.5, color: COLOR_CPI },
+        itemStyle: { color: COLOR_CPI },
         symbol: "circle",
         symbolSize: 4,
       },
@@ -206,7 +191,7 @@ const option = computed(() => {
   <div v-else>
     <div
       role="img"
-      :aria-label="`Line chart showing UK wealth concentration from ${yearRange.min} to ${yearRange.max}. The top 10 percent held between ${Math.round(top10Range.min)}% and ${Math.round(top10Range.max)}% of total wealth. The top 1 percent held between ${Math.round(top1Range.min)}% and ${Math.round(top1Range.max)}% of total wealth.`"
+      :aria-label="`Line chart showing Bank of England base rate and CPI inflation from ${chartData.dates[0]} to ${chartData.dates[chartData.dates.length - 1]}. Bank rate ranged from ${rateRange.min.toFixed(2)}% to ${rateRange.max.toFixed(2)}%. CPI inflation ranged from ${cpiRange.min.toFixed(1)}% to ${cpiRange.max.toFixed(1)}%.`"
       class="w-full"
     >
       <VChart
@@ -217,16 +202,23 @@ const option = computed(() => {
       />
     </div>
 
-    <!-- Source citation — visible text, not just tooltip (WCAG AA) -->
+    <!-- Source citation -->
     <p class="text-sm text-[var(--wl-ink-muted)] mt-4 text-center">
       Source:
       <a
-        href="https://wid.world"
+        href="https://www.bankofengland.co.uk/monetary-policy/the-interest-rate-bank-rate"
         target="_blank"
         rel="noopener"
         class="underline hover:text-[var(--wl-ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--wl-red)] rounded"
       >
-        World Inequality Database (wid.world)<span class="sr-only"> (opens in new tab)</span></a>, accessed 2026-05-14
+        Bank of England<span class="sr-only"> (opens in new tab)</span></a> /
+      <a
+        href="https://www.ons.gov.uk/economy/inflationandpriceindices"
+        target="_blank"
+        rel="noopener"
+        class="underline hover:text-[var(--wl-ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--wl-red)] rounded"
+      >
+        ONS CPI<span class="sr-only"> (opens in new tab)</span></a>, accessed 2026-05-14
     </p>
   </div>
 </template>
