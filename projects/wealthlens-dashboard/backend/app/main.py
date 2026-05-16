@@ -58,6 +58,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["GET"],
     allow_headers=["*"],
+    max_age=3600,
 )
 
 app.include_router(data.router, prefix="/api/data", tags=["data"])
