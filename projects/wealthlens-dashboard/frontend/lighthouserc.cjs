@@ -2,7 +2,11 @@ module.exports = {
   ci: {
     collect: {
       staticDistDir: './dist',
-      url: ['/', '/charts/wealth-shares', '/tools/wealth-calculator'],
+      url: [
+        '/wealthlens-hq/',
+        '/wealthlens-hq/charts/wealth-shares',
+        '/wealthlens-hq/tools/wealth-calculator',
+      ],
       numberOfRuns: 3,
     },
     assert: {
