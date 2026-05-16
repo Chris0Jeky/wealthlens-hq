@@ -10,7 +10,13 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.logging_config import configure_logging
 from app.routers import data
+
+# ---------------------------------------------------------------------------
+# Logging — structured JSON to stdout for production monitoring
+# ---------------------------------------------------------------------------
+configure_logging()
 
 # ---------------------------------------------------------------------------
 # CORS configuration
