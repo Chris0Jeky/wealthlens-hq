@@ -5,10 +5,11 @@
  * Uses the route param :name to determine which chart component to render.
  * Currently supports: wealth-shares, housing-affordability, cgt-concentration
  */
-import { computed, defineAsyncComponent } from "vue";
+import { computed, defineAsyncComponent, watch } from "vue";
 import { useRoute } from "vue-router";
 import ShareButton from "@/components/ShareButton.vue";
 import { CHART_METADATA, isValidChart } from "@/utils/chartConstants";
+import { useAnalytics } from "@/composables/useAnalytics";
 
 /** Lazy-load chart components to avoid bundling ECharts on every route. */
 const WealthSharesChart = defineAsyncComponent(
@@ -25,6 +26,7 @@ const WealthByDecileChart = defineAsyncComponent(
 );
 
 const route = useRoute();
+const { trackEvent } = useAnalytics();
 
 const chartName = computed(() => route.params.name as string);
 
@@ -33,6 +35,13 @@ const isSupported = computed(() => isValidChart(chartName.value));
 const chartTitle = computed(() =>
   isValidChart(chartName.value) ? CHART_METADATA[chartName.value].title : "",
 );
+
+/** Track chart views when the chart name changes. */
+watch(chartName, (name) => {
+  if (name && isValidChart(name)) {
+    trackEvent("view_chart", { chart: name });
+  }
+}, { immediate: true });
 </script>
 
 <template>
