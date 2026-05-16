@@ -279,11 +279,12 @@ def test_missing_csv_error_includes_dataset_name():
 
 
 def test_dataset_list_has_cache_headers():
-    """GET /api/data/ should include Cache-Control header."""
+    """GET /api/data/ should include Cache-Control and Vary headers."""
     response = client.get("/api/data/")
     assert response.status_code == 200
     assert "cache-control" in response.headers
     assert "public" in response.headers["cache-control"]
+    assert "accept-encoding" in response.headers.get("vary", "").lower()
 
 
 def test_metadata_has_long_cache():
@@ -306,4 +307,26 @@ def test_health_has_no_cache():
     """GET /health should NOT include Cache-Control header."""
     response = client.get("/health")
     assert response.status_code == 200
+    assert "cache-control" not in response.headers
+
+
+def test_health_data_has_no_cache():
+    """GET /api/health/data should NOT include Cache-Control header."""
+    response = client.get("/api/health/data")
+    assert response.status_code == 200
+    assert "cache-control" not in response.headers
+
+
+def test_single_dataset_metadata_has_long_cache():
+    """GET /api/data/{name}/metadata should cache for 24 hours."""
+    response = client.get("/api/data/wealth-shares/metadata")
+    assert response.status_code == 200
+    cc = response.headers.get("cache-control", "")
+    assert "max-age=86400" in cc
+
+
+def test_404_has_no_cache_headers():
+    """404 responses must NOT include Cache-Control headers."""
+    response = client.get("/api/data/nonexistent")
+    assert response.status_code == 404
     assert "cache-control" not in response.headers
