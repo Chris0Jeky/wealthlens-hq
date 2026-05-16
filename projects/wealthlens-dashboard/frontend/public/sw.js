@@ -1,5 +1,9 @@
 // WealthLens UK — Service Worker
 // Cache-first for static assets, network-first for HTML/API
+//
+// IMPORTANT: Base path '/wealthlens-hq/' is coupled to vite.config.ts `base`.
+// If deploying to a custom domain at '/', update all paths below.
+// Bump CACHE_NAME on breaking changes to force cache invalidation.
 
 const CACHE_NAME = 'wl-v1'
 const OFFLINE_URL = '/wealthlens-hq/offline.html'
