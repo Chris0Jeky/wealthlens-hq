@@ -39,7 +39,7 @@ class ColumnSummary(BaseModel):
     """Descriptive statistics for a single numeric column."""
 
     column: str
-    count: int = Field(ge=0)
+    count: int = Field(ge=0, description="Number of non-null values in this column")
     mean: float | None = None
     std: float | None = None
     min: float | None = None
@@ -51,7 +51,7 @@ class DatasetSummaryResponse(BaseModel):
     """Response for GET /api/data/{name}/summary — descriptive stats."""
 
     dataset: str
-    row_count: int = Field(ge=0)
+    row_count: int = Field(ge=0, description="Total rows including those with null values")
     numeric_columns: list[ColumnSummary]
 
 

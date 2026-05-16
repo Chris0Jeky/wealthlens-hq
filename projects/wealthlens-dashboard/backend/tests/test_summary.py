@@ -21,6 +21,12 @@ Alice,London
 Bob,Manchester
 """
 
+CSV_ALL_NULL_NUMERIC = """year,value
+2020,
+2021,
+2022,
+"""
+
 
 @pytest.fixture(autouse=True)
 def _fake_data_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -28,6 +34,7 @@ def _fake_data_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     csv_file.write_text(CSV_CONTENT, encoding="utf-8")
     monkeypatch.setattr(data_mod, "DATA_DIR", tmp_path)
     data_mod._metadata_cache.clear()
+    data_mod._summary_cache.clear()
 
 
 @pytest.fixture
@@ -82,3 +89,25 @@ def test_summary_route_not_shadowed_by_catchall(client: TestClient) -> None:
     resp = client.get("/api/data/wealth-shares/summary")
     assert resp.status_code == 200
     assert "numeric_columns" in resp.json()
+
+
+def test_summary_all_null_column(
+    client: TestClient, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """All-null numeric column returns count=0 and None for all stats."""
+    csv_file = tmp_path / "wid_wealth_shares_gb.csv"
+    csv_file.write_text(CSV_ALL_NULL_NUMERIC, encoding="utf-8")
+    monkeypatch.setattr(data_mod, "DATA_DIR", tmp_path)
+    data_mod._metadata_cache.clear()
+    data_mod._summary_cache.clear()
+
+    resp = client.get("/api/data/wealth-shares/summary")
+    assert resp.status_code == 200
+    body = resp.json()
+    value_col = next(c for c in body["numeric_columns"] if c["column"] == "value")
+    assert value_col["count"] == 0
+    assert value_col["mean"] is None
+    assert value_col["std"] is None
+    assert value_col["min"] is None
+    assert value_col["max"] is None
+    assert value_col["median"] is None
