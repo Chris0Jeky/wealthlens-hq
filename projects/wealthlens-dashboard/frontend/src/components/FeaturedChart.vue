@@ -9,6 +9,9 @@
  * - direct right-side labels
  * - range selector buttons: 200y, 100y, 50y, 25y
  *
+ * All SVG is rendered via Vue template syntax (v-for, computed
+ * properties, inline elements) — no v-html or string concatenation.
+ *
  * Source: WID.world, CC-BY, accessed 2026-05-14.
  * No external charting library — all raw SVG.
  */
@@ -118,120 +121,141 @@ const ERAS: Era[] = [
 ]
 
 /* ------------------------------------------------------------------ */
-/* Computed SVG                                                        */
+/* Computed chart data (template-friendly objects, not SVG strings)     */
 /* ------------------------------------------------------------------ */
 
-const chartSvg = computed(() => {
+/** Filtered data points for the active range. */
+const filteredData = computed(() => {
   const range = activeRange.value
   const minYear = range === 200 ? 1820 : range === 100 ? 1925 : range === 50 ? 1975 : 2000
-  const data = WEALTH_SHARES.filter((d) => d[0] >= minYear)
-  if (data.length < 2) return ''
+  return WEALTH_SHARES.filter((d) => d[0] >= minYear)
+})
 
-  const xMin = data[0][0]
-  const xMax = data[data.length - 1][0]
+/** X/Y domain boundaries. */
+const domain = computed(() => {
+  const data = filteredData.value
+  if (data.length < 2) return { xMin: 0, xMax: 1 }
+  return { xMin: data[0][0], xMax: data[data.length - 1][0] }
+})
 
-  const x = (year: number) => padL + ((year - xMin) / (xMax - xMin)) * (W - padL - padR)
-  const yScale = (v: number) => padT + (1 - v / 100) * (H - padT - padB)
+/** Scale functions for converting data values to SVG coordinates. */
+function xScale(year: number, xMin: number, xMax: number): number {
+  return padL + ((year - xMin) / (xMax - xMin)) * (W - padL - padR)
+}
 
-  // Gridlines
-  const yTicks = [0, 25, 50, 75, 100]
-  const grid = yTicks
-    .map(
-      (t) => `
-    <line x1="${padL}" x2="${W - padR}" y1="${yScale(t)}" y2="${yScale(t)}"
-      stroke="var(--wl-rule)" stroke-width="1"/>
-    <text x="${padL - 10}" y="${yScale(t) + 4}" text-anchor="end"
-      font-family="IBM Plex Mono" font-size="11" fill="var(--wl-ink-muted)">${t}%</text>`,
-    )
-    .join('')
+function yScale(v: number): number {
+  return padT + (1 - v / 100) * (H - padT - padB)
+}
 
-  // X axis ticks
+/** Y-axis gridlines: value + y position. */
+const Y_TICKS = [0, 25, 50, 75, 100]
+
+const yGridlines = computed(() =>
+  Y_TICKS.map((t) => ({
+    y: yScale(t),
+    label: `${t}%`,
+  })),
+)
+
+/** X-axis tick marks: year + x position. */
+const xTicks = computed(() => {
+  const data = filteredData.value
+  if (data.length < 2) return []
+  const { xMin, xMax } = domain.value
   const nTicks = Math.min(7, data.length)
-  const xTicks = Array.from(
-    { length: nTicks },
-    (_, i) => data[Math.round((i * (data.length - 1)) / (nTicks - 1))][0],
-  )
-  const xAxis = xTicks
-    .map(
-      (t) => `
-    <line x1="${x(t)}" x2="${x(t)}" y1="${H - padB}" y2="${H - padB + 5}"
-      stroke="var(--wl-ink)" stroke-width="1"/>
-    <text x="${x(t)}" y="${H - padB + 22}" text-anchor="middle"
-      font-family="IBM Plex Mono" font-size="11" fill="var(--wl-ink-muted)">${t}</text>`,
-    )
-    .join('')
+  return Array.from({ length: nTicks }, (_, i) => {
+    const year = data[Math.round((i * (data.length - 1)) / (nTicks - 1))][0]
+    return { year, x: xScale(year, xMin, xMax) }
+  })
+})
 
-  // 50% dashed line
-  const fifty = `
-    <line x1="${padL}" x2="${W - padR}" y1="${yScale(50)}" y2="${yScale(50)}"
-      stroke="var(--wl-ink)" stroke-width="1" stroke-dasharray="4 4"/>
-    <text x="${W - padR - 6}" y="${yScale(50) - 4}" text-anchor="end"
-      font-family="IBM Plex Mono" font-size="10" fill="var(--wl-ink-muted)"
-      letter-spacing="1">50% LINE · TOP 10% NEVER BELOW</text>`
+/** 50% dashed line y position. */
+const fiftyLineY = computed(() => yScale(50))
 
-  // Era bands
-  const eraBands = ERAS.filter((e) => e.from < xMax && e.to > minYear)
+/** Chart title text showing the year range. */
+const chartTitleText = computed(() => {
+  const { xMin, xMax } = domain.value
+  return `SHARE OF NET PERSONAL WEALTH (%) · ${xMin}–${xMax}`
+})
+
+/** Era bands (visible ones only, with coordinates). */
+const eraBands = computed(() => {
+  const data = filteredData.value
+  if (data.length < 2) return []
+  const { xMin, xMax } = domain.value
+  const minYear = data[0][0]
+
+  return ERAS.filter((e) => e.from < xMax && e.to > minYear)
     .map((e, i) => {
       const from = Math.max(e.from, minYear)
-      const x0 = x(from)
-      const x1 = x(Math.min(e.to, xMax))
-      if (x1 - x0 < 30) return ''
-      return `
-      <rect x="${x0}" y="${padT}" width="${x1 - x0}" height="${H - padT - padB}"
-        fill="${i % 2 === 0 ? 'transparent' : 'var(--wl-paper-deep)'}" opacity="0.4"/>
-      <text x="${(x0 + x1) / 2}" y="${padT + 14}" text-anchor="middle"
-        font-family="IBM Plex Mono" font-size="9" fill="var(--wl-ink-muted)"
-        letter-spacing="1.4">${e.label.toUpperCase()}</text>`
+      const x0 = xScale(from, xMin, xMax)
+      const x1 = xScale(Math.min(e.to, xMax), xMin, xMax)
+      const width = x1 - x0
+      if (width < 30) return null
+      return {
+        x: x0,
+        width,
+        labelX: (x0 + x1) / 2,
+        label: e.label.toUpperCase(),
+        fill: i % 2 === 0 ? 'transparent' : 'var(--wl-paper-deep)',
+        key: `era-${i}`,
+      }
     })
-    .join('')
-
-  // Series paths — build path string for a series index
-  function buildPath(idx: number): string {
-    return data
-      .map((d, i) => `${i === 0 ? 'M' : 'L'} ${x(d[0]).toFixed(1)} ${yScale(d[idx]).toFixed(1)}`)
-      .join(' ')
-  }
-
-  // Draw dim series first, then foreground on top
-  const drawOrder = [...SERIES].sort((a, b) => (a.dim === b.dim ? 0 : a.dim ? -1 : 1))
-  const paths = drawOrder
-    .map(
-      (s) => `
-    <path d="${buildPath(s.idx)}" stroke="${s.color}" stroke-width="${s.w}" fill="none"
-      stroke-linejoin="round" stroke-linecap="round"
-      ${s.dim ? 'stroke-dasharray="3 2" opacity="0.7"' : ''}/>`,
-    )
-    .join('')
-
-  // Right-side direct labels
-  const last = data[data.length - 1]
-  const labels = SERIES.map(
-    (s) => `
-    <g transform="translate(${W - padR + 14} ${yScale(last[s.idx])})">
-      <line x1="-8" x2="0" y1="0" y2="0" stroke="${s.color}" stroke-width="${s.w}"/>
-      <text x="8" y="4" font-family="IBM Plex Sans" font-size="13" font-weight="600" fill="${s.color}">${s.label}</text>
-      <text x="8" y="20" font-family="IBM Plex Mono" font-size="11" fill="var(--wl-ink-muted)">${last[s.idx]}% · ${last[0]}</text>
-    </g>`,
-  ).join('')
-
-  // Chart title, axes
-  const axes = `
-    <text x="${padL}" y="22" font-family="IBM Plex Mono" font-size="10"
-      fill="var(--wl-ink-muted)" letter-spacing="2">SHARE OF NET PERSONAL WEALTH (%) · ${xMin}–${xMax}</text>
-    <line x1="${padL}" x2="${padL}" y1="${padT}" y2="${H - padB}" stroke="var(--wl-ink)" stroke-width="1"/>
-    <line x1="${padL}" x2="${W - padR}" y1="${H - padB}" y2="${H - padB}" stroke="var(--wl-ink)" stroke-width="1"/>`
-
-  return `
-    <defs><clipPath id="clipFeaturedChart"><rect x="${padL}" y="${padT}" width="${W - padL - padR}" height="${H - padT - padB}"/></clipPath></defs>
-    ${eraBands}
-    ${grid}
-    ${xAxis}
-    ${fifty}
-    <g clip-path="url(#clipFeaturedChart)">${paths}</g>
-    ${labels}
-    ${axes}
-  `
+    .filter((e): e is NonNullable<typeof e> => e !== null)
 })
+
+/** SVG path string for a given series index. */
+function buildPathD(data: number[][], idx: number, xMin: number, xMax: number): string {
+  return data
+    .map(
+      (d, i) =>
+        `${i === 0 ? 'M' : 'L'} ${xScale(d[0], xMin, xMax).toFixed(1)} ${yScale(d[idx]).toFixed(1)}`,
+    )
+    .join(' ')
+}
+
+/** Series in draw order: dim first, then foreground on top. */
+const sortedSeries = computed(() =>
+  [...SERIES].sort((a, b) => (a.dim === b.dim ? 0 : a.dim ? -1 : 1)),
+)
+
+/** Series path data for v-for rendering. */
+const seriesPaths = computed(() => {
+  const data = filteredData.value
+  if (data.length < 2) return []
+  const { xMin, xMax } = domain.value
+  return sortedSeries.value.map((s) => ({
+    key: `series-${s.idx}`,
+    d: buildPathD(data, s.idx, xMin, xMax),
+    color: s.color,
+    strokeWidth: s.w,
+    dim: s.dim,
+  }))
+})
+
+/** Right-side labels with positions and text. */
+const seriesLabels = computed(() => {
+  const data = filteredData.value
+  if (data.length < 2) return []
+  const last = data[data.length - 1]
+  return SERIES.map((s) => ({
+    key: `label-${s.idx}`,
+    x: W - padR + 14,
+    y: yScale(last[s.idx]),
+    color: s.color,
+    strokeWidth: s.w,
+    label: s.label,
+    value: `${last[s.idx]}% · ${last[0]}`,
+  }))
+})
+
+/** Clip path rect dimensions. */
+const clipRect = {
+  x: padL,
+  y: padT,
+  width: W - padL - padR,
+  height: H - padT - padB,
+}
 </script>
 
 <template>
@@ -293,17 +317,181 @@ const chartSvg = computed(() => {
           </div>
         </div>
 
-        <!-- Chart stage -->
+        <!-- Chart stage — template-based SVG, no v-html -->
         <div class="chart-stage">
-          <!-- eslint-disable-next-line vue/no-v-html -- trusted computed SVG -->
           <svg
             class="chart-svg"
             :viewBox="`0 0 ${W} ${H}`"
             preserveAspectRatio="xMidYMid meet"
             aria-label="Share of net personal wealth in the UK, by percentile group, 1820–2023"
             role="img"
-            v-html="chartSvg"
-          ></svg>
+          >
+            <!-- Clip path definition -->
+            <defs>
+              <clipPath id="clipFeaturedChart">
+                <rect
+                  :x="clipRect.x"
+                  :y="clipRect.y"
+                  :width="clipRect.width"
+                  :height="clipRect.height"
+                />
+              </clipPath>
+            </defs>
+
+            <!-- Era bands -->
+            <template v-for="era in eraBands" :key="era.key">
+              <rect
+                :x="era.x"
+                :y="padT"
+                :width="era.width"
+                :height="H - padT - padB"
+                :fill="era.fill"
+                opacity="0.4"
+              />
+              <text
+                :x="era.labelX"
+                :y="padT + 14"
+                text-anchor="middle"
+                font-family="IBM Plex Mono"
+                font-size="9"
+                fill="var(--wl-ink-muted)"
+                letter-spacing="1.4"
+              >{{ era.label }}</text>
+            </template>
+
+            <!-- Y-axis gridlines -->
+            <template v-for="tick in yGridlines" :key="`y-${tick.label}`">
+              <line
+                :x1="padL"
+                :x2="W - padR"
+                :y1="tick.y"
+                :y2="tick.y"
+                stroke="var(--wl-rule)"
+                stroke-width="1"
+              />
+              <text
+                :x="padL - 10"
+                :y="tick.y + 4"
+                text-anchor="end"
+                font-family="IBM Plex Mono"
+                font-size="11"
+                fill="var(--wl-ink-muted)"
+              >{{ tick.label }}</text>
+            </template>
+
+            <!-- X-axis tick marks -->
+            <template v-for="tick in xTicks" :key="`x-${tick.year}`">
+              <line
+                :x1="tick.x"
+                :x2="tick.x"
+                :y1="H - padB"
+                :y2="H - padB + 5"
+                stroke="var(--wl-ink)"
+                stroke-width="1"
+              />
+              <text
+                :x="tick.x"
+                :y="H - padB + 22"
+                text-anchor="middle"
+                font-family="IBM Plex Mono"
+                font-size="11"
+                fill="var(--wl-ink-muted)"
+              >{{ tick.year }}</text>
+            </template>
+
+            <!-- 50% dashed reference line -->
+            <line
+              :x1="padL"
+              :x2="W - padR"
+              :y1="fiftyLineY"
+              :y2="fiftyLineY"
+              stroke="var(--wl-ink)"
+              stroke-width="1"
+              stroke-dasharray="4 4"
+            />
+            <text
+              :x="W - padR - 6"
+              :y="fiftyLineY - 4"
+              text-anchor="end"
+              font-family="IBM Plex Mono"
+              font-size="10"
+              fill="var(--wl-ink-muted)"
+              letter-spacing="1"
+            >50% LINE · TOP 10% NEVER BELOW</text>
+
+            <!-- Series paths (clipped) -->
+            <g clip-path="url(#clipFeaturedChart)">
+              <path
+                v-for="sp in seriesPaths"
+                :key="sp.key"
+                :d="sp.d"
+                :stroke="sp.color"
+                :stroke-width="sp.strokeWidth"
+                fill="none"
+                stroke-linejoin="round"
+                stroke-linecap="round"
+                :stroke-dasharray="sp.dim ? '3 2' : undefined"
+                :opacity="sp.dim ? 0.7 : undefined"
+              />
+            </g>
+
+            <!-- Right-side direct labels -->
+            <g
+              v-for="sl in seriesLabels"
+              :key="sl.key"
+              :transform="`translate(${sl.x} ${sl.y})`"
+            >
+              <line
+                x1="-8"
+                x2="0"
+                y1="0"
+                y2="0"
+                :stroke="sl.color"
+                :stroke-width="sl.strokeWidth"
+              />
+              <text
+                x="8"
+                y="4"
+                font-family="IBM Plex Sans"
+                font-size="13"
+                font-weight="600"
+                :fill="sl.color"
+              >{{ sl.label }}</text>
+              <text
+                x="8"
+                y="20"
+                font-family="IBM Plex Mono"
+                font-size="11"
+                fill="var(--wl-ink-muted)"
+              >{{ sl.value }}</text>
+            </g>
+
+            <!-- Chart title and axes -->
+            <text
+              :x="padL"
+              y="22"
+              font-family="IBM Plex Mono"
+              font-size="10"
+              fill="var(--wl-ink-muted)"
+              letter-spacing="2"
+            >{{ chartTitleText }}</text>
+            <line
+              :x1="padL"
+              :x2="padL"
+              :y1="padT"
+              :y2="H - padB"
+              stroke="var(--wl-ink)"
+              stroke-width="1"
+            />
+            <line
+              :x1="padL"
+              :x2="W - padR"
+              :y1="H - padB"
+              :y2="H - padB"
+              stroke="var(--wl-ink)"
+              stroke-width="1"
+            />
+          </svg>
         </div>
 
         <!-- Footer: source + download links -->

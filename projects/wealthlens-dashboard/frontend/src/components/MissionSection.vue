@@ -3,7 +3,7 @@
  * MissionSection — dark background section with the project's mission.
  *
  * Left column: quote block, mission description, signature.
- * Right column: 4 stat boxes (42 charts, 5 sources, 1820 earliest year,
+ * Right column: 4 stat boxes (5 charts, 5 sources, 1820 earliest year,
  * 100% source-cited).
  *
  * Dark ink background with cream/paper text.
@@ -15,7 +15,7 @@ interface MissionStat {
 }
 
 const STATS: MissionStat[] = [
-  { value: '42', label: 'Charts published' },
+  { value: '5', label: 'Charts published' },
   { value: '5', label: 'Primary data sources' },
   { value: '1820', label: 'Earliest year covered' },
   { value: '100%', label: 'Source-cited' },

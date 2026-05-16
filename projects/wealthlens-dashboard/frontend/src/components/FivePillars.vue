@@ -5,9 +5,10 @@
  *
  * Each pillar card shows a number, name, key finding (with bold text),
  * and a mini inline SVG chart (sparkline, donut, bar, or column).
- * Cards are clickable and link to their respective chart views.
+ * Cards link to their respective chart views via router-link.
  *
- * Mini charts are rendered as raw SVG — no external charting library.
+ * Mini charts are rendered as template-based SVG using Vue's v-for
+ * and computed properties — no v-html or string concatenation.
  */
 import { computed } from 'vue'
 
@@ -23,7 +24,10 @@ interface ColumnEntry {
 interface Pillar {
   n: string
   name: string
-  find: string
+  /** Finding text — plain text parts and bold parts for safe rendering */
+  findParts: Array<{ text: string; bold: boolean }>
+  /** Route path for the pillar's chart page */
+  route: string
   /** Sparkline series data — rendered as line chart. */
   series?: number[]
   /** Whether the sparkline uses the red colour. */
@@ -36,6 +40,29 @@ interface Pillar {
   columns?: ColumnEntry[]
 }
 
+/**
+ * Parse a simple HTML string with <b> tags into typed parts for
+ * safe template rendering. Only supports <b>...</b> — no nesting.
+ */
+function parseFindText(html: string): Array<{ text: string; bold: boolean }> {
+  const parts: Array<{ text: string; bold: boolean }> = []
+  const regex = /<b>(.*?)<\/b>/g
+  let lastIndex = 0
+  let match: RegExpExecArray | null
+
+  while ((match = regex.exec(html)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push({ text: html.slice(lastIndex, match.index), bold: false })
+    }
+    parts.push({ text: match[1], bold: true })
+    lastIndex = regex.lastIndex
+  }
+  if (lastIndex < html.length) {
+    parts.push({ text: html.slice(lastIndex), bold: false })
+  }
+  return parts
+}
+
 /* ------------------------------------------------------------------ */
 /* PILLARS data — all 5 entries with exact text from design reference  */
 /* ------------------------------------------------------------------ */
@@ -44,33 +71,48 @@ const PILLARS: Pillar[] = [
   {
     n: '01',
     name: 'Wealth',
-    find: 'The <b>top 10%</b> own <b>57%</b> of everything — same as 1910, before the welfare state existed.',
+    findParts: parseFindText(
+      'The <b>top 10%</b> own <b>57%</b> of everything — same as 1910, before the welfare state existed.',
+    ),
+    route: '/charts/wealth-shares',
     series: [42, 44, 47, 51, 53, 55, 56, 57],
     red: true,
   },
   {
     n: '02',
     name: 'Housing',
-    find: 'A house now costs <b>8.6×</b> average earnings. Your parents paid 3×. Same job. Same house.',
+    findParts: parseFindText(
+      'A house now costs <b>8.6×</b> average earnings. Your parents paid 3×. Same job. Same house.',
+    ),
+    route: '/charts/housing-affordability',
     series: [3.2, 3.5, 4.1, 4.8, 5.6, 6.9, 7.8, 8.6],
     red: true,
   },
   {
     n: '03',
     name: 'Tax',
-    find: '<b>92%</b> of capital gains flow to the top 1% — taxed lower than your salary.',
+    findParts: parseFindText(
+      '<b>92%</b> of capital gains flow to the top 1% — taxed lower than your salary.',
+    ),
+    route: '/charts/cgt-concentration',
     donut: [92, 8],
   },
   {
     n: '04',
     name: 'Inheritance',
-    find: 'Only <b>4–5%</b> of estates pay any tax. The threshold hasn\'t moved since 2009 — the year of the iPhone 3GS.',
+    findParts: parseFindText(
+      "Only <b>4–5%</b> of estates pay any tax. The threshold hasn't moved since 2009 — the year of the iPhone 3GS.",
+    ),
+    route: '/charts/wealth-by-decile',
     bars: [5, 95],
   },
   {
     n: '05',
     name: 'Place',
-    find: 'Westminster: <b>£79.5k</b> per head. Blackpool: <b>£14.2k</b>. Same country. Same NHS, in theory.',
+    findParts: parseFindText(
+      'Westminster: <b>£79.5k</b> per head. Blackpool: <b>£14.2k</b>. Same country. Same NHS, in theory.',
+    ),
+    route: '/charts/wealth-by-decile',
     columns: [
       { v: 79.5, label: 'WSM' },
       { v: 24.8, label: 'UK' },
@@ -80,11 +122,17 @@ const PILLARS: Pillar[] = [
 ]
 
 /* ------------------------------------------------------------------ */
-/* SVG chart builders — port of buildPillarCard() from landing.jsx     */
+/* Sparkline computed data                                             */
 /* ------------------------------------------------------------------ */
 
-/** Build a sparkline SVG path + end dot. */
-function buildSparkline(series: number[], red: boolean): string {
+interface SparklineData {
+  d: string
+  endCx: number
+  endCy: number
+  color: string
+}
+
+function computeSparkline(series: number[], red: boolean): SparklineData {
   const W = 220
   const H = 60
   const pad = 4
@@ -93,68 +141,103 @@ function buildSparkline(series: number[], red: boolean): string {
   const ys = series.map((v) => H - pad - (v / max) * (H - pad * 2 - 6))
   const d = xs.map((x, i) => `${i === 0 ? 'M' : 'L'} ${x.toFixed(1)} ${ys[i].toFixed(1)}`).join(' ')
   const color = red ? 'var(--wl-red)' : 'var(--wl-ink)'
-  return `<svg class="pillar-chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">
-    <path d="${d}" stroke="${color}" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-    <circle cx="${xs[xs.length - 1]}" cy="${ys[ys.length - 1]}" r="3.5" fill="${color}"/>
-  </svg>`
+  return { d, endCx: xs[xs.length - 1], endCy: ys[ys.length - 1], color }
 }
 
-/** Build a donut chart SVG. */
-function buildDonut(values: [number, number]): string {
-  const [a] = values
-  const total = a + values[1]
+/* ------------------------------------------------------------------ */
+/* Donut computed data                                                 */
+/* ------------------------------------------------------------------ */
+
+interface DonutData {
+  circumference: number
+  mainLen: number
+  remainLen: number
+  mainValue: number
+}
+
+function computeDonut(values: [number, number]): DonutData {
+  const [a, b] = values
+  const total = a + b
   const C = 2 * Math.PI * 22
   const aLen = (a / total) * C
-  return `<svg class="pillar-chart" viewBox="0 0 220 60" aria-hidden="true">
-    <g transform="translate(30 30)">
-      <circle r="22" cx="0" cy="0" fill="none" stroke="var(--wl-rule)" stroke-width="8"/>
-      <circle r="22" cx="0" cy="0" fill="none" stroke="var(--wl-red)" stroke-width="8"
-        stroke-dasharray="${aLen.toFixed(1)} ${(C - aLen).toFixed(1)}" transform="rotate(-90)"/>
-    </g>
-    <text x="68" y="34" font-family="IBM Plex Mono" font-size="16" font-weight="600" fill="var(--wl-red)">${a}%</text>
-    <text x="68" y="50" font-family="IBM Plex Mono" font-size="9" fill="var(--wl-ink-muted)">to top 1%</text>
-  </svg>`
+  return { circumference: C, mainLen: aLen, remainLen: C - aLen, mainValue: a }
 }
 
-/** Build a horizontal bar chart SVG. */
-function buildBars(values: [number, number]): string {
+/* ------------------------------------------------------------------ */
+/* Bar computed data                                                   */
+/* ------------------------------------------------------------------ */
+
+interface BarData {
+  yesWidth: number
+  noWidth: number
+  noX: number
+  yesLabel: number
+  noLabel: number
+}
+
+function computeBars(values: [number, number]): BarData {
   const [yes, no] = values
   const yesW = (yes / 100) * 220
-  return `<svg class="pillar-chart" viewBox="0 0 220 60" aria-hidden="true">
-    <rect x="0" y="22" width="${yesW.toFixed(1)}" height="14" fill="var(--wl-red)"/>
-    <rect x="${(yesW + 2).toFixed(1)}" y="22" width="${((no / 100) * 220 - 2).toFixed(1)}" height="14" fill="var(--wl-rule)"/>
-    <text x="0" y="16" font-family="IBM Plex Mono" font-size="9" fill="var(--wl-ink-muted)" letter-spacing="1">PAY IHT  ·  DON'T</text>
-    <text x="0" y="52" font-family="IBM Plex Mono" font-size="11" font-weight="600" fill="var(--wl-red)">${yes}%</text>
-    <text x="${(yesW + 10).toFixed(1)}" y="52" font-family="IBM Plex Mono" font-size="11" fill="var(--wl-ink-muted)">${no}%</text>
-  </svg>`
+  return {
+    yesWidth: yesW,
+    noWidth: (no / 100) * 220 - 2,
+    noX: yesW + 2,
+    yesLabel: yes,
+    noLabel: no,
+  }
 }
 
-/** Build a vertical column chart SVG. */
-function buildColumns(cols: ColumnEntry[]): string {
+/* ------------------------------------------------------------------ */
+/* Column computed data                                                */
+/* ------------------------------------------------------------------ */
+
+interface ColumnData {
+  x: number
+  y: number
+  h: number
+  fill: string
+  label: string
+  valueLabel: string
+  valueLabelY: number
+}
+
+function computeColumns(cols: ColumnEntry[]): ColumnData[] {
   const maxV = Math.max(...cols.map((c) => c.v))
-  const bars = cols
-    .map((c, i) => {
-      const x = 18 + i * 70
-      const h = (c.v / maxV) * 40
-      const y = 50 - h
-      const fill = i === 0 ? 'var(--wl-red)' : 'var(--wl-ink)'
-      return `<rect x="${x}" y="${y.toFixed(1)}" width="40" height="${h.toFixed(1)}" fill="${fill}"/>
-      <text x="${x + 20}" y="58" text-anchor="middle" font-family="IBM Plex Mono" font-size="9" fill="var(--wl-ink-muted)">${c.label}</text>
-      <text x="${x + 20}" y="${(y - 4).toFixed(1)}" text-anchor="middle" font-family="IBM Plex Mono" font-size="10" font-weight="600" fill="${fill}">£${c.v}k</text>`
-    })
-    .join('\n')
-  return `<svg class="pillar-chart" viewBox="0 0 220 60" aria-hidden="true">${bars}</svg>`
+  return cols.map((c, i) => {
+    const x = 18 + i * 70
+    const h = (c.v / maxV) * 40
+    const y = 50 - h
+    const fill = i === 0 ? 'var(--wl-red)' : 'var(--wl-ink)'
+    return {
+      x,
+      y,
+      h,
+      fill,
+      label: c.label,
+      valueLabel: `£${c.v}k`,
+      valueLabelY: y - 4,
+    }
+  })
 }
 
-/** Compute the SVG markup for a given pillar's mini chart. */
-const pillarCharts = computed(() =>
-  PILLARS.map((p) => {
-    if (p.series) return buildSparkline(p.series, p.red ?? false)
-    if (p.donut) return buildDonut(p.donut)
-    if (p.bars) return buildBars(p.bars)
-    if (p.columns) return buildColumns(p.columns)
-    return ''
-  }),
+/* ------------------------------------------------------------------ */
+/* Pre-compute chart data for each pillar                              */
+/* ------------------------------------------------------------------ */
+
+const pillarSparklines = computed(() =>
+  PILLARS.map((p) => (p.series ? computeSparkline(p.series, p.red ?? false) : null)),
+)
+
+const pillarDonuts = computed(() =>
+  PILLARS.map((p) => (p.donut ? computeDonut(p.donut) : null)),
+)
+
+const pillarBars = computed(() =>
+  PILLARS.map((p) => (p.bars ? computeBars(p.bars) : null)),
+)
+
+const pillarColumns = computed(() =>
+  PILLARS.map((p) => (p.columns ? computeColumns(p.columns) : null)),
 )
 </script>
 
@@ -180,12 +263,11 @@ const pillarCharts = computed(() =>
 
     <!-- Five-column grid -->
     <div class="pillars-grid">
-      <div
+      <router-link
         v-for="(pillar, idx) in PILLARS"
         :key="pillar.n"
+        :to="pillar.route"
         class="pillar"
-        role="link"
-        :tabindex="0"
         :aria-label="`Pillar ${pillar.n}: ${pillar.name}`"
       >
         <div class="pillar-top">
@@ -193,11 +275,105 @@ const pillarCharts = computed(() =>
           <span class="pillar-link" aria-hidden="true">&rarr;</span>
         </div>
         <div class="pillar-name">{{ pillar.name }}</div>
-        <!-- eslint-disable-next-line vue/no-v-html -- trusted static content with <b> tags -->
-        <div class="pillar-find" v-html="pillar.find"></div>
-        <!-- eslint-disable-next-line vue/no-v-html -- trusted SVG markup -->
-        <div class="pillar-chart-wrap" v-html="pillarCharts[idx]"></div>
-      </div>
+        <div class="pillar-find">
+          <template v-for="(part, pIdx) in pillar.findParts" :key="pIdx">
+            <b v-if="part.bold">{{ part.text }}</b>
+            <template v-else>{{ part.text }}</template>
+          </template>
+        </div>
+
+        <!-- Mini chart: sparkline -->
+        <div v-if="pillarSparklines[idx]" class="pillar-chart-wrap">
+          <svg class="pillar-chart" viewBox="0 0 220 60" preserveAspectRatio="none" aria-hidden="true">
+            <path
+              :d="pillarSparklines[idx]!.d"
+              :stroke="pillarSparklines[idx]!.color"
+              stroke-width="2"
+              fill="none"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+            <circle
+              :cx="pillarSparklines[idx]!.endCx"
+              :cy="pillarSparklines[idx]!.endCy"
+              r="3.5"
+              :fill="pillarSparklines[idx]!.color"
+            />
+          </svg>
+        </div>
+
+        <!-- Mini chart: donut -->
+        <div v-else-if="pillarDonuts[idx]" class="pillar-chart-wrap">
+          <svg class="pillar-chart" viewBox="0 0 220 60" aria-hidden="true">
+            <g transform="translate(30 30)">
+              <circle r="22" cx="0" cy="0" fill="none" stroke="var(--wl-rule)" stroke-width="8" />
+              <circle
+                r="22"
+                cx="0"
+                cy="0"
+                fill="none"
+                stroke="var(--wl-red)"
+                stroke-width="8"
+                :stroke-dasharray="`${pillarDonuts[idx]!.mainLen.toFixed(1)} ${pillarDonuts[idx]!.remainLen.toFixed(1)}`"
+                transform="rotate(-90)"
+              />
+            </g>
+            <text x="68" y="34" font-family="IBM Plex Mono" font-size="16" font-weight="600" fill="var(--wl-red)">
+              {{ pillarDonuts[idx]!.mainValue }}%
+            </text>
+            <text x="68" y="50" font-family="IBM Plex Mono" font-size="9" fill="var(--wl-ink-muted)">
+              to top 1%
+            </text>
+          </svg>
+        </div>
+
+        <!-- Mini chart: horizontal bars -->
+        <div v-else-if="pillarBars[idx]" class="pillar-chart-wrap">
+          <svg class="pillar-chart" viewBox="0 0 220 60" aria-hidden="true">
+            <rect x="0" y="22" :width="pillarBars[idx]!.yesWidth.toFixed(1)" height="14" fill="var(--wl-red)" />
+            <rect :x="pillarBars[idx]!.noX.toFixed(1)" y="22" :width="pillarBars[idx]!.noWidth.toFixed(1)" height="14" fill="var(--wl-rule)" />
+            <text x="0" y="16" font-family="IBM Plex Mono" font-size="9" fill="var(--wl-ink-muted)" letter-spacing="1">PAY IHT  ·  DON'T</text>
+            <text x="0" y="52" font-family="IBM Plex Mono" font-size="11" font-weight="600" fill="var(--wl-red)">
+              {{ pillarBars[idx]!.yesLabel }}%
+            </text>
+            <text :x="(pillarBars[idx]!.noX + 8).toFixed(1)" y="52" font-family="IBM Plex Mono" font-size="11" fill="var(--wl-ink-muted)">
+              {{ pillarBars[idx]!.noLabel }}%
+            </text>
+          </svg>
+        </div>
+
+        <!-- Mini chart: vertical columns -->
+        <div v-else-if="pillarColumns[idx]" class="pillar-chart-wrap">
+          <svg class="pillar-chart" viewBox="0 0 220 60" aria-hidden="true">
+            <template v-for="(col, cIdx) in pillarColumns[idx]!" :key="cIdx">
+              <rect
+                :x="col.x"
+                :y="col.y.toFixed(1)"
+                width="40"
+                :height="col.h.toFixed(1)"
+                :fill="col.fill"
+              />
+              <text
+                :x="col.x + 20"
+                y="58"
+                text-anchor="middle"
+                font-family="IBM Plex Mono"
+                font-size="9"
+                fill="var(--wl-ink-muted)"
+              >{{ col.label }}</text>
+              <text
+                :x="col.x + 20"
+                :y="col.valueLabelY.toFixed(1)"
+                text-anchor="middle"
+                font-family="IBM Plex Mono"
+                font-size="10"
+                font-weight="600"
+                :fill="col.fill"
+              >{{ col.valueLabel }}</text>
+            </template>
+          </svg>
+        </div>
+      </router-link>
     </div>
   </section>
 </template>
@@ -285,6 +461,8 @@ const pillarCharts = computed(() =>
   gap: 14px;
   transition: background 0.18s ease;
   min-height: 280px;
+  text-decoration: none;
+  color: inherit;
 }
 
 .pillar:hover {
@@ -335,7 +513,7 @@ const pillarCharts = computed(() =>
   min-height: 60px;
 }
 
-.pillar-find :deep(b) {
+.pillar-find b {
   color: var(--wl-ink);
   font-weight: 600;
 }
@@ -346,7 +524,7 @@ const pillarCharts = computed(() =>
   margin-top: auto;
 }
 
-.pillar-chart-wrap :deep(.pillar-chart) {
+.pillar-chart {
   width: 100%;
   height: 60px;
   display: block;
