@@ -47,11 +47,14 @@ CHECKS: list[dict] = [
         "min_rows": 10,
         "dtypes": {"total_wealth_bn": "float"},
         "ranges": {"total_wealth_bn": (0.0, 10000.0)},
+        "unique_keys": ["decile"],
     },
     {
         "file": "hmrc_cgt_concentration.csv",
         "columns": {"band_lower"},
         "min_rows": 3,
+        "ranges": {"band_lower": (0.0, 5_000_000.0)},
+        "unique_keys": ["band_lower"],
     },
 ]
 
@@ -76,6 +79,7 @@ def validate_all() -> list[str]:
         missing_cols = check["columns"] - set(df.columns)
         if missing_cols:
             errors.append(f"COLUMNS: {check['file']} missing {missing_cols}")
+            continue
 
         if len(df) < check["min_rows"]:
             errors.append(f"ROWS: {check['file']} has {len(df)} rows, expected >= {check['min_rows']}")
