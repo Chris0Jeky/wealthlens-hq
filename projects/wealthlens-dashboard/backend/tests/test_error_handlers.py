@@ -83,6 +83,23 @@ class TestHTTPException4xx:
         assert body["error"]["type"] == "http_error"
         assert body["error"]["message"] == "Invalid date range"
 
+    def test_4xx_with_dict_detail(self) -> None:
+        """Non-string detail (dict) is stringified in the error message."""
+        app = _make_app()
+
+        @app.get("/structured")
+        def _structured() -> None:
+            raise HTTPException(status_code=400, detail={"fields": ["name"]})
+
+        client = TestClient(app, raise_server_exceptions=False)
+        resp = client.get("/structured")
+
+        assert resp.status_code == 400
+        body = resp.json()
+        assert body["error"]["code"] == 400
+        assert isinstance(body["error"]["message"], str)
+        assert body["error"]["type"] == "http_error"
+
 
 # ---------------------------------------------------------------------------
 # Tests — 5xx sanitization
@@ -130,6 +147,25 @@ class TestHTTPException5xx:
         assert body["error"]["code"] == 503
         # Internal detail must NOT appear in the response
         assert "DB pool" not in resp.text
+
+    def test_502_sanitizes_and_uses_http_error_type(self) -> None:
+        app = _make_app()
+
+        @app.get("/gateway")
+        def _gateway() -> None:
+            raise HTTPException(
+                status_code=502, detail="upstream timeout at 10.0.0.5:5432"
+            )
+
+        client = TestClient(app, raise_server_exceptions=False)
+        resp = client.get("/gateway")
+
+        assert resp.status_code == 502
+        body = resp.json()
+        assert body["error"]["type"] == "http_error"
+        assert body["error"]["message"] == "Server error"
+        assert body["error"]["code"] == 502
+        assert "upstream" not in resp.text
 
 
 # ---------------------------------------------------------------------------
