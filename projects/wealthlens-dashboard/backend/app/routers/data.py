@@ -14,7 +14,7 @@ from pathlib import Path as FilePath
 from typing import Any
 
 import pandas as pd
-from fastapi import APIRouter, HTTPException, Path, Query
+from fastapi import APIRouter, HTTPException, Path, Query, Response
 
 from app.routers.schemas import (
     AllDatasetsMetadataResponse,
@@ -29,6 +29,10 @@ logger = logging.getLogger("wealthlens.data")
 router = APIRouter()
 
 DATA_DIR = FilePath(__file__).resolve().parents[3] / "data" / "processed"
+
+# Cache durations — data is updated weekly at most, so cache aggressively.
+_CACHE_METADATA = "public, max-age=3600"  # 1 hour for list/metadata endpoints
+_CACHE_DATA = "public, max-age=300"  # 5 minutes for paginated data (params vary)
 
 # Cache for metadata derived from CSV reads (row_count, columns).
 # Populated lazily by _build_metadata to avoid re-reading CSVs on every
@@ -194,12 +198,13 @@ def health_data() -> dict[str, Any]:
 
 
 @router.get("/", response_model=DatasetListResponse, summary="List available datasets")
-def list_datasets() -> dict[str, list[str]]:
+def list_datasets(response: Response) -> dict[str, list[str]]:
     """Return the names of all configured datasets.
 
     The returned list can be used to build URLs for the paginated data
     and metadata endpoints.
     """
+    response.headers["Cache-Control"] = _CACHE_METADATA
     return {"datasets": list(DATASETS.keys())}
 
 
@@ -208,12 +213,13 @@ def list_datasets() -> dict[str, list[str]]:
     response_model=AllDatasetsMetadataResponse,
     summary="Metadata for all datasets",
 )
-def all_datasets_metadata() -> dict[str, list[dict[str, Any]]]:
+def all_datasets_metadata(response: Response) -> dict[str, list[dict[str, Any]]]:
     """Return metadata with source citations for every dataset.
 
     Each entry includes the dataset description, data source name and URL,
     access date, row count, and column names.
     """
+    response.headers["Cache-Control"] = _CACHE_METADATA
     return {"datasets": [_build_metadata(name) for name in DATASETS]}
 
 
@@ -223,6 +229,7 @@ def all_datasets_metadata() -> dict[str, list[dict[str, Any]]]:
     summary="Metadata for one dataset",
 )
 def dataset_metadata(
+    response: Response,
     dataset_name: str = Path(
         ...,
         pattern=r"^[a-z0-9-]{1,50}$",
@@ -239,6 +246,7 @@ def dataset_metadata(
     """
     if dataset_name not in DATASETS:
         raise HTTPException(status_code=404, detail=f"Unknown dataset: {dataset_name}")
+    response.headers["Cache-Control"] = _CACHE_METADATA
     return _build_metadata(dataset_name)
 
 
@@ -268,6 +276,7 @@ def dataset_columns(dataset_name: str) -> dict[str, Any]:
     summary="Get paginated dataset rows",
 )
 def get_dataset(
+    response: Response,
     dataset_name: str = Path(
         ...,
         pattern=r"^[a-z0-9-]{1,50}$",
@@ -289,6 +298,7 @@ def get_dataset(
     if dataset_name not in DATASETS:
         raise HTTPException(status_code=404, detail=f"Unknown dataset: {dataset_name}")
 
+    response.headers["Cache-Control"] = _CACHE_DATA
     df = _read_csv(dataset_name)
 
     # Replace NaN with None so JSON serialization produces explicit nulls
