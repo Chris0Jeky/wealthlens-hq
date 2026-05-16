@@ -21,6 +21,9 @@ const CgtConcentrationChart = defineAsyncComponent(
 const WealthByDecileChart = defineAsyncComponent(
   () => import("@/components/WealthByDecileChart.vue"),
 );
+const GenerationalWealthChart = defineAsyncComponent(
+  () => import("@/components/GenerationalWealthChart.vue"),
+);
 
 const route = useRoute();
 
@@ -32,6 +35,7 @@ const chartTitles: Record<string, string> = {
   "housing-affordability": "Housing Affordability — Price-to-Earnings Ratios by Region",
   "cgt-concentration": "Capital Gains Tax — Concentration by Size of Gain",
   "wealth-by-decile": "Total Household Wealth by Decile",
+  "generational-wealth": "Generational Wealth Gap — Median Wealth at Key Ages",
 };
 
 const isSupported = computed(() => chartName.value in chartTitles);
@@ -55,6 +59,7 @@ const isSupported = computed(() => chartName.value in chartTitles);
       <HousingAffordabilityChart v-else-if="chartName === 'housing-affordability'" />
       <CgtConcentrationChart v-else-if="chartName === 'cgt-concentration'" />
       <WealthByDecileChart v-else-if="chartName === 'wealth-by-decile'" />
+      <GenerationalWealthChart v-else-if="chartName === 'generational-wealth'" />
     </template>
 
     <!-- Unsupported chart name -->

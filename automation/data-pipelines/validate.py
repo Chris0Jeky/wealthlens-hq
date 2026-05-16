@@ -44,6 +44,11 @@ CHECKS: list[dict] = [
         "columns": {"band_lower"},
         "min_rows": 3,
     },
+    {
+        "file": "generational_wealth_gap.csv",
+        "columns": {"generation", "age_milestone", "median_wealth_gbp", "year_measured"},
+        "min_rows": 5,
+    },
 ]
 
 

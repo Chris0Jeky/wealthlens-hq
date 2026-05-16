@@ -13,6 +13,8 @@ const descriptions: Record<string, string> = {
   'wealth-by-decile':
     'Total net wealth by decile group in Great Britain (ONS WAS)',
   'cgt-concentration': 'Capital gains concentration by size of gain (HMRC)',
+  'generational-wealth':
+    'Median wealth by generation at age milestones, 2022 real GBP (Resolution Foundation / ONS)',
 }
 
 onMounted(() => {

@@ -38,6 +38,7 @@ DATASETS: dict[str, str] = {
     "housing-affordability": "ons_housing_affordability_by_region.csv",
     "wealth-by-decile": "ons_wealth_by_decile.csv",
     "cgt-concentration": "hmrc_cgt_concentration.csv",
+    "generational-wealth": "generational_wealth_gap.csv",
 }
 
 # Source citations — every dataset must document where the data came from.
@@ -73,6 +74,16 @@ DATASET_META: dict[str, dict[str, str]] = {
         "source": "HMRC",
         "source_url": "https://www.gov.uk/government/statistics/capital-gains-tax-statistics",
         "access_date": "2026-05-14",
+    },
+    "generational-wealth": {
+        "description": "Median wealth by generation at age milestones (2022 real GBP)",
+        "source": "Resolution Foundation / ONS Wealth and Assets Survey",
+        "source_url": (
+            "https://www.ons.gov.uk/peoplepopulationandcommunity/"
+            "personalandhouseholdfinances/incomeandwealth/bulletins/"
+            "totalwealthingreatbritain/latest"
+        ),
+        "access_date": "2026-05-16",
     },
 }
 
