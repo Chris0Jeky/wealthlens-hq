@@ -72,6 +72,11 @@ CHECKS: list[dict] = [
         "columns": {"year", "income_tax_bn", "nics_bn", "cgt_bn", "iht_bn", "sdlt_bn", "work_pct", "wealth_pct"},
         "min_rows": 3,
     },
+    {
+        "file": "boe_rates.csv",
+        "columns": {"date", "bank_rate"},
+        "min_rows": 10,
+    },
 ]
 
 
