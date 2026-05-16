@@ -35,6 +35,20 @@ class AllDatasetsMetadataResponse(BaseModel):
     datasets: list[DatasetMetadataResponse]
 
 
+class ColumnInfo(BaseModel):
+    """Schema for a single column's metadata."""
+
+    name: str
+    dtype: str
+
+
+class ColumnsResponse(BaseModel):
+    """Response for GET /api/data/{name}/columns — column names and types."""
+
+    dataset: str
+    columns: list[ColumnInfo]
+
+
 class PaginatedDatasetResponse(BaseModel):
     """Response for GET /api/data/{name} — paginated row data."""
 
