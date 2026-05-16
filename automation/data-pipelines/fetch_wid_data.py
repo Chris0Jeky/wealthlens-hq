@@ -65,7 +65,7 @@ def fetch() -> dict[str, Any]:
     # API may return an S3 download URL for large payloads
     if isinstance(raw_data, dict) and "download_url" in raw_data:
         resp2 = requests.get(
-            str(raw_data["download_url"]), timeout=REQUEST_TIMEOUT_SECONDS,
+            raw_data["download_url"], timeout=REQUEST_TIMEOUT_SECONDS,
         )
         resp2.raise_for_status()
         raw_data = resp2.json()
