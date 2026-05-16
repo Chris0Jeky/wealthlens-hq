@@ -14,6 +14,7 @@ These caveats are noted on the chart output.
 from __future__ import annotations
 
 import re
+import zipfile
 from datetime import date
 from pathlib import Path
 
@@ -21,6 +22,11 @@ import pandas as pd
 import plotly.graph_objects as go
 import requests
 from chart_html import write_accessible_chart
+
+try:
+    from openpyxl.utils.exceptions import InvalidFileException
+except ImportError:  # pragma: no cover — openpyxl is always installed with pandas[excel]
+    InvalidFileException = type('InvalidFileException', (OSError,), {})  # type: ignore[assignment,misc]
 
 ROOT = Path(__file__).resolve().parents[2]
 DATA_DIR = ROOT / "projects" / "wealthlens-dashboard" / "data"
@@ -77,7 +83,11 @@ def fetch() -> Path | None:
             print(f"  {label.capitalize()} download failed: {exc}")
             continue
 
-        out_path.write_bytes(resp.content)
+        try:
+            out_path.write_bytes(resp.content)
+        except (OSError, IOError) as exc:
+            print(f"  Warning: could not write file ({type(exc).__name__}: {exc})")
+            continue
         print(f"  Saved to {out_path} ({len(resp.content) // 1024} KB)")
         return out_path
 
@@ -117,7 +127,20 @@ def process(xlsx_path: Path | None) -> pd.DataFrame:
         print(f"  {len(df)} rows")
         return df
 
-    xl = pd.ExcelFile(xlsx_path, engine="openpyxl")
+    # Guard against corrupt / truncated XLSX files (e.g. partial download,
+    # server returning an HTML error page with a .xlsx extension).
+    try:
+        xl = pd.ExcelFile(xlsx_path, engine="openpyxl")
+    except (zipfile.BadZipFile, InvalidFileException, ValueError, OSError) as exc:
+        print(f"  Warning: cannot open XLSX ({type(exc).__name__}: {exc})")
+        print("  Falling back to hard-coded data.")
+        df = _build_fallback_data()
+        out_path = PROCESSED_DIR / "ons_wealth_by_decile.csv"
+        df.to_csv(out_path, index=False)
+        print(f"  Processed data saved to {out_path}")
+        print(f"  {len(df)} rows")
+        return df
+
     print(f"  Available sheets: {xl.sheet_names}")
 
     # Prefer "Table 2.2" (aggregate total wealth by decile).  Fall back to
@@ -137,9 +160,19 @@ def process(xlsx_path: Path | None) -> pd.DataFrame:
         target_sheet = xl.sheet_names[0]
 
     print(f"  Reading sheet: '{target_sheet}'")
-    df_raw = pd.read_excel(
-        xlsx_path, sheet_name=target_sheet, header=None, engine="openpyxl",
-    )
+    try:
+        df_raw = pd.read_excel(
+            xlsx_path, sheet_name=target_sheet, header=None, engine="openpyxl",
+        )
+    except (zipfile.BadZipFile, InvalidFileException, ValueError, OSError) as exc:
+        print(f"  Warning: cannot read sheet ({type(exc).__name__}: {exc})")
+        print("  Falling back to hard-coded data.")
+        df = _build_fallback_data()
+        out_path = PROCESSED_DIR / "ons_wealth_by_decile.csv"
+        df.to_csv(out_path, index=False)
+        print(f"  Processed data saved to {out_path}")
+        print(f"  {len(df)} rows")
+        return df
 
     df = _parse_table_2_2(df_raw)
     if df is None:
@@ -216,8 +249,9 @@ def _parse_table_2_2(df_raw: pd.DataFrame) -> pd.DataFrame | None:
 
     if len(records) != 10:
         print(f"  Warning: expected 10 decile rows, found {len(records)}.")
-        if not records:
-            return None
+        # Partial decile data is unreliable — reject so the caller can fall
+        # back to the next parser or hard-coded data.
+        return None
 
     return pd.DataFrame(records)
 
