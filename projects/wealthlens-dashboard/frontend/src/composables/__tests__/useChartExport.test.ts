@@ -41,8 +41,8 @@ describe('useChartExport', () => {
       return document.createElement(tag)
     })
 
-    vi.spyOn(document.body, 'appendChild').mockImplementation(() => null as any)
-    vi.spyOn(document.body, 'removeChild').mockImplementation(() => null as any)
+    vi.spyOn(document.body, 'appendChild').mockImplementation(<T extends Node>(node: T) => node)
+    vi.spyOn(document.body, 'removeChild').mockImplementation(<T extends Node>(node: T) => node)
 
     vi.stubGlobal('URL', {
       ...URL,
@@ -118,9 +118,10 @@ describe('useChartExport', () => {
 
       expect(result).toBe(false)
       // Watermark removal still attempted (second setOption call)
-      const removeCalls = mockChart.setOption.mock.calls.filter(
-        (call: any[]) => call[0]?.graphic?.[0]?.$action === 'remove'
-      )
+      const removeCalls = mockChart.setOption.mock.calls.filter((call) => {
+        const option = call[0] as { graphic?: Array<{ $action?: string }> }
+        return option.graphic?.[0]?.$action === 'remove'
+      })
       expect(removeCalls.length).toBe(1)
     })
 
@@ -249,9 +250,10 @@ describe('useChartExport', () => {
       const result = exportSVG({ filename: 'test' })
 
       expect(result).toBe(false)
-      const removeCalls = mockChart.setOption.mock.calls.filter(
-        (call: any[]) => call[0]?.graphic?.[0]?.$action === 'remove'
-      )
+      const removeCalls = mockChart.setOption.mock.calls.filter((call) => {
+        const option = call[0] as { graphic?: Array<{ $action?: string }> }
+        return option.graphic?.[0]?.$action === 'remove'
+      })
       expect(removeCalls.length).toBe(1)
     })
 
