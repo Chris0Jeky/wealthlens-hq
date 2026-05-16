@@ -1,15 +1,34 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, nextTick } from 'vue'
 import { RouterLink } from 'vue-router'
 
 const mobileMenuOpen = ref(false)
+const hamburgerBtn = ref<HTMLButtonElement | null>(null)
+const mobileNav = ref<HTMLElement | null>(null)
 
 function toggleMenu() {
   mobileMenuOpen.value = !mobileMenuOpen.value
+  if (mobileMenuOpen.value) {
+    // Move focus into the mobile menu after it renders
+    nextTick(() => {
+      const firstLink = mobileNav.value?.querySelector<HTMLElement>('a')
+      firstLink?.focus()
+    })
+  }
 }
 
-function closeMenu() {
+function closeMenu(returnFocus = false) {
   mobileMenuOpen.value = false
+  if (returnFocus) {
+    // Return focus to the hamburger button when closed via Escape
+    nextTick(() => hamburgerBtn.value?.focus())
+  }
+}
+
+function onMenuKeydown(event: KeyboardEvent) {
+  if (event.key === 'Escape') {
+    closeMenu(true)
+  }
 }
 
 const today = new Date().toLocaleDateString('en-GB', {
@@ -38,7 +57,7 @@ const today = new Date().toLocaleDateString('en-GB', {
 
     <!-- Main nav row -->
     <div class="nav-inner">
-      <RouterLink to="/" class="brand" aria-label="WealthLens UK — home page" @click="closeMenu">
+      <RouterLink to="/" class="brand" aria-label="WealthLens UK — home page" @click="closeMenu()">
         <svg
           class="brand-mark"
           viewBox="0 0 68 68"
@@ -76,20 +95,20 @@ const today = new Date().toLocaleDateString('en-GB', {
       </RouterLink>
 
       <!-- Desktop nav links -->
-      <div class="nav-links" role="navigation" aria-label="Main navigation">
-        <RouterLink to="/" class="nav-link" active-class="active" @click="closeMenu">
+      <div class="nav-links">
+        <RouterLink to="/" class="nav-link" active-class="active" @click="closeMenu()">
           Front page
         </RouterLink>
-        <RouterLink to="/charts/wealth-shares" class="nav-link" active-class="active" @click="closeMenu">
+        <RouterLink to="/charts/wealth-shares" class="nav-link" active-class="active" @click="closeMenu()">
           The data
         </RouterLink>
-        <RouterLink to="/methodology" class="nav-link" active-class="active" @click="closeMenu">
+        <RouterLink to="/methodology" class="nav-link" active-class="active" @click="closeMenu()">
           Methodology
         </RouterLink>
-        <RouterLink to="/about" class="nav-link" active-class="active" @click="closeMenu">
+        <RouterLink to="/about" class="nav-link" active-class="active" @click="closeMenu()">
           About
         </RouterLink>
-        <RouterLink to="/contribute" class="nav-link" active-class="active" @click="closeMenu">
+        <RouterLink to="/contribute" class="nav-link" active-class="active" @click="closeMenu()">
           Contribute
         </RouterLink>
       </div>
@@ -111,6 +130,7 @@ const today = new Date().toLocaleDateString('en-GB', {
 
       <!-- Mobile hamburger button -->
       <button
+        ref="hamburgerBtn"
         class="hamburger"
         :aria-expanded="mobileMenuOpen"
         aria-controls="mobile-menu"
@@ -127,23 +147,24 @@ const today = new Date().toLocaleDateString('en-GB', {
     <div
       v-if="mobileMenuOpen"
       id="mobile-menu"
+      ref="mobileNav"
       class="mobile-menu"
-      role="navigation"
       aria-label="Mobile navigation"
+      @keydown="onMenuKeydown"
     >
-      <RouterLink to="/" class="mobile-link" active-class="active" @click="closeMenu">
+      <RouterLink to="/" class="mobile-link" active-class="active" @click="closeMenu()">
         Front page
       </RouterLink>
-      <RouterLink to="/charts/wealth-shares" class="mobile-link" active-class="active" @click="closeMenu">
+      <RouterLink to="/charts/wealth-shares" class="mobile-link" active-class="active" @click="closeMenu()">
         The data
       </RouterLink>
-      <RouterLink to="/methodology" class="mobile-link" active-class="active" @click="closeMenu">
+      <RouterLink to="/methodology" class="mobile-link" active-class="active" @click="closeMenu()">
         Methodology
       </RouterLink>
-      <RouterLink to="/about" class="mobile-link" active-class="active" @click="closeMenu">
+      <RouterLink to="/about" class="mobile-link" active-class="active" @click="closeMenu()">
         About
       </RouterLink>
-      <RouterLink to="/contribute" class="mobile-link" active-class="active" @click="closeMenu">
+      <RouterLink to="/contribute" class="mobile-link" active-class="active" @click="closeMenu()">
         Contribute
       </RouterLink>
       <div class="mobile-actions">
@@ -155,7 +176,7 @@ const today = new Date().toLocaleDateString('en-GB', {
         >
           View source ↗
         </a>
-        <RouterLink to="/charts/wealth-shares" class="wl-btn wl-btn--red wl-btn--sm" @click="closeMenu">
+        <RouterLink to="/charts/wealth-shares" class="wl-btn wl-btn--red wl-btn--sm" @click="closeMenu()">
           Read the data →
         </RouterLink>
       </div>
