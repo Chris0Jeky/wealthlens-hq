@@ -8,9 +8,6 @@ the CSV exists and when it does not.
 from __future__ import annotations
 
 import importlib
-import os
-from pathlib import Path
-from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
