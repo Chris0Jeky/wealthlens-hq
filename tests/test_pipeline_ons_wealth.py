@@ -203,11 +203,12 @@ def test_fetch_tries_fallback_on_primary_failure() -> None:
     """If the primary URL fails, fetch() should try the fallback URL."""
     call_log: list[str] = []
 
-    def mock_get(url: str, timeout: int = 60) -> MagicMock:
+    def mock_get(url: str, **kwargs) -> MagicMock:
         call_log.append(url)
         if url == fetch_ons_wealth.XLSX_URL:
             raise fetch_ons_wealth.requests.RequestException("404 Not Found")
         resp = MagicMock()
+        resp.status_code = 200
         resp.content = b"fake xlsx content"
         return resp
 
@@ -227,7 +228,7 @@ def test_fetch_tries_fallback_on_primary_failure() -> None:
 def test_fetch_returns_none_when_both_urls_fail() -> None:
     """If both URLs fail, fetch() should return None."""
 
-    def mock_get(url: str, timeout: int = 60) -> MagicMock:
+    def mock_get(url: str, **kwargs) -> MagicMock:
         raise fetch_ons_wealth.requests.RequestException("Network error")
 
     with (
