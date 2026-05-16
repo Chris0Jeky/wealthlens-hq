@@ -26,10 +26,22 @@ interface HeadlineSegment {
   italic?: boolean
 }
 
+/**
+ * A segment of the sub-paragraph. Each segment renders as one of:
+ * - plain text (default)
+ * - <strong> with highlight background (strong: true)
+ * - red emphasis span (red: true)
+ */
+interface SubSegment {
+  text: string
+  strong?: boolean
+  red?: boolean
+}
+
 interface Headline {
   label: string
   segments: HeadlineSegment[]
-  sub: string
+  subSegments: SubSegment[]
   source: string
 }
 
@@ -41,7 +53,12 @@ const HEADLINES: Headline[] = [
       { text: 'ten years late', italic: true },
       { text: '.' },
     ],
-    sub: `Your parents bought a house at 24. Had you at 27. You'll be lucky to buy at 36 — if at all. So the family waits. The retirement waits. And in that twelve‑year gap, roughly <strong>£180,000 of your wages becomes someone else's mortgage</strong>. <span class="hero-sub-red">The clock didn't break. It was moved.</span>`,
+    subSegments: [
+      { text: "Your parents bought a house at 24. Had you at 27. You'll be lucky to buy at 36 — if at all. So the family waits. The retirement waits. And in that twelve‑year gap, roughly " },
+      { text: '£180,000 of your wages becomes someone else’s mortgage', strong: true },
+      { text: '. ' },
+      { text: "The clock didn't break. It was moved.", red: true },
+    ],
     source: 'Source: UK Finance first‑time buyer age · ONS House Price Index · IFS 2024',
   },
   {
@@ -51,7 +68,12 @@ const HEADLINES: Headline[] = [
       { text: 'three houses', italic: true },
       { text: ". You'll own none." },
     ],
-    sub: `Forty years of renting in a UK city ≈ <strong>£540,000</strong> in today's money. That's three average UK homes. It doesn't disappear — it becomes someone else's pension, someone else's holiday villa, someone else's child's deposit. <span class="hero-sub-red">Renting isn't a service. It's a transfer.</span>`,
+    subSegments: [
+      { text: "Forty years of renting in a UK city ≈ " },
+      { text: '£540,000', strong: true },
+      { text: " in today’s money. That’s three average UK homes. It doesn’t disappear — it becomes someone else’s pension, someone else’s holiday villa, someone else’s child’s deposit. " },
+      { text: "Renting isn’t a service. It’s a transfer.", red: true },
+    ],
     source: 'Source: ONS Private Rental Market 2024 · HM Land Registry',
   },
   {
@@ -61,7 +83,12 @@ const HEADLINES: Headline[] = [
       { text: '2008', italic: true },
       { text: ". Life doesn't." },
     ],
-    sub: `Real wages haven't grown in 16 years — Britain is the <strong>only G7 economy</strong> where this happened. Rent didn't sit still. Childcare didn't. Energy didn't. <span class="hero-sub-red">You're not bad with money. The maths was rewritten while you weren't looking.</span>`,
+    subSegments: [
+      { text: "Real wages haven’t grown in 16 years — Britain is the " },
+      { text: 'only G7 economy', strong: true },
+      { text: " where this happened. Rent didn’t sit still. Childcare didn’t. Energy didn’t. " },
+      { text: "You’re not bad with money. The maths was rewritten while you weren’t looking.", red: true },
+    ],
     source: 'Source: ONS AWE deflated by CPIH · IFS Living Standards 2024',
   },
   {
@@ -71,7 +98,12 @@ const HEADLINES: Headline[] = [
       { text: 'inherited', italic: true },
       { text: ', not earned.' },
     ],
-    sub: `£100 billion a year transferred through estates — and rising. If your parents own, you're set. If they don't, you're not, no matter the hours. <strong>Only 4–5% of estates pay any tax</strong> — the threshold hasn't moved since 2009. <span class="hero-sub-red">"Hard work pays" used to be a promise. It's a lottery ticket.</span>`,
+    subSegments: [
+      { text: "£100 billion a year transferred through estates — and rising. If your parents own, you’re set. If they don’t, you’re not, no matter the hours. " },
+      { text: "Only 4–5% of estates pay any tax", strong: true },
+      { text: " — the threshold hasn’t moved since 2009. " },
+      { text: "“Hard work pays” used to be a promise. It’s a lottery ticket.", red: true },
+    ],
     source: 'Source: HMRC IHT statistics · Resolution Foundation 2024',
   },
   {
@@ -81,7 +113,14 @@ const HEADLINES: Headline[] = [
       { text: 'alarm clock', italic: true },
       { text: '. Not the inheritance.' },
     ],
-    sub: `Wages from work: up to <strong>47%</strong>. Capital gains: 10–28%. Inheritance under £325k: <strong>0%</strong>. The system charges you most for the one thing you actually control — your time. <span class="hero-sub-red">Effort is taxed. Luck is not.</span>`,
+    subSegments: [
+      { text: 'Wages from work: up to ' },
+      { text: '47%', strong: true },
+      { text: '. Capital gains: 10–28%. Inheritance under £325k: ' },
+      { text: '0%', strong: true },
+      { text: '. The system charges you most for the one thing you actually control — your time. ' },
+      { text: 'Effort is taxed. Luck is not.', red: true },
+    ],
     source: 'Source: HMRC · IFS Tax Analysis 2024',
   },
 ]
@@ -129,8 +168,13 @@ onUnmounted(() => {
           </template>
         </h1>
 
-        <!-- eslint-disable-next-line vue/no-v-html -- trusted static content -->
-        <p class="hero-sub" v-html="headline.sub"></p>
+        <p class="hero-sub">
+          <template v-for="(seg, si) in headline.subSegments" :key="si">
+            <strong v-if="seg.strong">{{ seg.text }}</strong>
+            <span v-else-if="seg.red" class="hero-sub-red">{{ seg.text }}</span>
+            <template v-else>{{ seg.text }}</template>
+          </template>
+        </p>
 
         <div class="hero-actions">
           <RouterLink to="/charts/wealth-shares" class="wl-btn wl-btn--red">

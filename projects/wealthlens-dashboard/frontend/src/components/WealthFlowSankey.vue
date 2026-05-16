@@ -130,6 +130,21 @@ const groups = computeGeometry()
 /* Ribbon entrance animation                                           */
 /* ------------------------------------------------------------------ */
 
+/**
+ * Imperative DOM approach is intentional here. The staggered ribbon
+ * entrance animation requires a two-phase trick:
+ *   1. Set scaleX(0) immediately on mount
+ *   2. Set scaleX(1) on the next animation frame
+ *
+ * Vue's reactive :style binding applies all values in a single render
+ * pass, so the browser would never see the scaleX(0) starting state
+ * and the transition wouldn't play. The requestAnimationFrame ensures
+ * the browser paints the collapsed state before expanding.
+ *
+ * Each ribbon gets a per-index delay for the stagger effect, which
+ * also can't be expressed as a static CSS class since the delay
+ * depends on the runtime index.
+ */
 const ribbonRefs = ref<(SVGPathElement | null)[]>([])
 
 function setRibbonRef(el: SVGPathElement | null, index: number) {
@@ -158,10 +173,7 @@ const footerSrcY = H - 16
 </script>
 
 <template>
-  <div
-    class="hero-lens-stage"
-    aria-label="Wealth flow: of every £100 of UK household wealth, £57 goes to 10 households, £6 goes to 50."
-  >
+  <div class="hero-lens-stage">
     <svg
       :viewBox="`0 0 ${W} ${H}`"
       class="flow-svg"

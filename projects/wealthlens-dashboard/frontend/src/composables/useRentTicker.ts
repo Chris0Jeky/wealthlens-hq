@@ -3,14 +3,22 @@
  * landlords in real time since the composable was created.
  *
  * UK private rental sector revenue ≈ £85bn/year ≈ £2,695/second.
- * Source: ONS Private Rental Market Statistics, 2024.
+ *
+ * Source: ONS Private Rental Market Statistics, Table 2.7, 2024.
+ * URL: https://www.ons.gov.uk/peoplepopulationandcommunity/housing/datasets/
+ *      privaterentalmarketsummarystatisticsinengland
+ * The £85bn figure is an estimate derived from: mean monthly private rent
+ * (£1,326 in 2024) x ~5.4 million private rented households (English
+ * Housing Survey 2022-23) x 12 months, rounded. Scotland, Wales, and NI
+ * add a further ~10%, giving a UK-wide ballpark of ~£85bn.
  *
  * Returns:
  *   rentPaid  — formatted string, e.g. "£14,832"
  *   elapsed   — formatted MM:SS string, e.g. "02:15"
  *
  * Uses setInterval at 100ms for a live-feeling counter. The interval
- * is cleared automatically on unmount.
+ * is paused when the browser tab is hidden (to avoid wasting CPU) and
+ * resumed when the tab becomes visible again. Cleaned up on unmount.
  */
 import { ref, onMounted, onUnmounted } from 'vue'
 
@@ -22,10 +30,14 @@ export function useRentTicker() {
   const elapsed = ref('00:00')
 
   let startTime = 0
+  /** Accumulated elapsed time before the most recent pause (ms). */
+  let accumulatedMs = 0
+  /** Timestamp when the timer was last resumed (or first started). */
+  let resumeTime = 0
   let timer: ReturnType<typeof setInterval> | null = null
 
   function tick() {
-    const ms = Date.now() - startTime
+    const ms = accumulatedMs + (Date.now() - resumeTime)
     const paid = Math.floor(ms * RATE_PER_MS)
     rentPaid.value = '£' + paid.toLocaleString('en-GB')
 
@@ -35,14 +47,39 @@ export function useRentTicker() {
     elapsed.value = `${mm}:${ss}`
   }
 
-  onMounted(() => {
-    startTime = Date.now()
+  function startTimer() {
+    if (timer) return // already running
+    resumeTime = Date.now()
     tick()
     timer = setInterval(tick, 100)
+  }
+
+  function stopTimer() {
+    if (!timer) return
+    accumulatedMs += Date.now() - resumeTime
+    clearInterval(timer)
+    timer = null
+  }
+
+  function onVisibilityChange() {
+    if (document.hidden) {
+      stopTimer()
+    } else {
+      startTimer()
+    }
+  }
+
+  onMounted(() => {
+    startTime = Date.now()
+    resumeTime = startTime
+    accumulatedMs = 0
+    startTimer()
+    document.addEventListener('visibilitychange', onVisibilityChange)
   })
 
   onUnmounted(() => {
-    if (timer) clearInterval(timer)
+    stopTimer()
+    document.removeEventListener('visibilitychange', onVisibilityChange)
   })
 
   return { rentPaid, elapsed }
