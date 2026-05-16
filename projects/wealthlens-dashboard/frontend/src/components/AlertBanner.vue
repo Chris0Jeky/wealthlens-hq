@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed, nextTick } from 'vue'
 
 export type AlertVariant = 'info' | 'warning' | 'error' | 'success'
 
@@ -11,9 +11,25 @@ const props = withDefaults(
   { variant: 'info', dismissible: false },
 )
 
-defineEmits<{ dismiss: [] }>()
+const emit = defineEmits<{ dismiss: [] }>()
 
 const dismissed = ref(false)
+const containerRef = ref<HTMLElement | null>(null)
+
+const liveRole = computed(() =>
+  props.variant === 'error' || props.variant === 'warning' ? 'alert' : 'status',
+)
+
+async function handleDismiss() {
+  const parent = containerRef.value?.parentElement
+  dismissed.value = true
+  emit('dismiss')
+  await nextTick()
+  if (parent && parent !== document.body) {
+    parent.setAttribute('tabindex', '-1')
+    parent.focus()
+  }
+}
 
 const variantClasses: Record<AlertVariant, string> = {
   info: 'bg-blue-50 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700 text-blue-800 dark:text-blue-200',
@@ -33,11 +49,13 @@ const iconMap: Record<AlertVariant, string> = {
 <template>
   <div
     v-if="!dismissed"
-    role="alert"
+    ref="containerRef"
+    :role="liveRole"
     class="flex items-start gap-3 rounded-md border px-4 py-3 text-sm"
     :class="variantClasses[props.variant]"
   >
     <span aria-hidden="true" class="shrink-0 text-base">{{ iconMap[props.variant] }}</span>
+    <span class="sr-only">{{ props.variant }}:</span>
     <div class="flex-1 min-w-0">
       <slot />
     </div>
@@ -46,7 +64,7 @@ const iconMap: Record<AlertVariant, string> = {
       type="button"
       aria-label="Dismiss alert"
       class="shrink-0 ml-2 opacity-70 hover:opacity-100 transition-opacity"
-      @click="dismissed = true; $emit('dismiss')"
+      @click="handleDismiss"
     >
       &#10005;
     </button>
