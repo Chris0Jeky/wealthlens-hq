@@ -7,8 +7,10 @@ that reports CSV availability.
 
 from __future__ import annotations
 
+import logging
 import math
 import os
+import time
 from pathlib import Path
 from typing import Any
 
@@ -21,6 +23,8 @@ from app.routers.schemas import (
     DatasetMetadataResponse,
     PaginatedDatasetResponse,
 )
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -88,18 +92,24 @@ def _read_csv(dataset_name: str) -> pd.DataFrame:
     """
     csv_path = DATA_DIR / DATASETS[dataset_name]
     if not csv_path.exists():
+        logger.warning("dataset_missing dataset=%s path=%s", dataset_name, csv_path)
         raise HTTPException(
             status_code=503,
             detail=f"Dataset file not found: {dataset_name} — run the pipeline first",
         )
     try:
-        return pd.read_csv(csv_path)
+        t0 = time.monotonic()
+        df = pd.read_csv(csv_path)
+        elapsed_ms = (time.monotonic() - t0) * 1000
+        logger.info("csv_read dataset=%s rows=%d elapsed_ms=%.1f", dataset_name, len(df), elapsed_ms)
+        return df
     except (
         pd.errors.ParserError,
         pd.errors.EmptyDataError,
         OSError,
         UnicodeDecodeError,
     ) as e:
+        logger.error("csv_read_error dataset=%s error=%s", dataset_name, e)
         raise HTTPException(
             status_code=503,
             detail=f"Failed to read dataset '{dataset_name}': {e}",
@@ -117,6 +127,9 @@ def _build_metadata(dataset_name: str) -> dict[str, Any]:
     if dataset_name not in _metadata_cache:
         df = _read_csv(dataset_name)
         _metadata_cache[dataset_name] = (len(df), list(df.columns))
+        logger.info("metadata_cache_miss dataset=%s", dataset_name)
+    else:
+        logger.debug("metadata_cache_hit dataset=%s", dataset_name)
 
     row_count, columns = _metadata_cache[dataset_name]
 
