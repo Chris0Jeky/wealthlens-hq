@@ -10,7 +10,6 @@ import {
   PRESET_SCENARIOS,
   TOTAL_HOUSEHOLDS,
   UK_GDP,
-  type WealthTaxBand,
 } from "@/utils/wealthTaxSimulator";
 
 describe("simulateWealthTax", () => {
