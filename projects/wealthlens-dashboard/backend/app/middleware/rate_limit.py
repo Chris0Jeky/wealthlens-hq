@@ -35,12 +35,21 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         cutoff = now - self.window
         return [t for t in timestamps if t > cutoff]
 
+    def _cleanup_stale(self, now: float) -> None:
+        cutoff = now - self.window
+        stale = [ip for ip, ts in self._hits.items() if not ts or ts[-1] < cutoff]
+        for ip in stale:
+            del self._hits[ip]
+
     async def dispatch(self, request: Request, call_next) -> Response:
-        if request.url.path == "/health":
+        if request.url.path.startswith("/health") or request.url.path == "/api/health/data":
             return await call_next(request)
 
         ip = self._client_ip(request)
         now = time.time()
+
+        if len(self._hits) > 10_000:
+            self._cleanup_stale(now)
 
         self._hits[ip] = self._prune(self._hits[ip], now)
 
