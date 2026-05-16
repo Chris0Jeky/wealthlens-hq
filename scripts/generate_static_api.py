@@ -14,8 +14,10 @@ Usage: python scripts/generate_static_api.py
 from __future__ import annotations
 
 import json
+import os
 import re
 import sys
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Callable
 
@@ -204,6 +206,37 @@ def main() -> None:
         all_meta["datasets"].append(json.loads(meta_path.read_text(encoding="utf-8")))
     all_meta_path = OUT_DIR / "all-metadata.json"
     all_meta_path.write_text(json.dumps(all_meta), encoding="utf-8")
+
+    # Freshness data — uses CSV file modification times
+    freshness_threshold_fresh = 168  # 7 days in hours
+    freshness_threshold_stale = 720  # 30 days in hours
+    now = datetime.now(tz=UTC)
+    datasets_freshness: dict[str, dict] = {}
+    for slug in available:
+        csv_path = DATA_DIR / DATASETS[slug]
+        mtime = os.path.getmtime(csv_path)
+        last_updated = datetime.fromtimestamp(mtime, tz=UTC)
+        age_hours = (now - last_updated).total_seconds() / 3600
+        if age_hours <= freshness_threshold_fresh:
+            status = "fresh"
+        elif age_hours <= freshness_threshold_stale:
+            status = "stale"
+        else:
+            status = "expired"
+        datasets_freshness[slug] = {
+            "last_updated": last_updated.isoformat(),
+            "age_hours": round(age_hours, 1),
+            "status": status,
+        }
+    freshness_response = {
+        "datasets": datasets_freshness,
+        "thresholds": {
+            "fresh_hours": freshness_threshold_fresh,
+            "stale_hours": freshness_threshold_stale,
+        },
+    }
+    freshness_path = OUT_DIR / "freshness.json"
+    freshness_path.write_text(json.dumps(freshness_response), encoding="utf-8")
 
     print(f"\nGenerated static API for {len(available)}/{len(DATASETS)} datasets in {OUT_DIR}")
     if errors:

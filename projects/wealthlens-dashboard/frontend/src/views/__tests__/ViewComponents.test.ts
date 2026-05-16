@@ -10,13 +10,16 @@ import NotFoundView from "@/views/NotFoundView.vue";
 
 const mockFetchDatasets = vi.fn();
 const mockFetchAllMetadata = vi.fn();
+const mockFetchFreshness = vi.fn();
 const mockStoreState = reactive({
   datasets: [] as string[],
   metadata: new Map(),
+  freshness: {} as Record<string, unknown>,
   loading: false,
   error: null as string | null,
   fetchDatasets: mockFetchDatasets,
   fetchAllMetadata: mockFetchAllMetadata,
+  fetchFreshness: mockFetchFreshness,
 });
 
 vi.mock("@/stores/data", () => ({
@@ -79,8 +82,10 @@ describe("HomeView", () => {
   beforeEach(() => {
     mockFetchDatasets.mockClear();
     mockFetchAllMetadata.mockClear();
+    mockFetchFreshness.mockClear();
     mockStoreState.datasets = [];
     mockStoreState.metadata = new Map();
+    mockStoreState.freshness = {};
     mockStoreState.loading = false;
     mockStoreState.error = null;
   });
@@ -98,6 +103,11 @@ describe("HomeView", () => {
   it("calls fetchAllMetadata on mount", () => {
     mount(HomeView);
     expect(mockFetchAllMetadata).toHaveBeenCalledOnce();
+  });
+
+  it("calls fetchFreshness on mount", () => {
+    mount(HomeView);
+    expect(mockFetchFreshness).toHaveBeenCalledOnce();
   });
 
   it("always renders all 10 hardcoded dataset cards", () => {

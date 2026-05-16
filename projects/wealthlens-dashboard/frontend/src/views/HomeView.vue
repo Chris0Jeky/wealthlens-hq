@@ -75,6 +75,7 @@ onMounted(async () => {
   const results = await Promise.allSettled([
     store.fetchDatasets(),
     store.fetchAllMetadata(),
+    store.fetchFreshness(),
   ])
 
   metadataLoading.value = false
@@ -173,6 +174,7 @@ onMounted(async () => {
           <DatasetCard
             :name="name"
             :description="getDescription(name)"
+            :freshness="store.freshness[name]"
           />
         </div>
       </ResponsiveGrid>

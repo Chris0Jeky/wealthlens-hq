@@ -25,6 +25,7 @@ function createMountOptions(storeOverrides = {}) {
             data: {
               datasets: [],
               metadata: new Map(),
+              freshness: {},
               loading: false,
               error: null,
               ...storeOverrides,
@@ -134,12 +135,19 @@ describe('HomeView', () => {
       expect(store.fetchAllMetadata).toHaveBeenCalledOnce()
     })
 
+    it('calls fetchFreshness on mount', () => {
+      mount(HomeView, createMountOptions())
+      const store = useDataStore()
+      expect(store.fetchFreshness).toHaveBeenCalledOnce()
+    })
+
     it('tracks both fetches concurrently via Promise.allSettled', () => {
       // Both should be called without waiting for one to complete before the other
       mount(HomeView, createMountOptions())
       const store = useDataStore()
       expect(store.fetchDatasets).toHaveBeenCalledOnce()
       expect(store.fetchAllMetadata).toHaveBeenCalledOnce()
+      expect(store.fetchFreshness).toHaveBeenCalledOnce()
     })
   })
 
