@@ -234,12 +234,12 @@
             View on GitHub
           </a>
           <a
-            href="https://github.com/Chris0Jeky/wealthlens-hq/blob/main/CONTRIBUTING.md"
+            href="https://github.com/Chris0Jeky/wealthlens-hq/issues"
             target="_blank"
             rel="noopener"
             class="wl-btn wl-btn--ghost"
           >
-            Contributing guide
+            Browse open issues
           </a>
         </div>
       </div>
