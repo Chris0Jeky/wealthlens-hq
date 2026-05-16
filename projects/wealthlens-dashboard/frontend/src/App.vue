@@ -4,24 +4,27 @@ import ErrorBoundary from '@/components/ErrorBoundary.vue'
 </script>
 
 <template>
-  <div class="min-h-screen bg-white text-gray-900 font-sans">
+  <!-- Root wrapper uses design-token backgrounds and ink colours.
+       Theme switching: set data-theme="dark" or "stark" on <html>
+       and all --wl-* custom properties update automatically. -->
+  <div class="min-h-screen bg-[var(--wl-bg)] text-[var(--wl-ink-body)] font-wl-sans">
     <a
       href="#main-content"
-      class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2 focus:bg-blue-600 focus:text-white focus:rounded"
+      class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2 focus:bg-[var(--wl-red)] focus:text-white focus:rounded-wl"
     >
       Skip to main content
     </a>
-    <header class="border-b border-gray-200 px-6 py-4">
-      <div class="max-w-6xl mx-auto flex items-center justify-between">
+    <header class="border-b border-[var(--wl-rule)] px-6 py-4">
+      <div class="max-w-wl mx-auto flex items-center justify-between">
         <router-link to="/" class="text-xl font-bold tracking-tight">
-          WealthLens<span class="text-blue-600"> UK</span>
+          WealthLens<span class="text-[var(--wl-red)]"> UK</span>
         </router-link>
         <nav aria-label="Main navigation" class="flex gap-6 text-sm">
           <a
             href="https://github.com/Chris0Jeky/wealthlens-hq"
             target="_blank"
             rel="noopener"
-            class="text-gray-600 hover:text-gray-900"
+            class="text-[var(--wl-ink-muted)] hover:text-[var(--wl-ink)]"
           >
             GitHub
           </a>
@@ -35,7 +38,7 @@ import ErrorBoundary from '@/components/ErrorBoundary.vue'
     </main>
     <footer
       role="contentinfo"
-      class="border-t border-gray-200 px-6 py-6 mt-12 text-center text-sm text-gray-500"
+      class="border-t border-[var(--wl-rule)] px-6 py-6 mt-12 text-center text-sm text-[var(--wl-ink-muted)]"
     >
       <p>
         WealthLens UK &middot; Open source &middot; Data cited from ONS, WID,
