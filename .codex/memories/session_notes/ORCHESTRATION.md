@@ -5,7 +5,7 @@
 >
 > **CRITICAL**: Update this file BEFORE every compaction risk (long tool calls, large diffs).
 
-Last updated: 2026-05-16T18:00Z
+Last updated: 2026-05-16T19:00Z
 
 ## Recovery Checklist (READ FIRST after compaction or session restart)
 
@@ -60,7 +60,7 @@ main
 
 ## Current Phase
 
-**Phase: WAVE 1 COMPLETE — WAVE 2 IN PROGRESS**
+**Phase: WAVE 2 R2 IN FLIGHT — WAVE 1 COMPLETE**
 
 ### Wave 1 Streams
 
@@ -76,15 +76,23 @@ main
 
 | # | Stream | Branch | Base | PR | Status | R1 | R2 |
 |---|--------|--------|------|----|--------|----|----|
-| 6 | Broadsheet article pages for new charts | `feat/chart-article-pages` | feat/new-chart-components | — | NOT STARTED | — | — |
-| 7 | Social OG meta tags for chart pages | `feat/og-meta-tags` | main | — | NOT STARTED | — | — |
-| 8 | API version endpoint + health widget | `feat/api-version-health` | main | — | NOT STARTED | — | — |
+| 6 | Broadsheet article pages for new charts | `feat/chart-article-pages` | feat/new-chart-components | #239 | FIXED | activeRange bug, [verify] markers, file size → fixed | PENDING |
+| 7 | Social OG meta tags for chart pages | `feat/og-meta-tags` | main | #238 | FIXED | Multi-instance conflict, SSR guard, stale tags → fixed | PENDING |
+| 8 | API version endpoint + health widget | `feat/api-version-health` | main | #237 | FIXED | Security leak, breaking compat, AbortController → fixed | PENDING |
 
-### Wave 3+ (to be seeded after Wave 2 reviews)
+### Wave 3 Streams (to start after Wave 2 R2)
+
+| # | Stream | Branch | Base | PR | Status | R1 | R2 |
+|---|--------|--------|------|----|--------|----|----|
+| 9 | Embed/share widget for charts | `feat/chart-embed-share` | main | — | NOT STARTED | — | — |
+| 10 | Performance: route-level code splitting | `perf/route-code-splitting` | main | — | NOT STARTED | — | — |
+| 11 | Backend: dataset freshness tracking | `feat/dataset-freshness` | main | — | NOT STARTED | — | ��� |
+
+### Wave 4+ (future)
 - Major dep upgrades (pandas 3, TypeScript 6, Vite 8)
-- More interactive chart tools (wealth calculator enhancements)
-- Embed/share functionality
-- Performance optimization (lazy loading, code splitting)
+- Wealth calculator enhancements
+- Email subscription widget (Buttondown)
+- Accessibility audit automation
 
 ## Decisions Log
 
