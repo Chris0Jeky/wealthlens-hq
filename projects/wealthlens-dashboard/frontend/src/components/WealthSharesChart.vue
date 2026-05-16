@@ -35,6 +35,15 @@ use([
 
 const { rows, loading, error } = useChartData("wealth-shares");
 
+/**
+ * Respect prefers-reduced-motion (WCAG 2.3.3).
+ * Disables ECharts smooth lines and animations when the user has
+ * requested reduced motion in their OS settings.
+ */
+const prefersReducedMotion =
+  typeof window !== "undefined" &&
+  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
 /** Extract sorted year+value pairs for a given percentile key. */
 function seriesFor(percentile: string): { years: number[]; values: number[] } {
   const filtered = rows.value
@@ -89,6 +98,7 @@ const option = computed(() => {
   const years = top10.years.length >= top1.years.length ? top10.years : top1.years;
 
   return {
+    animation: !prefersReducedMotion,
     title: {
       text: "UK Wealth Concentration Over Time",
       left: "center",
@@ -149,7 +159,7 @@ const option = computed(() => {
         name: "Top 10%",
         type: "line" as const,
         data: top10.values,
-        smooth: true,
+        smooth: !prefersReducedMotion,
         lineStyle: { width: 2.5, color: COLOR_TOP_10 },
         itemStyle: { color: COLOR_TOP_10 },
         symbol: "circle",
@@ -159,7 +169,7 @@ const option = computed(() => {
         name: "Top 1%",
         type: "line" as const,
         data: top1.values,
-        smooth: true,
+        smooth: !prefersReducedMotion,
         lineStyle: { width: 2.5, color: COLOR_TOP_1 },
         itemStyle: { color: COLOR_TOP_1 },
         symbol: "circle",
@@ -172,12 +182,12 @@ const option = computed(() => {
 
 <template>
   <!-- Loading state -->
-  <div v-if="loading" class="flex items-center justify-center py-20">
+  <div v-if="loading" class="flex items-center justify-center py-20" role="status" aria-live="polite">
     <p class="text-[var(--wl-ink-muted)] text-lg">Loading chart data...</p>
   </div>
 
   <!-- Error state -->
-  <div v-else-if="error" class="py-10 text-center">
+  <div v-else-if="error" class="py-10 text-center" role="alert">
     <p class="text-[var(--wl-red)] font-medium">{{ error }}</p>
     <p class="text-[var(--wl-ink-muted)] text-sm mt-2">
       Make sure the backend API is running on port 8000.
@@ -185,7 +195,7 @@ const option = computed(() => {
   </div>
 
   <!-- No data state -->
-  <div v-else-if="!hasData" class="py-10 text-center">
+  <div v-else-if="!hasData" class="py-10 text-center" role="status">
     <p class="text-[var(--wl-ink-muted)] text-lg">No data available for this chart.</p>
   </div>
 
@@ -211,9 +221,9 @@ const option = computed(() => {
         href="https://wid.world"
         target="_blank"
         rel="noopener"
-        class="underline hover:text-[var(--wl-ink)]"
+        class="underline hover:text-[var(--wl-ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--wl-red)] rounded"
       >
-        World Inequality Database (wid.world)</a>, accessed 2026-05-14
+        World Inequality Database (wid.world)<span class="sr-only"> (opens in new tab)</span></a>, accessed 2026-05-14
     </p>
   </div>
 </template>

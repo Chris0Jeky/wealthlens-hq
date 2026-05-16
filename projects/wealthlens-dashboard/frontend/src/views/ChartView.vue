@@ -49,7 +49,7 @@ watch(chartName, (name) => {
     <!-- Back link -->
     <router-link
       to="/"
-      class="inline-flex items-center text-sm text-[var(--wl-red)] hover:text-[var(--wl-red-deep)] mb-6"
+      class="inline-flex items-center text-sm text-[var(--wl-red)] hover:text-[var(--wl-red-deep)] mb-6 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--wl-red)] rounded"
     >
       &larr; Back to datasets
     </router-link>
@@ -68,14 +68,14 @@ watch(chartName, (name) => {
     </template>
 
     <!-- Unsupported chart name -->
-    <div v-else class="py-10 text-center">
+    <div v-else class="py-10 text-center" role="alert">
       <h1 class="text-2xl font-bold mb-3">Chart not found</h1>
       <p class="text-[var(--wl-ink-muted)]">
         No chart is available for "<span class="font-mono">{{ chartName }}</span>".
       </p>
       <router-link
         to="/"
-        class="inline-block mt-4 text-[var(--wl-red)] hover:text-[var(--wl-red-deep)] underline"
+        class="inline-block mt-4 text-[var(--wl-red)] hover:text-[var(--wl-red-deep)] underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--wl-red)] rounded"
       >
         Return to dashboard
       </router-link>
