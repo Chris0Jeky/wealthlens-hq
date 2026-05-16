@@ -10,11 +10,11 @@ from __future__ import annotations
 import logging
 import math
 import os
-from pathlib import Path
+from pathlib import Path as FilePath
 from typing import Any
 
 import pandas as pd
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Path, Query
 
 from app.routers.schemas import (
     AllDatasetsMetadataResponse,
@@ -28,7 +28,7 @@ logger = logging.getLogger("wealthlens.data")
 
 router = APIRouter()
 
-DATA_DIR = Path(__file__).resolve().parents[3] / "data" / "processed"
+DATA_DIR = FilePath(__file__).resolve().parents[3] / "data" / "processed"
 
 # Cache for metadata derived from CSV reads (row_count, columns).
 # Populated lazily by _build_metadata to avoid re-reading CSVs on every
@@ -222,7 +222,13 @@ def all_datasets_metadata() -> dict[str, list[dict[str, Any]]]:
     response_model=DatasetMetadataResponse,
     summary="Metadata for one dataset",
 )
-def dataset_metadata(dataset_name: str) -> dict[str, Any]:
+def dataset_metadata(
+    dataset_name: str = Path(
+        ...,
+        pattern=r"^[a-z0-9-]{1,50}$",
+        description="Dataset identifier (lowercase, digits, hyphens only)",
+    ),
+) -> dict[str, Any]:
     """Return metadata with source citation for a single dataset.
 
     Args:
@@ -262,7 +268,11 @@ def dataset_columns(dataset_name: str) -> dict[str, Any]:
     summary="Get paginated dataset rows",
 )
 def get_dataset(
-    dataset_name: str,
+    dataset_name: str = Path(
+        ...,
+        pattern=r"^[a-z0-9-]{1,50}$",
+        description="Dataset identifier (lowercase, digits, hyphens only)",
+    ),
     page: int = Query(default=1, ge=1, description="Page number (1-indexed)"),
     limit: int = Query(default=100, ge=1, le=1000, description="Rows per page (max 1000)"),
 ) -> dict[str, Any]:
