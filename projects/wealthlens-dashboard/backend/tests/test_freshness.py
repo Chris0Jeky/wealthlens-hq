@@ -10,10 +10,8 @@ import time
 from pathlib import Path
 from unittest.mock import patch
 
-import pytest
 from app.main import app
 from app.routers.data import (
-    DATA_DIR,
     DATASETS,
     FRESHNESS_FRESH_HOURS,
     FRESHNESS_STALE_HOURS,
@@ -71,7 +69,7 @@ class TestFreshnessEndpoint:
     def test_each_entry_has_required_fields(self) -> None:
         response = client.get("/api/data/freshness")
         datasets = response.json()["datasets"]
-        for name, entry in datasets.items():
+        for _name, entry in datasets.items():
             assert "last_updated" in entry
             assert "age_hours" in entry
             assert "status" in entry
