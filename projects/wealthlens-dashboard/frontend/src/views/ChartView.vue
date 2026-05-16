@@ -68,7 +68,7 @@ watch(chartName, (name) => {
     </template>
 
     <!-- Unsupported chart name -->
-    <div v-else class="py-10 text-center" role="status">
+    <div v-else class="py-10 text-center" role="alert">
       <h1 class="text-2xl font-bold mb-3">Chart not found</h1>
       <p class="text-[var(--wl-ink-muted)]">
         No chart is available for "<span class="font-mono">{{ chartName }}</span>".
