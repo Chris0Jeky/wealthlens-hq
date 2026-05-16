@@ -474,12 +474,16 @@ def test_security_headers_present():
 
 
 def test_metadata_cache_warmed_on_startup():
-    """After app startup, metadata cache should be pre-populated."""
-    from app.routers.data import DATASETS, _metadata_cache
+    """Lifespan must pre-populate the metadata cache."""
+    from app.routers import data as data_mod
 
-    # The TestClient triggers lifespan events, so cache should already be warm
-    for name in DATASETS:
-        assert name in _metadata_cache, f"Metadata cache missing {name} after startup"
-        row_count, columns = _metadata_cache[name]
-        assert row_count > 0
-        assert len(columns) > 0
+    data_mod._metadata_cache.clear()
+
+    with TestClient(app):
+        for name in data_mod.DATASETS:
+            assert name in data_mod._metadata_cache, (
+                f"Metadata cache missing {name} after startup"
+            )
+            row_count, columns = data_mod._metadata_cache[name]
+            assert row_count > 0
+            assert len(columns) > 0
