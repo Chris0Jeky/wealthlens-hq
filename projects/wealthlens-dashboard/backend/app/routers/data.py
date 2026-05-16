@@ -53,6 +53,7 @@ DATASETS: dict[str, str] = {
     "tax-composition": "tax_composition.csv",
     "boe-rates": "boe_rates.csv",
     "child-poverty": "child_poverty_by_region.csv",
+    "generational-wealth": "generational_wealth_gap.csv",
 }
 
 # Source citations — every dataset must document where the data came from.
@@ -132,6 +133,12 @@ DATASET_META: dict[str, dict[str, str]] = {
             "https://www.gov.uk/government/statistics/"
             "children-in-low-income-families-local-area-statistics-2014-to-2023"
         ),
+        "access_date": "2026-05-16",
+    },
+    "generational-wealth": {
+        "description": "Median household wealth by generation at equivalent ages",
+        "source": "Resolution Foundation / ONS Wealth and Assets Survey",
+        "source_url": "https://www.resolutionfoundation.org/publications/",
         "access_date": "2026-05-16",
     },
 }
