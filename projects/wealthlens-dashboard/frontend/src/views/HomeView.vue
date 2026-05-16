@@ -2,9 +2,12 @@
 import { onMounted } from 'vue'
 import { useDataStore } from '@/stores/data'
 import DatasetCard from '@/components/DatasetCard.vue'
+import DatasetSearch from '@/components/DatasetSearch.vue'
 import { CHART_METADATA } from '@/utils/chartConstants'
+import { useDatasetSearch } from '@/composables/useDatasetSearch'
 
 const store = useDataStore()
+const { isSearchActive } = useDatasetSearch(200)
 
 const descriptions: Record<string, string> = Object.fromEntries(
   Object.values(CHART_METADATA).map((c) => [c.name, c.description]),
@@ -24,6 +27,9 @@ onMounted(() => {
         Kingdom. Every chart cites its data source with URL and access date.
       </p>
     </section>
+
+    <!-- Dataset search/filter -->
+    <DatasetSearch />
 
     <section aria-labelledby="datasets-heading">
       <h2 id="datasets-heading" class="text-xl font-semibold mb-4">Available Datasets</h2>

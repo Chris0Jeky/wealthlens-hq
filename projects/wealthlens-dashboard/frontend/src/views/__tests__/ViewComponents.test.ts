@@ -22,6 +22,7 @@ vi.mock("@/stores/data", () => ({
 
 vi.mock("vue-router", () => ({
   useRoute: vi.fn(),
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
 }));
 
 vi.mock("@/composables/useAnalytics", () => ({
