@@ -129,6 +129,9 @@ function closeMobile() {
           GitHub &nearr;
           <span class="sr-only">(opens in new tab)</span>
         </a>
+        <div class="px-3 py-2">
+          <ThemeToggle />
+        </div>
       </nav>
     </div>
   </header>
