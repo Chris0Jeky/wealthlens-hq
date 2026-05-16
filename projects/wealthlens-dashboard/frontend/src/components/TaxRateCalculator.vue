@@ -619,7 +619,7 @@ function barWidth(rate: number): string {
   color: rgba(255, 255, 255, 0.75);
 }
 .tax__stat--highlight .tax__stat-value {
-  color: #fff;
+  color: var(--wl-bg);
 }
 
 .tax__stat-label {
@@ -767,7 +767,7 @@ function barWidth(rate: number): string {
   font-family: var(--wl-mono);
   font-size: 16px;
   font-weight: 700;
-  color: #fff;
+  color: var(--wl-bg);
   white-space: nowrap;
 }
 
@@ -907,6 +907,15 @@ function barWidth(rate: number): string {
 
   .tax__bar-track {
     width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tax__results {
+    animation: none;
+  }
+  .tax__bar-fill {
+    transition: none;
   }
 }
 </style>
