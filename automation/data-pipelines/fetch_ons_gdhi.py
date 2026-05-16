@@ -192,7 +192,7 @@ def _find_per_head_sheet(xl: pd.ExcelFile) -> str | None:
             df_peek = pd.read_excel(
                 xl, sheet_name=name, header=None, nrows=10, engine="openpyxl",
             )
-        except Exception:  # noqa: BLE001 — skip unreadable sheets
+        except Exception:  # skip unreadable sheets
             continue
 
         for i in range(len(df_peek)):
