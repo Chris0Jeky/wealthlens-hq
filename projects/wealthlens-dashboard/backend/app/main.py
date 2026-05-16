@@ -5,7 +5,6 @@ Serves processed UK wealth inequality datasets as JSON for the Vue 3 frontend.
 
 from __future__ import annotations
 
-import logging
 import os
 
 from fastapi import FastAPI
@@ -14,8 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.logging_config import setup_logging
 from app.routers import data
 
-setup_logging()
-logger = logging.getLogger("wealthlens.app")
+setup_logging(os.environ.get("LOG_LEVEL", "INFO"))
 
 # ---------------------------------------------------------------------------
 # CORS configuration
