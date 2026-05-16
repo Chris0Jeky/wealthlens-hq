@@ -32,8 +32,13 @@ For full prerequisites, environment setup, backend/frontend commands, and pipeli
 ```bash
 git clone https://github.com/Chris0Jeky/wealthlens-hq.git
 cd wealthlens-hq
+python -m venv .venv
+# Windows:
+.venv\Scripts\activate
+# macOS/Linux:
+source .venv/bin/activate
 pip install -e ".[dev,pipelines]"
-python -m pytest tests/ -v
+make ci-quick
 ```
 
 ## Good first contributions
@@ -47,9 +52,8 @@ python -m pytest tests/ -v
 
 1. Fork the repo and create a feature branch.
 2. Make small, focused commits with descriptive messages.
-3. Ensure tests pass: `python -m pytest tests/ -v`
-4. Ensure linting is clean: `python -m ruff check automation/ tests/`
-5. Open a PR with a clear description of what changed and why.
+3. Ensure tests and linting pass: `make ci-quick`
+4. Open a PR with a clear description of what changed and why.
 
 ## Code of conduct
 
