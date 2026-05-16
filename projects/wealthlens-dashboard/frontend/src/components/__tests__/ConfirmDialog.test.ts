@@ -122,4 +122,9 @@ describe('ConfirmDialog', () => {
     expect(event.defaultPrevented).toBe(true)
     expect(wrapper.emitted('cancel')).toHaveLength(1)
   })
+
+  it('calls showModal when mounted with open: true', () => {
+    mountDialog({ open: true })
+    expect(HTMLDialogElement.prototype.showModal).toHaveBeenCalled()
+  })
 })

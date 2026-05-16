@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, nextTick, useId } from 'vue'
+import { ref, watch, nextTick, useId, onMounted } from 'vue'
 
 const props = withDefaults(
   defineProps<{
@@ -24,22 +24,31 @@ const dialogRef = ref<HTMLDialogElement | null>(null)
 const cancelBtnRef = ref<HTMLButtonElement | null>(null)
 const previousFocus = ref<HTMLElement | null>(null)
 
+async function openDialog() {
+  if (!dialogRef.value) return
+  previousFocus.value = document.activeElement as HTMLElement
+  dialogRef.value.showModal()
+  await nextTick()
+  cancelBtnRef.value?.focus()
+}
+
+async function closeDialog() {
+  if (!dialogRef.value) return
+  dialogRef.value.close()
+  await nextTick()
+  previousFocus.value?.focus()
+}
+
+onMounted(() => {
+  if (props.open) openDialog()
+})
+
 watch(
   () => props.open,
-  async (isOpen) => {
-    if (!dialogRef.value) return
-    if (isOpen) {
-      previousFocus.value = document.activeElement as HTMLElement
-      dialogRef.value.showModal()
-      await nextTick()
-      cancelBtnRef.value?.focus()
-    } else {
-      dialogRef.value.close()
-      await nextTick()
-      previousFocus.value?.focus()
-    }
+  (isOpen) => {
+    if (isOpen) openDialog()
+    else closeDialog()
   },
-  { immediate: true },
 )
 
 function handleCancel() {
