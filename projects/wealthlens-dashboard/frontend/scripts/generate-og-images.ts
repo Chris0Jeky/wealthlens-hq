@@ -26,6 +26,8 @@ import { VALID_CHART_NAMES } from "../src/constants/charts";
 
 // --- Configuration ---
 
+type SatoriNode = Parameters<typeof satori>[0];
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
@@ -131,7 +133,7 @@ async function downloadFont(url: string, dest: string): Promise<void> {
  * Build the satori-compatible JSX structure for a chart OG image.
  * Satori uses a subset of CSS Flexbox for layout.
  */
-function buildChartLayout(metadata: OgMetadataEntry) {
+function buildChartLayout(metadata: OgMetadataEntry): SatoriNode {
   return {
     type: "div",
     props: {
@@ -259,13 +261,13 @@ function buildChartLayout(metadata: OgMetadataEntry) {
         },
       ],
     },
-  };
+  } as SatoriNode;
 }
 
 /**
  * Build layout for the default OG image (non-chart pages).
  */
-function buildDefaultLayout() {
+function buildDefaultLayout(): SatoriNode {
   return {
     type: "div",
     props: {
@@ -369,17 +371,17 @@ function buildDefaultLayout() {
         },
       ],
     },
-  };
+  } as SatoriNode;
 }
 
 /**
  * Render a satori layout to a PNG buffer.
  */
 async function renderToPng(
-  layout: ReturnType<typeof buildChartLayout>,
+  layout: SatoriNode,
   fonts: Awaited<ReturnType<typeof loadFonts>>
 ): Promise<Buffer> {
-  const svg = await satori(layout as unknown as React.ReactNode, {
+  const svg = await satori(layout, {
     width: WIDTH,
     height: HEIGHT,
     fonts: fonts.map((f) => ({
