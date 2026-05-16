@@ -1,11 +1,33 @@
-import { describe, it, expect, vi } from 'vitest'
-import { mount } from '@vue/test-utils'
-import { createTestingPinia } from '@pinia/testing'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { mount, flushPromises } from '@vue/test-utils'
+import { createPinia, setActivePinia, defineStore } from 'pinia'
 import { createRouter, createMemoryHistory } from 'vue-router'
+import { ref } from 'vue'
 import HomeView from '../HomeView.vue'
-import { useDataStore } from '@/stores/data'
 
-function createMountOptions(storeOverrides = {}) {
+const mockFetchDatasets = vi.fn()
+const mockFetchFreshness = vi.fn()
+
+vi.mock('@/stores/data', () => ({
+  useDataStore: () => ({
+    datasets: mockDatasets.value,
+    loading: mockLoading.value,
+    error: mockError.value,
+    freshness: mockFreshness.value,
+    fetchDatasets: mockFetchDatasets,
+    fetchFreshness: mockFetchFreshness,
+  }),
+}))
+
+const mockDatasets = ref<string[]>([])
+const mockLoading = ref(false)
+const mockError = ref<string | null>(null)
+const mockFreshness = ref<Record<string, unknown>>({})
+
+function createMountOptions() {
+  const pinia = createPinia()
+  setActivePinia(pinia)
+
   const router = createRouter({
     history: createMemoryHistory(),
     routes: [
@@ -16,50 +38,64 @@ function createMountOptions(storeOverrides = {}) {
 
   return {
     global: {
-      plugins: [
-        router,
-        createTestingPinia({
-          createSpy: vi.fn,
-          initialState: { data: { datasets: [], loading: false, error: null, ...storeOverrides } },
-        }),
-      ],
+      plugins: [router, pinia],
     },
   }
 }
 
 describe('HomeView', () => {
-  it('renders main heading', () => {
+  beforeEach(() => {
+    mockDatasets.value = []
+    mockLoading.value = false
+    mockError.value = null
+    mockFreshness.value = {}
+    mockFetchDatasets.mockClear()
+    mockFetchFreshness.mockClear()
+  })
+
+  it('renders main heading', async () => {
     const wrapper = mount(HomeView, createMountOptions())
+    await flushPromises()
     expect(wrapper.find('h1').text()).toBe('UK Wealth Inequality Dashboard')
   })
 
-  it('renders description paragraph', () => {
+  it('renders description paragraph', async () => {
     const wrapper = mount(HomeView, createMountOptions())
+    await flushPromises()
     expect(wrapper.text()).toContain('Open-source, source-backed data')
   })
 
-  it('shows loading state', () => {
-    const wrapper = mount(HomeView, createMountOptions({ loading: true }))
+  it('shows loading state', async () => {
+    mockLoading.value = true
+    const wrapper = mount(HomeView, createMountOptions())
+    await flushPromises()
     expect(wrapper.text()).toContain('Loading datasets')
   })
 
-  it('shows error state', () => {
-    const wrapper = mount(HomeView, createMountOptions({ error: 'Network error' }))
+  it('shows error state', async () => {
+    mockError.value = 'Network error'
+    const wrapper = mount(HomeView, createMountOptions())
+    await flushPromises()
     expect(wrapper.text()).toContain('Network error')
   })
 
-  it('renders dataset cards when loaded', () => {
-    const wrapper = mount(
-      HomeView,
-      createMountOptions({ datasets: ['wealth-shares', 'housing-affordability'] }),
-    )
+  it('renders dataset cards when loaded', async () => {
+    mockDatasets.value = ['wealth-shares', 'housing-affordability']
+    const wrapper = mount(HomeView, createMountOptions())
+    await flushPromises()
     const items = wrapper.findAll('[role="listitem"]')
     expect(items.length).toBe(2)
   })
 
-  it('calls fetchDatasets on mount', () => {
+  it('calls fetchDatasets on mount', async () => {
     mount(HomeView, createMountOptions())
-    const store = useDataStore()
-    expect(store.fetchDatasets).toHaveBeenCalledOnce()
+    await flushPromises()
+    expect(mockFetchDatasets).toHaveBeenCalledOnce()
+  })
+
+  it('calls fetchFreshness on mount', async () => {
+    mount(HomeView, createMountOptions())
+    await flushPromises()
+    expect(mockFetchFreshness).toHaveBeenCalledOnce()
   })
 })
