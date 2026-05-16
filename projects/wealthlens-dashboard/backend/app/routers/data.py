@@ -7,6 +7,7 @@ that reports CSV availability.
 
 from __future__ import annotations
 
+import logging
 import math
 import os
 from pathlib import Path
@@ -21,6 +22,8 @@ from app.routers.schemas import (
     DatasetMetadataResponse,
     PaginatedDatasetResponse,
 )
+
+logger = logging.getLogger("wealthlens.data")
 
 router = APIRouter()
 
@@ -98,6 +101,7 @@ def _read_csv(dataset_name: str) -> pd.DataFrame:
     """
     csv_path = DATA_DIR / DATASETS[dataset_name]
     if not csv_path.exists():
+        logger.warning("Dataset file not found: %s", dataset_name)
         raise HTTPException(
             status_code=503,
             detail=f"Dataset file not found: {dataset_name} — run the pipeline first",
@@ -110,6 +114,7 @@ def _read_csv(dataset_name: str) -> pd.DataFrame:
         OSError,
         UnicodeDecodeError,
     ) as e:
+        logger.error("Failed to read dataset '%s': %s", dataset_name, e)
         raise HTTPException(
             status_code=503,
             detail=f"Failed to read dataset '{dataset_name}': {e}",
@@ -126,7 +131,9 @@ def _build_metadata(dataset_name: str) -> dict[str, Any]:
 
     if dataset_name not in _metadata_cache:
         df = _read_csv(dataset_name)
-        _metadata_cache[dataset_name] = (len(df), list(df.columns))
+        row_count = len(df)
+        _metadata_cache[dataset_name] = (row_count, list(df.columns))
+        logger.info("Cached metadata for %s (%d rows)", dataset_name, row_count)
 
     row_count, columns = _metadata_cache[dataset_name]
 
@@ -172,6 +179,10 @@ def health_data() -> dict[str, Any]:
         status = "degraded"
     else:
         status = "unavailable"
+
+    logger.info(
+        "Health check: %s (%d/%d datasets available)", status, available_count, total
+    )
 
     return {
         "status": status,
