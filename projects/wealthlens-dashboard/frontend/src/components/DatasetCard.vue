@@ -26,7 +26,7 @@ const downloadUrl = `/api/data/${props.name}/download`
     <div class="flex items-center gap-4">
       <router-link
         :to="`/datasets/${name}`"
-        class="inline-flex items-center text-sm font-medium text-[var(--wl-ink-muted)] hover:text-[var(--wl-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--wl-red)] focus:ring-offset-2 rounded"
+        class="inline-flex items-center text-sm font-medium text-[var(--wl-ink-muted)] hover:text-[var(--wl-ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--wl-red)] rounded"
       >
         Details
       </router-link>
@@ -34,7 +34,7 @@ const downloadUrl = `/api/data/${props.name}/download`
         v-if="chartAvailable"
         :to="`/charts/${name}`"
         :aria-label="`View ${name} chart`"
-        class="inline-flex items-center text-sm font-medium text-[var(--wl-red)] hover:text-[var(--wl-red-deep)] focus:outline-none focus:ring-2 focus:ring-[var(--wl-red)] focus:ring-offset-2 rounded"
+        class="inline-flex items-center text-sm font-medium text-[var(--wl-red)] hover:text-[var(--wl-red-deep)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--wl-red)] rounded"
       >
         View Chart &rarr;
       </router-link>
@@ -42,7 +42,7 @@ const downloadUrl = `/api/data/${props.name}/download`
       <a
         :href="downloadUrl"
         download
-        class="inline-flex items-center text-sm text-[var(--wl-ink-muted)] hover:text-[var(--wl-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--wl-red)] focus:ring-offset-2 rounded"
+        class="inline-flex items-center text-sm text-[var(--wl-ink-muted)] hover:text-[var(--wl-ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--wl-red)] rounded"
         :aria-label="`Download ${name} as CSV`"
       >
         &#x2913; CSV

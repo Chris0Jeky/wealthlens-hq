@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
-import { RouterView } from 'vue-router'
+import { onMounted, watch } from 'vue'
+import { RouterView, useRouter } from 'vue-router'
 import ErrorBoundary from '@/components/ErrorBoundary.vue'
 import AppHeader from '@/components/AppHeader.vue'
 import AppFooter from '@/components/AppFooter.vue'
@@ -11,6 +11,21 @@ const { init: initAnalytics } = useAnalytics()
 onMounted(() => {
   initAnalytics()
 })
+
+/**
+ * Move focus to #main-content on route change so keyboard and screen-reader
+ * users start from the top of the new page (WCAG 2.4.3 Focus Order).
+ */
+const router = useRouter()
+watch(
+  () => router.currentRoute.value.fullPath,
+  () => {
+    const main = document.getElementById('main-content')
+    if (main) {
+      main.focus({ preventScroll: false })
+    }
+  },
+)
 </script>
 
 <template>

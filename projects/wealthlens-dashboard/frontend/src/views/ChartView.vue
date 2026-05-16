@@ -49,7 +49,7 @@ watch(chartName, (name) => {
     <!-- Back link -->
     <router-link
       to="/"
-      class="inline-flex items-center text-sm text-[var(--wl-red)] hover:text-[var(--wl-red-deep)] mb-6"
+      class="inline-flex items-center text-sm text-[var(--wl-red)] hover:text-[var(--wl-red-deep)] mb-6 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--wl-red)] rounded"
     >
       &larr; Back to datasets
     </router-link>
@@ -75,7 +75,7 @@ watch(chartName, (name) => {
       </p>
       <router-link
         to="/"
-        class="inline-block mt-4 text-[var(--wl-red)] hover:text-[var(--wl-red-deep)] underline"
+        class="inline-block mt-4 text-[var(--wl-red)] hover:text-[var(--wl-red-deep)] underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--wl-red)] rounded"
       >
         Return to dashboard
       </router-link>

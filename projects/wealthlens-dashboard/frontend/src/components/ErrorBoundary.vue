@@ -43,7 +43,7 @@ onErrorCaptured((err: Error) => {
     </p>
     <button
       v-if="retryCount < MAX_RETRIES"
-      class="px-4 py-2 bg-[var(--wl-red)] text-white rounded hover:bg-[var(--wl-red-deep)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--wl-red)] focus:ring-offset-2"
+      class="px-4 py-2 bg-[var(--wl-red)] text-white rounded hover:bg-[var(--wl-red-deep)] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--wl-red)]"
       @click="reset"
     >
       Try again
@@ -51,7 +51,7 @@ onErrorCaptured((err: Error) => {
     <router-link
       v-else
       to="/"
-      class="inline-flex items-center px-4 py-2 bg-[var(--wl-red)] text-white rounded hover:bg-[var(--wl-red-deep)] transition-colors"
+      class="inline-flex items-center px-4 py-2 bg-[var(--wl-red)] text-white rounded hover:bg-[var(--wl-red-deep)] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--wl-red)]"
     >
       &larr; Back to dashboard
     </router-link>
