@@ -468,3 +468,22 @@ def test_security_headers_present():
     assert response.headers["Referrer-Policy"] == "strict-origin-when-cross-origin"
     assert response.headers["Permissions-Policy"] == "camera=(), microphone=(), geolocation=()"
     assert response.headers["X-XSS-Protection"] == "0"
+
+
+# --- Lifespan tests ---
+
+
+def test_metadata_cache_warmed_on_startup():
+    """Lifespan must pre-populate the metadata cache."""
+    from app.routers import data as data_mod
+
+    data_mod._metadata_cache.clear()
+
+    with TestClient(app):
+        for name in data_mod.DATASETS:
+            assert name in data_mod._metadata_cache, (
+                f"Metadata cache missing {name} after startup"
+            )
+            row_count, columns = data_mod._metadata_cache[name]
+            assert row_count > 0
+            assert len(columns) > 0
