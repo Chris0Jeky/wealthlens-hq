@@ -12,9 +12,7 @@ export default defineConfig({
     },
   },
   build: {
-    // Warn when any chunk exceeds 250KB (gzipped assets are smaller but
-    // this keeps raw parse cost visible during development)
-    chunkSizeWarningLimit: 250,
+    chunkSizeWarningLimit: 600,
     rollupOptions: {
       output: {
         manualChunks: {

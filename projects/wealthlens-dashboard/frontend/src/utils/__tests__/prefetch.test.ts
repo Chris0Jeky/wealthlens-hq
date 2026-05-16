@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { prefetchRouteComponent, prefetchRouteComponents } from "@/utils/prefetch";
 
 describe("prefetchRouteComponent", () => {
   beforeEach(() => {
     vi.useFakeTimers();
+    vi.resetModules();
   });
 
   afterEach(() => {
@@ -11,28 +11,36 @@ describe("prefetchRouteComponent", () => {
     vi.restoreAllMocks();
   });
 
-  it("calls the import function via requestIdleCallback", () => {
+  it("calls the import function after timeout (setTimeout fallback)", async () => {
+    const { prefetchRouteComponent } = await import("@/utils/prefetch");
     const importFn = vi.fn().mockResolvedValue({});
 
-    // jsdom does not have requestIdleCallback, so it will fall through to setTimeout
     prefetchRouteComponent(importFn);
 
     expect(importFn).not.toHaveBeenCalled();
-
-    // Advance past the default timeout
     vi.advanceTimersByTime(4000);
-
     expect(importFn).toHaveBeenCalledTimes(1);
   });
 
-  it("uses requestIdleCallback when available", () => {
+  it("deduplicates — same function is only prefetched once", async () => {
+    const { prefetchRouteComponent } = await import("@/utils/prefetch");
+    const importFn = vi.fn().mockResolvedValue({});
+
+    prefetchRouteComponent(importFn);
+    prefetchRouteComponent(importFn);
+
+    vi.advanceTimersByTime(4000);
+    expect(importFn).toHaveBeenCalledTimes(1);
+  });
+
+  it("uses requestIdleCallback when available", async () => {
+    const { prefetchRouteComponent } = await import("@/utils/prefetch");
     const importFn = vi.fn().mockResolvedValue({});
     const mockRIC = vi.fn((cb: () => void) => {
       cb();
       return 1;
     });
 
-    // Temporarily add requestIdleCallback
     Object.defineProperty(window, "requestIdleCallback", {
       value: mockRIC,
       writable: true,
@@ -44,22 +52,22 @@ describe("prefetchRouteComponent", () => {
     expect(mockRIC).toHaveBeenCalled();
     expect(importFn).toHaveBeenCalledTimes(1);
 
-    // Clean up
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     delete (window as any).requestIdleCallback;
   });
 
-  it("does not throw if the import function rejects", () => {
+  it("does not throw if the import function rejects", async () => {
+    const { prefetchRouteComponent } = await import("@/utils/prefetch");
     const importFn = vi.fn().mockRejectedValue(new Error("Network error"));
 
     prefetchRouteComponent(importFn);
     vi.advanceTimersByTime(4000);
 
-    // Should not throw — errors are silently caught
     expect(importFn).toHaveBeenCalledTimes(1);
   });
 
-  it("respects custom timeout", () => {
+  it("respects custom timeout", async () => {
+    const { prefetchRouteComponent } = await import("@/utils/prefetch");
     const importFn = vi.fn().mockResolvedValue({});
 
     prefetchRouteComponent(importFn, 1000);
@@ -75,13 +83,15 @@ describe("prefetchRouteComponent", () => {
 describe("prefetchRouteComponents", () => {
   beforeEach(() => {
     vi.useFakeTimers();
+    vi.resetModules();
   });
 
   afterEach(() => {
     vi.useRealTimers();
   });
 
-  it("prefetches multiple components", () => {
+  it("staggers prefetch timeouts for each component", async () => {
+    const { prefetchRouteComponents } = await import("@/utils/prefetch");
     const fn1 = vi.fn().mockResolvedValue({});
     const fn2 = vi.fn().mockResolvedValue({});
     const fn3 = vi.fn().mockResolvedValue({});
@@ -89,9 +99,15 @@ describe("prefetchRouteComponents", () => {
     prefetchRouteComponents([fn1, fn2, fn3]);
 
     vi.advanceTimersByTime(4000);
-
     expect(fn1).toHaveBeenCalledTimes(1);
+    expect(fn2).not.toHaveBeenCalled();
+    expect(fn3).not.toHaveBeenCalled();
+
+    vi.advanceTimersByTime(500);
     expect(fn2).toHaveBeenCalledTimes(1);
+    expect(fn3).not.toHaveBeenCalled();
+
+    vi.advanceTimersByTime(500);
     expect(fn3).toHaveBeenCalledTimes(1);
   });
 });
