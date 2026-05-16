@@ -1,6 +1,10 @@
 # WealthLens HQ — Active Status Board
 
 > Single source of truth for current focus areas. Read this first after `AGENTS.md`.
+>
+> **ACTIVE ORCHESTRATION SESSION**: An end-to-end autonomous workflow is in progress.
+> Read [`.codex/memories/session_notes/ORCHESTRATION.md`](.codex/memories/session_notes/ORCHESTRATION.md) for branch status, PR tracking, review rounds, and recovery instructions.
+> That file is the master control document — update it as work progresses.
 
 Last updated: 2026-05-15
 

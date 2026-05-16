@@ -8,6 +8,7 @@ API endpoint discovered from the public WID Stata tool:
 from __future__ import annotations
 
 import json
+import os
 import sys
 from datetime import date
 from pathlib import Path
@@ -25,7 +26,9 @@ CHART_DIR = ROOT / "projects" / "wealthlens-dashboard" / "charts"
 
 WID_API_BASE = "https://rfap9nitz6.execute-api.eu-west-1.amazonaws.com/prod"
 # Published public key from https://github.com/world-inequality-database/wid-stata-tool
-WID_API_KEY = "rYFByOB0ioaPATwHtllMI71zLOZSK0Ic5veQonJP"
+# Prefer env var override; fall back to the public default so it works without config.
+WID_API_KEY = os.environ.get("WID_API_KEY", "").strip() or "rYFByOB0ioaPATwHtllMI71zLOZSK0Ic5veQonJP"
+print(f"WID API: using {'environment' if os.environ.get('WID_API_KEY', '').strip() else 'default public'} key")
 HEADERS = {"x-api-key": WID_API_KEY}
 
 AREA = "GB"
