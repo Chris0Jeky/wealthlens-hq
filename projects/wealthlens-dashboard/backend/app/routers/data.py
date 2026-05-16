@@ -14,7 +14,9 @@ from typing import Any
 
 import pandas as pd
 from fastapi import APIRouter, HTTPException, Query
+from starlette.responses import Response
 
+from app.cache_headers import add_cache_headers
 from app.routers.schemas import (
     AllDatasetsMetadataResponse,
     DatasetListResponse,
@@ -172,28 +174,32 @@ def health_data() -> dict[str, Any]:
 
 
 @router.get("/", response_model=DatasetListResponse)
-def list_datasets() -> dict[str, list[str]]:
+def list_datasets(response: Response) -> dict[str, list[str]]:
     """Return available dataset names."""
+    add_cache_headers(response, max_age=3600)
     return {"datasets": list(DATASETS.keys())}
 
 
 @router.get("/metadata", response_model=AllDatasetsMetadataResponse)
-def all_datasets_metadata() -> dict[str, list[dict[str, Any]]]:
+def all_datasets_metadata(response: Response) -> dict[str, list[dict[str, Any]]]:
     """Return metadata with source citations for every dataset."""
+    add_cache_headers(response, max_age=86400)
     return {"datasets": [_build_metadata(name) for name in DATASETS]}
 
 
 @router.get("/{dataset_name}/metadata", response_model=DatasetMetadataResponse)
-def dataset_metadata(dataset_name: str) -> dict[str, Any]:
+def dataset_metadata(dataset_name: str, response: Response) -> dict[str, Any]:
     """Return metadata with source citation for a single dataset."""
     if dataset_name not in DATASETS:
         raise HTTPException(status_code=404, detail=f"Unknown dataset: {dataset_name}")
+    add_cache_headers(response, max_age=86400)
     return _build_metadata(dataset_name)
 
 
 @router.get("/{dataset_name}", response_model=PaginatedDatasetResponse)
 def get_dataset(
     dataset_name: str,
+    response: Response,
     page: int = Query(default=1, ge=1, description="Page number (1-indexed)"),
     limit: int = Query(default=100, ge=1, le=1000, description="Rows per page (max 1000)"),
 ) -> dict[str, Any]:
@@ -201,6 +207,7 @@ def get_dataset(
     if dataset_name not in DATASETS:
         raise HTTPException(status_code=404, detail=f"Unknown dataset: {dataset_name}")
 
+    add_cache_headers(response, max_age=3600)
     df = _read_csv(dataset_name)
 
     # Replace NaN with None so JSON serialization produces explicit nulls

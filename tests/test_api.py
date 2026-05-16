@@ -273,3 +273,37 @@ def test_missing_csv_error_includes_dataset_name():
     assert response.status_code == 503
     detail = response.json()["detail"]
     assert "wealth-shares" in detail, f"Dataset name missing from error: {detail}"
+
+
+# --- Cache header tests ---
+
+
+def test_dataset_list_has_cache_headers():
+    """GET /api/data/ should include Cache-Control header."""
+    response = client.get("/api/data/")
+    assert response.status_code == 200
+    assert "cache-control" in response.headers
+    assert "public" in response.headers["cache-control"]
+
+
+def test_metadata_has_long_cache():
+    """GET /api/data/metadata should cache for 24 hours."""
+    response = client.get("/api/data/metadata")
+    assert response.status_code == 200
+    cc = response.headers.get("cache-control", "")
+    assert "max-age=86400" in cc
+
+
+def test_dataset_has_cache_headers():
+    """GET /api/data/{name} should include Cache-Control header."""
+    response = client.get("/api/data/wealth-shares")
+    assert response.status_code == 200
+    assert "cache-control" in response.headers
+    assert "public" in response.headers["cache-control"]
+
+
+def test_health_has_no_cache():
+    """GET /health should NOT include Cache-Control header."""
+    response = client.get("/health")
+    assert response.status_code == 200
+    assert "cache-control" not in response.headers
