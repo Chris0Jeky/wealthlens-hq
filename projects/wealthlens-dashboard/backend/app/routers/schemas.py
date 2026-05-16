@@ -27,6 +27,10 @@ class DatasetMetadataResponse(BaseModel):
     access_date: str
     row_count: int = Field(ge=0)
     columns: list[str]
+    last_updated: str | None = Field(
+        default=None,
+        description="ISO 8601 datetime of last CSV file modification, or null if missing",
+    )
 
 
 class AllDatasetsMetadataResponse(BaseModel):
@@ -80,3 +84,31 @@ class DatasetColumnsResponse(BaseModel):
     dataset: str
     row_count: int = Field(ge=0)
     columns: list[ColumnInfo]
+
+
+class DatasetFreshnessEntry(BaseModel):
+    """Freshness info for a single dataset."""
+
+    last_updated: str | None = Field(
+        description="ISO 8601 datetime of last file modification, or null if missing"
+    )
+    age_hours: float | None = Field(
+        ge=0, description="Hours since last update, or null if file missing"
+    )
+    status: str = Field(
+        description="One of: fresh (<=7d), stale (<=30d), expired (>30d), unknown (missing)"
+    )
+
+
+class FreshnessThresholds(BaseModel):
+    """Thresholds used to classify dataset freshness."""
+
+    fresh_hours: int = Field(description="Max hours to be considered fresh")
+    stale_hours: int = Field(description="Max hours to be considered stale (beyond = expired)")
+
+
+class FreshnessResponse(BaseModel):
+    """Response for GET /api/data/freshness — freshness status for all datasets."""
+
+    datasets: dict[str, DatasetFreshnessEntry]
+    thresholds: FreshnessThresholds

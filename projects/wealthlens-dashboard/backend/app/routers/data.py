@@ -10,6 +10,7 @@ from __future__ import annotations
 import logging
 import math
 import os
+from datetime import UTC, datetime
 from pathlib import Path as FilePath
 from typing import Any
 
@@ -23,6 +24,7 @@ from app.routers.schemas import (
     DatasetListResponse,
     DatasetMetadataResponse,
     DatasetSummaryResponse,
+    FreshnessResponse,
     PaginatedDatasetResponse,
 )
 
@@ -191,6 +193,8 @@ def _build_metadata(dataset_name: str) -> dict[str, Any]:
 
     row_count, columns = _metadata_cache[dataset_name]
 
+    last_updated = _get_last_updated(dataset_name)
+
     return {
         "name": dataset_name,
         "description": meta["description"],
@@ -199,7 +203,36 @@ def _build_metadata(dataset_name: str) -> dict[str, Any]:
         "access_date": meta["access_date"],
         "row_count": row_count,
         "columns": columns,
+        "last_updated": last_updated,
     }
+
+
+# --- Freshness tracking ---
+# Thresholds for classifying dataset freshness.
+FRESHNESS_FRESH_HOURS = 168  # 7 days
+FRESHNESS_STALE_HOURS = 720  # 30 days
+
+
+def _get_last_updated(dataset_name: str) -> str | None:
+    """Return the ISO 8601 UTC modification time of a dataset's CSV file.
+
+    Returns None if the file does not exist or cannot be stat'd.
+    """
+    csv_path = DATA_DIR / DATASETS[dataset_name]
+    try:
+        mtime = csv_path.stat().st_mtime
+        return datetime.fromtimestamp(mtime, tz=UTC).isoformat()
+    except OSError:
+        return None
+
+
+def _freshness_status(age_hours: float) -> str:
+    """Classify a dataset's age into fresh/stale/expired."""
+    if age_hours <= FRESHNESS_FRESH_HOURS:
+        return "fresh"
+    if age_hours <= FRESHNESS_STALE_HOURS:
+        return "stale"
+    return "expired"
 
 
 def health_data() -> dict[str, Any]:
@@ -255,6 +288,50 @@ def list_datasets(response: Response) -> dict[str, list[str]]:
     """
     response.headers["Cache-Control"] = _CACHE_METADATA
     return {"datasets": list(DATASETS.keys())}
+
+
+@router.get(
+    "/freshness",
+    response_model=FreshnessResponse,
+    summary="Dataset freshness status",
+)
+def dataset_freshness(response: Response) -> dict[str, Any]:
+    """Return freshness status for all datasets.
+
+    Reads the modification time of each CSV file to determine how
+    recently the data was updated.  Classifies each dataset as
+    fresh (within 7 days), stale (within 30 days), or expired (older).
+    Returns null for last_updated and age_hours if the file is missing.
+    """
+    response.headers["Cache-Control"] = _CACHE_METADATA
+    now = datetime.now(tz=UTC)
+    datasets_freshness: dict[str, dict[str, Any]] = {}
+
+    for name in DATASETS:
+        csv_path = DATA_DIR / DATASETS[name]
+        try:
+            mtime = csv_path.stat().st_mtime
+            last_updated_dt = datetime.fromtimestamp(mtime, tz=UTC)
+            age_hours = (now - last_updated_dt).total_seconds() / 3600
+            datasets_freshness[name] = {
+                "last_updated": last_updated_dt.isoformat(),
+                "age_hours": round(age_hours, 1),
+                "status": _freshness_status(age_hours),
+            }
+        except OSError:
+            datasets_freshness[name] = {
+                "last_updated": None,
+                "age_hours": None,
+                "status": "unknown",
+            }
+
+    return {
+        "datasets": datasets_freshness,
+        "thresholds": {
+            "fresh_hours": FRESHNESS_FRESH_HOURS,
+            "stale_hours": FRESHNESS_STALE_HOURS,
+        },
+    }
 
 
 @router.get(
