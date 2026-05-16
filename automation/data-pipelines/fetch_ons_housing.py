@@ -12,8 +12,8 @@ from pathlib import Path
 
 import pandas as pd
 import plotly.graph_objects as go
-import requests
 from chart_html import write_accessible_chart
+from http_retry import fetch_with_retry
 
 ROOT = Path(__file__).resolve().parents[2]
 DATA_DIR = ROOT / "projects" / "wealthlens-dashboard" / "data"
@@ -38,7 +38,7 @@ def fetch() -> Path:
     out_path = RAW_DIR / "ons_housing_affordability.xlsx"
 
     logger.info("Downloading ONS housing affordability data...")
-    resp = requests.get(XLSX_URL, timeout=REQUEST_TIMEOUT_SECONDS)
+    resp = fetch_with_retry(XLSX_URL, timeout=REQUEST_TIMEOUT_SECONDS)
     resp.raise_for_status()
 
     out_path.write_bytes(resp.content)

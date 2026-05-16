@@ -13,8 +13,8 @@ from pathlib import Path
 
 import pandas as pd
 import plotly.graph_objects as go
-import requests
 from chart_html import write_accessible_chart
+from http_retry import fetch_with_retry
 
 ROOT = Path(__file__).resolve().parents[2]
 DATA_DIR = ROOT / "projects" / "wealthlens-dashboard" / "data"
@@ -48,7 +48,7 @@ def fetch() -> dict[str, Path]:
     for name, url in [("table2", TABLE2_URL), ("table1", TABLE1_URL)]:
         out_path = RAW_DIR / f"hmrc_cgt_{name}.ods"
         logger.info("Downloading HMRC CGT %s...", name)
-        resp = requests.get(url, timeout=REQUEST_TIMEOUT_SECONDS)
+        resp = fetch_with_retry(url, timeout=REQUEST_TIMEOUT_SECONDS)
         resp.raise_for_status()
         out_path.write_bytes(resp.content)
         logger.info("Saved to %s (%d KB)", out_path, len(resp.content) // 1024)

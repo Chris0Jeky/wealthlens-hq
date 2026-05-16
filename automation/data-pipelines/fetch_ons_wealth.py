@@ -23,6 +23,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import requests
 from chart_html import write_accessible_chart
+from http_retry import fetch_with_retry
 
 logger = logging.getLogger(__name__)
 REQUEST_TIMEOUT_SECONDS = 60
@@ -81,7 +82,7 @@ def fetch() -> Path | None:
     for label, url in urls:
         logger.info("Downloading ONS Total Wealth data (%s URL)...", label)
         try:
-            resp = requests.get(url, timeout=REQUEST_TIMEOUT_SECONDS)
+            resp = fetch_with_retry(url, timeout=REQUEST_TIMEOUT_SECONDS)
             resp.raise_for_status()
         except requests.RequestException as exc:
             logger.warning("%s download failed: %s", label.capitalize(), exc)
