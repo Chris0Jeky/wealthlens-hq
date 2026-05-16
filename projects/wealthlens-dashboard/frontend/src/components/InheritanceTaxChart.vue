@@ -91,7 +91,10 @@ onMounted(async () => {
     const res = await fetchWithRetry(`${baseUrl}data/inheritance-tax.json`, undefined, 0);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const parsed = await res.json();
-    if (!parsed?.summary?.liability_rate_pct || !Array.isArray(parsed.by_year)) {
+    if (
+      typeof parsed?.summary?.liability_rate_pct !== "number" ||
+      !Array.isArray(parsed.by_year)
+    ) {
       throw new Error("Unexpected data format");
     }
     data.value = parsed;
