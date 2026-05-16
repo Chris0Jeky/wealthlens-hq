@@ -17,6 +17,8 @@ If this involves new data, provide:
 - Format (CSV, API, Excel):
 - Update frequency:
 - Licence:
+- Publisher:
+- Geographic coverage:
 
 **Alternatives considered**
 Any alternative approaches you've thought about.
