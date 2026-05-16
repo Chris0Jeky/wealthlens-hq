@@ -3,6 +3,11 @@
 **Open-source tools making UK wealth inequality data visible, interactive, and impossible to ignore.**
 
 [![Deploy Charts](https://github.com/Chris0Jeky/wealthlens-hq/actions/workflows/deploy.yml/badge.svg)](https://github.com/Chris0Jeky/wealthlens-hq/actions/workflows/deploy.yml)
+[![CI Backend](https://github.com/Chris0Jeky/wealthlens-hq/actions/workflows/ci-backend.yml/badge.svg)](https://github.com/Chris0Jeky/wealthlens-hq/actions/workflows/ci-backend.yml)
+[![CI Frontend](https://github.com/Chris0Jeky/wealthlens-hq/actions/workflows/ci-frontend.yml/badge.svg)](https://github.com/Chris0Jeky/wealthlens-hq/actions/workflows/ci-frontend.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-blue.svg)](https://www.python.org/downloads/)
+[![Node 20+](https://img.shields.io/badge/Node-20%2B-green.svg)](https://nodejs.org/)
 
 ## What is this?
 
