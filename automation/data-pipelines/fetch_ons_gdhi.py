@@ -1,7 +1,7 @@
 """Fetch ONS Gross Disposable Household Income (GDHI) per head by region.
 
 Source: ONS Regional Gross Disposable Household Income (OGL v3.0)
-Dataset: GDHI per head at current prices, by ITL1 region.
+Dataset: GDHI per head at current prices, all ITL regions.
 Edition: 1997 to 2023.
 URL: https://www.ons.gov.uk/economy/regionalaccounts/grossdisposablehouseholdincome/datasets/regionalgrossdisposablehouseholdincomegdhi
 Accessed: 2026-05-16
@@ -10,9 +10,12 @@ Note: GDHI is income after taxes and benefits — the amount households
 have available for spending or saving.  Per-head figures divide total
 GDHI by the resident population of each region.  The ONS publishes at
 ITL1 (nations/regions), ITL2 (counties/groups), and ITL3 (local
-authority groups).  This pipeline extracts the ITL3 (local-authority
-level) per-head data for the most recent year available, to show the
-full range of regional inequality from Westminster to Blackpool.
+authority groups).  This pipeline extracts **ITL3-level** per-head data
+for the most recent year available, to show the full range of regional
+inequality from Westminster to Blackpool.  Parent/aggregate rows (ITL1,
+ITL2, UK total) are filtered out so they do not distort the chart.
+The fallback dataset includes a curated mix of ITL regions plus the UK
+average for context.
 """
 
 from __future__ import annotations
@@ -106,7 +109,7 @@ def fetch() -> Path | None:
     return None
 
 
-def process(xlsx_path: Path | None) -> pd.DataFrame:
+def process(xlsx_path: Path | None) -> tuple[pd.DataFrame, bool]:
     """Extract GDHI per head by region from the XLSX.
 
     The ONS GDHI workbook has multiple sheets.  We look for a sheet
@@ -117,13 +120,17 @@ def process(xlsx_path: Path | None) -> pd.DataFrame:
 
     If the XLSX cannot be parsed, falls back to illustrative data
     sourced from the ONS 2023 GDHI bulletin.
+
+    Returns:
+        A tuple of (DataFrame, is_fallback) where is_fallback is True
+        when illustrative data was used instead of live ONS data.
     """
     PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
 
     if xlsx_path is None:
         logger.info("No XLSX available, using illustrative fallback data.")
         df = _build_fallback_data()
-        return _save_and_return(df)
+        return _save_and_return(df), True
 
     try:
         xl = pd.ExcelFile(xlsx_path, engine="openpyxl")
@@ -131,7 +138,7 @@ def process(xlsx_path: Path | None) -> pd.DataFrame:
         logger.warning("Cannot open XLSX (%s: %s)", type(exc).__name__, exc)
         logger.warning("Falling back to illustrative data.")
         df = _build_fallback_data()
-        return _save_and_return(df)
+        return _save_and_return(df), True
 
     logger.info("Available sheets: %s", xl.sheet_names)
 
@@ -141,7 +148,7 @@ def process(xlsx_path: Path | None) -> pd.DataFrame:
     if target_sheet is None:
         logger.warning("Could not find GDHI per-head sheet. Falling back.")
         df = _build_fallback_data()
-        return _save_and_return(df)
+        return _save_and_return(df), True
 
     logger.info("Reading sheet: '%s'", target_sheet)
     try:
@@ -151,14 +158,15 @@ def process(xlsx_path: Path | None) -> pd.DataFrame:
     except (zipfile.BadZipFile, InvalidFileException, ValueError, OSError) as exc:
         logger.warning("Cannot read sheet (%s: %s)", type(exc).__name__, exc)
         df = _build_fallback_data()
-        return _save_and_return(df)
+        return _save_and_return(df), True
 
     df = _parse_gdhi_per_head(df_raw)
     if df is None or df.empty:
         logger.warning("Could not parse GDHI per-head data. Falling back.")
         df = _build_fallback_data()
+        return _save_and_return(df), True
 
-    return _save_and_return(df)
+    return _save_and_return(df), False
 
 
 def _save_and_return(df: pd.DataFrame) -> pd.DataFrame:
@@ -192,7 +200,8 @@ def _find_per_head_sheet(xl: pd.ExcelFile) -> str | None:
             df_peek = pd.read_excel(
                 xl, sheet_name=name, header=None, nrows=10, engine="openpyxl",
             )
-        except Exception:  # skip unreadable sheets
+        except (ValueError, TypeError, KeyError, zipfile.BadZipFile, InvalidFileException) as exc:
+            logger.debug("Skipping unreadable sheet '%s': %s", name, exc)
             continue
 
         for i in range(len(df_peek)):
@@ -213,7 +222,10 @@ def _parse_gdhi_per_head(df_raw: pd.DataFrame) -> pd.DataFrame | None:
         - A row containing year columns (1997, 1998, ..., 2023)
         - Data rows with: ITL code, region name, values per year
 
-    We extract the most recent year's values for all regions.
+    We extract the most recent year's values.  When ITL codes are
+    present, we filter to keep only the most granular level (ITL3)
+    and discard parent/aggregate rows (ITL1/ITL2/UK total) so the
+    chart is not distorted by double-counting.
     """
     # Find the row containing year headers
     year_row = None
@@ -256,6 +268,9 @@ def _parse_gdhi_per_head(df_raw: pd.DataFrame) -> pd.DataFrame | None:
     # Scan the data area to determine which column has text region names
     name_col = _find_name_column(df_raw, year_row)
 
+    # Determine the ITL code column (typically column 0 when name_col > 0)
+    code_col = 0 if name_col > 0 else None
+
     records: list[dict[str, object]] = []
     for i in range(year_row + 1, len(df_raw)):
         region = (
@@ -276,10 +291,15 @@ def _parse_gdhi_per_head(df_raw: pd.DataFrame) -> pd.DataFrame | None:
         if gdhi <= 0:
             continue
 
+        itl_code = ""
+        if code_col is not None and pd.notna(df_raw.iloc[i, code_col]):
+            itl_code = str(df_raw.iloc[i, code_col]).strip()
+
         records.append({
             "region": region,
             "gdhi_per_head": round(gdhi, 0),
             "year": latest_year,
+            "itl_code": itl_code,
         })
 
     if not records:
@@ -287,6 +307,13 @@ def _parse_gdhi_per_head(df_raw: pd.DataFrame) -> pd.DataFrame | None:
         return None
 
     df = pd.DataFrame(records)
+
+    # Filter to the most granular ITL level available.
+    # ITL codes follow the pattern: TL + 1 char = ITL1, + 2 = ITL2, + 3+ = ITL3.
+    # Keep only the most granular level to avoid parent/child duplication.
+    df = _filter_to_leaf_itl_level(df)
+
+    df = df.drop(columns=["itl_code"])
     df = df.sort_values("gdhi_per_head", ascending=False).reset_index(drop=True)
 
     logger.info(
@@ -299,6 +326,48 @@ def _parse_gdhi_per_head(df_raw: pd.DataFrame) -> pd.DataFrame | None:
     )
 
     return df
+
+
+def _filter_to_leaf_itl_level(df: pd.DataFrame) -> pd.DataFrame:
+    """Keep only the most granular ITL level, removing parent/aggregate rows.
+
+    ONS ITL codes: 'TL' prefix + 1 letter = ITL1 (e.g. 'TLC'),
+    + 2 chars = ITL2 (e.g. 'TLC1'), + 3+ chars = ITL3 (e.g. 'TLC11').
+    The UK total row uses code 'TL' or 'K02000001'.
+
+    If no valid ITL codes are found, returns the DataFrame unchanged.
+    """
+    # Classify each row's ITL level by code length after the 'TL' prefix
+    itl_codes = df["itl_code"].str.strip()
+    tl_mask = itl_codes.str.upper().str.startswith("TL")
+
+    if tl_mask.sum() < 5:
+        # Not enough ITL codes to reliably filter — return as-is
+        logger.info("Few ITL codes found (%d); skipping hierarchy filter.", tl_mask.sum())
+        return df
+
+    # Compute code length for TL-prefixed rows (length after "TL" prefix)
+    suffix_lengths = itl_codes[tl_mask].str.len() - 2  # subtract "TL" prefix
+    max_suffix = suffix_lengths.max()
+
+    if max_suffix <= 1:
+        # Only ITL1 data available — keep everything
+        logger.info("Only ITL1-level data found; keeping all rows.")
+        return df
+
+    # Keep rows at the most granular level (longest suffix)
+    keep_mask = tl_mask & ((itl_codes.str.len() - 2) == max_suffix)
+    # Also keep rows without TL codes (e.g. "United Kingdom" with code
+    # "K02000001") only if they are clearly not aggregates — but since
+    # we cannot be sure, drop non-TL rows when filtering is active.
+    filtered = df[keep_mask].copy()
+
+    logger.info(
+        "Filtered from %d to %d rows (keeping ITL level with suffix length %d).",
+        len(df), len(filtered), max_suffix,
+    )
+
+    return filtered
 
 
 def _find_name_column(df_raw: pd.DataFrame, year_row: int) -> int:
@@ -381,8 +450,14 @@ def _build_fallback_data() -> pd.DataFrame:
     })
 
 
-def build_chart(df: pd.DataFrame) -> None:
+def build_chart(df: pd.DataFrame, *, is_fallback: bool = False) -> None:
     """Generate a bar chart of GDHI per head by region, sorted high to low.
+
+    Args:
+        df: DataFrame with columns 'region', 'gdhi_per_head', 'year'.
+        is_fallback: True when using illustrative data instead of live
+            ONS data.  Controls the data-quality warning shown on the
+            chart.
 
     Westminster and Blackpool are highlighted to show the extremes
     of regional income inequality.
@@ -448,8 +523,6 @@ def build_chart(df: pd.DataFrame) -> None:
             line=dict(color="#2ca02c", width=2, dash="dash"),
         ))
 
-    # Determine if using real or fallback data
-    is_fallback = len(df_sorted) < 30
     data_note = (
         "ILLUSTRATIVE DATA — verify against ONS source before publication. "
         if is_fallback
@@ -522,8 +595,8 @@ def build_chart(df: pd.DataFrame) -> None:
 def main() -> None:
     """Fetch ONS GDHI data, process, and generate chart."""
     xlsx_path = fetch()
-    df = process(xlsx_path)
-    build_chart(df)
+    df, is_fallback = process(xlsx_path)
+    build_chart(df, is_fallback=is_fallback)
     logger.info("Done. Open the chart HTML in a browser to view.")
 
 
