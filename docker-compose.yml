@@ -1,0 +1,21 @@
+services:
+  backend:
+    build:
+      context: projects/wealthlens-dashboard/backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data/processed:/data/processed:ro
+      - ./projects/wealthlens-dashboard/backend/app:/app/app
+    environment:
+      - CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+
+  frontend:
+    build:
+      context: projects/wealthlens-dashboard/frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    environment:
+      - VITE_API_BASE_URL=http://localhost:8000
