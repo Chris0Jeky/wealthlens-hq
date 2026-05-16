@@ -12,15 +12,29 @@ describe('SourceCitation', () => {
   it('renders source name as a link', () => {
     const wrapper = mount(SourceCitation, { props })
     const link = wrapper.find('a')
-    expect(link.text()).toBe('World Inequality Database (wid.world)')
+    expect(link.text()).toContain('World Inequality Database (wid.world)')
     expect(link.attributes('href')).toBe('https://wid.world')
   })
 
-  it('sets target="_blank" and rel="noopener"', () => {
+  it('sets target="_blank" and rel="noopener noreferrer"', () => {
     const wrapper = mount(SourceCitation, { props })
     const link = wrapper.find('a')
     expect(link.attributes('target')).toBe('_blank')
-    expect(link.attributes('rel')).toBe('noopener')
+    expect(link.attributes('rel')).toBe('noopener noreferrer')
+  })
+
+  it('includes screen-reader new tab warning', () => {
+    const wrapper = mount(SourceCitation, { props })
+    const srOnly = wrapper.find('.sr-only')
+    expect(srOnly.text()).toBe('(opens in new tab)')
+  })
+
+  it('sanitizes non-http URLs to #', () => {
+    const wrapper = mount(SourceCitation, {
+      props: { ...props, sourceUrl: 'javascript:alert(1)' },
+    })
+    const link = wrapper.find('a')
+    expect(link.attributes('href')).toBe('#')
   })
 
   it('displays the access date', () => {
