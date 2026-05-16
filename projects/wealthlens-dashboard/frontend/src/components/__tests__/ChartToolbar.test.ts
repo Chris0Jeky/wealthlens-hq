@@ -69,4 +69,24 @@ describe('ChartToolbar', () => {
     })
     expect(wrapper.find('[role="tablist"]').exists()).toBe(false)
   })
+
+  it('navigates ranges with ArrowRight key', async () => {
+    const wrapper = mount(ChartToolbar, {
+      props: { ranges: sampleRanges, activeRange: '200y' },
+    })
+    const tablist = wrapper.find('[role="tablist"]')
+    await tablist.trigger('keydown', { key: 'ArrowRight' })
+    expect(wrapper.emitted('range-change')![0]).toEqual(['100y'])
+  })
+
+  it('sets tabindex=0 on active tab and -1 on inactive tabs', () => {
+    const wrapper = mount(ChartToolbar, {
+      props: { ranges: sampleRanges, activeRange: '100y' },
+    })
+    const buttons = wrapper.findAll('button[role="tab"]')
+    const activeBtn = buttons.find((b) => b.text() === '100y')
+    const inactiveBtn = buttons.find((b) => b.text() === '200y')
+    expect(activeBtn!.attributes('tabindex')).toBe('0')
+    expect(inactiveBtn!.attributes('tabindex')).toBe('-1')
+  })
 })

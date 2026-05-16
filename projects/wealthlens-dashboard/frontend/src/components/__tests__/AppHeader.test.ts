@@ -79,4 +79,16 @@ describe('AppHeader', () => {
     expect(brandLink.exists()).toBe(true)
     expect(brandLink.attributes('href')).toBe('/')
   })
+
+  it('closes mobile menu on Escape key', async () => {
+    const wrapper = mountHeader()
+    const btn = wrapper.find('button[aria-label="Toggle navigation menu"]')
+    await btn.trigger('click')
+    expect(wrapper.find('#mobile-menu').exists()).toBe(true)
+
+    const menu = wrapper.find('#mobile-menu')
+    await menu.trigger('keydown', { key: 'Escape' })
+    expect(wrapper.find('#mobile-menu').exists()).toBe(false)
+    expect(btn.attributes('aria-expanded')).toBe('false')
+  })
 })
