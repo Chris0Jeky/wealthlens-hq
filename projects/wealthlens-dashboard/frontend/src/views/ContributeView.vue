@@ -23,7 +23,7 @@
       </ol>
     </nav>
 
-    <main class="contribute-content">
+    <div class="contribute-content">
       <!-- Welcome -->
       <section class="contribute-hero" aria-labelledby="contribute-heading">
         <span class="wl-eyebrow">Get Involved</span>
@@ -297,13 +297,13 @@
           </a>
         </div>
       </section>
-    </main>
+    </div>
   </div>
 </template>
 
 <style scoped>
 .contribute-page {
-  max-width: 1320px;
+  max-width: var(--wl-max);
   margin: 0 auto;
 }
 
@@ -413,6 +413,10 @@
 }
 .way-card__link:hover {
   text-decoration: underline;
+}
+.way-card__link:focus-visible {
+  outline: 2px solid var(--wl-red);
+  outline-offset: 2px;
 }
 
 /* Getting Started */
