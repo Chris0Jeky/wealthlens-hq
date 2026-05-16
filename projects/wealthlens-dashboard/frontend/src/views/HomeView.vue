@@ -1,6 +1,16 @@
 <script setup lang="ts">
+/**
+ * HomeView — the WealthLens UK front page.
+ *
+ * Composes the hero section (rotating headlines + wealth flow Sankey),
+ * rent ticker, and the existing dataset listing. The dataset listing
+ * is kept below as a fallback until the full landing page sections
+ * (gut test, two Britains, pillars, etc.) are built in a later PR.
+ */
 import { onMounted } from 'vue'
 import { useDataStore } from '@/stores/data'
+import HeroSection from '@/components/HeroSection.vue'
+import RentTicker from '@/components/RentTicker.vue'
 import DatasetCard from '@/components/DatasetCard.vue'
 
 const store = useDataStore()
@@ -21,33 +31,94 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="max-w-6xl mx-auto px-6 py-10">
-    <section class="mb-12">
-      <h1 class="text-3xl font-bold mb-3">UK Wealth Inequality Dashboard</h1>
-      <p class="text-gray-600 max-w-2xl">
-        Open-source, source-backed data on wealth inequality in the United
-        Kingdom. Every chart cites its data source with URL and access date.
-      </p>
-    </section>
+  <div>
+    <!-- Hero: rotating headlines + wealth flow Sankey -->
+    <HeroSection />
 
-    <section>
-      <h2 class="text-xl font-semibold mb-4">Available Datasets</h2>
+    <!-- Live rent ticker -->
+    <RentTicker />
 
-      <div aria-live="polite">
-        <p v-if="store.loading" class="text-gray-500">Loading datasets...</p>
-      </div>
-      <div aria-live="assertive">
-        <p v-if="store.error" class="text-red-600">{{ store.error }}</p>
-      </div>
+    <!-- Existing dataset listing — kept until full landing page sections are built -->
+    <div class="datasets-section">
+      <section class="datasets-inner">
+        <h2 class="datasets-heading">Available Datasets</h2>
 
-      <div v-if="!store.loading && !store.error" class="grid gap-4 sm:grid-cols-2" role="list">
-        <div v-for="name in store.datasets" :key="name" role="listitem">
-          <DatasetCard
-            :name="name"
-            :description="descriptions[name] ?? 'UK inequality dataset'"
-          />
+        <div aria-live="polite">
+          <p v-if="store.loading" class="datasets-loading">Loading datasets...</p>
         </div>
-      </div>
-    </section>
+        <div aria-live="assertive">
+          <p v-if="store.error" class="datasets-error">{{ store.error }}</p>
+        </div>
+
+        <div
+          v-if="!store.loading && !store.error"
+          class="datasets-grid"
+          role="list"
+        >
+          <div v-for="name in store.datasets" :key="name" role="listitem">
+            <DatasetCard
+              :name="name"
+              :description="descriptions[name] ?? 'UK inequality dataset'"
+            />
+          </div>
+        </div>
+      </section>
+    </div>
   </div>
 </template>
+
+<style scoped>
+/* ============================================================
+   Datasets section — interim listing below the hero
+   ============================================================ */
+.datasets-section {
+  padding: 64px 0;
+  background: var(--wl-bg);
+  border-bottom: 1px solid var(--wl-rule);
+}
+
+.datasets-inner {
+  max-width: var(--wl-max);
+  margin: 0 auto;
+  padding: 0 32px;
+}
+
+.datasets-heading {
+  font-family: var(--wl-serif);
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--wl-ink);
+  margin: 0 0 24px;
+  letter-spacing: -0.01em;
+}
+
+.datasets-loading {
+  color: var(--wl-ink-muted);
+  font-size: 15px;
+}
+
+.datasets-error {
+  color: var(--wl-red);
+  font-size: 15px;
+}
+
+.datasets-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+}
+
+@media (max-width: 768px) {
+  .datasets-section {
+    padding: 36px 0;
+  }
+
+  .datasets-inner {
+    padding: 0 16px;
+  }
+
+  .datasets-grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
