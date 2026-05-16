@@ -5,6 +5,7 @@ Serves processed UK wealth inequality datasets as JSON for the Vue 3 frontend.
 
 from __future__ import annotations
 
+import logging
 import os
 import time
 from datetime import UTC, datetime
@@ -23,6 +24,7 @@ from app.routers import data
 from app.timeout_middleware import TimeoutMiddleware
 
 setup_logging(os.environ.get("LOG_LEVEL", "INFO"))
+logger = logging.getLogger("wealthlens.main")
 
 _started_at: float = time.time()
 
@@ -64,10 +66,14 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-app.add_middleware(
-    RateLimitMiddleware,
-    requests_per_minute=int(os.environ.get("RATE_LIMIT_RPM", "60")),
-)
+_rpm_raw = os.environ.get("RATE_LIMIT_RPM", "60")
+try:
+    _rpm = max(int(_rpm_raw), 1)
+except (ValueError, TypeError):
+    logger.warning("Invalid RATE_LIMIT_RPM value %r, defaulting to 60", _rpm_raw)
+    _rpm = 60
+
+app.add_middleware(RateLimitMiddleware, requests_per_minute=_rpm)
 app.add_middleware(TimeoutMiddleware)
 
 app.add_middleware(
