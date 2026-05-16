@@ -5,7 +5,7 @@
  * Displays "Copy link" by default and briefly shows "Copied!" for 2 seconds
  * after a successful copy. Only renders when the Clipboard API is available.
  */
-import { ref, computed } from "vue";
+import { ref, computed, onBeforeUnmount } from "vue";
 
 const copied = ref(false);
 
@@ -32,6 +32,13 @@ async function copyUrl(): Promise<void> {
     // Clipboard write failed — silently ignore.
   }
 }
+
+onBeforeUnmount(() => {
+  if (timeoutId) {
+    clearTimeout(timeoutId);
+    timeoutId = null;
+  }
+});
 </script>
 
 <template>

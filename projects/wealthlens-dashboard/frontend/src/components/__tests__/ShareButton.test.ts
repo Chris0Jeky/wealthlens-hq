@@ -3,16 +3,23 @@ import { mount } from "@vue/test-utils";
 import ShareButton from "@/components/ShareButton.vue";
 
 describe("ShareButton", () => {
+  let originalClipboard: unknown;
+
   beforeEach(() => {
-    // Mock the Clipboard API
-    Object.assign(navigator, {
-      clipboard: {
-        writeText: vi.fn().mockResolvedValue(undefined),
-      },
+    originalClipboard = navigator.clipboard;
+    Object.defineProperty(navigator, "clipboard", {
+      value: { writeText: vi.fn().mockResolvedValue(undefined) },
+      writable: true,
+      configurable: true,
     });
   });
 
   afterEach(() => {
+    Object.defineProperty(navigator, "clipboard", {
+      value: originalClipboard,
+      writable: true,
+      configurable: true,
+    });
     vi.restoreAllMocks();
     vi.useRealTimers();
   });
@@ -44,16 +51,24 @@ describe("ShareButton", () => {
 
     const wrapper = mount(ShareButton);
     await wrapper.find("button").trigger("click");
-
-    // Wait for the async clipboard call to resolve
     await vi.runAllTicksAsync();
 
     expect(wrapper.text()).toContain("Copied!");
 
-    // Advance time by 2 seconds
     vi.advanceTimersByTime(2000);
     await vi.runAllTicksAsync();
 
     expect(wrapper.text()).toContain("Copy link");
+  });
+
+  it("clears timeout on unmount without errors", async () => {
+    vi.useFakeTimers();
+
+    const wrapper = mount(ShareButton);
+    await wrapper.find("button").trigger("click");
+    await vi.runAllTicksAsync();
+
+    wrapper.unmount();
+    vi.advanceTimersByTime(2000);
   });
 });
