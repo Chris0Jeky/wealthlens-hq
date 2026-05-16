@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { ref, nextTick } from 'vue'
-import { mount, config } from '@vue/test-utils'
+import { mount } from '@vue/test-utils'
 import { defineComponent } from 'vue'
 import { useDebounce } from '@/composables/useDebounce'
 

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { mount, flushPromises } from '@vue/test-utils'
+import { mount } from '@vue/test-utils'
 import { defineComponent, ref, nextTick } from 'vue'
 import { useClickOutside } from '@/composables/useClickOutside'
 

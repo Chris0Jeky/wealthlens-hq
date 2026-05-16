@@ -1,9 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import type {
-  DatasetListResponse,
   DatasetRow,
-  PaginatedDatasetResponse,
 } from '@/types/api'
 import { fetchWithRetry } from '@/utils/fetchWithRetry'
 

@@ -62,7 +62,7 @@ function onKeydown(event: KeyboardEvent) {
   if (tabs.length === 0) return;
 
   const currentIdx = tabs.indexOf(props.activeRange);
-  let nextIdx = currentIdx;
+  let nextIdx: number;
 
   switch (event.key) {
     case "ArrowRight":

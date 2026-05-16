@@ -141,7 +141,7 @@ onUnmounted(() => {
       class="absolute left-0 z-10 mt-1 w-48 origin-top-left rounded-md bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black/5 dark:ring-white/10 focus:outline-none"
     >
       <li
-        v-for="(item, idx) in items"
+        v-for="item in items"
         :key="item.id"
         role="menuitem"
         :aria-disabled="item.disabled ? 'true' : undefined"

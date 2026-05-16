@@ -154,7 +154,7 @@ describe("ChartView", () => {
   function mountChart(name: string): VueWrapper {
     vi.mocked(useRoute).mockReturnValue({
       params: { name },
-    } as any);
+    } as unknown as ReturnType<typeof useRoute>);
     return mount(ChartView, {
       global: { stubs: chartStubs },
     });

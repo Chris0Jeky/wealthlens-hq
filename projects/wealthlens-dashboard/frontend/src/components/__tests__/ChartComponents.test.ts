@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { mount, flushPromises } from "@vue/test-utils";
+import { mount } from "@vue/test-utils";
 import { createPinia, setActivePinia } from "pinia";
 import { ref, shallowRef } from "vue";
 
@@ -13,7 +13,7 @@ let mockLoading: ReturnType<typeof ref>;
 let mockError: ReturnType<typeof ref>;
 
 vi.mock("@/composables/useChartData", () => ({
-  useChartData: (_name: string) => ({
+  useChartData: () => ({
     rows: mockRows,
     loading: mockLoading,
     error: mockError,

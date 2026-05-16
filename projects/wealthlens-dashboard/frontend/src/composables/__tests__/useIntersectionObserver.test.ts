@@ -50,14 +50,14 @@ describe('useIntersectionObserver', () => {
   })
 
   it('unobserves after first intersection when once=true', async () => {
-    const wrapper = mountWithObserver({ once: true })
+    mountWithObserver({ once: true })
     observeCallback([{ isIntersecting: true }])
     await nextTick()
     expect(mockUnobserve).toHaveBeenCalled()
   })
 
   it('does not unobserve when once=false', async () => {
-    const wrapper = mountWithObserver({ once: false })
+    mountWithObserver({ once: false })
     observeCallback([{ isIntersecting: true }])
     await nextTick()
     expect(mockUnobserve).not.toHaveBeenCalled()
