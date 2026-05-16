@@ -11,7 +11,7 @@
 > 5. Pick up from the **Current Phase** section below.
 > 6. After completing work, UPDATE this file before the next compaction risk.
 
-Last updated: 2026-05-16 (wave 30 complete — 56 PRs total: #75-#130, seeding wave 31)
+Last updated: 2026-05-16 (Wave 10 IN PROGRESS — 18 open PRs #39-#56, Waves 1-8 complete with R2 PASS, Wave 9 R2 in flight, Wave 10 R1 in flight)
 
 ## Workflow Design
 
@@ -39,7 +39,7 @@ main
 
 ## Current Phase
 
-**Phase: WAVE 31 SEEDING** — PRs #75-#130 (waves 17-30) all R2 PASS. Seeding wave 31 tasks.
+**Phase: WAVE 10 IN PROGRESS** — 18 open PRs (#39-#56). Waves 1-8 all R2 PASS. Wave 9 R2 verification in flight. Wave 10 R1 reviews in flight.
 
 ### Work Stream Status
 
@@ -78,27 +78,6 @@ main
 24. [DONE] Build wave 6 PRs (2 PRs: #37, #38)
 25. [DONE] Wave 6 review round 1 + fixes
 26. [DONE] Wave 6 review round 2 — both PRs verified LGTM
-27. [DONE] Build waves 7-8 PRs (#39-#52)
-28. [DONE] Waves 7-8 review rounds 1+2
-29. [DONE] Build waves 9-11 PRs (#53-#58)
-30. [DONE] Waves 9-11 review rounds 1+2
-31. [DONE] Audit for wave 12, seed tasks
-32. [DONE] Build wave 12 PRs (#59-#62), R1+R2 all pass
-33. [DONE] Build wave 13 PRs (#63-#64), R1+R2 all pass
-34. [DONE] Build wave 14 PRs (#65-#67), R1+R2 all pass
-35. [DONE] Build wave 15 PRs (#68-#70), R1+R2 all pass
-36. [DONE] Build wave 16 PRs (#71-#74), R1+R2 all pass
-37. [DONE] Build wave 17 PRs (#75-#78), R1+R2 all pass
-38. [DONE] Waves 18-22 PRs (#79-#98), R1+R2 all pass
-39. [DONE] Wave 23 PRs (#99-#102), R1+R2 all pass
-40. [DONE] Wave 24 PRs (#103-#106), R1+R2 all pass
-41. [DONE] Wave 25 PRs (#107-#110), R1+R2 all pass
-42. [DONE] Wave 26 PRs (#111-#114), R1+R2 all pass
-43. [DONE] Wave 27 PRs (#115-#118), R1+R2 all pass
-44. [DONE] Wave 28 PRs (#119-#122), R1+R2 all pass
-45. [DONE] Wave 29 PRs (#123-#126), R1+R2 all pass
-46. [DONE] Wave 30 PRs (#127-#130), R1+R2 all pass
-47. [IN PROGRESS] Seed wave 31, build PRs
 
 ## Decisions Log
 
@@ -275,116 +254,77 @@ main
  └── feat/ci-backend (NEW, independent)
 ```
 
-## Waves 7-11 — Summary (PRs #39-#58)
-
-Waves 7-11 created 20 PRs spanning: broadsheet design tokens (#39), masthead/footer (#42), chart page redesign (#43), landing hero (#44), wealth calculator (#45), landing sections (#46), tax composition pipeline (#47), BoE rates pipeline (#48), dark theme toggle (#49), OG meta tags (#50), mobile responsive (#51), component tests (#52), tax rate calculator (#53), about/methodology pages (#54), child poverty pipeline (#55), generational wealth gap (#56), Plausible analytics (#57), WCAG 2.2 AA audit (#58).
-
-All 20 PRs reviewed x2 (R1 + fixes + R2 verification). Key fixes included: PA taper tax bug, CGT rate labels, XSS prevention in chart HTML, analytics queue shim, silent-failure hardening, heading hierarchy, contrast ratios, and focus management.
-
-## Wave 12 — Seeded from audit (data integrity, CI, config)
+## Wave 7 — Frontend Redesign + New Pipelines (2026-05-16)
 
 | # | Stream | Branch | Base | PR | Status |
 |---|--------|--------|------|----|--------|
-| 29 | Dataset meta sidecars + licences | `chore/dataset-meta-sidecars` | main | #59 | R2 PASS |
-| 30 | CI test fixtures | `fix/ci-test-fixtures` | main | #60 | R2 PASS |
-| 31 | Configurable API URL | `feat/configurable-api-url` | main | #61 | R2 PASS |
-| 32 | CI frontend lint enforcement | `fix/ci-frontend-lint-enforcement` | main | #62 | R1 CLEAN — no issues |
+| 29 | Design tokens | `feat/frontend-design-tokens` | main | #39 | REVIEWED x2 — PASS |
+| 30 | Masthead + footer | `feat/frontend-masthead-footer` | #39 | #42 | REVIEWED x2 — PASS |
+| 31 | Landing hero | `feat/frontend-landing-hero` | #42 | #44 | REVIEWED x2 — PASS |
+| 32 | Landing sections | `feat/frontend-landing-sections` | #44 | #46 | REVIEWED x2 — PASS |
+| 33 | Chart page redesign | `feat/frontend-chart-page` | #39 | #43 | REVIEWED x2 — PASS |
+| 34 | Productivity-pay pipeline | `feat/productivity-pay-chart` | main | #40 | REVIEWED x2 — PASS |
+| 35 | GDHI pipeline | `feat/gdhi-pipeline` | main | #41 | REVIEWED x2 — PASS |
+| 36 | Wealth calculator | `feat/wealth-calculator` | #43 | #45 | REVIEWED x2 — PASS |
 
-### Wave 12 stacking
-```
-main
- ├── chore/dataset-meta-sidecars (#59, independent)
- ├── fix/ci-test-fixtures (#60, independent)
- ├── feat/configurable-api-url (#61, independent)
- └── fix/ci-frontend-lint-enforcement (#62, independent)
-```
-
-## Wave 13 — Docs: SECURITY.md, ARCHITECTURE.md
+## Wave 8 — Polish, Pipelines, Tests (2026-05-16)
 
 | # | Stream | Branch | Base | PR | Status |
 |---|--------|--------|------|----|--------|
-| 33 | Security policy | `docs/security-policy` | main | #63 | R2 PASS |
-| 34 | Architecture overview | `docs/architecture` | main | #64 | R2 PASS |
+| 37 | Tax composition pipeline | `feat/tax-composition-chart` | main | #47 | R2 PASS |
+| 38 | BoE rates pipeline | `feat/boe-rates-pipeline` | main | #48 | R2 PASS |
+| 39 | Dark theme toggle | `feat/dark-theme-toggle` | #42 | #49 | R2 PASS |
+| 40 | OG meta tags | `feat/og-meta-tags` | main | #50 | R2 PASS |
+| 41 | Mobile responsive | `feat/mobile-responsive` | #46 | #51 | R2 PASS |
+| 42 | Frontend tests | `feat/frontend-component-tests` | #46 | #52 | R1 PASS (no fixes) |
 
-### Wave 13 stacking
-```
-main
- ├── docs/security-policy (#63, independent)
- └── docs/architecture (#64, independent)
-```
-
-## Wave 14 — Backend API tests, CONTRIBUTING.md, mypy strictness
+## Wave 9 — Content Pages + Interactive Calculators (2026-05-16)
 
 | # | Stream | Branch | Base | PR | Status |
 |---|--------|--------|------|----|--------|
-| 35 | Backend API endpoint tests | `test/backend-api-endpoints` | main | #66 | R2 PASS |
-| 36 | Root CONTRIBUTING.md | `docs/contributing` | main | #65 | R2 PASS |
-| 37 | Mypy strictness for automation/ | `chore/mypy-strict-automation` | main | #67 | R2 PASS |
+| 43 | Tax rate calculator | `feat/tax-rate-calculator` | #45 | #53 | R1 FIXED, R2 IN FLIGHT |
+| 44 | About + Methodology | `feat/about-methodology-pages` | #43 | #54 | R1 FIXED, R2 IN FLIGHT |
 
-### Wave 14 stacking
-```
-main
- ├── test/backend-api-endpoints (NEW, independent)
- ├── docs/contributing (NEW, independent)
- └── chore/mypy-strict-automation (NEW, independent)
-```
+### Wave 9 R1 findings fixed
+- PR #53: PA taper income tax bug (critical), CGT rates updated to post-Budget 2024, unit tests added, prefers-reduced-motion, design tokens
+- PR #54: Broken CONTRIBUTING.md link replaced with GitHub issues link
 
-## Wave 15 — EditorConfig, frontend chart tests, py.typed
+## Wave 10 — New Data Pipelines (2026-05-16)
 
 | # | Stream | Branch | Base | PR | Status |
 |---|--------|--------|------|----|--------|
-| 38 | EditorConfig | `chore/editorconfig` | main | #68 | R2 PASS |
-| 39 | Frontend chart component tests | `test/frontend-chart-components` | main | #70 | R2 PASS |
-| 40 | py.typed marker + backend __init__ | `chore/py-typed` | main | #69 | R2 PASS |
+| 45 | Child poverty by region | `feat/child-poverty-map` | main | #55 | R1 IN FLIGHT |
+| 46 | Generational wealth gap | `feat/generational-wealth-gap` | main | #56 | R1 IN FLIGHT |
 
-### Wave 15 stacking
-```
-main
- ├── chore/editorconfig (NEW, independent)
- ├── test/frontend-chart-components (NEW, independent)
- └── chore/py-typed (NEW, independent)
-```
+### Remaining GitHub issues
+- #4: WCAG 2.2 AA accessibility audit (wave 11)
+- #5: Child poverty map → now PR #55
+- #8: Generational wealth → now PR #56
+- #9: Analytics (Plausible/Umami)
 
-## Wave 16 — View tests, router tests, backend data route tests, GitHub templates
+### Future waves
+- Wave 11: WCAG 2.2 AA audit (#4), analytics (#9), embeds, search
+- Wave 12+: More data sources, regional deep dives, policy simulator
 
-| # | Stream | Branch | Base | PR | Status |
-|---|--------|--------|------|----|--------|
-| 41 | Frontend view component tests | `test/frontend-view-components` | main | #73 | R2 PASS |
-| 42 | Frontend router tests | `test/frontend-router` | main | #71 | R2 PASS |
-| 43 | Backend data route tests | `test/backend-data-routes` | main | #74 | R2 PASS |
-| 44 | GitHub issue/PR templates | `chore/github-templates` | main | #72 | R2 PASS |
+## Recovery Checklist v3 (After Compaction)
 
-### Wave 16 stacking
-```
-main
- ├── test/frontend-view-components (#73, independent)
- ├── test/frontend-router (#71, independent)
- ├── test/backend-data-routes (#74, independent)
- └── chore/github-templates (#72, independent)
-```
-
-## Wave 17 — Makefile, Dependabot, store tests, Docker
-
-| # | Stream | Branch | Base | PR | Status |
-|---|--------|--------|------|----|--------|
-| 45 | Dependabot config | `chore/dependabot` | main | #75 | R2 PASS |
-| 46 | Makefile frontend-test | `chore/makefile-frontend-test` | main | #76 | R2 PASS |
-| 47 | Store edge case tests | `test/frontend-store-edge-cases` | main | #77 | R2 PASS |
-| 48 | Docker support | `chore/docker-support` | main | #78 | R2 PASS |
-
-### Wave 17 stacking
-```
-main
- ├── chore/dependabot (#75, independent)
- ├── chore/makefile-frontend-test (#76, independent)
- ├── test/frontend-store-edge-cases (#77, independent)
- └── chore/docker-support (#78, independent)
-```
+1. Read THIS file
+2. Read `.codex/memories/00_ACTIVE.md`
+3. Run `git branch -a --sort=-committerdate | head -30`
+4. Run `gh pr list --state open --limit 20`
+5. Check `TaskList` for in-conversation progress
+6. Continue from the first NOT STARTED or IN PROGRESS stream
+7. After finishing, update THIS file
 
 ## Notes
 
 - Windows 10 Pro environment — Bash tool uses Git Bash, not PowerShell
 - Python 3.11+, Node via npm
-- Tests: pytest (backend), vitest (frontend — being added)
+- Tests: pytest (backend), vitest (frontend)
 - Linting: ruff (Python), vue-tsc (TypeScript)
 - Solo dev repo — amend/rebase/reset allowed per user preference
+- All PRs before wave 7 are merged (28 PRs)
+- 18 open PRs (#39-#56)
+- Design reference: `docs/redesign/` for broadsheet newspaper aesthetic
+- Fonts: Newsreader, IBM Plex Sans, IBM Plex Mono
+- Colors: newsprint cream, ink black, pillar-box red. No blue anywhere.
