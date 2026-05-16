@@ -44,6 +44,11 @@ CHECKS: list[dict] = [
         "columns": {"band_lower"},
         "min_rows": 3,
     },
+    {
+        "file": "productivity_pay_gap.csv",
+        "columns": {"year", "productivity_index", "pay_index", "gap_pct"},
+        "min_rows": 20,
+    },
 ]
 
 

@@ -20,6 +20,7 @@ SCRIPTS = [
     "fetch_ons_housing.py",
     "fetch_ons_wealth.py",
     "fetch_hmrc_stats.py",
+    "fetch_productivity_pay.py",
 ]
 
 
