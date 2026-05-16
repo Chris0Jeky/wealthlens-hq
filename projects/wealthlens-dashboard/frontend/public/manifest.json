@@ -1,0 +1,16 @@
+{
+  "name": "WealthLens UK",
+  "short_name": "WealthLens",
+  "description": "Making UK wealth inequality data visible, interactive, and impossible to ignore.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "icons": [
+    {
+      "src": "/icon-192.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
