@@ -90,12 +90,27 @@ export function getDecile(wealth: number): number {
 }
 
 /**
+ * Maximum displayable wealth (£100 billion). Values above this produce
+ * unwieldy display and are far beyond meaningful interpolation.
+ * The calculator will show a capped message for inputs above this.
+ */
+export const MAX_DISPLAYABLE_WEALTH = 100_000_000_000;
+
+/**
  * Returns an approximate percentile (0-100) for a given total net
  * household wealth. Uses linear interpolation within the decile.
  *
  * This is an approximation: within each decile we assume a uniform
  * distribution between the lower and upper boundaries. The real
  * distribution is skewed, especially in deciles 1 and 10.
+ *
+ * LIMITATION: Linear interpolation is least accurate for deciles 1
+ * and 10, which have open-ended ranges and highly skewed distributions.
+ * For decile 1, many households cluster near zero or negative values.
+ * For decile 10, wealth is extremely right-skewed (a few households
+ * hold billions). We clamp the percentile to 1-9 for decile 1 and
+ * 91-99 for decile 10 rather than extrapolating linearly into
+ * unbounded territory.
  *
  * @param wealth - Total net household wealth in GBP
  * @returns Approximate percentile from 0 to 100
@@ -107,7 +122,9 @@ export function getPercentile(wealth: number): number {
   // Base percentile for the start of this decile
   const basePercentile = (decile - 1) * 10;
 
-  // For decile 1: interpolate from 0 to the upper bound
+  // For decile 1 (open-ended lower range): clamp to 0–10 percentile.
+  // Linear interpolation is inaccurate here because many households
+  // cluster near zero or have negative net wealth.
   if (info.lowerBound === null) {
     if (info.upperBound === null) return 50; // shouldn't happen
     // Allow negative wealth — clamp at 0th percentile
@@ -116,7 +133,10 @@ export function getPercentile(wealth: number): number {
     return Math.round(basePercentile + fraction * 10);
   }
 
-  // For decile 10: cap at 99th percentile since we can't know exact position
+  // For decile 10 (open-ended upper range): clamp to 91–99 percentile.
+  // Linear interpolation is inaccurate here because wealth is extremely
+  // right-skewed — the top 0.1% holds vastly more than the rest of the
+  // decile. We use a conservative estimate rather than extrapolating.
   if (info.upperBound === null) {
     // Rough interpolation: assume the 10th decile spans to ~3M for display
     const estimatedTop = 3_000_000;

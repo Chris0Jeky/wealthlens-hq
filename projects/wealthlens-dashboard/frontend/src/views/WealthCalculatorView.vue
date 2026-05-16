@@ -18,7 +18,7 @@ import WealthCalculator from "@/components/WealthCalculator.vue";
           <span class="crumb__sep" aria-hidden="true">/</span>
         </li>
         <li class="crumb__item">
-          <span class="crumb__current" aria-current="page">Tools</span>
+          <span class="crumb__current">Tools</span>
           <span class="crumb__sep" aria-hidden="true">/</span>
         </li>
         <li class="crumb__item">
