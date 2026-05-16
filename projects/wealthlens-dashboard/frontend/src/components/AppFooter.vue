@@ -106,22 +106,20 @@ const year = new Date().getFullYear()
               GitHub
             </a>
           </li>
-          <!-- TODO: Replace with actual WealthLens Bluesky profile URL once confirmed -->
           <li>
             <a
-              href="#"
+              href="https://bsky.app/profile/wealthlens.uk"
               target="_blank"
-              rel="noopener"
+              rel="noopener me"
             >
               Bluesky
             </a>
           </li>
-          <!-- TODO: Replace with actual WealthLens Mastodon profile URL once confirmed -->
           <li>
             <a
-              href="#"
+              href="https://mastodon.social/@wealthlens"
               target="_blank"
-              rel="noopener"
+              rel="noopener me"
             >
               Mastodon
             </a>
