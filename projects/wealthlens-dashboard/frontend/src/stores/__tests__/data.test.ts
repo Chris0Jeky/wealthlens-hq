@@ -87,6 +87,68 @@ describe("useDataStore", () => {
       expect(store.loading).toBe(false);
       expect(store.datasets).toEqual([]);
     });
+
+    it("handles concurrent fetchDatasets calls (last wins)", async () => {
+      let resolveFirst!: (v: Response) => void;
+      let resolveSecond!: (v: Response) => void;
+
+      const fetchSpy = vi.spyOn(globalThis, "fetch");
+      fetchSpy.mockReturnValueOnce(new Promise(r => { resolveFirst = r; }));
+      fetchSpy.mockReturnValueOnce(new Promise(r => { resolveSecond = r; }));
+
+      const store = useDataStore();
+      const p1 = store.fetchDatasets();
+      const p2 = store.fetchDatasets();
+
+      resolveSecond({ ok: true, json: async () => ({ datasets: ["second"] }) } as Response);
+      resolveFirst({ ok: true, json: async () => ({ datasets: ["first"] }) } as Response);
+
+      await Promise.all([p1, p2]);
+      expect(store.loading).toBe(false);
+      expect(store.error).toBeNull();
+    });
+
+    it("clears previous error on successful retry", async () => {
+      const fetchSpy = vi.spyOn(globalThis, "fetch");
+      fetchSpy.mockRejectedValueOnce(new Error("Network error"));
+
+      const store = useDataStore();
+      await store.fetchDatasets();
+      expect(store.error).toBe("Network error");
+
+      fetchSpy.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ datasets: ["recovered"] }),
+      } as Response);
+
+      await store.fetchDatasets();
+      expect(store.error).toBeNull();
+      expect(store.datasets).toEqual(["recovered"]);
+    });
+
+    it("handles non-Error thrown values", async () => {
+      vi.spyOn(globalThis, "fetch").mockRejectedValueOnce("string error");
+
+      const store = useDataStore();
+      await store.fetchDatasets();
+
+      expect(store.error).toBe("Failed to fetch datasets");
+      expect(store.loading).toBe(false);
+    });
+
+    it("stores empty datasets array without error", async () => {
+      vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ datasets: [] }),
+      } as Response);
+
+      const store = useDataStore();
+      await store.fetchDatasets();
+
+      expect(store.datasets).toEqual([]);
+      expect(store.error).toBeNull();
+      expect(store.loading).toBe(false);
+    });
   });
 
   describe("fetchDataset", () => {
@@ -117,6 +179,43 @@ describe("useDataStore", () => {
       await expect(store.fetchDataset("missing")).rejects.toThrow(
         "Failed to fetch missing",
       );
+    });
+
+    it("includes statusText in error message", async () => {
+      vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+        ok: false,
+        status: 503,
+        statusText: "Service Unavailable",
+      } as Response);
+
+      const store = useDataStore();
+      await expect(store.fetchDataset("broken")).rejects.toThrow(
+        "Failed to fetch broken: 503 Service Unavailable",
+      );
+    });
+
+    it("constructs correct URL for hyphenated dataset names", async () => {
+      vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ data: [] }),
+      } as Response);
+
+      const store = useDataStore();
+      await store.fetchDataset("housing-affordability");
+
+      expect(globalThis.fetch).toHaveBeenCalledWith("/api/data/housing-affordability");
+    });
+
+    it("returns empty data array without error", async () => {
+      vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ data: [] }),
+      } as Response);
+
+      const store = useDataStore();
+      const result = await store.fetchDataset("empty-set");
+
+      expect(result).toEqual([]);
     });
   });
 });
