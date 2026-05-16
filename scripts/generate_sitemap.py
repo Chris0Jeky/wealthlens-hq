@@ -11,7 +11,7 @@ Configuration:
 from __future__ import annotations
 
 import os
-from datetime import date, timezone
+from datetime import date
 from pathlib import Path
 from xml.etree.ElementTree import Element, SubElement, ElementTree, indent
 
@@ -128,6 +128,8 @@ def main() -> None:
         xml_declaration=True,
         encoding="UTF-8",
     )
+    with open(sitemap_path, "a", encoding="utf-8") as f:
+        f.write("\n")
     print(f"Generated: {sitemap_path}")
 
     # Write robots.txt
