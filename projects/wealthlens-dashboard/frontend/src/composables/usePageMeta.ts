@@ -37,6 +37,10 @@ function unwrap(value: string | Ref<string | undefined> | undefined): string | u
  * Sets title, description, og:*, and twitter:* meta tags reactively.
  * Cleans up all managed tags when the component scope is disposed.
  *
+ * Each instance creates and exclusively owns its own meta elements,
+ * preventing cross-contamination during route transitions where two
+ * instances may be mounted simultaneously.
+ *
  * @example
  * ```ts
  * usePageMeta({
@@ -47,38 +51,58 @@ function unwrap(value: string | Ref<string | undefined> | undefined): string | u
  * ```
  */
 export function usePageMeta(options: PageMetaOptions): void {
-  /** Tracks all <meta> elements created by this instance for cleanup. */
+  // SSR guard: bail out when document is not available (e.g. Node.js / SSR)
+  if (typeof document === 'undefined') return
+
+  /**
+   * Tracks all <meta> elements created by this instance for cleanup.
+   * Each instance always creates its own elements — never queries for
+   * existing ones — to avoid cross-contamination during route transitions.
+   */
   const managedElements: HTMLMetaElement[] = []
 
-  /** Find or create a <meta> element by property or name attribute. */
-  function getOrCreateMeta(attr: 'property' | 'name', value: string): HTMLMetaElement {
-    let el = document.head.querySelector<HTMLMetaElement>(
-      `meta[${attr}="${value}"]`,
-    )
-    if (!el) {
-      el = document.createElement('meta')
-      el.setAttribute(attr, value)
-      document.head.appendChild(el)
-    }
-    if (!managedElements.includes(el)) {
-      managedElements.push(el)
-    }
+  /**
+   * Create a new <meta> element owned exclusively by this instance.
+   * Never queries the DOM for existing elements to prevent multi-instance conflicts.
+   */
+  function createOwnedMeta(attr: 'property' | 'name', value: string): HTMLMetaElement {
+    const el = document.createElement('meta')
+    el.setAttribute(attr, value)
+    document.head.appendChild(el)
+    managedElements.push(el)
     return el
   }
 
-  /** Set content on a meta element, or remove it if content is empty. */
+  /**
+   * Find a meta element that this instance previously created (by attribute key).
+   * Only searches within managedElements, never the global DOM.
+   */
+  function findOwned(attr: 'property' | 'name', key: string): HTMLMetaElement | undefined {
+    return managedElements.find(
+      (el) => el.getAttribute(attr) === key,
+    )
+  }
+
+  /**
+   * Set content on a meta element owned by this instance.
+   * If content is truthy, creates or updates the element.
+   * If content is falsy, removes the element if it exists.
+   * This ensures stale tags are always cleaned up (e.g. imageAlt going from truthy to falsy).
+   */
   function setMeta(attr: 'property' | 'name', key: string, content: string | undefined): void {
+    const existing = findOwned(attr, key)
     if (content) {
-      const el = getOrCreateMeta(attr, key)
-      el.setAttribute('content', content)
+      if (existing) {
+        existing.setAttribute('content', content)
+      } else {
+        const el = createOwnedMeta(attr, key)
+        el.setAttribute('content', content)
+      }
     } else {
-      // If no content, remove the element if we created it
-      const el = document.head.querySelector<HTMLMetaElement>(
-        `meta[${attr}="${key}"]`,
-      )
-      if (el && managedElements.includes(el)) {
-        el.remove()
-        const idx = managedElements.indexOf(el)
+      // Remove the element if we own it and content is now empty
+      if (existing) {
+        existing.remove()
+        const idx = managedElements.indexOf(existing)
         if (idx !== -1) managedElements.splice(idx, 1)
       }
     }
@@ -120,13 +144,13 @@ export function usePageMeta(options: PageMetaOptions): void {
     setMeta('name', 'twitter:title', title ?? SITE_NAME)
     setMeta('name', 'twitter:description', description)
     setMeta('name', 'twitter:image', image)
-    if (imageAlt) {
-      setMeta('name', 'twitter:image:alt', imageAlt)
-      setMeta('property', 'og:image:alt', imageAlt)
-    }
+
+    // Image alt — always called unconditionally so stale alt tags are removed
+    setMeta('name', 'twitter:image:alt', imageAlt)
+    setMeta('property', 'og:image:alt', imageAlt)
   })
 
-  // Cleanup: remove all managed meta elements when scope is disposed
+  // Cleanup: remove only the meta elements this instance created
   onScopeDispose(() => {
     for (const el of managedElements) {
       el.remove()
