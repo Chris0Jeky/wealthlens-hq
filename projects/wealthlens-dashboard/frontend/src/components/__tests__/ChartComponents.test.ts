@@ -12,8 +12,6 @@ vi.mock("@/stores/data", () => ({
   useDataStore: () => ({
     fetchDataset: mockFetchDataset,
   }),
-  // Re-export the type so chart imports don't break
-  DatasetRow: undefined,
 }));
 
 /**
@@ -120,4 +118,35 @@ describe("Chart components", () => {
       });
     });
   }
+
+  describe("WealthSharesChart happy path", () => {
+    it("renders VChart when data loads successfully", async () => {
+      mockFetchDataset.mockResolvedValue([
+        { year: 2020, variable: "shweal_p99p100_992_j", percentile: "p99p100", value: 0.213 },
+        { year: 2020, variable: "shweal_p90p100_992_j", percentile: "p90p100", value: 0.527 },
+        { year: 2021, variable: "shweal_p99p100_992_j", percentile: "p99p100", value: 0.219 },
+        { year: 2021, variable: "shweal_p90p100_992_j", percentile: "p90p100", value: 0.531 },
+      ]);
+      const wrapper = mount(WealthSharesChart);
+      await flushPromises();
+
+      const vchart = wrapper.find(".vchart-stub");
+      expect(vchart.exists()).toBe(true);
+      expect(wrapper.text()).not.toContain("No data available");
+      expect(wrapper.text()).not.toContain("Loading chart data...");
+    });
+  });
+
+  describe("WealthSharesChart schema mismatch", () => {
+    it("shows no-data when rows lack expected fields", async () => {
+      mockFetchDataset.mockResolvedValue([
+        { year: 2020, unrelated: "x" },
+        { year: 2021, unrelated: "y" },
+      ]);
+      const wrapper = mount(WealthSharesChart);
+      await flushPromises();
+
+      expect(wrapper.text()).toContain("No data available for this chart.");
+    });
+  });
 });

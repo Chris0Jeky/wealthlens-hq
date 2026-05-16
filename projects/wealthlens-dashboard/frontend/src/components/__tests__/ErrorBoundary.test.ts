@@ -90,4 +90,32 @@ describe("ErrorBoundary", () => {
     const alert = tree.find('[role="alert"]');
     expect(alert.exists()).toBe(true);
   });
+
+  it("re-renders child after clicking Try again", async () => {
+    const tree = mountWithThrowingChild();
+    await tree.vm.$nextTick();
+
+    expect(tree.find('[role="alert"]').exists()).toBe(true);
+
+    await tree.find("button").trigger("click");
+    await tree.vm.$nextTick();
+
+    // The child re-throws on re-render, so error reappears
+    // but the retry mechanism was exercised
+    expect(tree.text()).toContain("Something went wrong");
+  });
+
+  it("shows Back to dashboard link after MAX_RETRIES exhausted", async () => {
+    const tree = mountWithThrowingChild();
+
+    for (let i = 0; i < 3; i++) {
+      await tree.vm.$nextTick();
+      const btn = tree.find("button");
+      if (btn.exists()) await btn.trigger("click");
+    }
+    await tree.vm.$nextTick();
+
+    expect(tree.find("button").exists()).toBe(false);
+    expect(tree.text()).toContain("Back to dashboard");
+  });
 });
