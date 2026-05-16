@@ -11,6 +11,7 @@ function createMountOptions(storeOverrides = {}) {
     routes: [
       { path: '/', component: HomeView },
       { path: '/charts/:name', component: { template: '<div />' } },
+      { path: '/datasets/:name', component: { template: '<div />' } },
     ],
   })
 
@@ -20,7 +21,15 @@ function createMountOptions(storeOverrides = {}) {
         router,
         createTestingPinia({
           createSpy: vi.fn,
-          initialState: { data: { datasets: [], loading: false, error: null, ...storeOverrides } },
+          initialState: {
+            data: {
+              datasets: [],
+              metadata: new Map(),
+              loading: false,
+              error: null,
+              ...storeOverrides,
+            },
+          },
         }),
       ],
     },
@@ -28,38 +37,163 @@ function createMountOptions(storeOverrides = {}) {
 }
 
 describe('HomeView', () => {
-  it('renders main heading', () => {
-    const wrapper = mount(HomeView, createMountOptions())
-    expect(wrapper.find('h1').text()).toBe('UK Wealth Inequality Dashboard')
+  describe('hero section', () => {
+    it('renders main heading', () => {
+      const wrapper = mount(HomeView, createMountOptions())
+      expect(wrapper.find('h1').text()).toBe('UK Wealth Inequality Dashboard')
+    })
+
+    it('renders mission description', () => {
+      const wrapper = mount(HomeView, createMountOptions())
+      expect(wrapper.text()).toContain('Open-source, source-backed data')
+    })
+
+    it('renders tagline', () => {
+      const wrapper = mount(HomeView, createMountOptions())
+      expect(wrapper.text()).toContain('Making wealth data accessible')
+    })
   })
 
-  it('renders description paragraph', () => {
-    const wrapper = mount(HomeView, createMountOptions())
-    expect(wrapper.text()).toContain('Open-source, source-backed data')
+  describe('key statistics section', () => {
+    it('shows dataset count', () => {
+      const wrapper = mount(HomeView, createMountOptions())
+      expect(wrapper.text()).toContain('10')
+      expect(wrapper.text()).toContain('Datasets')
+    })
+
+    it('shows interactive charts count', () => {
+      const wrapper = mount(HomeView, createMountOptions())
+      expect(wrapper.text()).toContain('Interactive Charts')
+    })
+
+    it('shows update frequency', () => {
+      const wrapper = mount(HomeView, createMountOptions())
+      expect(wrapper.text()).toContain('Weekly')
+      expect(wrapper.text()).toContain('Update Frequency')
+    })
   })
 
-  it('shows loading state', () => {
-    const wrapper = mount(HomeView, createMountOptions({ loading: true }))
-    expect(wrapper.text()).toContain('Loading datasets')
+  describe('loading state', () => {
+    it('shows skeleton loaders when loading', () => {
+      const wrapper = mount(HomeView, createMountOptions({ loading: true }))
+      const skeletons = wrapper.findAll('[role="status"]')
+      // Each of 10 cards has 3 skeleton loaders (title, description, actions)
+      expect(skeletons.length).toBeGreaterThanOrEqual(10)
+    })
+
+    it('does not show dataset cards when loading', () => {
+      const wrapper = mount(HomeView, createMountOptions({ loading: true }))
+      const items = wrapper.findAll('[role="listitem"]')
+      expect(items.length).toBe(0)
+    })
   })
 
-  it('shows error state', () => {
-    const wrapper = mount(HomeView, createMountOptions({ error: 'Network error' }))
-    expect(wrapper.text()).toContain('Network error')
+  describe('error state', () => {
+    it('shows error message', () => {
+      const wrapper = mount(HomeView, createMountOptions({ error: 'Network error' }))
+      expect(wrapper.text()).toContain('Network error')
+    })
+
+    it('shows failure heading', () => {
+      const wrapper = mount(HomeView, createMountOptions({ error: 'Server down' }))
+      expect(wrapper.text()).toContain('Failed to load datasets')
+    })
+
+    it('shows retry button', () => {
+      const wrapper = mount(HomeView, createMountOptions({ error: 'Network error' }))
+      const button = wrapper.find('button')
+      expect(button.exists()).toBe(true)
+      expect(button.text()).toBe('Retry')
+    })
+
+    it('retry button calls fetchDatasets', async () => {
+      const wrapper = mount(HomeView, createMountOptions({ error: 'Network error' }))
+      const store = useDataStore()
+      // Reset the call count from onMounted
+      vi.mocked(store.fetchDatasets).mockClear()
+
+      await wrapper.find('button').trigger('click')
+      expect(store.fetchDatasets).toHaveBeenCalledOnce()
+    })
   })
 
-  it('renders dataset cards when loaded', () => {
-    const wrapper = mount(
-      HomeView,
-      createMountOptions({ datasets: ['wealth-shares', 'housing-affordability'] }),
-    )
-    const items = wrapper.findAll('[role="listitem"]')
-    expect(items.length).toBe(2)
+  describe('dataset cards', () => {
+    it('renders all 10 dataset cards when loaded', () => {
+      const wrapper = mount(HomeView, createMountOptions())
+      const items = wrapper.findAll('[role="listitem"]')
+      expect(items.length).toBe(10)
+    })
+
+    it('displays correct dataset names', () => {
+      const wrapper = mount(HomeView, createMountOptions())
+      const text = wrapper.text()
+      expect(text).toContain('wealth-shares')
+      expect(text).toContain('housing-affordability')
+      expect(text).toContain('cgt-concentration')
+      expect(text).toContain('wealth-by-decile')
+      expect(text).toContain('productivity-pay')
+      expect(text).toContain('gdhi-by-region')
+      expect(text).toContain('tax-composition')
+      expect(text).toContain('boe-rates')
+      expect(text).toContain('child-poverty')
+      expect(text).toContain('generational-wealth')
+    })
+
+    it('uses metadata description when available', () => {
+      const metadata = new Map([
+        ['wealth-shares', { name: 'wealth-shares', description: 'Custom description from API', source: '', source_url: '', access_date: '', row_count: 0, columns: [] }],
+      ])
+      const wrapper = mount(HomeView, createMountOptions({ metadata }))
+      expect(wrapper.text()).toContain('Custom description from API')
+    })
+
+    it('uses fallback descriptions when metadata unavailable', () => {
+      const wrapper = mount(HomeView, createMountOptions())
+      expect(wrapper.text()).toContain('Gap between productivity growth and median pay')
+    })
   })
 
-  it('calls fetchDatasets on mount', () => {
-    mount(HomeView, createMountOptions())
-    const store = useDataStore()
-    expect(store.fetchDatasets).toHaveBeenCalledOnce()
+  describe('data fetching', () => {
+    it('calls fetchDatasets on mount', () => {
+      mount(HomeView, createMountOptions())
+      const store = useDataStore()
+      expect(store.fetchDatasets).toHaveBeenCalledOnce()
+    })
+
+    it('calls fetchAllMetadata on mount', () => {
+      mount(HomeView, createMountOptions())
+      const store = useDataStore()
+      expect(store.fetchAllMetadata).toHaveBeenCalledOnce()
+    })
+  })
+
+  describe('accessibility', () => {
+    it('has aria-labelledby on hero section', () => {
+      const wrapper = mount(HomeView, createMountOptions())
+      const section = wrapper.find('[aria-labelledby="hero-heading"]')
+      expect(section.exists()).toBe(true)
+    })
+
+    it('has aria-labelledby on datasets section', () => {
+      const wrapper = mount(HomeView, createMountOptions())
+      const section = wrapper.find('[aria-labelledby="datasets-heading"]')
+      expect(section.exists()).toBe(true)
+    })
+
+    it('has role="alert" on error state', () => {
+      const wrapper = mount(HomeView, createMountOptions({ error: 'Error' }))
+      expect(wrapper.find('[role="alert"]').exists()).toBe(true)
+    })
+
+    it('has role="list" on dataset grid', () => {
+      const wrapper = mount(HomeView, createMountOptions())
+      expect(wrapper.find('[role="list"]').exists()).toBe(true)
+    })
+
+    it('has sr-only label for stats section', () => {
+      const wrapper = mount(HomeView, createMountOptions())
+      const srOnly = wrapper.find('.sr-only')
+      expect(srOnly.text()).toBe('Key Statistics')
+    })
   })
 })
