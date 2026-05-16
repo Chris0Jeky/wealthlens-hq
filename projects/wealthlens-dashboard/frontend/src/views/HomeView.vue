@@ -5,6 +5,7 @@ import DatasetCard from '@/components/DatasetCard.vue'
 import ResponsiveGrid from '@/components/ResponsiveGrid.vue'
 import NumberStat from '@/components/NumberStat.vue'
 import { CHART_METADATA, SUPPORTED_CHART_NAMES } from '@/utils/chartConstants'
+import { prefetchRouteComponents } from '@/utils/prefetch'
 import { usePageMeta } from '@/composables/usePageMeta'
 
 const store = useDataStore()
@@ -91,6 +92,12 @@ onMounted(async () => {
       ? results[1].reason.message
       : 'Failed to load metadata'
   }
+
+  // Prefetch the most likely next navigations after idle
+  prefetchRouteComponents([
+    () => import('@/views/ChartView.vue'),
+    () => import('@/views/DatasetDetailView.vue'),
+  ])
 })
 </script>
 

@@ -41,3 +41,15 @@ describe("Router configuration", () => {
     expect(chartRoute!.path).toBe("/charts/:name");
   });
 });
+
+describe("Route-level code splitting", () => {
+  it("all route components use lazy loading (function components)", () => {
+    const routes = router.getRoutes();
+    for (const route of routes) {
+      const components = route.components ?? {};
+      for (const [, comp] of Object.entries(components)) {
+        expect(typeof comp).toBe("function");
+      }
+    }
+  });
+});
