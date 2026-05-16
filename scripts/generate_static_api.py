@@ -14,8 +14,10 @@ Usage: python scripts/generate_static_api.py
 from __future__ import annotations
 
 import json
+import re
 import sys
 from pathlib import Path
+from typing import Any, Callable
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = ROOT / "projects" / "wealthlens-dashboard" / "data" / "processed"
@@ -98,13 +100,53 @@ DATASET_META: dict[str, dict[str, str]] = {
 }
 
 
-def _read_csv_as_records(path: Path) -> list[dict]:
-    """Read a CSV and return list of row dicts, converting NaN to None."""
+def _extract_percentile(variable: str) -> str:
+    """Extract percentile key from WID variable name.
+
+    e.g. 'shweal_p99p100_992_j' -> 'p99p100'
+         'shweal_p90p100_992_j' -> 'p90p100'
+    """
+    match = re.search(r"(p\d+p\d+)", variable)
+    return match.group(1) if match else variable
+
+
+# Dataset-specific post-processing hooks.
+# Each function receives a list of row dicts and returns a modified list.
+def _postprocess_wealth_shares(records: list[dict]) -> list[dict]:
+    """Add a 'percentile' field derived from the WID 'variable' column.
+
+    The WealthSharesChart.vue component filters rows by r.percentile,
+    but the source CSV only has the full WID variable name.  This derives
+    the short percentile key (e.g. 'p99p100') so the frontend works
+    without needing to parse variable names at runtime.
+    """
+    for row in records:
+        if "variable" in row and row["variable"]:
+            row["percentile"] = _extract_percentile(row["variable"])
+    return records
+
+
+_POSTPROCESSORS: dict[str, Callable[[list[dict[str, Any]]], list[dict[str, Any]]]] = {
+    "wealth-shares": _postprocess_wealth_shares,
+}
+
+
+def _read_csv_as_records(path: Path, slug: str = "") -> list[dict]:
+    """Read a CSV and return list of row dicts, converting NaN to None.
+
+    If a post-processor is registered for the given slug, it is applied
+    after CSV parsing to add derived fields needed by the frontend.
+    """
     import pandas as pd
 
     df = pd.read_csv(path)
     df = df.where(pd.notna(df), other=None)
-    return df.to_dict(orient="records")
+    records = df.to_dict(orient="records")
+
+    if slug in _POSTPROCESSORS:
+        records = _POSTPROCESSORS[slug](records)
+
+    return records
 
 
 def main() -> None:
@@ -119,7 +161,7 @@ def main() -> None:
             errors.append(f"  SKIP {slug}: {csv_path} not found")
             continue
 
-        records = _read_csv_as_records(csv_path)
+        records = _read_csv_as_records(csv_path, slug=slug)
         available.append(slug)
 
         # Paginated data response (all rows in one page)

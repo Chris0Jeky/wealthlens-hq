@@ -25,7 +25,14 @@ describe("Router configuration", () => {
   });
 
   it("has the expected number of route definitions", () => {
-    expect(router.getRoutes()).toHaveLength(8);
+    // home, dataset-detail, chart, methodology, data-sources, about,
+    // contribute, wealth-calculator, not-found catch-all
+    expect(router.getRoutes()).toHaveLength(9);
+  });
+
+  it('resolves /data-sources to the "data-sources" route', () => {
+    const resolved = router.resolve("/data-sources");
+    expect(resolved.name).toBe("data-sources");
   });
 
   it('the "chart" route has a dynamic :name param', () => {
