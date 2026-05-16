@@ -9,11 +9,14 @@ import NotFoundView from "@/views/NotFoundView.vue";
 // --- Mocks ---
 
 const mockFetchDatasets = vi.fn();
+const mockFetchFreshness = vi.fn();
 const mockStoreState = reactive({
   datasets: [] as string[],
   loading: false,
   error: null as string | null,
+  freshness: {} as Record<string, unknown>,
   fetchDatasets: mockFetchDatasets,
+  fetchFreshness: mockFetchFreshness,
 });
 
 vi.mock("@/stores/data", () => ({

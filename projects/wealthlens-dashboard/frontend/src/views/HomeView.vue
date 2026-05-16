@@ -12,6 +12,7 @@ const descriptions: Record<string, string> = Object.fromEntries(
 
 onMounted(() => {
   store.fetchDatasets()
+  store.fetchFreshness()
 })
 </script>
 
@@ -40,6 +41,7 @@ onMounted(() => {
           <DatasetCard
             :name="name"
             :description="descriptions[name] ?? 'UK inequality dataset'"
+            :freshness="store.freshness[name]"
           />
         </div>
       </div>
