@@ -15,6 +15,7 @@ export const useDataStore = defineStore("data", () => {
     error.value = null;
     try {
       const res = await fetch("/api/data/");
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
       datasets.value = json.datasets;
     } catch (e) {
