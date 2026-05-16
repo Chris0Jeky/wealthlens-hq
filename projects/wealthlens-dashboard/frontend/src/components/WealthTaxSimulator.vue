@@ -111,8 +111,8 @@ function removeBand(index: number) {
 
 function applyPreset(preset: PresetScenario) {
   bands.value = preset.bands.map((b) => ({
-    thresholdIndex: THRESHOLD_STEPS.findIndex((t) => t === b.threshold) ?? 0,
-    rateIndex: RATE_STEPS.findIndex((r) => r === b.rate) ?? 0,
+    thresholdIndex: Math.max(0, THRESHOLD_STEPS.findIndex((t) => t === b.threshold)),
+    rateIndex: Math.max(0, RATE_STEPS.findIndex((r) => r === b.rate)),
   }));
   activePreset.value = preset.name;
 }
