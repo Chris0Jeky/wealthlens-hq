@@ -48,7 +48,7 @@ jobs:
       - name: Install dev tools
         run: |
           pip install ".[dev]"
-          pip install pytest-cov>=6.0
+          pip install "pytest-cov>=6.0"
 
       - name: Ruff check
         run: |
@@ -71,5 +71,5 @@ jobs:
 
       - name: Run tests with coverage
         run: |
-          python -m pytest tests/ -q --cov=app --cov-report=term-missing --cov-report=xml:coverage.xml --cov-fail-under=60 || true
+          python -m pytest tests/ -q --cov=app --cov-report=term-missing --cov-report=xml:coverage.xml --cov-fail-under=60
         working-directory: projects/wealthlens-dashboard/backend
