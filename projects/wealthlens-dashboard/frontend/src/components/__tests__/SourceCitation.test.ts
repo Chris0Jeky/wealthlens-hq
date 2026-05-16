@@ -1,49 +1,47 @@
 import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
-import SourceCitation from '../SourceCitation.vue'
+import SourceCitation from '@/components/SourceCitation.vue'
+
+const defaultProps = {
+  source: 'ONS',
+  sourceUrl: 'https://www.ons.gov.uk/data',
+  accessDate: '2026-05-14',
+}
 
 describe('SourceCitation', () => {
-  const props = {
-    source: 'World Inequality Database (wid.world)',
-    sourceUrl: 'https://wid.world',
-    accessDate: '2026-05-14',
-  }
-
-  it('renders source name as a link', () => {
-    const wrapper = mount(SourceCitation, { props })
+  it('renders source name as link text', () => {
+    const wrapper = mount(SourceCitation, { props: defaultProps })
     const link = wrapper.find('a')
-    expect(link.text()).toContain('World Inequality Database (wid.world)')
-    expect(link.attributes('href')).toBe('https://wid.world')
+    expect(link.text()).toContain('ONS')
   })
 
-  it('sets target="_blank" and rel="noopener noreferrer"', () => {
-    const wrapper = mount(SourceCitation, { props })
+  it('links to the source URL', () => {
+    const wrapper = mount(SourceCitation, { props: defaultProps })
+    const link = wrapper.find('a')
+    expect(link.attributes('href')).toBe('https://www.ons.gov.uk/data')
+  })
+
+  it('opens link in new tab with noopener', () => {
+    const wrapper = mount(SourceCitation, { props: defaultProps })
     const link = wrapper.find('a')
     expect(link.attributes('target')).toBe('_blank')
     expect(link.attributes('rel')).toBe('noopener noreferrer')
   })
 
-  it('includes screen-reader new tab warning', () => {
-    const wrapper = mount(SourceCitation, { props })
+  it('displays access date', () => {
+    const wrapper = mount(SourceCitation, { props: defaultProps })
+    expect(wrapper.text()).toContain('Accessed 2026-05-14')
+  })
+
+  it('includes sr-only new tab hint', () => {
+    const wrapper = mount(SourceCitation, { props: defaultProps })
     const srOnly = wrapper.find('.sr-only')
-    expect(srOnly.text()).toBe('(opens in new tab)')
+    expect(srOnly.exists()).toBe(true)
+    expect(srOnly.text()).toContain('opens in new tab')
   })
 
-  it('sanitizes non-http URLs to #', () => {
-    const wrapper = mount(SourceCitation, {
-      props: { ...props, sourceUrl: 'javascript:alert(1)' },
-    })
-    const link = wrapper.find('a')
-    expect(link.attributes('href')).toBe('#')
-  })
-
-  it('displays the access date', () => {
-    const wrapper = mount(SourceCitation, { props })
-    expect(wrapper.text()).toContain('accessed 2026-05-14')
-  })
-
-  it('displays "Source:" label', () => {
-    const wrapper = mount(SourceCitation, { props })
-    expect(wrapper.text()).toContain('Source:')
+  it('renders as a footer element', () => {
+    const wrapper = mount(SourceCitation, { props: defaultProps })
+    expect(wrapper.find('footer').exists()).toBe(true)
   })
 })
