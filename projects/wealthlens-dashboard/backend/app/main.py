@@ -9,6 +9,7 @@ import os
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.gzip import GZipMiddleware
 
 from app.lifespan import lifespan
 from app.logging_config import setup_logging
@@ -67,6 +68,8 @@ app.add_middleware(
     max_age=3600,
 )
 app.add_middleware(SecurityHeadersMiddleware)
+
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 app.include_router(data.router, prefix="/api/data", tags=["data"])
 
