@@ -232,6 +232,16 @@ function setMode(newMode: CalcMode) {
   mode.value = newMode;
 }
 
+function onTabKeydown(e: KeyboardEvent) {
+  if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+    e.preventDefault();
+    const newMode: CalcMode = mode.value === "single" ? "compare" : "single";
+    setMode(newMode);
+    const targetId = newMode === "single" ? "tab-single" : "tab-compare";
+    (document.getElementById(targetId) as HTMLElement)?.focus();
+  }
+}
+
 /** Get ordinal for a given decile number */
 function getOrdinal(n: number): string {
   if (n === 1) return "1st";
@@ -280,6 +290,7 @@ function getOrdinal(n: number): string {
         :tabindex="mode === 'single' ? 0 : -1"
         aria-controls="panel-single"
         @click="setMode('single')"
+        @keydown="onTabKeydown"
       >
         Your position
       </button>
@@ -292,6 +303,7 @@ function getOrdinal(n: number): string {
         :tabindex="mode === 'compare' ? 0 : -1"
         aria-controls="panel-compare"
         @click="setMode('compare')"
+        @keydown="onTabKeydown"
       >
         Compare two
       </button>
@@ -649,7 +661,7 @@ function getOrdinal(n: number): string {
             >
               <span class="calc__bar-label">{{ d.decile }}</span>
               <span
-                v-if="d.decile === decileA"
+                v-if="d.decile === decileA && decileA !== decileB"
                 class="calc__bar-marker calc__bar-marker--a"
                 aria-hidden="true"
               >
