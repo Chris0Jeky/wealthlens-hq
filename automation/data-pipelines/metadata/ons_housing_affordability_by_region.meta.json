@@ -1,0 +1,18 @@
+{
+  "dataset": "ons_housing_affordability_by_region",
+  "description": "House price to workplace-based earnings ratio by UK region.",
+  "sources": [
+    {
+      "name": "ONS",
+      "publication": "Ratio of house price to workplace-based earnings (lower quartile and median)",
+      "url": "https://www.ons.gov.uk/peoplepopulationandcommunity/housing/datasets/ratioofhousepricetoworkplacebasedearningslowerquartileandmedian",
+      "licence": "OGL v3.0"
+    }
+  ],
+  "access_date": "2026-05-14",
+  "columns": {
+    "region": "UK region name",
+    "year": "Calendar year",
+    "ratio": "Median house price to median earnings ratio"
+  }
+}

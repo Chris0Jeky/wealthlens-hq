@@ -1,0 +1,16 @@
+{
+  "dataset": "ons_wealth_by_decile",
+  "description": "Total net household wealth by decile in Great Britain.",
+  "sources": [
+    {
+      "name": "ONS Wealth and Assets Survey",
+      "url": "https://www.ons.gov.uk/peoplepopulationandcommunity/personalandhouseholdfinances/incomeandwealth/datasets/totalwealthwealthingreatbritain",
+      "licence": "OGL v3.0"
+    }
+  ],
+  "access_date": "2026-05-14",
+  "columns": {
+    "decile": "Wealth decile (1 = lowest, 10 = highest)",
+    "total_wealth_bn": "Total net wealth in billions GBP"
+  }
+}
