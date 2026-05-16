@@ -5,6 +5,10 @@
  * Keep in sync with the FastAPI schemas whenever they change.
  */
 
+// Mirrors backend Pydantic models in schemas.py.
+// Pydantic Field constraints (ge=0, ge=1) are not expressible in TS
+// and are enforced server-side only.
+
 /** GET /api/data/ — available dataset names. */
 export interface DatasetListResponse {
   datasets: string[]
@@ -26,7 +30,9 @@ export interface AllDatasetsMetadataResponse {
   datasets: DatasetMetadataResponse[]
 }
 
-/** A single row returned by the paginated dataset endpoint. */
+/**
+ * Backend emits dict[str, Any]; we narrow to the types our charts handle.
+ */
 export interface DatasetRow {
   [key: string]: string | number | null
 }
