@@ -83,6 +83,8 @@ class TestJsonFormatter:
         parsed = json.loads(self.formatter.format(record))
         assert parsed["exc_type"] == "ValueError"
         assert parsed["exc_message"] == "bad value"
+        assert "traceback" in parsed
+        assert "ValueError: bad value" in parsed["traceback"]
 
 
 class TestConfigureLogging:

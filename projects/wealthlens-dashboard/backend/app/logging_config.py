@@ -1,7 +1,10 @@
 """Structured JSON logging configuration for the WealthLens backend.
 
 Produces one JSON object per log line with fields: timestamp, level, logger,
-message.  Exception info is appended as exc_type and exc_message when present.
+message.  Exception info includes exc_type, exc_message, and full traceback.
+
+Note: log messages may contain user-supplied data. Operators should configure
+log redaction in their aggregator for production deployments.
 
 Usage:
     from app.logging_config import configure_logging
@@ -34,6 +37,7 @@ class JsonFormatter(logging.Formatter):
             log_entry["exc_type"] = record.exc_info[0].__name__
             exc_value = record.exc_info[1]
             log_entry["exc_message"] = str(exc_value) if exc_value else ""
+            log_entry["traceback"] = self.formatException(record.exc_info)
 
         return json.dumps(log_entry)
 
