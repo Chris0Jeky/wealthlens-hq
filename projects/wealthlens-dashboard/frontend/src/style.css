@@ -10,8 +10,9 @@
    These reference CSS custom properties so data-theme switching works.
    --------------------------------------------------------------------------- */
 
-@theme {
-  /* Colour tokens */
+@theme inline {
+  /* Colour tokens — `inline` preserves var() references in output CSS
+     so that data-theme switching works at runtime. */
   --color-wl-paper:       var(--wl-paper);
   --color-wl-paper-tint:  var(--wl-paper-tint);
   --color-wl-paper-deep:  var(--wl-paper-deep);
