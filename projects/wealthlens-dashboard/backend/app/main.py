@@ -11,6 +11,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.logging_config import setup_logging
+from app.middleware import SecurityHeadersMiddleware
 from app.routers import data
 from app.timeout_middleware import TimeoutMiddleware
 
@@ -63,6 +64,7 @@ app.add_middleware(
     allow_headers=["*"],
     max_age=3600,
 )
+app.add_middleware(SecurityHeadersMiddleware)
 
 app.include_router(data.router, prefix="/api/data", tags=["data"])
 
