@@ -2,15 +2,15 @@
 
 from __future__ import annotations
 
+# Add parent to path so we can import validate
+import sys
 from pathlib import Path
 
 import pytest
 
-# Add parent to path so we can import validate
-import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from validate import validate_all, CHECKS, DATA_DIR  # noqa: E402
+from validate import CHECKS, validate_all
 
 
 class TestValidateAll:

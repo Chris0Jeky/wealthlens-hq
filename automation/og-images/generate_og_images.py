@@ -115,7 +115,7 @@ def generate_landing_og() -> Path:
     # (7.7x England median); HMRC tax receipts (93% work tax).
     stats = [
         ("57%", "of wealth held\nby top 10%"),
-        ("7.7×", "house price to\nearnings ratio"),
+        ("7.7×", "house price to\nearnings ratio"),  # noqa: RUF001
         ("93%", "of tax from\nwork, not wealth"),
         ("£85bn", "in rent paid\nper year"),
     ]
@@ -159,7 +159,7 @@ def generate_chart_og(
     font_stat = _get_font(96, bold=True)
     font_label = _get_sans_font(22)
     font_eyebrow = _get_mono_font(14)
-    font_source = _get_sans_font(16)
+    _get_sans_font(16)  # reserved for future source line
 
     _draw_red_rule(draw, 40, w)
 
@@ -257,7 +257,7 @@ def main() -> None:
         },
         {
             "title": "Housing Affordability by Region",
-            "stat_value": "7.7×",
+            "stat_value": "7.7×",  # noqa: RUF001
             "stat_label": "England median house price to earnings (ONS 2024)",
             "filename": "og-housing-affordability.png",
         },

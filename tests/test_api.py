@@ -475,7 +475,6 @@ def test_metadata_caching_avoids_redundant_csv_reads(tmp_path):
     data.
     """
     import pandas as pd
-
     from app.routers import data as data_module
 
     # Seed stub CSVs in a temp directory so the endpoint can read them.
@@ -537,7 +536,7 @@ def test_metadata_cache_warmed_on_startup():
     with TestClient(app):
         cached = data_mod._metadata_cache
         assert len(cached) > 0, "No datasets cached after startup"
-        for name, (row_count, columns) in cached.items():
+        for _name, (row_count, columns) in cached.items():
             assert row_count > 0
             assert len(columns) > 0
 
