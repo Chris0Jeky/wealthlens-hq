@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /** Dataset names that have a chart implementation. */
-const SUPPORTED_CHARTS = new Set(["wealth-shares", "housing-affordability", "cgt-concentration"]);
+const SUPPORTED_CHARTS = new Set(["wealth-shares", "housing-affordability", "cgt-concentration", "wealth-by-decile"]);
 
 const props = defineProps<{
   name: string;
