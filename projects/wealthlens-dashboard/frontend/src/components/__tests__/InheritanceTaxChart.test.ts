@@ -34,7 +34,7 @@ vi.mock("echarts/components", () => ({
 }));
 
 vi.mock("@/utils/fetchWithRetry", () => ({
-  fetchWithRetry: (...args: unknown[]) => (globalThis as any).fetch(...args),
+  fetchWithRetry: (...args: Parameters<typeof fetch>) => globalThis.fetch(...args),
 }));
 
 import InheritanceTaxChart from "@/components/InheritanceTaxChart.vue";
