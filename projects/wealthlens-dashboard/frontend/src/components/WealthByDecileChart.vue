@@ -10,7 +10,7 @@
  *
  * Accessibility: WCAG AA high-contrast colors, aria-label, escapeHtml tooltips.
  */
-import { computed, onMounted, ref } from "vue";
+import { computed } from "vue";
 import { use } from "echarts/core";
 import { CanvasRenderer } from "echarts/renderers";
 import { BarChart } from "echarts/charts";
@@ -20,7 +20,7 @@ import {
   TitleComponent,
 } from "echarts/components";
 import VChart from "vue-echarts";
-import { useDataStore, type DatasetRow } from "@/stores/data";
+import { useChartData } from "@/composables/useChartData";
 import { escapeHtml } from "@/utils/chart";
 
 // Register only the ECharts modules we need (tree-shaking)
@@ -32,21 +32,7 @@ use([
   TitleComponent,
 ]);
 
-const store = useDataStore();
-const rows = ref<DatasetRow[]>([]);
-const loading = ref(true);
-const error = ref<string | null>(null);
-
-onMounted(async () => {
-  try {
-    rows.value = await store.fetchDataset("wealth-by-decile");
-  } catch (e) {
-    error.value =
-      e instanceof Error ? e.message : "Failed to load wealth by decile data";
-  } finally {
-    loading.value = false;
-  }
-});
+const { rows, loading, error } = useChartData("wealth-by-decile");
 
 // WCAG AA high-contrast colors against white
 // #1a56db (blue) contrast ratio ~7.2:1 — standard bars
