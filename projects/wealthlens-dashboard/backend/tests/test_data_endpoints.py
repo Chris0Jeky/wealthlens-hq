@@ -9,14 +9,21 @@ from __future__ import annotations
 from unittest.mock import patch
 
 import pandas as pd
+import pytest
 from fastapi.testclient import TestClient
 
+import app.routers.data as data_mod
 from app.main import app
 
 client = TestClient(app)
 
-
 SAMPLE_DF = pd.DataFrame({"year": [2020, 2021, 2022], "value": [1.0, 2.0, 3.0]})
+
+
+@pytest.fixture(autouse=True)
+def _clear_metadata_cache() -> None:
+    """Clear the module-level metadata cache between tests for isolation."""
+    data_mod._metadata_cache.clear()
 
 
 class TestListDatasets:
@@ -56,6 +63,8 @@ class TestGetDataset:
         assert body["total"] == 3
         assert body["page"] == 1
         assert len(body["data"]) == 3
+        assert body["data"][0] == {"year": 2020, "value": 1.0}
+        assert body["data"][2] == {"year": 2022, "value": 3.0}
 
     @patch("app.routers.data._read_csv", return_value=SAMPLE_DF)
     def test_pagination_limit(self, mock_read) -> None:  # noqa: ANN001
