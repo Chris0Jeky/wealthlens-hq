@@ -55,6 +55,24 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /*
+ * WCAG 2.4.7 — Global focus-visible fallback.
+ * Ensures all interactive elements have a visible focus indicator
+ * for keyboard users. Individual components can override this.
+ */
+:focus-visible {
+  outline: 2px solid #1a56db;
+  outline-offset: 2px;
+}
+
+/*
+ * Suppress focus ring on #main-content which receives programmatic
+ * focus on route navigation (it has tabindex="-1").
+ */
+#main-content:focus {
+  outline: none;
+}
+
+/*
  * WCAG 2.3.3 — Respect prefers-reduced-motion.
  * Disables CSS transitions and animations globally when the user has
  * requested reduced motion in their OS settings.

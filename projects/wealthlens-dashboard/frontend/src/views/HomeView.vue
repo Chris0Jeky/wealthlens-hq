@@ -17,16 +17,16 @@ onMounted(() => {
 
 <template>
   <div class="max-w-6xl mx-auto px-6 py-10">
-    <section class="mb-12">
-      <h1 class="text-3xl font-bold mb-3">UK Wealth Inequality Dashboard</h1>
+    <section class="mb-12" aria-labelledby="dashboard-heading">
+      <h1 id="dashboard-heading" class="text-3xl font-bold mb-3">UK Wealth Inequality Dashboard</h1>
       <p class="text-[var(--wl-ink-muted)] max-w-2xl">
         Open-source, source-backed data on wealth inequality in the United
         Kingdom. Every chart cites its data source with URL and access date.
       </p>
     </section>
 
-    <section>
-      <h2 class="text-xl font-semibold mb-4">Available Datasets</h2>
+    <section aria-labelledby="datasets-heading">
+      <h2 id="datasets-heading" class="text-xl font-semibold mb-4">Available Datasets</h2>
 
       <div aria-live="polite">
         <p v-if="store.loading" class="text-[var(--wl-ink-muted)]">Loading datasets...</p>
