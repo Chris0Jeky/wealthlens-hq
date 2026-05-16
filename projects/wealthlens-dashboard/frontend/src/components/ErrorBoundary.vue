@@ -6,7 +6,6 @@ const MAX_RETRIES = 3;
 const error = ref<Error | null>(null);
 const errorId = ref("");
 const retryCount = ref(0);
-const retryButton = ref<HTMLButtonElement | null>(null);
 const errorContainer = ref<HTMLDivElement | null>(null);
 
 function generateErrorId(): string {
@@ -16,9 +15,6 @@ function generateErrorId(): string {
 function reset() {
   retryCount.value++;
   error.value = null;
-  nextTick(() => {
-    retryButton.value?.focus();
-  });
 }
 
 onErrorCaptured((err: Error) => {
@@ -47,7 +43,6 @@ onErrorCaptured((err: Error) => {
     </p>
     <button
       v-if="retryCount < MAX_RETRIES"
-      ref="retryButton"
       class="px-4 py-2 bg-[var(--wl-red)] text-white rounded hover:bg-[var(--wl-red-deep)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--wl-red)] focus:ring-offset-2"
       @click="reset"
     >
