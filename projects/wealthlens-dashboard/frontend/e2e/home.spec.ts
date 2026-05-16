@@ -17,7 +17,7 @@ test.describe('Home page', () => {
     await page.goto('/')
     const nav = page.getByRole('navigation', { name: /site/i })
     await expect(nav.getByRole('link', { name: /about/i })).toBeVisible()
-    await expect(nav.getByRole('link', { name: /the data/i })).toBeVisible()
+    await expect(nav.getByRole('link', { name: 'The data', exact: true })).toBeVisible()
   })
 
   // Requires API or static data fallback — mark as fixme until data layer is stable
