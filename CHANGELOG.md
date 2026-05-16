@@ -20,7 +20,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ErrorBoundary component wrapping router view with retry limit and focus management
 - WCAG AA accessibility improvements: skip link, ARIA labels, keyboard navigation, high-contrast colours
 - Data pipelines for ONS wealth, ONS housing, WID wealth shares, and HMRC CGT statistics
-- ONS Total Wealth fetch/process/chart script
 - Shared accessible chart HTML wrapper for pipeline-generated charts
 - CSV validation module with `make validate` target
 - Cross-platform Python pipeline runner (`run_all.py`)
@@ -32,7 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Weekly data update workflow with scheduled pipeline runs
 - Backend test suite for API endpoints, metadata, pagination, and health/data
 - Frontend test suite with vitest, vue-test-utils, and jsdom (DatasetCard and store tests)
-- Pipeline tests for ONS housing, ONS wealth, and chart HTML
+- Pipeline tests for ONS housing, ONS wealth, WID, HMRC, chart HTML, and CSV validation
 - Unit tests for `extract_action_items.py`
 - ESLint and Prettier configuration for frontend
 - `.env.example` documenting expected environment variables
@@ -40,6 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `CONTRIBUTING.md` with setup instructions
 - MIT `LICENSE`
 - Data licences documentation
+- `.prettierignore` added with `package-lock.json`
 - Vite manual chunk splitting for ECharts and Vue vendor bundles
 
 ### Fixed
@@ -54,7 +54,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pinia store error handling in `fetchDataset()`
 - Frontend `v-if` chain corrected to `v-else-if`
 - CORS empty-string filtering and edge-case handling
-- Pipeline timeout extracted to module-level constant
 - CGT chart `nan%` bug
 - Ruff lint errors: `IOError` replaced with `OSError` (UP024), unused imports, E402 import ordering
 
@@ -63,5 +62,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pipeline scripts migrated from `print()` to `logging` module
 - Vue router extracted to `src/router/index.ts`
 - `vue-echarts` included in ECharts manual chunk
-- `.prettierignore` added with `package-lock.json`
+- Pipeline timeout extracted to module-level constant
 - `.gitignore` updated and tracked cache files removed
+
+[Unreleased]: https://github.com/Chris0Jeky/wealthlens-hq/commits/main
