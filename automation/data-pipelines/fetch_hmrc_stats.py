@@ -6,6 +6,7 @@ Shows concentration of capital gains among top taxpayers.
 
 from __future__ import annotations
 
+import logging
 import sys
 from datetime import date
 from pathlib import Path
@@ -35,6 +36,8 @@ TABLE1_URL = (
 
 ACCESS_DATE = date.today().isoformat()
 
+logger = logging.getLogger(__name__)
+
 
 def fetch() -> dict[str, Path]:
     """Download HMRC CGT ODS files."""
@@ -43,11 +46,11 @@ def fetch() -> dict[str, Path]:
 
     for name, url in [("table2", TABLE2_URL), ("table1", TABLE1_URL)]:
         out_path = RAW_DIR / f"hmrc_cgt_{name}.ods"
-        print(f"Downloading HMRC CGT {name}...")
+        logger.info("Downloading HMRC CGT %s...", name)
         resp = requests.get(url, timeout=60)
         resp.raise_for_status()
         out_path.write_bytes(resp.content)
-        print(f"  Saved to {out_path} ({len(resp.content) // 1024} KB)")
+        logger.info("Saved to %s (%d KB)", out_path, len(resp.content) // 1024)
         paths[name] = out_path
 
     return paths
@@ -77,7 +80,7 @@ def process(paths: dict[str, Path]) -> pd.DataFrame:
     if target_sheet is None:
         target_sheet = next(s for s in xl.sheet_names if s != "Contents")
 
-    print(f"  Reading sheet: '{target_sheet}'")
+    logger.info("Reading sheet: '%s'", target_sheet)
     df_raw = pd.read_excel(table2_path, sheet_name=target_sheet, header=None, engine="odf")
 
     # Find the header row containing "Range" or "Number"
@@ -89,9 +92,9 @@ def process(paths: dict[str, Path]) -> pd.DataFrame:
             break
 
     if header_row is None:
-        print("  Could not find header row. Dumping first 15 rows:")
+        logger.error("Could not find header row. Dumping first 15 rows:")
         for i in range(min(15, len(df_raw))):
-            print(f"    {i}: {[str(v)[:40] for v in df_raw.iloc[i].values if pd.notna(v)]}")
+            logger.debug("%d: %s", i, [str(v)[:40] for v in df_raw.iloc[i].values if pd.notna(v)])
         sys.exit(1)
 
     # Columns: 0=band lower limit, 1=num individuals (thousands), 2=gains (£m), 3=tax (£m)
@@ -139,7 +142,7 @@ def process(paths: dict[str, Path]) -> pd.DataFrame:
     df = df[df["gain_band"] != "All"].copy()
 
     if df.empty:
-        print("  WARNING: No data extracted from HMRC Table 2.")
+        logger.error("No data extracted from HMRC Table 2.")
         sys.exit(1)
 
     # Use the "All" row total if available, otherwise sum
@@ -159,13 +162,13 @@ def process(paths: dict[str, Path]) -> pd.DataFrame:
 
     out_path = PROCESSED_DIR / "hmrc_cgt_concentration.csv"
     df.to_csv(out_path, index=False)
-    print(f"  Processed: {len(df)} bands, total gains £{total_gains:,.0f}m, {total_taxpayers:,.0f}k taxpayers")
+    logger.info("Processed: %d bands, total gains £%s m, %s k taxpayers", len(df), f"{total_gains:,.0f}", f"{total_taxpayers:,.0f}")
 
-    # Print the headline stat
+    # Log the headline stat
     top_bands = df[df["band_lower"] >= 1_000_000]
     top_gains_share = top_bands["share_of_gains_pct"].sum()
     top_taxpayer_share = top_bands["share_of_taxpayers_pct"].sum()
-    print(f"  Taxpayers with gains >= £1m: {top_taxpayer_share:.1f}% of taxpayers, {top_gains_share:.1f}% of all gains")
+    logger.info("Taxpayers with gains >= £1m: %.1f%% of taxpayers, %.1f%% of all gains", top_taxpayer_share, top_gains_share)
 
     return df
 
@@ -266,8 +269,12 @@ def main() -> None:
     paths = fetch()
     df = process(paths)
     build_chart(df)
-    print("\nDone. Open the chart HTML in a browser to view.")
+    logger.info("Done. Open the chart HTML in a browser to view.")
 
 
 if __name__ == "__main__":
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(levelname)s: %(message)s",
+    )
     main()

@@ -1,0 +1,366 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>WealthLens UK — Design overview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700;800&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,500;1,6..72,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="tokens.css" />
+<style>
+  html, body { height: 100%; }
+  body { background: #E8E2D4; margin: 0; }
+
+  .ab-frame {
+    width: 100%; height: 100%; border: 0; background: var(--wl-paper);
+    display: block;
+  }
+
+  /* === Cover artboard — broadsheet front page === */
+  .ab-cover {
+    width: 100%; height: 100%;
+    background: var(--wl-paper);
+    color: var(--wl-ink);
+    padding: 44px;
+    font-family: var(--wl-sans);
+    display: flex; flex-direction: column; gap: 28px;
+    position: relative;
+    border: 1px solid var(--wl-ink);
+  }
+  .ab-cover .masthead-band {
+    background: var(--wl-ink); color: var(--wl-paper);
+    font-family: var(--wl-mono); font-size: 11px;
+    letter-spacing: 0.16em; text-transform: uppercase;
+    padding: 8px 14px;
+    margin: -44px -44px 0;
+    display: flex; justify-content: space-between;
+  }
+  .ab-cover .masthead-band .pip { color: var(--wl-red); margin-right: 8px; }
+  .ab-cover .top-rule {
+    border-top: 4px solid var(--wl-ink);
+    border-bottom: 1px solid var(--wl-ink);
+    padding: 12px 0;
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-family: var(--wl-mono); font-size: 11px;
+    color: var(--wl-ink-muted);
+    letter-spacing: 0.16em; text-transform: uppercase;
+  }
+  .ab-cover .top-rule .name {
+    font-family: var(--wl-serif); font-size: 24px;
+    font-weight: 700; letter-spacing: -0.02em;
+    color: var(--wl-ink); text-transform: none;
+  }
+  .ab-cover h1 {
+    font-family: var(--wl-serif);
+    font-size: 72px; font-weight: 600;
+    letter-spacing: -0.028em; line-height: 0.95;
+    margin: 0; max-width: 13ch;
+    text-wrap: balance;
+  }
+  .ab-cover h1 em {
+    font-style: italic; color: var(--wl-red); font-weight: 500;
+  }
+  .ab-cover .sub {
+    font-size: 17px; color: var(--wl-ink-body);
+    max-width: 56ch; line-height: 1.5;
+  }
+  .ab-cover .sub b { background: var(--wl-red-soft); padding: 1px 4px; color: var(--wl-ink); font-weight: 600; }
+  .ab-cover .stat-row {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 1px; background: var(--wl-ink);
+    border: 1px solid var(--wl-ink); margin-top: auto;
+  }
+  .ab-cover .stat { background: var(--wl-paper); padding: 18px 16px; }
+  .ab-cover .stat.hero { background: var(--wl-red); color: #fff; }
+  .ab-cover .stat .v {
+    font-family: var(--wl-serif); font-size: 36px;
+    font-weight: 600; letter-spacing: -0.022em;
+    font-variant-numeric: tabular-nums; line-height: 1;
+  }
+  .ab-cover .stat .l {
+    font-family: var(--wl-mono); font-size: 10px;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--wl-ink-muted); margin-top: 8px;
+  }
+  .ab-cover .stat.hero .l { color: rgba(255,255,255,0.8); }
+  .ab-cover .deliverables {
+    display: flex; gap: 14px;
+    padding: 14px 0; border-top: 1px solid var(--wl-rule);
+    font-family: var(--wl-mono); font-size: 11px;
+    color: var(--wl-ink-muted); letter-spacing: 0.08em;
+  }
+  .ab-cover .deliverables span b { color: var(--wl-red); font-weight: 600; }
+
+  /* === Spec sheet === */
+  .ab-spec {
+    width: 100%; height: 100%;
+    background: var(--wl-paper); color: var(--wl-ink);
+    padding: 44px; font-family: var(--wl-sans);
+    display: flex; flex-direction: column; gap: 24px;
+    overflow: hidden;
+    border: 1px solid var(--wl-ink);
+  }
+  .ab-spec h2 {
+    font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--wl-red); margin: 0; font-family: var(--wl-mono);
+    font-weight: 600;
+  }
+  .ab-spec h3 {
+    font-family: var(--wl-serif);
+    font-size: 26px; margin: 0;
+    letter-spacing: -0.012em; font-weight: 600;
+    color: var(--wl-ink);
+  }
+  .spec-section {
+    border-top: 1px solid var(--wl-rule); padding-top: 18px;
+  }
+  .swatch-row {
+    display: flex; gap: 10px; flex-wrap: wrap;
+  }
+  .swatch { display: flex; flex-direction: column; gap: 6px; }
+  .swatch-chip {
+    width: 84px; height: 68px;
+    border: 1px solid var(--wl-rule);
+  }
+  .swatch-meta {
+    font-family: var(--wl-mono); font-size: 10px;
+    color: var(--wl-ink-muted); line-height: 1.4;
+  }
+  .swatch-meta .name {
+    color: var(--wl-ink); font-weight: 600; display: block;
+    font-family: var(--wl-sans); font-size: 11px;
+  }
+
+  .type-row {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 18px;
+  }
+  .type-sample {
+    display: flex; flex-direction: column; gap: 6px;
+    padding: 14px; background: var(--wl-paper-tint);
+    border-left: 3px solid var(--wl-red);
+  }
+  .type-sample .label {
+    font-family: var(--wl-mono); font-size: 10px;
+    color: var(--wl-ink-muted); letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .type-sample .sample {
+    color: var(--wl-ink); letter-spacing: -0.015em;
+  }
+
+  .principles {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 1px; background: var(--wl-ink);
+    border: 1px solid var(--wl-ink);
+  }
+  .principle {
+    background: var(--wl-paper); padding: 18px;
+  }
+  .principle .num {
+    font-family: var(--wl-mono); font-size: 11px;
+    color: var(--wl-red); letter-spacing: 0.14em;
+    font-weight: 600;
+  }
+  .principle .ttl {
+    font-family: var(--wl-serif); font-size: 18px;
+    font-weight: 600; color: var(--wl-ink);
+    margin: 4px 0 6px; letter-spacing: -0.005em;
+  }
+  .principle .desc {
+    font-size: 12px; color: var(--wl-ink-muted);
+    line-height: 1.55;
+  }
+</style>
+</head>
+<body>
+
+<div id="canvas-root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="design-canvas.jsx" type="text/babel"></script>
+
+<script type="text/babel">
+function CoverArtboard() {
+  return (
+    <div className="ab-cover">
+      <div className="masthead-band">
+        <span><span className="pip">●</span>The front page · Issue №07</span>
+        <span>WealthLens UK · v0.2 · May 2026</span>
+      </div>
+      <div className="top-rule">
+        <span>Vol. MMXXVI</span>
+        <span className="name">WealthLens UK</span>
+        <span>The numbers behind the gut feeling</span>
+      </div>
+      <h1>You can't fix what you can't <em>see</em>.</h1>
+      <p className="sub">
+        Front-page broadsheet aesthetic. Cream, ink, and a single signal red.
+        Strong empathic British headlines, <b>interactive perspective play</b>, and bold,
+        source-backed data — no decoration between the reader and the finding.
+      </p>
+      <div className="deliverables">
+        <span><b>D1</b> Landing</span>
+        <span>·</span>
+        <span><b>D3</b> Chart page</span>
+        <span>·</span>
+        <span><b>D4</b> Logo</span>
+        <span>·</span>
+        <span><b>Tweaks</b> Palette · Headline · Lens</span>
+      </div>
+      <div className="stat-row">
+        <div className="stat hero">
+          <div className="v">57%</div>
+          <div className="l">Top 10% wealth share · 2023</div>
+        </div>
+        <div className="stat">
+          <div className="v">£17T</div>
+          <div className="l">UK household wealth</div>
+        </div>
+        <div className="stat">
+          <div className="v">1820</div>
+          <div className="l">Earliest year covered</div>
+        </div>
+        <div className="stat">
+          <div className="v">100%</div>
+          <div className="l">Source-cited</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SpecArtboard() {
+  return (
+    <div className="ab-spec">
+      <div>
+        <h2>● System · Tokens</h2>
+        <h3 style={{ marginTop: 8 }}>Front-page broadsheet, at a glance.</h3>
+      </div>
+
+      <div className="spec-section">
+        <h2>Colour</h2>
+        <div className="swatch-row" style={{ marginTop: 12 }}>
+          <div className="swatch">
+            <div className="swatch-chip" style={{ background: '#F4EFE6' }}></div>
+            <span className="swatch-meta"><span className="name">Paper</span>#F4EFE6</span>
+          </div>
+          <div className="swatch">
+            <div className="swatch-chip" style={{ background: '#ECE6DA' }}></div>
+            <span className="swatch-meta"><span className="name">Section</span>#ECE6DA</span>
+          </div>
+          <div className="swatch">
+            <div className="swatch-chip" style={{ background: '#111111' }}></div>
+            <span className="swatch-meta"><span className="name">Ink</span>#111111</span>
+          </div>
+          <div className="swatch">
+            <div className="swatch-chip" style={{ background: '#C8161D' }}></div>
+            <span className="swatch-meta"><span className="name">Signal Red</span>#C8161D</span>
+          </div>
+          <div className="swatch">
+            <div className="swatch-chip" style={{ background: '#5A5550' }}></div>
+            <span className="swatch-meta"><span className="name">Ink Muted</span>#5A5550</span>
+          </div>
+          <div className="swatch">
+            <div className="swatch-chip" style={{ background: '#D8D1C1' }}></div>
+            <span className="swatch-meta"><span className="name">Rule</span>#D8D1C1</span>
+          </div>
+        </div>
+        <div style={{ marginTop: 10, fontFamily: 'var(--wl-mono)', fontSize: 11, color: 'var(--wl-ink-muted)', letterSpacing: '0.04em' }}>
+          Three palettes via Tweaks: <b style={{ color: 'var(--wl-ink)' }}>Front Page</b> (cream) · <b style={{ color: 'var(--wl-ink)' }}>Late Edition</b> (ink) · <b style={{ color: 'var(--wl-ink)' }}>Stark</b> (paper-white). No blue.
+        </div>
+      </div>
+
+      <div className="spec-section">
+        <h2>Typography</h2>
+        <div className="type-row" style={{ marginTop: 12 }}>
+          <div className="type-sample">
+            <span className="label">Display · Newsreader 600 italic</span>
+            <span className="sample" style={{ fontFamily: 'Newsreader, serif', fontSize: 38, fontStyle: 'italic', fontWeight: 500, color: 'var(--wl-red)' }}>not imagining it.</span>
+          </div>
+          <div className="type-sample">
+            <span className="label">Display · Newsreader 600 roman</span>
+            <span className="sample" style={{ fontFamily: 'Newsreader, serif', fontSize: 38, fontWeight: 600 }}>£17 trillion</span>
+          </div>
+          <div className="type-sample">
+            <span className="label">Body · Plex Sans 400</span>
+            <span className="sample" style={{ fontSize: 15 }}>The data is in the deeds.</span>
+          </div>
+          <div className="type-sample">
+            <span className="label">Data · Plex Mono 500</span>
+            <span className="sample" style={{ fontFamily: 'IBM Plex Mono', fontSize: 14 }}>57% · 1820–2023</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="spec-section">
+        <h2>Principles</h2>
+        <div className="principles" style={{ marginTop: 12 }}>
+          <div className="principle">
+            <div className="num">01</div>
+            <div className="ttl">The red line is the headline</div>
+            <div className="desc">Reserve red for the finding you can't unsee. Never decorative. Everything else is ink on paper.</div>
+          </div>
+          <div className="principle">
+            <div className="num">02</div>
+            <div className="ttl">Lead with the human voice</div>
+            <div className="desc">Newsreader italic for the empathic line. Plex Sans for the bureaucratic one. Plex Mono for the receipts.</div>
+          </div>
+          <div className="principle">
+            <div className="num">03</div>
+            <div className="ttl">No fluff between reader and finding</div>
+            <div className="desc">Direct-label every data point. Source it on the artwork. No decorative icons, no rounded fluff.</div>
+          </div>
+          <div className="principle">
+            <div className="num">04</div>
+            <div className="ttl">Perspective as a tool</div>
+            <div className="desc">The lens magnifier, the Two Britains tilt, the 50% floor — each makes inequality literally visible.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <DesignCanvas
+      title="WealthLens UK"
+      subtitle="Red / cream / ink — broadsheet aesthetic. Drag to pan · scroll to zoom · click any artboard to focus."
+    >
+      <DCSection id="intro" title="01 · System">
+        <DCArtboard id="cover" label="Cover · front page" width={920} height={620}>
+          <CoverArtboard />
+        </DCArtboard>
+        <DCArtboard id="tokens" label="Design tokens" width={920} height={620}>
+          <SpecArtboard />
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection id="d4" title="02 · Logo concepts (D4)" subtitle="Lens & Lorenz is the user pick. Re-tinted to red on cream / ink.">
+        <DCArtboard id="logos" label="Logo concepts · all variations" width={1100} height={1500}>
+          <iframe className="ab-frame" src="pages/logos.html" title="Logo concepts"></iframe>
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection id="d1" title="03 · Landing page (D1)" subtitle="Empathic British headlines · lens magnifier · gut-feeling test · Two Britains · featured chart. Tweaks inside.">
+        <DCArtboard id="landing" label="Landing — full page · interactive" width={1280} height={4400}>
+          <iframe className="ab-frame" src="pages/landing.html" title="Landing page"></iframe>
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection id="d3" title="04 · Chart page template (D3)" subtitle="Bold headline numbers, era bands, 50% floor, hero red endpoint. No fluff.">
+        <DCArtboard id="chart" label="Chart page — Who owns wealth?" width={1320} height={2400}>
+          <iframe className="ab-frame" src="pages/chart.html" title="Chart page"></iframe>
+        </DCArtboard>
+      </DCSection>
+    </DesignCanvas>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('canvas-root')).render(<App />);
+</script>
+
+</body>
+</html>

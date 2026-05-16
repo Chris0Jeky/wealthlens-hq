@@ -6,9 +6,12 @@ Usage: python automation/data-pipelines/run_all.py [--validate-only]
 
 from __future__ import annotations
 
+import logging
 import subprocess
 import sys
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 PIPELINE_DIR = Path(__file__).resolve().parent
 
@@ -25,21 +28,17 @@ def run_pipelines() -> list[str]:
     failed: list[str] = []
     for script in SCRIPTS:
         path = PIPELINE_DIR / script
-        print(f"\n{'='*60}")
-        print(f"  Running {script}")
-        print(f"{'='*60}")
+        logger.info("Running %s", script)
         result = subprocess.run([sys.executable, str(path)], cwd=str(PIPELINE_DIR))
         if result.returncode != 0:
             failed.append(script)
-            print(f"  FAILED: {script}")
+            logger.error("FAILED: %s", script)
     return failed
 
 
 def run_validation() -> bool:
     """Run the validation module; returns True if all checks pass."""
-    print(f"\n{'='*60}")
-    print("  Validating processed datasets")
-    print(f"{'='*60}")
+    logger.info("Validating processed datasets")
     result = subprocess.run([sys.executable, str(PIPELINE_DIR / "validate.py")])
     return result.returncode == 0
 
@@ -49,9 +48,9 @@ def main() -> None:
 
     if not validate_only:
         failed = run_pipelines()
-        print(f"\n--- Ran {len(SCRIPTS)} pipelines, {len(failed)} failed ---")
+        logger.info("Ran %d pipelines, %d failed", len(SCRIPTS), len(failed))
         if failed:
-            print(f"Failed: {', '.join(failed)}")
+            logger.error("Failed: %s", ", ".join(failed))
 
     ok = run_validation()
 
@@ -59,8 +58,12 @@ def main() -> None:
         sys.exit(1)
     if not ok:
         sys.exit(1)
-    print("\nAll done.")
+    logger.info("All done.")
 
 
 if __name__ == "__main__":
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(levelname)s: %(message)s",
+    )
     main()

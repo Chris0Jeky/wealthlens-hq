@@ -1,0 +1,307 @@
+<script setup lang="ts">
+/**
+ * HousingAffordabilityChart — Multi-line chart showing house-price-to-earnings
+ * ratios by region over time.
+ *
+ * Data source: ONS Housing Affordability
+ * Columns: region, year, ratio (median affordability ratio)
+ *
+ * Accessibility: WCAG AA high-contrast colors, aria-label, escapeHtml tooltips.
+ */
+import { computed, onMounted, ref } from "vue";
+import { use } from "echarts/core";
+import { CanvasRenderer } from "echarts/renderers";
+import { LineChart } from "echarts/charts";
+import {
+  GridComponent,
+  TooltipComponent,
+  TitleComponent,
+  LegendComponent,
+} from "echarts/components";
+import VChart from "vue-echarts";
+import { useDataStore, type DatasetRow } from "@/stores/data";
+
+// Register only the ECharts modules we need (tree-shaking)
+use([
+  CanvasRenderer,
+  LineChart,
+  GridComponent,
+  TooltipComponent,
+  TitleComponent,
+  LegendComponent,
+]);
+
+const store = useDataStore();
+const rows = ref<DatasetRow[]>([]);
+const loading = ref(true);
+const error = ref<string | null>(null);
+
+onMounted(async () => {
+  try {
+    rows.value = await store.fetchDataset("housing-affordability");
+  } catch (e) {
+    error.value =
+      e instanceof Error ? e.message : "Failed to load housing affordability data";
+  } finally {
+    loading.value = false;
+  }
+});
+
+/** Escape HTML special characters to prevent XSS in tooltip content. */
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+/** Safely compute min/max from a number array without spreading (stack-safe). */
+function safeMinMax(arr: number[]): { min: number; max: number } {
+  if (arr.length === 0) return { min: 0, max: 0 };
+  let min = arr[0];
+  let max = arr[0];
+  for (let i = 1; i < arr.length; i++) {
+    if (arr[i] < min) min = arr[i];
+    if (arr[i] > max) max = arr[i];
+  }
+  return { min, max };
+}
+
+/**
+ * WCAG AA high-contrast colors against white (#fff).
+ * Each has at least 4.5:1 contrast ratio.
+ */
+const REGION_COLORS = [
+  "#1a56db", // Blue   — ~7.2:1
+  "#dc2626", // Red    — ~4.6:1
+  "#047857", // Green  — ~5.5:1
+  "#7c3aed", // Purple — ~5.0:1
+  "#b45309", // Amber  — ~4.7:1
+  "#0e7490", // Cyan   — ~4.8:1
+  "#be185d", // Pink   — ~5.2:1
+  "#4338ca", // Indigo — ~7.0:1
+];
+
+/** Maximum number of region lines to display before grouping. */
+const MAX_REGIONS = 8;
+
+/** Group data by region, returning sorted region names and their series. */
+const regionData = computed(() => {
+  const byRegion = new Map<string, { year: number; ratio: number }[]>();
+
+  for (const row of rows.value) {
+    const region = String(row.region ?? "");
+    const year = Number(row.year);
+    const ratio = Number(row.ratio);
+    if (!region || isNaN(year) || isNaN(ratio)) continue;
+
+    if (!byRegion.has(region)) byRegion.set(region, []);
+    byRegion.get(region)!.push({ year, ratio });
+  }
+
+  // Sort each region's data by year
+  for (const data of byRegion.values()) {
+    data.sort((a, b) => a.year - b.year);
+  }
+
+  // If too many regions, pick the ones with the highest latest ratio
+  let regionNames = Array.from(byRegion.keys());
+  let tooManyRegions = false;
+
+  if (regionNames.length > MAX_REGIONS) {
+    tooManyRegions = true;
+    // Rank by latest ratio (descending) to show most unaffordable regions
+    regionNames.sort((a, b) => {
+      const aData = byRegion.get(a)!;
+      const bData = byRegion.get(b)!;
+      const aLatest = aData[aData.length - 1]?.ratio ?? 0;
+      const bLatest = bData[bData.length - 1]?.ratio ?? 0;
+      return bLatest - aLatest;
+    });
+    regionNames = regionNames.slice(0, MAX_REGIONS);
+  }
+
+  return { byRegion, regionNames, tooManyRegions };
+});
+
+/** Unique sorted years across all displayed regions. */
+const allYears = computed(() => {
+  const yearSet = new Set<number>();
+  const { byRegion, regionNames } = regionData.value;
+  for (const name of regionNames) {
+    for (const d of byRegion.get(name) ?? []) {
+      yearSet.add(d.year);
+    }
+  }
+  return Array.from(yearSet).sort((a, b) => a - b);
+});
+
+const yearRange = computed(() => safeMinMax(allYears.value));
+
+const hasData = computed(() => regionData.value.regionNames.length > 0);
+
+/** Overall ratio range across all displayed regions (for aria-label). */
+const ratioRange = computed(() => {
+  const allRatios: number[] = [];
+  const { byRegion, regionNames } = regionData.value;
+  for (const name of regionNames) {
+    for (const d of byRegion.get(name) ?? []) {
+      allRatios.push(d.ratio);
+    }
+  }
+  return safeMinMax(allRatios);
+});
+
+const option = computed(() => {
+  const { byRegion, regionNames } = regionData.value;
+  const years = allYears.value;
+
+  // Build a year->ratio lookup for each region for aligned data
+  const series = regionNames.map((region, idx) => {
+    const dataMap = new Map<number, number>();
+    for (const d of byRegion.get(region) ?? []) {
+      dataMap.set(d.year, d.ratio);
+    }
+    // Align to the shared year axis; null for missing years
+    const data = years.map((y) => dataMap.get(y) ?? null);
+    const color = REGION_COLORS[idx % REGION_COLORS.length];
+
+    return {
+      name: region,
+      type: "line" as const,
+      data,
+      smooth: true,
+      lineStyle: { width: 2.5, color },
+      itemStyle: { color },
+      symbol: "circle",
+      symbolSize: 4,
+      connectNulls: true,
+    };
+  });
+
+  return {
+    title: {
+      text: "Housing Affordability — Price-to-Earnings Ratios by Region",
+      left: "center",
+      textStyle: {
+        fontSize: 16,
+        fontWeight: "bold",
+        color: "#111827",
+      },
+    },
+    tooltip: {
+      trigger: "axis" as const,
+      axisPointer: { type: "cross" as const },
+      formatter: (
+        params: Array<{
+          seriesName: string;
+          value: number | null;
+          axisValue: string;
+        }>,
+      ) => {
+        if (!Array.isArray(params) || params.length === 0) return "";
+        let html = `<strong>${escapeHtml(String(params[0].axisValue))}</strong><br/>`;
+        for (const p of params) {
+          if (p.value == null) continue;
+          const val =
+            typeof p.value === "number" ? p.value.toFixed(1) : String(p.value);
+          html += `${escapeHtml(String(p.seriesName))}: ${escapeHtml(val)}<br/>`;
+        }
+        return html;
+      },
+    },
+    legend: {
+      bottom: 0,
+      type: "scroll" as const,
+      data: regionNames,
+      textStyle: { color: "#374151" },
+    },
+    grid: {
+      left: "3%",
+      right: "4%",
+      bottom: "15%",
+      top: "15%",
+      containLabel: true,
+    },
+    xAxis: {
+      type: "category" as const,
+      data: years,
+      name: "Year",
+      nameLocation: "middle" as const,
+      nameGap: 30,
+      axisLabel: {
+        color: "#374151",
+        rotate: years.length > 30 ? 45 : 0,
+      },
+    },
+    yAxis: {
+      type: "value" as const,
+      name: "Price-to-earnings ratio",
+      nameLocation: "middle" as const,
+      nameGap: 50,
+      axisLabel: {
+        color: "#374151",
+      },
+    },
+    series,
+  };
+});
+</script>
+
+<template>
+  <!-- Loading state -->
+  <div v-if="loading" class="flex items-center justify-center py-20">
+    <p class="text-gray-500 text-lg">Loading chart data...</p>
+  </div>
+
+  <!-- Error state -->
+  <div v-else-if="error" class="py-10 text-center">
+    <p class="text-red-600 font-medium">{{ error }}</p>
+    <p class="text-gray-500 text-sm mt-2">
+      Make sure the backend API is running on port 8000.
+    </p>
+  </div>
+
+  <!-- No data state -->
+  <div v-else-if="!hasData" class="py-10 text-center">
+    <p class="text-gray-500 text-lg">No data available for this chart.</p>
+  </div>
+
+  <!-- Chart -->
+  <div v-else>
+    <div
+      role="img"
+      :aria-label="`Line chart showing house-price-to-earnings ratios by region from ${yearRange.min} to ${yearRange.max}. Ratios range from ${ratioRange.min.toFixed(1)} to ${ratioRange.max.toFixed(1)} across ${regionData.regionNames.length} regions.`"
+      class="w-full"
+    >
+      <VChart
+        class="w-full"
+        style="height: 480px"
+        :option="option"
+        autoresize
+      />
+    </div>
+
+    <!-- Note when regions are truncated -->
+    <p
+      v-if="regionData.tooManyRegions"
+      class="text-sm text-gray-500 mt-2 text-center italic"
+    >
+      Showing top {{ MAX_REGIONS }} least-affordable regions. Additional regions
+      are available in the full dataset.
+    </p>
+
+    <!-- Source citation -->
+    <p class="text-sm text-gray-500 mt-4 text-center">
+      Source:
+      <a
+        href="https://www.ons.gov.uk/peoplepopulationandcommunity/housing/datasets/ratioofhousepricetoworkplacebasedearningslowerquartileandmedian"
+        target="_blank"
+        rel="noopener"
+        class="underline hover:text-gray-700"
+      >
+        ONS Housing Affordability</a>, accessed 2026-05-14
+    </p>
+  </div>
+</template>
