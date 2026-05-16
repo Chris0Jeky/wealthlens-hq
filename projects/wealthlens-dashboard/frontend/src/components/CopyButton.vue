@@ -44,7 +44,7 @@ onUnmounted(resetTimer)
 <template>
   <button
     type="button"
-    :aria-label="copied ? (label ? label + ' — copied' : 'Copied to clipboard') : (label ?? 'Copy to clipboard')"
+    :aria-label="error ? 'Copy failed — try again' : copied ? (label ? label + ' — copied' : 'Copied to clipboard') : (label ?? 'Copy to clipboard')"
     class="inline-flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
     @click="handleCopy"
   >

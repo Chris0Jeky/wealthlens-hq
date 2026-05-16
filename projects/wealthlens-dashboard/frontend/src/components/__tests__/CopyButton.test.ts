@@ -98,6 +98,8 @@ describe('CopyButton', () => {
     await wrapper.find('button').trigger('click')
     await wrapper.vm.$nextTick()
     expect(wrapper.text()).toContain('Copy')
+    const status = wrapper.find('[role="status"]')
+    expect(status.text()).toBe('')
   })
 
   it('shows error state when writeText rejects', async () => {
