@@ -9,6 +9,7 @@ import sys
 def setup_logging(level: str = "INFO") -> None:
     """Configure structured logging for the application."""
     root = logging.getLogger("wealthlens")
+    root.setLevel(getattr(logging, level.upper(), logging.INFO))
     if root.handlers:
         return
     handler = logging.StreamHandler(sys.stdout)
@@ -18,6 +19,5 @@ def setup_logging(level: str = "INFO") -> None:
             datefmt="%Y-%m-%dT%H:%M:%S",
         )
     )
-    root.setLevel(getattr(logging, level.upper(), logging.INFO))
     root.addHandler(handler)
     root.propagate = False
