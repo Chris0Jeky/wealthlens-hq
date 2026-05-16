@@ -13,6 +13,7 @@ describe("AccessibleDataTable", () => {
     rows: sampleRows,
     columns: ["year", "region", "value"],
     caption: "Wealth distribution by region, 2020-2022",
+    numericColumns: ["value"],
   };
 
   it("renders caption text", () => {
@@ -70,9 +71,16 @@ describe("AccessibleDataTable", () => {
     }
   });
 
-  it("table has role=table attribute", () => {
+  it("table element uses native semantics without redundant role", () => {
     const wrapper = mount(AccessibleDataTable, { props: defaultProps });
     const table = wrapper.find("table");
-    expect(table.attributes("role")).toBe("table");
+    expect(table.exists()).toBe(true);
+    expect(table.attributes("role")).toBeUndefined();
+  });
+
+  it("year column renders without locale formatting when not in numericColumns", () => {
+    const wrapper = mount(AccessibleDataTable, { props: defaultProps });
+    const cells = wrapper.findAll("tbody td");
+    expect(cells[0].text()).toBe("2020");
   });
 });

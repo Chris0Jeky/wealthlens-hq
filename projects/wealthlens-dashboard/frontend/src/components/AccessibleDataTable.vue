@@ -14,21 +14,24 @@ const props = defineProps<{
   rows: DatasetRow[];
   /** Column keys to display (controls order and which fields are shown). */
   columns: string[];
-  /** Accessible caption describing the table content for screen readers. */
+  /** Accessible caption describing the table content. */
   caption: string;
+  /** Column keys whose numeric values should be locale-formatted. Others render raw. */
+  numericColumns?: string[];
 }>();
 
-/**
- * Format a cell value for display.
- * - null/undefined → em-dash "—"
- * - numbers → locale-formatted (en-GB)
- * - strings → as-is
- */
-function formatCell(value: string | number | null | undefined): string {
+function formatCell(
+  value: string | number | null | undefined,
+  col: string,
+): string {
   if (value === null || value === undefined) {
-    return "—"; // em-dash
+    return "—";
   }
-  if (typeof value === "number") {
+  if (
+    typeof value === "number" &&
+    props.numericColumns &&
+    props.numericColumns.includes(col)
+  ) {
     return value.toLocaleString("en-GB");
   }
   return String(value);
@@ -45,10 +48,9 @@ function formatCell(value: string | number | null | undefined): string {
 
     <div class="overflow-x-auto mt-2">
       <table
-        role="table"
         class="min-w-full border-collapse border border-gray-300 text-sm"
       >
-        <caption class="sr-only">
+        <caption class="text-left text-sm font-medium text-gray-600 pb-2">
           {{ props.caption }}
         </caption>
 
@@ -76,7 +78,7 @@ function formatCell(value: string | number | null | undefined): string {
               :key="col"
               class="border border-gray-300 px-3 py-2 text-gray-700"
             >
-              {{ formatCell(row[col]) }}
+              {{ formatCell(row[col], col) }}
             </td>
           </tr>
         </tbody>
