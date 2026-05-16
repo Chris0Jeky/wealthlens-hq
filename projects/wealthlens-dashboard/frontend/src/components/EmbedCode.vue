@@ -78,10 +78,10 @@ onBeforeUnmount(clearTimer);
         class="embed-code__radio-label"
       >
         <input
+          v-model="selectedWidth"
           type="radio"
           name="embed-width"
           :value="opt.value"
-          v-model="selectedWidth"
           class="embed-code__radio"
         />
         {{ opt.label }}
