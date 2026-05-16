@@ -69,14 +69,14 @@ const NI_UPPER_EARNINGS_LIMIT = 50_270;
 const CGT_ANNUAL_EXEMPT = 3_000;
 const CGT_BASIC_RATE = 0.10;
 const CGT_HIGHER_RATE = 0.20;
-const BASIC_RATE_LIMIT = 50_270;
+const CGT_BASIC_RATE_BAND_WIDTH = 37_700;
 
 /**
  * Calculates the personal allowance after taper for incomes over £100,000.
  * For every £2 earned over £100,000 the personal allowance is reduced by £1,
  * until it reaches zero at £125,140.
  */
-function getPersonalAllowance(salary: number): number {
+export function getPersonalAllowance(salary: number): number {
   if (salary <= PERSONAL_ALLOWANCE_TAPER_START) {
     return PERSONAL_ALLOWANCE;
   }
@@ -191,16 +191,9 @@ function calculateCGTComparison(amount: number): {
 
   const taxableGain = Math.max(0, amount - CGT_ANNUAL_EXEMPT);
 
-  // Determine if basic or higher rate applies based on the amount
-  // (assuming no other income for comparison purposes)
-  let cgtPaid: number;
-  if (amount <= BASIC_RATE_LIMIT) {
-    cgtPaid = taxableGain * CGT_BASIC_RATE;
-  } else {
-    const basicPortion = Math.max(0, BASIC_RATE_LIMIT - CGT_ANNUAL_EXEMPT);
-    const higherPortion = taxableGain - basicPortion;
-    cgtPaid = basicPortion * CGT_BASIC_RATE + Math.max(0, higherPortion) * CGT_HIGHER_RATE;
-  }
+  const basicPortion = Math.min(taxableGain, CGT_BASIC_RATE_BAND_WIDTH);
+  const higherPortion = Math.max(0, taxableGain - CGT_BASIC_RATE_BAND_WIDTH);
+  const cgtPaid = basicPortion * CGT_BASIC_RATE + higherPortion * CGT_HIGHER_RATE;
 
   return {
     basicRate: CGT_BASIC_RATE,
@@ -238,4 +231,3 @@ export function formatPercent(n: number): string {
   return `${(n * 100).toFixed(1)}%`;
 }
 
-export { getPersonalAllowance };

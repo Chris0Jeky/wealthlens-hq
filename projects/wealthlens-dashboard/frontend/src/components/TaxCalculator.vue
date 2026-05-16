@@ -254,7 +254,7 @@ function formatGBP(value: number): string {
         <h2 class="calc__comparison-heading">The income vs. capital gains gap</h2>
         <div class="calc__comparison-card">
           <p class="calc__comparison-text">
-            If this {{ formatGBP(parsedSalary!) }} were received as
+            If this {{ formatGBP(parsedSalary ?? 0) }} were received as
             <strong>capital gains</strong> instead of earned income, you'd pay
             an effective rate of just
             <span class="calc__comparison-rate wl-num">
