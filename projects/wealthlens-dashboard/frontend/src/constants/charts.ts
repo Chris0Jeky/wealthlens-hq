@@ -3,4 +3,5 @@ export const VALID_CHART_NAMES = new Set([
   "housing-affordability",
   "wealth-by-decile",
   "cgt-concentration",
+  "inheritance-tax",
 ]);
