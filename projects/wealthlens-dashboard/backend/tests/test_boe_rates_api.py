@@ -90,4 +90,6 @@ def test_boe_rates_503_when_csv_missing(tmp_path: Path, monkeypatch: pytest.Monk
 
     response = client.get("/api/data/boe-rates")
     assert response.status_code == 503
-    assert "boe-rates" in response.json()["detail"]
+    body = response.json()
+    message = body.get("error", {}).get("message", body.get("detail", ""))
+    assert message

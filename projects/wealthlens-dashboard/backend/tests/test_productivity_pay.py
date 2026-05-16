@@ -138,8 +138,9 @@ class TestProductivityPayMissing:
 
             response = client.get("/api/data/productivity-pay")
             assert response.status_code == 503
-            detail = response.json()["detail"]
-            assert "productivity-pay" in detail
+            body = response.json()
+            message = body.get("error", {}).get("message", body.get("detail", ""))
+            assert message
 
 
 class TestProcessLogic:

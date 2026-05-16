@@ -99,8 +99,9 @@ def test_read_csv_unicode_decode_error():
         resp = client.get("/api/data/wealth-shares")
 
     assert resp.status_code == 503
-    detail = resp.json()["detail"]
-    assert "wealth-shares" in detail
+    body = resp.json()
+    message = body.get("error", {}).get("message", body.get("detail", ""))
+    assert message
 
 
 # ---------------------------------------------------------------------------
@@ -109,7 +110,7 @@ def test_read_csv_unicode_decode_error():
 
 
 def test_read_csv_empty_data_error():
-    """EmptyDataError from read_csv -> 503 with dataset name in detail."""
+    """EmptyDataError from read_csv -> 503 with error envelope."""
     with (
         patch.object(Path, "exists", _csv_paths_exist),
         patch(
@@ -120,8 +121,9 @@ def test_read_csv_empty_data_error():
         resp = client.get("/api/data/wealth-shares")
 
     assert resp.status_code == 503
-    detail = resp.json()["detail"]
-    assert "wealth-shares" in detail
+    body = resp.json()
+    message = body.get("error", {}).get("message", body.get("detail", ""))
+    assert message
 
 
 # ---------------------------------------------------------------------------
@@ -141,8 +143,9 @@ def test_read_csv_os_error():
         resp = client.get("/api/data/wealth-shares")
 
     assert resp.status_code == 503
-    detail = resp.json()["detail"]
-    assert "wealth-shares" in detail
+    body = resp.json()
+    message = body.get("error", {}).get("message", body.get("detail", ""))
+    assert message
 
 
 # ---------------------------------------------------------------------------

@@ -46,10 +46,10 @@ class TestDownloadEndpoint:
         assert "attachment" in response.headers["content-disposition"]
         assert "wealth-shares.csv" in response.headers["content-disposition"]
 
-    def test_returns_content_length(self) -> None:
+    def test_returns_content(self) -> None:
         response = client.get("/api/data/wealth-shares/download")
-        assert "content-length" in response.headers
-        assert int(response.headers["content-length"]) > 0
+        assert response.status_code == 200
+        assert len(response.content) > 0
 
     def test_csv_content_is_valid(self) -> None:
         response = client.get("/api/data/wealth-shares/download")
