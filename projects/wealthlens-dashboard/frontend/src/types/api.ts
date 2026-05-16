@@ -23,6 +23,7 @@ export interface DatasetMetadataResponse {
   access_date: string
   row_count: number
   columns: string[]
+  last_updated?: string | null
 }
 
 /** GET /api/data/metadata — metadata for every dataset. */

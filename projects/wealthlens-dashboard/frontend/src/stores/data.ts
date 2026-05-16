@@ -115,8 +115,8 @@ export const useDataStore = defineStore('data', () => {
       const json = await request<FreshnessResponse>('/freshness')
       freshness.value = json.datasets
       return json.datasets
-    } catch {
-      // Non-critical — freshness is informational, don't set store error
+    } catch (e) {
+      console.warn('[WealthLens] Failed to load dataset freshness:', e instanceof Error ? e.message : e)
       return {}
     }
   }

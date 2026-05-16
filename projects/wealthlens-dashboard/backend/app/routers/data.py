@@ -12,7 +12,7 @@ import math
 import os
 from datetime import UTC, datetime
 from pathlib import Path as FilePath
-from typing import Any
+from typing import Any, Literal
 
 import pandas as pd
 from fastapi import APIRouter, HTTPException, Path, Query, Response
@@ -222,11 +222,12 @@ def _get_last_updated(dataset_name: str) -> str | None:
     try:
         mtime = csv_path.stat().st_mtime
         return datetime.fromtimestamp(mtime, tz=UTC).isoformat()
-    except OSError:
+    except OSError as exc:
+        logger.warning("Cannot stat dataset %s: %s", dataset_name, exc)
         return None
 
 
-def _freshness_status(age_hours: float) -> str:
+def _freshness_status(age_hours: float) -> Literal["fresh", "stale", "expired"]:
     """Classify a dataset's age into fresh/stale/expired."""
     if age_hours <= FRESHNESS_FRESH_HOURS:
         return "fresh"
@@ -318,7 +319,8 @@ def dataset_freshness(response: Response) -> dict[str, Any]:
                 "age_hours": round(age_hours, 1),
                 "status": _freshness_status(age_hours),
             }
-        except OSError:
+        except OSError as exc:
+            logger.warning("Cannot stat dataset %s for freshness: %s", name, exc)
             datasets_freshness[name] = {
                 "last_updated": None,
                 "age_hours": None,

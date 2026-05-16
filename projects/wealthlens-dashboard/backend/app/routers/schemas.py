@@ -6,7 +6,7 @@ every GET endpoint in the data router.  Uses Pydantic v2 syntax.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -95,8 +95,8 @@ class DatasetFreshnessEntry(BaseModel):
     age_hours: float | None = Field(
         ge=0, description="Hours since last update, or null if file missing"
     )
-    status: str = Field(
-        description="One of: fresh (<=7d), stale (<=30d), expired (>30d), unknown (missing)"
+    status: Literal["fresh", "stale", "expired", "unknown"] = Field(
+        description="fresh (<=7d), stale (<=30d), expired (>30d), unknown (missing)"
     )
 
 
