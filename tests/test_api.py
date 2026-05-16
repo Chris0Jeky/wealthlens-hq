@@ -273,3 +273,40 @@ def test_missing_csv_error_includes_dataset_name():
     assert response.status_code == 503
     detail = response.json()["detail"]
     assert "wealth-shares" in detail, f"Dataset name missing from error: {detail}"
+
+
+# --- CSV download tests ---
+
+
+def test_download_dataset_returns_csv():
+    """GET /api/data/{name}/download returns a CSV file."""
+    response = client.get("/api/data/wealth-shares/download")
+    assert response.status_code == 200
+    assert "text/csv" in response.headers["content-type"]
+    assert "attachment" in response.headers.get("content-disposition", "")
+    assert "wid_wealth_shares_gb.csv" in response.headers["content-disposition"]
+    # Should contain CSV content
+    lines = response.text.strip().split("\n")
+    assert len(lines) > 1  # header + at least one data row
+
+
+def test_download_unknown_dataset_returns_404():
+    """GET /api/data/{name}/download returns 404 for unknown dataset."""
+    response = client.get("/api/data/nonexistent/download")
+    assert response.status_code == 404
+
+
+def test_download_missing_file_returns_503():
+    """GET /api/data/{name}/download returns 503 when CSV file missing."""
+    from app.routers.data import DATA_DIR
+
+    original_exists = Path.exists
+
+    def fake_exists(self):
+        if str(self).startswith(str(DATA_DIR)):
+            return False
+        return original_exists(self)
+
+    with patch.object(Path, "exists", fake_exists):
+        response = client.get("/api/data/wealth-shares/download")
+    assert response.status_code == 503

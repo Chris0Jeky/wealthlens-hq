@@ -14,6 +14,7 @@ from typing import Any
 
 import pandas as pd
 from fastapi import APIRouter, HTTPException, Query
+from fastapi.responses import FileResponse
 
 from app.routers.schemas import (
     AllDatasetsMetadataResponse,
@@ -189,6 +190,24 @@ def dataset_metadata(dataset_name: str) -> dict[str, Any]:
     if dataset_name not in DATASETS:
         raise HTTPException(status_code=404, detail=f"Unknown dataset: {dataset_name}")
     return _build_metadata(dataset_name)
+
+
+@router.get("/{dataset_name}/download", summary="Download dataset CSV")
+def download_dataset(dataset_name: str) -> FileResponse:
+    """Return the raw CSV file for a dataset as a downloadable attachment."""
+    if dataset_name not in DATASETS:
+        raise HTTPException(status_code=404, detail=f"Unknown dataset: {dataset_name}")
+    csv_path = DATA_DIR / DATASETS[dataset_name]
+    if not csv_path.exists():
+        raise HTTPException(
+            status_code=503,
+            detail=f"Dataset file not found: {dataset_name} — run the pipeline first",
+        )
+    return FileResponse(
+        path=csv_path,
+        media_type="text/csv",
+        filename=DATASETS[dataset_name],
+    )
 
 
 @router.get("/{dataset_name}", response_model=PaginatedDatasetResponse)
