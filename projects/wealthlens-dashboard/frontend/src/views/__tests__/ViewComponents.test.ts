@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mount, VueWrapper } from "@vue/test-utils";
-import { defineComponent } from "vue";
+import { defineComponent, reactive } from "vue";
 import { useRoute } from "vue-router";
 import HomeView from "@/views/HomeView.vue";
 import ChartView from "@/views/ChartView.vue";
@@ -9,12 +9,12 @@ import NotFoundView from "@/views/NotFoundView.vue";
 // --- Mocks ---
 
 const mockFetchDatasets = vi.fn();
-let mockStoreState = {
+const mockStoreState = reactive({
   datasets: [] as string[],
   loading: false,
   error: null as string | null,
   fetchDatasets: mockFetchDatasets,
-};
+});
 
 vi.mock("@/stores/data", () => ({
   useDataStore: () => mockStoreState,
@@ -45,12 +45,9 @@ vi.mock("@/components/DatasetCard.vue", () => ({
 describe("HomeView", () => {
   beforeEach(() => {
     mockFetchDatasets.mockClear();
-    mockStoreState = {
-      datasets: [],
-      loading: false,
-      error: null,
-      fetchDatasets: mockFetchDatasets,
-    };
+    mockStoreState.datasets = [];
+    mockStoreState.loading = false;
+    mockStoreState.error = null;
   });
 
   it("renders heading", () => {
@@ -89,11 +86,29 @@ describe("HomeView", () => {
     const wrapper = mount(HomeView);
     expect(wrapper.find('[role="list"]').exists()).toBe(true);
   });
+
+  it("does not render cards while loading", () => {
+    mockStoreState.loading = true;
+    mockStoreState.datasets = ["wealth-shares"];
+    const wrapper = mount(HomeView);
+    expect(wrapper.findAll(".dataset-card-stub")).toHaveLength(0);
+  });
+
+  it("does not render cards when error is set", () => {
+    mockStoreState.error = "Something failed";
+    mockStoreState.datasets = ["wealth-shares"];
+    const wrapper = mount(HomeView);
+    expect(wrapper.findAll(".dataset-card-stub")).toHaveLength(0);
+  });
 });
 
 // --- ChartView ---
 
 describe("ChartView", () => {
+  beforeEach(() => {
+    vi.mocked(useRoute).mockReset();
+  });
+
   const chartStubs = {
     "router-link": RouterLinkStub,
     WealthSharesChart: true,
@@ -111,11 +126,14 @@ describe("ChartView", () => {
     });
   }
 
-  it("shows chart title for a supported chart", () => {
-    const wrapper = mountChart("wealth-shares");
-    expect(wrapper.find("h1").text()).toBe(
-      "Wealth Shares — Top 1% and Top 10%",
-    );
+  it.each([
+    ["wealth-shares", "Wealth Shares — Top 1% and Top 10%"],
+    ["housing-affordability", "Housing Affordability — Price-to-Earnings Ratios by Region"],
+    ["cgt-concentration", "Capital Gains Tax — Concentration by Size of Gain"],
+    ["wealth-by-decile", "Total Household Wealth by Decile"],
+  ])("shows correct title for %s", (name, expectedTitle) => {
+    const wrapper = mountChart(name);
+    expect(wrapper.find("h1").text()).toBe(expectedTitle);
   });
 
   it('shows "Chart not found" for unsupported chart', () => {
