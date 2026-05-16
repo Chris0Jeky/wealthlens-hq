@@ -580,7 +580,6 @@ const clipRect = {
 .chart-card {
   background: var(--wl-card);
   border: 1px solid var(--wl-ink);
-  overflow: hidden;
 }
 
 /* --- Toolbar ------------------------------------------------ */
@@ -774,12 +773,12 @@ const clipRect = {
 /* 375px and below — ensure chart is scrollable */
 @media (max-width: 375px) {
   .chart-toolbar-tag {
-    font-size: 10px;
+    font-size: 11px;
   }
 
   .chart-range {
     padding: 6px 12px;
-    font-size: 10px;
+    font-size: 12px;
   }
 }
 </style>

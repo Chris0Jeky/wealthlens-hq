@@ -220,7 +220,7 @@ const STATS: MissionStat[] = [
   }
 }
 
-/* 375px and below — single column stats */
+/* 375px and below — compact stats */
 @media (max-width: 375px) {
   .mission-quote {
     font-size: 20px;
