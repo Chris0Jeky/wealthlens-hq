@@ -455,3 +455,16 @@ def test_metadata_caching_avoids_redundant_csv_reads(tmp_path):
     finally:
         data_module._metadata_cache.clear()
         data_module._metadata_cache.update(saved_cache)
+
+
+# --- Security headers tests ---
+
+
+def test_security_headers_present():
+    """All responses must include standard security headers."""
+    response = client.get("/health")
+    assert response.headers["X-Content-Type-Options"] == "nosniff"
+    assert response.headers["X-Frame-Options"] == "DENY"
+    assert response.headers["Referrer-Policy"] == "strict-origin-when-cross-origin"
+    assert response.headers["Permissions-Policy"] == "camera=(), microphone=(), geolocation=()"
+    assert response.headers["X-XSS-Protection"] == "0"
