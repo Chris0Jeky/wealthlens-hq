@@ -68,11 +68,11 @@ export const NIC_HIGHER_RATE = 0.02;
 /** CGT annual exempt amount (2024-25) */
 export const CGT_ANNUAL_EXEMPT = 3_000;
 
-/** CGT basic rate for shares/securities */
-export const CGT_BASIC_RATE = 0.10;
+/** CGT basic rate for shares/securities (post-Autumn Budget 2024, from 30 Oct 2024) */
+export const CGT_BASIC_RATE = 0.18;
 
-/** CGT higher rate for shares/securities */
-export const CGT_HIGHER_RATE = 0.20;
+/** CGT higher rate for shares/securities (post-Autumn Budget 2024, from 30 Oct 2024) */
+export const CGT_HIGHER_RATE = 0.24;
 
 /**
  * Assumed proportion of billionaire wealth realised as capital gains
@@ -192,16 +192,18 @@ export function calculateEmployeeTax(salary: number): EmployeeTaxResult {
     });
   }
 
-  // Apply each Income Tax band
-  let remainingTaxable = taxableIncome;
-  for (const band of INCOME_TAX_BANDS) {
-    if (remainingTaxable <= 0) break;
+  // Apply each Income Tax band using absolute income thresholds.
+  // The basic rate band bottom is effectivePA (not the fixed 12,570)
+  // so the PA taper correctly expands the basic rate zone.
+  for (let i = 0; i < INCOME_TAX_BANDS.length; i++) {
+    const band = INCOME_TAX_BANDS[i];
+    const bandBottom = i === 0 ? effectivePA : band.from - 1;
+    const bandTop = band.to === Infinity ? salary : band.to;
 
-    // Width of this band (how much income it covers)
-    const bandStart = band.from - 1; // Convert to 0-based from PA
-    const bandEnd = band.to === Infinity ? Infinity : band.to;
-    const bandWidth = bandEnd - bandStart;
-    const taxableInBand = Math.min(remainingTaxable, bandWidth);
+    const taxableInBand = Math.max(
+      0,
+      Math.min(salary, bandTop) - bandBottom,
+    );
 
     if (taxableInBand > 0) {
       const taxForBand = taxableInBand * band.rate;
@@ -212,7 +214,6 @@ export function calculateEmployeeTax(salary: number): EmployeeTaxResult {
         rate: band.rate,
         tax: taxForBand,
       });
-      remainingTaxable -= taxableInBand;
     }
   }
 
@@ -255,7 +256,7 @@ export function calculateEmployeeTax(salary: number): EmployeeTaxResult {
  * of billionaire wealth growth — are taxed at 0% until sold.
  *
  * Assumptions:
- * - Gains are in shares/securities (not property — uses 10%/20% CGT rates)
+ * - Gains are in shares/securities (not property — uses 18%/24% CGT rates post-Autumn Budget 2024)
  * - Billionaire is a higher/additional rate taxpayer (20% CGT rate applies)
  * - Only the assumed realisation percentage of gains is subject to CGT
  * - Annual exempt amount is negligible at this scale but still applied
