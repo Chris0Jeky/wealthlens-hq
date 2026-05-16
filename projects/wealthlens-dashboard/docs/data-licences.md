@@ -1,6 +1,6 @@
 # Data Sources and Licences
 
-Last updated: 2026-05-15
+Last updated: 2026-05-16
 
 Every dataset used in WealthLens charts is listed here with its licence and attribution requirements. See also `research/data-sources/data-source-registry.md` for the full source catalogue.
 
@@ -12,6 +12,7 @@ Every dataset used in WealthLens charts is listed here with its licence and attr
 | Housing Affordability in England and Wales | ONS | OGL v3.0 | Yes — "Source: ONS" | https://www.ons.gov.uk/peoplepopulationandcommunity/housing/datasets/ratioofhousepricetoworkplacebasedearningslowerquartileandmedian |
 | Total Wealth in Great Britain (WAS) | ONS | OGL v3.0 | Yes — "Source: ONS" | https://www.ons.gov.uk/peoplepopulationandcommunity/personalandhouseholdfinances/incomeandwealth/bulletins/totalwealthingreatbritain/latest |
 | Capital Gains Tax Statistics | HMRC | OGL v3.0 | Yes — "Contains public sector information licensed under the Open Government Licence v3.0" | https://www.gov.uk/government/statistics/capital-gains-tax-statistics |
+| Regional Gross Disposable Household Income | ONS | OGL v3.0 | Yes — "Source: ONS" | https://www.ons.gov.uk/economy/regionalaccounts/grossdisposablehouseholdincome/datasets/regionalgrossdisposablehouseholdincomegdhi |
 
 ## Licence summaries
 

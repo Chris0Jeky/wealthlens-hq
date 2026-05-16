@@ -62,6 +62,11 @@ CHECKS: list[dict] = [
         "columns": {"year", "productivity_index", "pay_index", "gap_pct"},
         "min_rows": 20,
     },
+    {
+        "file": "ons_gdhi_by_region.csv",
+        "columns": {"region", "gdhi_per_head", "year"},
+        "min_rows": 10,
+    },
 ]
 
 
