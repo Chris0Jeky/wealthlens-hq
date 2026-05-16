@@ -17,7 +17,17 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         start = time.perf_counter()
-        response = await call_next(request)
+        try:
+            response = await call_next(request)
+        except Exception:
+            duration_ms = (time.perf_counter() - start) * 1000
+            logger.error(
+                "%s %s 500 %.1fms [unhandled]",
+                request.method,
+                request.url.path,
+                duration_ms,
+            )
+            raise
         duration_ms = (time.perf_counter() - start) * 1000
 
         logger.info(
