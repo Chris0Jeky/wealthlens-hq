@@ -22,6 +22,7 @@ import {
 } from "echarts/components";
 import VChart from "vue-echarts";
 import { useDataStore, type DatasetRow } from "@/stores/data";
+import { escapeHtml } from "@/utils/chart";
 
 // Register only the ECharts modules we need (tree-shaking)
 use([
@@ -49,15 +50,6 @@ onMounted(async () => {
     loading.value = false;
   }
 });
-
-/** Escape HTML special characters to prevent XSS in tooltip content. */
-function escapeHtml(str: string): string {
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
 
 // WCAG AA high-contrast colors against white
 // #1a56db (blue) contrast ratio ~7.2:1 — share of gains bars

@@ -20,6 +20,7 @@ import {
 } from "echarts/components";
 import VChart from "vue-echarts";
 import { useDataStore, type DatasetRow } from "@/stores/data";
+import { escapeHtml, safeMinMax } from "@/utils/chart";
 
 // Register only the ECharts modules we need (tree-shaking)
 use([
@@ -46,27 +47,6 @@ onMounted(async () => {
     loading.value = false;
   }
 });
-
-/** Escape HTML special characters to prevent XSS in tooltip content. */
-function escapeHtml(str: string): string {
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
-
-/** Safely compute min/max from a number array without spreading (stack-safe). */
-function safeMinMax(arr: number[]): { min: number; max: number } {
-  if (arr.length === 0) return { min: 0, max: 0 };
-  let min = arr[0];
-  let max = arr[0];
-  for (let i = 1; i < arr.length; i++) {
-    if (arr[i] < min) min = arr[i];
-    if (arr[i] > max) max = arr[i];
-  }
-  return { min, max };
-}
 
 /**
  * WCAG AA high-contrast colors against white (#fff).
