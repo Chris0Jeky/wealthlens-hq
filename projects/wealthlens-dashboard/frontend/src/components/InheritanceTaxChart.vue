@@ -23,6 +23,7 @@ import {
 } from "echarts/components";
 import VChart from "vue-echarts";
 import { escapeHtml } from "@/utils/chart";
+import { fetchWithRetry } from "@/utils/fetchWithRetry";
 
 // Register only the ECharts modules we need (tree-shaking)
 use([
@@ -77,19 +78,23 @@ const prefersReducedMotion =
   typeof window !== "undefined" &&
   window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-// WCAG AA high-contrast colors
-// #dc2626 (red) contrast ratio ~4.6:1 — IHT liable (accent)
-// #1a56db (blue) contrast ratio ~7.2:1 — not liable / bar fill
-const COLOR_LIABLE = "#dc2626";
+// WCAG AA colors — graphical objects require 3:1 minimum
+// #b91c1c (red-700) contrast ~5.7:1 — IHT liable (accent)
+// #1a56db (blue) contrast ~7.2:1 — not liable / bar fill
+const COLOR_LIABLE = "#b91c1c";
 const COLOR_NOT_LIABLE = "#1a56db";
 const COLOR_BAR = "#1a56db";
 
 onMounted(async () => {
   try {
     const baseUrl = import.meta.env.BASE_URL ?? "/";
-    const res = await fetch(`${baseUrl}data/inheritance-tax.json`);
+    const res = await fetchWithRetry(`${baseUrl}data/inheritance-tax.json`, undefined, 0);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    data.value = await res.json();
+    const parsed = await res.json();
+    if (!parsed?.summary?.liability_rate_pct || !Array.isArray(parsed.by_year)) {
+      throw new Error("Unexpected data format");
+    }
+    data.value = parsed;
   } catch (e) {
     error.value =
       e instanceof Error ? e.message : "Failed to load inheritance tax data";

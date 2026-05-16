@@ -33,6 +33,10 @@ vi.mock("echarts/components", () => ({
   LegendComponent: {},
 }));
 
+vi.mock("@/utils/fetchWithRetry", () => ({
+  fetchWithRetry: (...args: unknown[]) => (globalThis as any).fetch(...args),
+}));
+
 import InheritanceTaxChart from "@/components/InheritanceTaxChart.vue";
 
 /** Sample valid IHT data matching the static JSON structure. */
