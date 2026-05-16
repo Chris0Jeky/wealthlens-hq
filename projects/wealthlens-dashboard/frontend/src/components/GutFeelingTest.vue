@@ -408,7 +408,7 @@ function handleKeydown(event: KeyboardEvent, n: string): void {
 
   .gut-card {
     padding: 24px;
-    min-height: 180px;
+    min-height: 44px; /* touch target minimum */
   }
 
   .gut-card-q {
@@ -418,6 +418,36 @@ function handleKeydown(event: KeyboardEvent, n: string): void {
 
   .gut-answer-stat {
     font-size: 28px;
+  }
+
+  .gut-hint {
+    padding: 8px 0; /* bigger touch hint area */
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .gut-title {
+    font-size: clamp(28px, 6vw, 42px);
+  }
+}
+
+/* 320px narrow phones */
+@media (max-width: 375px) {
+  .gut-card {
+    padding: 20px 16px;
+  }
+
+  .gut-card-q {
+    font-size: 20px;
+  }
+
+  .gut-answer-stat {
+    font-size: 24px;
+  }
+
+  .gut-answer-body {
+    font-size: 13px;
   }
 }
 </style>

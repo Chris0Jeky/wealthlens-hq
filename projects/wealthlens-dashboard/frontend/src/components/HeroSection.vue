@@ -278,8 +278,10 @@ onUnmounted(() => {
   }
 
   .hero-headline {
-    font-size: clamp(36px, 8vw, 56px);
+    font-size: clamp(32px, 8vw, 56px);
     max-width: none;
+    word-break: break-word;
+    overflow-wrap: break-word;
   }
 
   .hero-sub {
@@ -290,6 +292,28 @@ onUnmounted(() => {
   .hero-byline {
     font-size: 10px;
     gap: 10px;
+  }
+
+  .hero-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .hero-actions .wl-btn {
+    justify-content: center;
+    min-height: 44px;
+    text-align: center;
+  }
+}
+
+/* 320px narrow phones */
+@media (max-width: 375px) {
+  .hero-headline {
+    font-size: clamp(28px, 9vw, 40px);
+  }
+
+  .hero-sub {
+    font-size: 15px;
   }
 }
 </style>
