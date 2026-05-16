@@ -293,7 +293,7 @@ function barWidth(rate: number): string {
             </span>
           </div>
           <div class="tax__stat">
-            <span class="tax__stat-label">CGT paid (20%)</span>
+            <span class="tax__stat-label">CGT paid (24%)</span>
             <span class="tax__stat-value wl-num">
               {{ formatGBP(billionaireResult.cgtPaid) }}
             </span>
@@ -616,7 +616,7 @@ function barWidth(rate: number): string {
   background: var(--wl-red);
 }
 .tax__stat--highlight .tax__stat-label {
-  color: rgba(255, 255, 255, 0.75);
+  color: color-mix(in srgb, var(--wl-bg) 75%, transparent);
 }
 .tax__stat--highlight .tax__stat-value {
   color: var(--wl-bg);
