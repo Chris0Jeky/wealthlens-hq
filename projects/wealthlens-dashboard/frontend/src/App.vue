@@ -3,6 +3,11 @@ import { RouterView } from 'vue-router'
 import ErrorBoundary from '@/components/ErrorBoundary.vue'
 import AppHeader from '@/components/AppHeader.vue'
 import AppFooter from '@/components/AppFooter.vue'
+import { useTheme } from '@/composables/useTheme'
+
+// Initialise theme on app mount — applies saved/system preference
+// to the document root before first paint.
+useTheme()
 </script>
 
 <template>
