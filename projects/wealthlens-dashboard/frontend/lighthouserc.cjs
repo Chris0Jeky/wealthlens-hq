@@ -1,11 +1,12 @@
 module.exports = {
   ci: {
     collect: {
-      staticDistDir: './dist',
+      startServerCommand: 'npm run preview -- --host 127.0.0.1 --port 4173',
+      startServerReadyPattern: 'Local:',
       url: [
-        '/wealthlens-hq/',
-        '/wealthlens-hq/charts/wealth-shares',
-        '/wealthlens-hq/tools/wealth-calculator',
+        'http://127.0.0.1:4173/wealthlens-hq/',
+        'http://127.0.0.1:4173/wealthlens-hq/charts/wealth-shares',
+        'http://127.0.0.1:4173/wealthlens-hq/tools/wealth-calculator',
       ],
       numberOfRuns: 3,
     },
