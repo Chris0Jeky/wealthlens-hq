@@ -5,10 +5,15 @@ import NewsletterSignup from '@/components/NewsletterSignup.vue'
 describe('NewsletterSignup', () => {
   beforeEach(() => {
     vi.stubGlobal('fetch', vi.fn())
+    vi.stubGlobal('AbortSignal', {
+      any: (signals: AbortSignal[]) => signals[0],
+      timeout: () => new AbortController().signal,
+    })
   })
 
   afterEach(() => {
     vi.restoreAllMocks()
+    vi.unstubAllGlobals()
   })
 
   it('renders form with email input and submit button', () => {
@@ -56,7 +61,7 @@ describe('NewsletterSignup', () => {
   })
 
   it('shows error message on network failure', async () => {
-    const mockFetch = vi.fn().mockRejectedValue(new Error('Network error'))
+    const mockFetch = vi.fn().mockRejectedValue(new TypeError('Failed to fetch'))
     vi.stubGlobal('fetch', mockFetch)
 
     const wrapper = mount(NewsletterSignup)
@@ -64,11 +69,15 @@ describe('NewsletterSignup', () => {
     await wrapper.find('form').trigger('submit')
     await flushPromises()
 
-    expect(wrapper.find('.newsletter__error').text()).toBe('Network error')
+    expect(wrapper.find('.newsletter__error').text()).toContain('Unable to reach')
   })
 
-  it('shows error message on non-ok response', async () => {
-    const mockFetch = vi.fn().mockResolvedValue({ ok: false, status: 400 })
+  it('shows specific error for 409 conflict', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 409,
+      headers: new Headers({ 'content-type': 'text/html' }),
+    })
     vi.stubGlobal('fetch', mockFetch)
 
     const wrapper = mount(NewsletterSignup)
@@ -76,7 +85,24 @@ describe('NewsletterSignup', () => {
     await wrapper.find('form').trigger('submit')
     await flushPromises()
 
-    expect(wrapper.find('.newsletter__error').text()).toContain('Subscription failed')
+    expect(wrapper.find('.newsletter__error').text()).toContain('already subscribed')
+  })
+
+  it('reads error detail from JSON response body', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 400,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: () => Promise.resolve({ detail: 'Email is disposable' }),
+    })
+    vi.stubGlobal('fetch', mockFetch)
+
+    const wrapper = mount(NewsletterSignup)
+    await wrapper.find('input[type="email"]').setValue('test@example.com')
+    await wrapper.find('form').trigger('submit')
+    await flushPromises()
+
+    expect(wrapper.find('.newsletter__error').text()).toBe('Email is disposable')
   })
 
   it('disables submit button during submission', async () => {
@@ -100,6 +126,26 @@ describe('NewsletterSignup', () => {
     expect(wrapper.find('.newsletter__success').exists()).toBe(true)
   })
 
+  it('prevents double-submit on rapid clicks', async () => {
+    let resolvePromise: (value: unknown) => void
+    const mockFetch = vi.fn().mockImplementation(
+      () => new Promise((resolve) => { resolvePromise = resolve }),
+    )
+    vi.stubGlobal('fetch', mockFetch)
+
+    const wrapper = mount(NewsletterSignup)
+    await wrapper.find('input[type="email"]').setValue('test@example.com')
+
+    // Trigger submit twice rapidly
+    await wrapper.find('form').trigger('submit')
+    await wrapper.find('form').trigger('submit')
+
+    expect(mockFetch).toHaveBeenCalledTimes(1)
+
+    resolvePromise!({ ok: true })
+    await flushPromises()
+  })
+
   it('has aria-live region for status messages', () => {
     const wrapper = mount(NewsletterSignup)
     const status = wrapper.find('[aria-live="polite"]')
@@ -121,5 +167,17 @@ describe('NewsletterSignup', () => {
     )
     const body = mockFetch.mock.calls[0][1].body as FormData
     expect(body.get('email')).toBe('user@domain.co.uk')
+  })
+
+  it('passes abort signal to fetch', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({ ok: true })
+    vi.stubGlobal('fetch', mockFetch)
+
+    const wrapper = mount(NewsletterSignup)
+    await wrapper.find('input[type="email"]').setValue('test@example.com')
+    await wrapper.find('form').trigger('submit')
+    await flushPromises()
+
+    expect(mockFetch.mock.calls[0][1].signal).toBeDefined()
   })
 })

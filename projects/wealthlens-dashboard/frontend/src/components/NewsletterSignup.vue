@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onUnmounted } from 'vue'
 
 type FormState = 'idle' | 'submitting' | 'success' | 'error'
 
@@ -8,8 +8,7 @@ const state = ref<FormState>('idle')
 const errorMessage = ref('')
 
 const newsletterId = import.meta.env.VITE_BUTTONDOWN_NEWSLETTER_ID || 'wealthlens'
-const apiUrl = import.meta.env.VITE_BUTTONDOWN_API_URL
-  || `https://buttondown.email/api/emails/embed-subscribe/${newsletterId}`
+const apiUrl = `https://buttondown.email/api/emails/embed-subscribe/${newsletterId}`
 
 const isValidEmail = computed(() => {
   const pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -18,8 +17,19 @@ const isValidEmail = computed(() => {
 
 const isDisabled = computed(() => state.value === 'submitting')
 
+let abortController: AbortController | null = null
+let inflight = false
+
+onUnmounted(() => {
+  abortController?.abort()
+})
+
 async function handleSubmit() {
-  if (!isValidEmail.value || isDisabled.value) return
+  if (inflight || !isValidEmail.value || isDisabled.value) return
+  inflight = true
+
+  abortController?.abort()
+  abortController = new AbortController()
 
   state.value = 'submitting'
   errorMessage.value = ''
@@ -31,18 +41,55 @@ async function handleSubmit() {
     const response = await fetch(apiUrl, {
       method: 'POST',
       body,
+      signal: AbortSignal.any([
+        abortController.signal,
+        AbortSignal.timeout(15_000),
+      ]),
     })
 
     if (!response.ok) {
-      throw new Error(`Subscription failed (${response.status})`)
+      let detail = ''
+      try {
+        const contentType = response.headers.get('content-type') || ''
+        if (contentType.includes('application/json')) {
+          const data = await response.json()
+          detail = data?.detail || data?.message || data?.error || ''
+        }
+      } catch { /* non-JSON body */ }
+
+      if (!detail) {
+        switch (response.status) {
+          case 400: detail = 'Invalid email address. Please check and try again.'; break
+          case 409: detail = 'This email is already subscribed.'; break
+          case 429: detail = 'Too many requests. Please wait a moment and try again.'; break
+          default: detail = `Subscription failed (HTTP ${response.status}). Please try again later.`
+        }
+      }
+      throw new Error(detail)
     }
 
     state.value = 'success'
     email.value = ''
   } catch (err) {
+    if (err instanceof DOMException && err.name === 'AbortError') return
+    if (err instanceof DOMException && err.name === 'TimeoutError') {
+      state.value = 'error'
+      errorMessage.value = 'Request timed out. Please check your connection and try again.'
+      return
+    }
+
     state.value = 'error'
-    errorMessage.value =
-      err instanceof Error ? err.message : 'Something went wrong. Please try again.'
+    if (err instanceof TypeError) {
+      console.error('[NewsletterSignup] Network error:', err)
+      errorMessage.value = 'Unable to reach the subscription service. Please try again later.'
+    } else if (err instanceof Error) {
+      errorMessage.value = err.message
+    } else {
+      console.error('[NewsletterSignup] Unknown error:', err)
+      errorMessage.value = 'Something went wrong. Please try again.'
+    }
+  } finally {
+    inflight = false
   }
 }
 </script>
@@ -76,7 +123,7 @@ async function handleSubmit() {
       />
       <button
         type="submit"
-        class="newsletter__btn wl-btn"
+        class="newsletter__btn"
         :disabled="isDisabled || !isValidEmail"
         :aria-busy="state === 'submitting'"
       >
@@ -210,7 +257,7 @@ async function handleSubmit() {
 
 .newsletter__success {
   font-size: 14px;
-  color: #16a34a;
+  color: var(--wl-teal, #2f6b5e);
   margin: 0;
   font-weight: 500;
 }
@@ -219,18 +266,6 @@ async function handleSubmit() {
   font-size: 14px;
   color: var(--wl-red);
   margin: 0;
-}
-
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border-width: 0;
 }
 
 @media (max-width: 480px) {
