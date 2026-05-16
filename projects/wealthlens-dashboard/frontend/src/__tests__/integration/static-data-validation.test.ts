@@ -12,7 +12,7 @@
  */
 import { describe, it, expect } from "vitest";
 import { readdirSync, readFileSync, existsSync } from "fs";
-import { resolve, basename } from "path";
+import { resolve } from "path";
 
 // Path to the public/data directory (relative to project root)
 const DATA_DIR = resolve(__dirname, "../../../../public/data");
