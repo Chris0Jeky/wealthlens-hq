@@ -32,8 +32,11 @@ describe("DatasetCard", () => {
     expect(paragraph.text()).toBe(defaultProps.description);
   });
 
-  it("has a root div wrapper", () => {
+  it("uses a semantic article element with aria-label", () => {
     const wrapper = mount(DatasetCard, { props: defaultProps });
-    expect(wrapper.element.tagName).toBe("DIV");
+    expect(wrapper.element.tagName).toBe("ARTICLE");
+    expect(wrapper.attributes("aria-label")).toBe(
+      `Dataset: ${defaultProps.name}`,
+    );
   });
 });
