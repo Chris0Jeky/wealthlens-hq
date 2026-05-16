@@ -7,6 +7,7 @@ title, aria-label, skip link, and noscript fallback.
 from __future__ import annotations
 
 import logging
+import os
 from pathlib import Path
 
 import plotly.graph_objects as go
@@ -28,6 +29,15 @@ def write_accessible_chart(
         config={"responsive": True, "displayModeBar": True},
     )
 
+    # Optional Plausible analytics — enabled when PLAUSIBLE_DOMAIN is set.
+    plausible_domain = os.environ.get("PLAUSIBLE_DOMAIN", "")
+    plausible_tag = ""
+    if plausible_domain:
+        plausible_tag = (
+            f'  <script defer data-domain="{plausible_domain}" '
+            f'src="https://plausible.io/js/script.js"></script>\n'
+        )
+
     html = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -35,7 +45,7 @@ def write_accessible_chart(
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{title} — WealthLens UK</title>
   <meta name="description" content="{description}">
-  <style>
+{plausible_tag}  <style>
     body {{ margin: 0; padding: 1rem; font-family: system-ui, -apple-system, sans-serif; background: #fff; }}
     .skip-link {{ position: absolute; top: -40px; left: 0; background: #1f77b4; color: #fff; padding: 8px 16px; z-index: 100; }}
     .skip-link:focus {{ top: 0; }}
