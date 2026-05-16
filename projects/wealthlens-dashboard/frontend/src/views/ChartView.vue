@@ -36,6 +36,24 @@ const CgtConcentrationChart = defineAsyncComponent(
 const WealthByDecileChart = defineAsyncComponent(
   () => import("@/components/WealthByDecileChart.vue"),
 );
+const ProductivityPayChart = defineAsyncComponent(
+  () => import("@/components/ProductivityPayChart.vue"),
+);
+const GdhiByRegionChart = defineAsyncComponent(
+  () => import("@/components/GdhiByRegionChart.vue"),
+);
+const TaxCompositionChart = defineAsyncComponent(
+  () => import("@/components/TaxCompositionChart.vue"),
+);
+const BoeRatesChart = defineAsyncComponent(
+  () => import("@/components/BoeRatesChart.vue"),
+);
+const ChildPovertyChart = defineAsyncComponent(
+  () => import("@/components/ChildPovertyChart.vue"),
+);
+const GenerationalWealthChart = defineAsyncComponent(
+  () => import("@/components/GenerationalWealthChart.vue"),
+);
 
 const route = useRoute();
 const { trackEvent } = useAnalytics();
@@ -104,6 +122,18 @@ const simpleChartTitles: Record<string, string> = {
   "cgt-concentration":
     "Capital Gains Tax — Concentration by Size of Gain",
   "wealth-by-decile": "Total Household Wealth by Decile",
+  "productivity-pay":
+    "Productivity vs Pay — The Growing Divergence",
+  "gdhi-by-region":
+    "Gross Disposable Household Income by Region",
+  "tax-composition":
+    "UK Tax Revenue — Work vs Wealth",
+  "boe-rates":
+    "Bank of England Base Rate vs CPI Inflation",
+  "child-poverty":
+    "Child Poverty Rate by UK Region",
+  "generational-wealth":
+    "Median Wealth by Generation at Key Ages",
 };
 
 /**
@@ -511,6 +541,24 @@ watch(chartName, (name) => {
             />
             <WealthByDecileChart
               v-if="chartName === 'wealth-by-decile'"
+            />
+            <ProductivityPayChart
+              v-if="chartName === 'productivity-pay'"
+            />
+            <GdhiByRegionChart
+              v-if="chartName === 'gdhi-by-region'"
+            />
+            <TaxCompositionChart
+              v-if="chartName === 'tax-composition'"
+            />
+            <BoeRatesChart
+              v-if="chartName === 'boe-rates'"
+            />
+            <ChildPovertyChart
+              v-if="chartName === 'child-poverty'"
+            />
+            <GenerationalWealthChart
+              v-if="chartName === 'generational-wealth'"
             />
           </div>
         </div>
