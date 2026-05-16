@@ -5,10 +5,12 @@ on:
     branches: [main]
     paths:
       - "projects/wealthlens-dashboard/frontend/**"
+      - ".github/workflows/ci-frontend.yml"
   pull_request:
     branches: [main]
     paths:
       - "projects/wealthlens-dashboard/frontend/**"
+      - ".github/workflows/ci-frontend.yml"
 
 permissions:
   contents: read
