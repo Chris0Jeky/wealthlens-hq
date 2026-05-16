@@ -1,0 +1,44 @@
+{
+  "nav": {
+    "home": "Front page",
+    "data": "The data",
+    "methodology": "Methodology",
+    "about": "About",
+    "contribute": "Contribute",
+    "viewSource": "View source",
+    "readTheData": "Read the data"
+  },
+  "home": {
+    "title": "UK Wealth Inequality Dashboard",
+    "subtitle": "Open-source, source-backed data"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Something went wrong",
+    "source": "Source",
+    "lastUpdated": "Last updated",
+    "backToHome": "Back to home"
+  },
+  "calculator": {
+    "title": "Where Do You Fit in UK Wealth?",
+    "inputLabel": "Enter your estimated net household wealth",
+    "calculate": "Calculate",
+    "resultPrefix": "You are in the",
+    "decile": "decile"
+  },
+  "footer": {
+    "copyright": "© {year} WealthLens UK",
+    "mitLicensed": "MIT licensed",
+    "tagline": "Made in London · Independent · Non-partisan",
+    "description": "Every statistic on this site links to its primary source. Source-backed. Open-source. Impossible to ignore.",
+    "explore": "Explore",
+    "allCharts": "All charts",
+    "wealth": "Wealth",
+    "housing": "Housing",
+    "tax": "Tax",
+    "incomeOpportunity": "Income & opportunity",
+    "project": "Project",
+    "licence": "Licence (MIT)",
+    "follow": "Follow"
+  }
+}
