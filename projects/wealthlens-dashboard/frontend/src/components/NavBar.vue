@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRoute } from 'vue-router'
+import ThemeToggle from '@/components/ThemeToggle.vue'
 
 const route = useRoute()
 const mobileOpen = ref(false)
@@ -62,6 +63,7 @@ function closeMobile() {
             GitHub
             <span class="sr-only">(opens in new tab)</span>
           </a>
+          <ThemeToggle />
         </nav>
 
         <button
