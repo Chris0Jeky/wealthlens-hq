@@ -14,7 +14,6 @@ from pathlib import Path
 
 import pandas as pd
 import plotly.graph_objects as go
-import requests
 from chart_html import write_accessible_chart
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -31,10 +30,12 @@ SOURCE_URL = (
 ACCESS_DATE = date.today().isoformat()
 
 logger = logging.getLogger(__name__)
-REQUEST_TIMEOUT_SECONDS = 60
 
-# Fallback data from DWP/HMRC Children in Low Income Families statistics
-# (% of children in relative low income after housing costs, 2022/23).
+# Fallback data from DWP/HMRC "Children in low income families:
+# local area statistics 2014 to 2023", Table 4 — regional breakdown.
+# Measure: % of children in relative low income after housing costs, 2022/23.
+# Publication: https://www.gov.uk/government/statistics/children-in-low-income-families-local-area-statistics-2014-to-2023
+# Accessed: 2026-05-16
 # Used when the live download is unavailable or the spreadsheet format
 # has changed.
 FALLBACK_DATA = [
@@ -54,35 +55,18 @@ FALLBACK_DATA = [
 
 
 def fetch() -> tuple[pd.DataFrame, bool]:
-    """Try to download child poverty data from gov.uk; fall back to hardcoded data.
+    """Return child poverty data, using hardcoded DWP/HMRC figures.
+
+    The gov.uk landing page does not expose a stable direct-download URL
+    for the spreadsheet — the filename changes with each annual release.
+    A future enhancement could scrape the page for the current .ods link.
 
     Returns:
-        A tuple of (DataFrame with raw data, is_fallback flag).
+        A tuple of (DataFrame with regional data, is_fallback flag).
     """
     RAW_DIR.mkdir(parents=True, exist_ok=True)
 
-    try:
-        logger.info("Attempting to fetch child poverty data from gov.uk...")
-        resp = requests.get(SOURCE_URL, timeout=REQUEST_TIMEOUT_SECONDS)
-        resp.raise_for_status()
-
-        # The landing page is HTML, not a direct file download.
-        # A real pipeline would parse it for the .ods/.xlsx link, then
-        # download and parse the spreadsheet.  For now, we use the
-        # fallback data since the download URL changes with each release.
-        logger.info(
-            "Landing page fetched (%d bytes) — "
-            "direct spreadsheet parsing not yet implemented, using fallback data.",
-            len(resp.content),
-        )
-    except requests.ConnectionError:
-        logger.warning("Could not connect to gov.uk — using fallback data.")
-    except requests.Timeout:
-        logger.warning("Request to gov.uk timed out — using fallback data.")
-    except requests.HTTPError as exc:
-        logger.warning("HTTP error from gov.uk (%s) — using fallback data.", exc)
-
-    logger.info("Using fallback data from DWP/HMRC statistics (2022/23).")
+    logger.info("Using fallback data from DWP/HMRC statistics (2022/23, Table 4).")
     df = pd.DataFrame(FALLBACK_DATA)
 
     raw_path = RAW_DIR / "child_poverty_by_region_fallback.csv"

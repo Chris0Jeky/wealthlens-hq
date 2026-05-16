@@ -96,6 +96,7 @@ def test_get_child_poverty():
     assert "data" in data
     assert len(data["data"]) > 0
     assert "region" in data["data"][0]
+    assert "child_poverty_pct" in data["data"][0]
 
 
 def test_unknown_dataset_returns_404():
