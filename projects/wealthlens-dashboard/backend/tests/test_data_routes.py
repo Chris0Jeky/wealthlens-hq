@@ -1,22 +1,22 @@
 """Backend data-route edge-case tests.
 
-Covers health_data statuses, metadata caching, _read_csv error branches,
-pagination edge cases, and response model validation. Does NOT duplicate
-tests already in tests/test_api.py.
+Covers metadata caching, _read_csv error branches, pagination edge cases,
+and response model validation. Health-data status tests live in
+tests/test_api.py.
 
 All tests are fully mocked so they run without CSV data files on disk.
 """
 
 from __future__ import annotations
 
-import os
 import sys
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pandas as pd
 from fastapi.testclient import TestClient
 
+# backend/ is not an installed package; add it so pytest can import app.*
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from app.main import app
@@ -48,147 +48,13 @@ def _csv_paths_exist(self: Path) -> bool:
     return _original_path_exists(self)
 
 
-def _csv_paths_missing(self: Path) -> bool:
-    """Pretend CSV files inside DATA_DIR do NOT exist."""
-    if str(self).startswith(str(data_module.DATA_DIR)):
-        return False
-    return _original_path_exists(self)
-
-
 def _fake_read_csv(*args, **kwargs):
     """Return a copy of the fake DataFrame for any read_csv call."""
     return _FAKE_DF.copy()
 
 
 # ---------------------------------------------------------------------------
-# 1. health_data -- healthy status
-# ---------------------------------------------------------------------------
-
-
-def _make_fake_file():
-    """Return a mock file object whose fileno() returns a fake fd."""
-    f = MagicMock()
-    f.fileno.return_value = 999
-    f.__enter__ = lambda self: self
-    f.__exit__ = lambda self, *a: None
-    return f
-
-
-def test_health_data_healthy():
-    """All CSVs present -> status 'healthy', available_count == total_count."""
-    real_open = open  # noqa: A001
-
-    def _mock_open(path, *args, **kwargs):
-        if str(path).startswith(str(data_module.DATA_DIR)):
-            return _make_fake_file()
-        return real_open(path, *args, **kwargs)
-
-    class _FakeStat:
-        st_size = 42
-
-    with (
-        patch("builtins.open", side_effect=_mock_open),
-        patch("os.fstat", return_value=_FakeStat()),
-    ):
-        resp = client.get("/api/health/data")
-
-    assert resp.status_code == 200
-    body = resp.json()
-    assert body["status"] == "healthy"
-    assert body["available_count"] == body["total_count"]
-    assert body["total_count"] == len(data_module.DATASETS)
-
-
-# ---------------------------------------------------------------------------
-# 2. health_data -- degraded status
-# ---------------------------------------------------------------------------
-
-
-def test_health_data_degraded():
-    """Some CSVs missing -> status 'degraded', available_count < total_count."""
-    real_open = open  # noqa: A001
-    call_count = 0
-
-    def _open_partial(path, *args, **kwargs):
-        nonlocal call_count
-        if str(path).startswith(str(data_module.DATA_DIR)):
-            call_count += 1
-            if call_count > 1:
-                raise OSError("mocked missing")
-            return _make_fake_file()
-        return real_open(path, *args, **kwargs)
-
-    class _FakeStat:
-        st_size = 42
-
-    with (
-        patch("builtins.open", side_effect=_open_partial),
-        patch("os.fstat", return_value=_FakeStat()),
-    ):
-        resp = client.get("/api/health/data")
-
-    body = resp.json()
-    assert body["status"] == "degraded"
-    assert 0 < body["available_count"] < body["total_count"]
-
-
-# ---------------------------------------------------------------------------
-# 3. health_data -- unavailable status
-# ---------------------------------------------------------------------------
-
-
-def test_health_data_unavailable():
-    """All CSVs missing -> status 'unavailable', available_count == 0."""
-    real_open = open  # noqa: A001
-
-    def _always_fail(path, *args, **kwargs):
-        if str(path).startswith(str(data_module.DATA_DIR)):
-            raise OSError("mocked unavailable")
-        return real_open(path, *args, **kwargs)
-
-    with patch("builtins.open", side_effect=_always_fail):
-        resp = client.get("/api/health/data")
-
-    body = resp.json()
-    assert body["status"] == "unavailable"
-    assert body["available_count"] == 0
-
-
-# ---------------------------------------------------------------------------
-# 4. health_data per-dataset detail fields
-# ---------------------------------------------------------------------------
-
-
-def test_health_data_per_dataset_detail():
-    """Each dataset entry has 'file' and 'available'; size_bytes when available."""
-    real_open = open  # noqa: A001
-
-    def _mock_open(path, *args, **kwargs):
-        if str(path).startswith(str(data_module.DATA_DIR)):
-            return _make_fake_file()
-        return real_open(path, *args, **kwargs)
-
-    class _FakeStat:
-        st_size = 123
-
-    with (
-        patch("builtins.open", side_effect=_mock_open),
-        patch("os.fstat", return_value=_FakeStat()),
-    ):
-        resp = client.get("/api/health/data")
-
-    body = resp.json()
-    for name, entry in body["datasets"].items():
-        assert "file" in entry, f"{name} missing 'file'"
-        assert "available" in entry, f"{name} missing 'available'"
-        if entry["available"]:
-            assert "size_bytes" in entry, f"{name} missing 'size_bytes'"
-            assert isinstance(entry["size_bytes"], int)
-            assert entry["size_bytes"] >= 0
-
-
-# ---------------------------------------------------------------------------
-# 5. metadata caching -- pd.read_csv called only once
+# 1. metadata caching -- pd.read_csv called only once
 # ---------------------------------------------------------------------------
 
 
@@ -217,7 +83,7 @@ def test_metadata_caching():
 
 
 # ---------------------------------------------------------------------------
-# 6. _read_csv UnicodeDecodeError handling
+# 2. _read_csv UnicodeDecodeError handling
 # ---------------------------------------------------------------------------
 
 
@@ -238,7 +104,7 @@ def test_read_csv_unicode_decode_error():
 
 
 # ---------------------------------------------------------------------------
-# 7. _read_csv EmptyDataError handling
+# 3. _read_csv EmptyDataError handling
 # ---------------------------------------------------------------------------
 
 
@@ -259,7 +125,7 @@ def test_read_csv_empty_data_error():
 
 
 # ---------------------------------------------------------------------------
-# 8. _read_csv OSError handling
+# 4. _read_csv OSError handling
 # ---------------------------------------------------------------------------
 
 
@@ -280,7 +146,7 @@ def test_read_csv_os_error():
 
 
 # ---------------------------------------------------------------------------
-# 9. pagination limit=1 returns exactly 1 row
+# 5. pagination limit=1 returns exactly 1 row
 # ---------------------------------------------------------------------------
 
 
@@ -299,7 +165,7 @@ def test_pagination_limit_one():
 
 
 # ---------------------------------------------------------------------------
-# 10. pagination limit=1000 returns at most 1000 rows
+# 6. pagination limit=1000 returns at most 1000 rows
 # ---------------------------------------------------------------------------
 
 
@@ -318,7 +184,7 @@ def test_pagination_limit_max():
 
 
 # ---------------------------------------------------------------------------
-# 11. response model validation
+# 7. response model validation
 # ---------------------------------------------------------------------------
 
 
