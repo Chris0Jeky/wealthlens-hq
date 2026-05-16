@@ -206,8 +206,38 @@ const STATS: MissionStat[] = [
     max-width: none;
   }
 
+  .mission-stats {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+  }
+
   .mission-stat-v {
     font-size: 36px;
+  }
+
+  .mission-body {
+    max-width: none;
+  }
+}
+
+/* 375px and below — single column stats */
+@media (max-width: 375px) {
+  .mission-quote {
+    font-size: 20px;
+    padding-left: 18px;
+  }
+
+  .mission-stats {
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .mission-stat-v {
+    font-size: 32px;
+  }
+
+  .mission-body {
+    font-size: 15px;
   }
 }
 </style>

@@ -130,13 +130,28 @@ const SOURCES: Source[] = [
   }
 
   .sources-row {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .sources-label {
+    text-align: center;
+  }
+}
+
+@media (max-width: 600px) {
+  .sources-row {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 375px) {
   .sources-row {
     grid-template-columns: 1fr;
+  }
+
+  .src-card {
+    padding: 16px;
+    min-height: 44px;
   }
 }
 </style>
