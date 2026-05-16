@@ -31,9 +31,5 @@
     { "year": 2023, "real_weekly": 495 },
     { "year": 2024, "real_weekly": 504 }
   ],
-  "counterfactual": [
-    { "year": 2008, "real_weekly": 520 },
-    { "year": 2024, "real_weekly": 632 }
-  ],
-  "notes": "Real weekly earnings in 2024 prices (CPI-adjusted). Counterfactual shows 2% annual real growth from 2008 peak — the rate achieved 2000-2008."
+  "notes": "Real weekly earnings in 2024 prices (CPI-adjusted). Counterfactual computed in-component at 1.5% annual real growth from 2008 peak — the observed 2000-2008 real wage CAGR."
 }

@@ -4,8 +4,8 @@
  *
  * Displays:
  * - Solid line: actual median real weekly earnings (2000-2024, CPI-adjusted)
- * - Dashed line: counterfactual (2% p.a. real growth from 2008 peak)
- * - Shaded area: the "lost wages" gap between actual and counterfactual
+ * - Dashed line: counterfactual (1.5% p.a. real growth from 2008 peak — observed 2000-2008 real wage CAGR)
+ * - Shaded area below counterfactual line (visual emphasis of lost-wage zone)
  * - Mark point: 2008 peak
  * - Annotation: gap in pounds per week / per year
  *
@@ -52,9 +52,9 @@ const prefersReducedMotion =
   window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 // WCAG AA high-contrast colors against white background
-// #1a56db (blue) contrast ratio ~7.2:1 — actual earnings line
-// #dc2626 (red)  contrast ratio ~4.6:1 — counterfactual line
-// rgba(220,38,38,0.08) — shaded gap area (subtle)
+// #1a56db (blue) contrast ratio ~6.2:1 — actual earnings line
+// #dc2626 (red)  contrast ratio ~4.8:1 — counterfactual line
+// rgba(220,38,38,0.08) — shaded area below counterfactual line (subtle)
 const COLOR_ACTUAL = "#1a56db";
 const COLOR_COUNTERFACTUAL = "#dc2626";
 const COLOR_GAP_FILL = "rgba(220, 38, 38, 0.08)";
@@ -62,7 +62,7 @@ const COLOR_GAP_FILL = "rgba(220, 38, 38, 0.08)";
 /** Peak year for the counterfactual start. */
 const PEAK_YEAR = 2008;
 const PEAK_VALUE = 520;
-const ANNUAL_GROWTH = 0.02;
+const ANNUAL_GROWTH = 0.015;
 
 /** Sorted actual data from the store. */
 const actualData = computed(() => {
@@ -85,7 +85,7 @@ const years = computed(() => actualData.value.map((d) => d.year));
 const actualValues = computed(() => actualData.value.map((d) => d.value));
 
 /**
- * Counterfactual series: 2% annual growth from the 2008 peak.
+ * Counterfactual series: 1.5% annual growth (observed 2000-2008 real wage CAGR) from the 2008 peak.
  * Null for years before 2008 (so ECharts doesn't draw a line there).
  */
 const counterfactualValues = computed(() => {
@@ -163,7 +163,7 @@ const option = computed(() => {
     },
     legend: {
       bottom: 0,
-      data: ["Actual earnings", "If 2% growth continued"],
+      data: ["Actual earnings", "If 1.5% growth continued"],
       textStyle: { color: "#374151" },
     },
     grid: {
@@ -224,7 +224,7 @@ const option = computed(() => {
         areaStyle: undefined,
       },
       {
-        name: "If 2% growth continued",
+        name: "If 1.5% growth continued",
         type: "line" as const,
         data: counterfactualValues.value,
         smooth: !prefersReducedMotion,
