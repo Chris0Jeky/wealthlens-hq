@@ -8,6 +8,7 @@
 import { computed, defineAsyncComponent } from "vue";
 import { useRoute } from "vue-router";
 import ShareButton from "@/components/ShareButton.vue";
+import { CHART_METADATA, isValidChart } from "@/utils/chartConstants";
 
 /** Lazy-load chart components to avoid bundling ECharts on every route. */
 const WealthSharesChart = defineAsyncComponent(
@@ -27,15 +28,11 @@ const route = useRoute();
 
 const chartName = computed(() => route.params.name as string);
 
-/** Map of supported chart names to display titles. */
-const chartTitles: Record<string, string> = {
-  "wealth-shares": "Wealth Shares — Top 1% and Top 10%",
-  "housing-affordability": "Housing Affordability — Price-to-Earnings Ratios by Region",
-  "cgt-concentration": "Capital Gains Tax — Concentration by Size of Gain",
-  "wealth-by-decile": "Total Household Wealth by Decile",
-};
+const isSupported = computed(() => isValidChart(chartName.value));
 
-const isSupported = computed(() => chartName.value in chartTitles);
+const chartTitle = computed(() =>
+  isValidChart(chartName.value) ? CHART_METADATA[chartName.value].title : "",
+);
 </script>
 
 <template>
@@ -51,7 +48,7 @@ const isSupported = computed(() => chartName.value in chartTitles);
     <!-- Supported chart -->
     <template v-if="isSupported">
       <div class="flex items-center justify-between mb-6">
-        <h1 class="text-2xl font-bold">{{ chartTitles[chartName] }}</h1>
+        <h1 class="text-2xl font-bold">{{ chartTitle }}</h1>
         <ShareButton />
       </div>
 

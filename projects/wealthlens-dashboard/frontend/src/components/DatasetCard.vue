@@ -1,17 +1,17 @@
 <script setup lang="ts">
-import { VALID_CHART_NAMES } from '@/constants/charts'
+import { SUPPORTED_CHART_NAMES } from '@/utils/chartConstants'
 
 const props = defineProps<{
   name: string
   description: string
-  /** Override chart availability. When omitted, checks VALID_CHART_NAMES. */
+  /** Override chart availability. When omitted, checks SUPPORTED_CHART_NAMES. */
   hasChart?: boolean
 }>()
 
 const chartAvailable =
   props.hasChart !== undefined
     ? props.hasChart
-    : VALID_CHART_NAMES.has(props.name)
+    : SUPPORTED_CHART_NAMES.has(props.name)
 </script>
 
 <template>
