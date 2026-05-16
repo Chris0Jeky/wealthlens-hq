@@ -25,7 +25,7 @@ Last updated: 2026-05-16
 ┌──────────────────▼──────────────────────────┐
 │         Data Pipelines (Python)             │
 │   automation/data-pipelines/fetch_*.py      │
-│   ONS · WID · HMRC · BoE APIs              │
+│   ONS · WID · HMRC APIs                    │
 └─────────────────────────────────────────────┘
 ```
 
@@ -44,7 +44,6 @@ wealthlens-hq/
 │   ├── frontend/             # Vue 3 SPA
 │   │   ├── src/
 │   │   │   ├── components/   # Chart components (ECharts-based)
-│   │   │   ├── composables/  # Reusable logic (analytics, etc.)
 │   │   │   ├── stores/       # Pinia data store
 │   │   │   ├── views/        # Page-level components
 │   │   │   └── router/       # Vue Router setup
@@ -53,17 +52,20 @@ wealthlens-hq/
 │   ├── data/
 │   │   ├── processed/        # Pipeline-generated CSVs (gitignored)
 │   │   └── raw/              # Raw downloaded data (gitignored)
-│   └── charts/               # Static HTML chart pages (Plotly)
+│   ├── charts/               # Static HTML chart pages (Plotly)
+│   │   └── index.html        # Chart gallery landing page
+│   ├── docs/                 # Project-level documentation
+│   │   └── data-licences.md  # Dataset licence and source reference
+│   └── notebooks/            # Exploratory analysis notebooks
 ├── automation/
 │   ├── data-pipelines/       # Python fetch/process/chart scripts
 │   │   ├── fetch_*.py        # One script per data source
 │   │   ├── chart_html.py     # Shared accessible chart wrapper
 │   │   ├── run_all.py        # Pipeline runner
-│   │   ├── validate.py       # Post-pipeline data checks
-│   │   └── metadata/         # Static .meta.json sidecars
+│   │   └── validate.py       # Post-pipeline data checks
 │   └── analysis/             # Research extraction tools
 ├── tests/                    # pytest test suite
-├── .github/workflows/        # CI: backend, frontend, weekly data update
+├── .github/workflows/        # CI: backend, frontend, deploy, weekly data update
 ├── docs/                     # Documentation
 ├── research/                 # Research inputs and synthesis
 ├── strategy/                 # Branding, outreach strategy
@@ -73,7 +75,7 @@ wealthlens-hq/
 
 ## Data Flow
 
-1. **Fetch**: Pipeline scripts download data from external APIs (ONS, WID, HMRC, BoE)
+1. **Fetch**: Pipeline scripts download data from external APIs (ONS, WID, HMRC)
 2. **Process**: Raw data is cleaned, transformed, and saved as CSV in `data/processed/`
 3. **Chart**: Plotly generates static HTML chart pages in `charts/`
 4. **Serve**: FastAPI reads CSVs and serves paginated JSON via `/api/data/{name}`
@@ -93,10 +95,10 @@ wealthlens-hq/
 ## Adding a New Dataset
 
 1. Create `automation/data-pipelines/fetch_<source>.py` with `fetch()`, `process()`, `build_chart()`, `main()`
-2. Add a `.meta.json` sidecar in `automation/data-pipelines/metadata/`
+2. Add a `.meta.json` sidecar alongside the processed CSV
 3. Register the dataset in `backend/app/routers/data.py` (both `DATASETS` and `DATASET_META`)
 4. Add the script to `run_all.py` SCRIPTS list
 5. Create a Vue chart component in `frontend/src/components/`
 6. Add the route in `frontend/src/router/index.ts`
-7. Add an entry to `docs/data-licences.md`
+7. Add an entry to `projects/wealthlens-dashboard/docs/data-licences.md`
 8. Write tests in `tests/`
