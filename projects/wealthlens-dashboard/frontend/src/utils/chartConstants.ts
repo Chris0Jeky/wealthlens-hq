@@ -28,6 +28,12 @@ const CHARTS = {
     description:
       "Total net wealth by decile group in Great Britain (ONS WAS)",
   },
+  "generational-wealth": {
+    name: "generational-wealth",
+    title: "Generational Wealth",
+    description:
+      "Wealth distribution across generations in Great Britain (ONS WAS)",
+  },
 } as const satisfies Record<string, ChartMeta>;
 
 export type ChartName = keyof typeof CHARTS;
