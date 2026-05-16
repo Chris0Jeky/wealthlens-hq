@@ -10,6 +10,7 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.lifespan import lifespan
 from app.logging_config import setup_logging
 from app.middleware import SecurityHeadersMiddleware
 from app.routers import data
@@ -52,6 +53,7 @@ app = FastAPI(
         "url": "https://opensource.org/licenses/MIT",
     },
     openapi_tags=tags_metadata,
+    lifespan=lifespan,
 )
 
 app.add_middleware(TimeoutMiddleware)
