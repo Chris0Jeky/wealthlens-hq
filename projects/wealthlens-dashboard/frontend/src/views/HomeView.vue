@@ -3,6 +3,7 @@ import { onMounted } from 'vue'
 import { useDataStore } from '@/stores/data'
 import DatasetCard from '@/components/DatasetCard.vue'
 import { CHART_METADATA } from '@/utils/chartConstants'
+import { prefetchRouteComponents } from '@/utils/prefetch'
 
 const store = useDataStore()
 
@@ -12,6 +13,12 @@ const descriptions: Record<string, string> = Object.fromEntries(
 
 onMounted(() => {
   store.fetchDatasets()
+
+  // Prefetch the most likely next navigations after idle
+  prefetchRouteComponents([
+    () => import('@/views/ChartView.vue'),
+    () => import('@/views/DatasetDetailView.vue'),
+  ])
 })
 </script>
 

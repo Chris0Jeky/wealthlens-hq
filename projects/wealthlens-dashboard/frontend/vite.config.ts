@@ -12,10 +12,22 @@ export default defineConfig({
     },
   },
   build: {
+    // Warn when any chunk exceeds 250KB (gzipped assets are smaller but
+    // this keeps raw parse cost visible during development)
+    chunkSizeWarningLimit: 250,
     rollupOptions: {
       output: {
         manualChunks: {
-          echarts: ["echarts", "echarts/core", "echarts/renderers", "echarts/charts", "echarts/components", "vue-echarts"],
+          // Heavy charting library — isolated so it only loads on chart routes
+          echarts: [
+            "echarts",
+            "echarts/core",
+            "echarts/renderers",
+            "echarts/charts",
+            "echarts/components",
+            "vue-echarts",
+          ],
+          // Framework core — cached across all routes
           "vue-vendor": ["vue", "vue-router", "pinia"],
         },
       },
