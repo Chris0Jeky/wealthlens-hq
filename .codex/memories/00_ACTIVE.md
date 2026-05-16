@@ -8,14 +8,14 @@
 
 Last updated: 2026-05-16
 
-## Current phase: Post-Merge Consolidation
+## Current phase: Post-Merge Consolidation — CI Green
 
-All feature PRs have been merged into main. The codebase now includes:
-- 8+ data pipelines (WID, ONS housing, CGT, wealth-by-decile, productivity-pay, GDHI, tax composition, BoE rates, child poverty, generational wealth)
+All feature PRs have been merged into main. Post-merge health check complete. The codebase now includes:
+- 10 data pipelines (WID, ONS housing, CGT, wealth-by-decile, productivity-pay, GDHI, tax composition, BoE rates, child poverty, generational wealth)
 - Vue 3 frontend with AppHeader/AppFooter, dark mode, broadsheet chart redesign, WCAG audit fixes
 - FastAPI backend with security headers, GZip, rate limiting, error envelope, CSV download, summary stats, columns endpoint
-- 718 tests passing (135 backend + 583 frontend)
-- CI/CD with GitHub Actions, Dependabot config, bandit security scan
+- 874 tests passing (156 root + 135 backend + 583 frontend)
+- CI/CD all green: ruff, mypy, bandit, pytest, ESLint, vue-tsc, vitest, vite build
 
 ### Active focus areas
 
@@ -26,8 +26,8 @@ All feature PRs have been merged into main. The codebase now includes:
 | Backend API | Full-featured (health, data, metadata, columns, CSV, summary stats) | Deploy to staging |
 | Frontend | Vue 3 + TS + Pinia + TailwindCSS with dark mode, a11y, analytics | Wire up remaining chart components |
 | Deployment | Live at chris0jeky.github.io/wealthlens-hq/ | Automatic on push to main |
-| Testing | 718 tests passing (135 backend + 583 frontend) | Maintain coverage |
-| CI/CD | Deploy + weekly-update + frontend CI + bandit scan | Monitor for failures |
+| Testing | 874 tests passing (156 root + 135 backend + 583 frontend) | Maintain coverage |
+| CI/CD | All green — Backend + Frontend + CodeQL + Deploy + weekly-update | Monitor for failures |
 | Social assets | chart_to_social.py generates 4 platform sizes | Generate assets for first LinkedIn post |
 | Social accounts | Twitter/X + Bluesky created | Update LinkedIn profile, write first post |
 | Outreach | Emails sent to mySociety + Democracy Club | Follow up |
@@ -37,6 +37,11 @@ All feature PRs have been merged into main. The codebase now includes:
 
 ### Recent activity
 
+- 2026-05-16: **POST-MERGE HEALTH CHECK COMPLETE** — all CI green, docs updated, 874 tests passing
+- 2026-05-16: Fixed mypy errors (Starlette type suppression, generator fixture), added httpx to dev deps
+- 2026-05-16: Fixed seed CSVs for CI (year ranges, region counts, decile labels, sort order, row counts)
+- 2026-05-16: Fixed ruff lint in automation/ and tests/ (noqa for unicode ×, import sorting, unused vars)
+- 2026-05-16: Updated dashboard README from stub to reflect actual state (10 datasets, API, 4 charts)
 - 2026-05-16: **MERGE SESSION COMPLETE** — all ~192 PRs merged or closed, zero open PRs
 - 2026-05-16: Fixed 15 test files to align with post-merge component structure (718 tests passing)
 - 2026-05-16: Merged 10 Dependabot dependency bumps; closed 6 risky major version bumps
