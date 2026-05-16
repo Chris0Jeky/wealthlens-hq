@@ -24,7 +24,7 @@ This document describes the WealthLens HQ system architecture for new contributo
                                  │ reads
 ┌────────────────────────────────▼────────────────────────────────┐
 │                  Processed CSV datasets                          │
-│          automation/data-pipelines/ output → backend/data/       │
+│        automation/data-pipelines/ output → data/processed/       │
 └────────────────────────────────┬────────────────────────────────┘
                                  │ fetched by
 ┌────────────────────────────────▼────────────────────────────────┐
@@ -49,19 +49,18 @@ wealthlens-hq/
 │   │   │   ├── middleware.py     # Security headers
 │   │   │   ├── rate_limit.py     # Per-IP rate limiting
 │   │   │   └── error_handlers.py # Structured error responses
-│   │   ├── data/                  # Processed CSV files
 │   │   └── tests/                 # pytest suite
+│   ├── data/processed/            # Processed CSV files (shared by backend + pipelines)
 │   └── frontend/                  # Vue 3 SPA
 │       ├── src/
 │       │   ├── components/        # Reusable UI + chart components
 │       │   ├── views/             # Route-level page components
-│       │   ├── composables/       # Shared reactive logic (useDataFreshness, etc.)
+│       │   ├── composables/       # Shared reactive logic (useChartData, useDarkMode, etc.)
 │       │   ├── stores/            # Pinia stores
 │       │   ├── router/            # Vue Router config
 │       │   ├── constants/         # Static config (chart names, dataset metadata)
-│       │   └── utils/             # Pure helpers (fetchWithRetry, taxCalculator)
+│       │   └── utils/             # Pure helpers (fetchWithRetry, wealthPosition, format)
 │       ├── public/data/           # Static JSON fallbacks for production
-│       ├── e2e/                   # Playwright E2E tests
 │       └── vite.config.ts         # Build config (base: /wealthlens-hq/)
 ├── automation/
 │   └── data-pipelines/            # Python scripts to fetch & process datasets
@@ -77,7 +76,7 @@ wealthlens-hq/
 ## Data Flow
 
 1. **Fetch**: Pipeline scripts (`automation/data-pipelines/fetch_*.py`) pull raw data from ONS, HMRC, WID, Bank of England via HTTP.
-2. **Process**: Scripts clean, normalize, and output CSV to `backend/data/`.
+2. **Process**: Scripts clean, normalize, and output CSV to `data/processed/`.
 3. **Serve (dev)**: FastAPI reads CSVs, returns paginated JSON via `/api/data/{dataset}`.
 4. **Serve (prod)**: Static JSON in `frontend/public/data/` (generated during build or pipeline run).
 5. **Display**: Vue components fetch data → Pinia store → ECharts renders interactive charts.
@@ -123,21 +122,20 @@ The Vite dev server proxies `/api/*` to `localhost:8000` automatically.
 
 ## How to Add a New Dataset
 
-1. **Write a pipeline script**: Create `automation/data-pipelines/fetch_<name>.py` that fetches, cleans, and outputs a CSV to `backend/data/<name>.csv`.
-2. **Add backend endpoint**: The data router auto-discovers CSVs in `backend/data/`, but add any custom logic to `app/routers/data.py`.
+1. **Write a pipeline script**: Create `automation/data-pipelines/fetch_<name>.py` that fetches, cleans, and outputs a CSV to `projects/wealthlens-dashboard/data/processed/<name>.csv`.
+2. **Register in backend**: Add the dataset slug and CSV filename to the `DATASETS` dict in `app/routers/data.py`.
 3. **Generate static JSON**: Run the pipeline and copy output to `frontend/public/data/<name>.json`.
-4. **Register the dataset**: Add the dataset slug to `frontend/src/constants/charts.ts`.
+4. **Register the chart name**: Add the dataset slug to `frontend/src/constants/charts.ts` (`VALID_CHART_NAMES`).
 5. **Create a chart component**: See below.
 
 ## How to Add a New Chart Component
 
 1. Create `frontend/src/components/<Name>Chart.vue`:
    - Import `vue-echarts` and only the ECharts modules you need (tree-shaking).
-   - Use `useDataFreshness(datasetSlug)` for freshness badges.
    - Fetch data with `fetchWithRetry()`.
    - Handle loading, error, and empty states.
 2. Register the chart name in `frontend/src/constants/charts.ts` (add to `VALID_CHART_NAMES`).
-3. The route `/charts/:name` resolves via `ChartView.vue` which dynamically loads the component.
+3. Add the component to `ChartView.vue` using `defineAsyncComponent` and map it in the chart component lookup.
 4. Add a test file at `frontend/src/components/__tests__/<Name>Chart.test.ts`.
 5. Verify with `npx vitest run` and `npx vue-tsc --noEmit`.
 
