@@ -3,7 +3,7 @@
  * ChartView — Dedicated page for viewing a single chart.
  *
  * Uses the route param :name to determine which chart component to render.
- * Currently supports: wealth-shares
+ * Currently supports: wealth-shares, housing-affordability, cgt-concentration
  */
 import { computed, defineAsyncComponent } from "vue";
 import { useRoute } from "vue-router";
@@ -11,6 +11,12 @@ import { useRoute } from "vue-router";
 /** Lazy-load chart components to avoid bundling ECharts on every route. */
 const WealthSharesChart = defineAsyncComponent(
   () => import("@/components/WealthSharesChart.vue"),
+);
+const HousingAffordabilityChart = defineAsyncComponent(
+  () => import("@/components/HousingAffordabilityChart.vue"),
+);
+const CgtConcentrationChart = defineAsyncComponent(
+  () => import("@/components/CgtConcentrationChart.vue"),
 );
 
 const route = useRoute();
@@ -20,6 +26,8 @@ const chartName = computed(() => route.params.name as string);
 /** Map of supported chart names to display titles. */
 const chartTitles: Record<string, string> = {
   "wealth-shares": "Wealth Shares — Top 1% and Top 10%",
+  "housing-affordability": "Housing Affordability — Price-to-Earnings Ratios by Region",
+  "cgt-concentration": "Capital Gains Tax — Concentration by Size of Gain",
 };
 
 const isSupported = computed(() => chartName.value in chartTitles);
@@ -40,6 +48,8 @@ const isSupported = computed(() => chartName.value in chartTitles);
       <h1 class="text-2xl font-bold mb-6">{{ chartTitles[chartName] }}</h1>
 
       <WealthSharesChart v-if="chartName === 'wealth-shares'" />
+      <HousingAffordabilityChart v-else-if="chartName === 'housing-affordability'" />
+      <CgtConcentrationChart v-else-if="chartName === 'cgt-concentration'" />
     </template>
 
     <!-- Unsupported chart name -->
