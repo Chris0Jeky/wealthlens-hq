@@ -43,3 +43,20 @@ class PaginatedDatasetResponse(BaseModel):
     limit: int = Field(ge=1)
     total: int = Field(ge=0)
     total_pages: int = Field(ge=1)
+
+
+class ColumnInfo(BaseModel):
+    """Metadata for a single dataset column."""
+
+    name: str
+    dtype: str = Field(description="Pandas dtype string (e.g. int64, float64, object)")
+    null_count: int = Field(ge=0, description="Number of null/NaN values")
+    unique_count: int = Field(ge=0, description="Number of distinct values")
+
+
+class DatasetColumnsResponse(BaseModel):
+    """Response for GET /api/data/{name}/columns — per-column metadata."""
+
+    dataset: str
+    row_count: int = Field(ge=0)
+    columns: list[ColumnInfo]
