@@ -20,10 +20,10 @@ defineProps<{
  * so keyboard users can bypass repetitive navigation.
  */
 .skip-link {
-  position: absolute;
+  position: fixed;
   top: -9999px;
   left: -9999px;
-  z-index: 50;
+  z-index: 9999;
   padding: 0.5rem 1rem;
   font-size: 0.875rem;
   font-weight: 600;

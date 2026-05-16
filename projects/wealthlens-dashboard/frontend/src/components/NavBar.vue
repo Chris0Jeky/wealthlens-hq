@@ -132,15 +132,3 @@ function closeMobile() {
   </header>
 </template>
 
-<style scoped>
-/*
- * WCAG 2.4.7 — Visible focus indicators for navigation links.
- * Uses the WealthLens red token for brand-consistent keyboard navigation.
- */
-a:focus-visible,
-button:focus-visible {
-  outline: 2px solid var(--wl-red);
-  outline-offset: 2px;
-  border-radius: var(--wl-radius, 3px);
-}
-</style>
