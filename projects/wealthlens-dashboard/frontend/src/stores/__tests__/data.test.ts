@@ -159,7 +159,13 @@ describe("useDataStore", () => {
       ];
       vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ data: mockData }),
+        json: async () => ({
+          data: mockData,
+          page: 1,
+          limit: 100,
+          total: 2,
+          total_pages: 1,
+        }),
       } as Response);
 
       const store = useDataStore();
