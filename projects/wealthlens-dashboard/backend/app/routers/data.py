@@ -49,6 +49,7 @@ DATASETS: dict[str, str] = {
     "wealth-by-decile": "ons_wealth_by_decile.csv",
     "cgt-concentration": "hmrc_cgt_concentration.csv",
     "productivity-pay": "productivity_pay_gap.csv",
+    "gdhi-by-region": "ons_gdhi_by_region.csv",
 }
 
 # Source citations — every dataset must document where the data came from.
@@ -91,6 +92,16 @@ DATASET_META: dict[str, dict[str, str]] = {
         "source_url": (
             "https://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/"
             "labourproductivity/timeseries/lzvd/prdy"
+        ),
+        "access_date": "2026-05-16",
+    },
+    "gdhi-by-region": {
+        "description": "Gross disposable household income per head by region",
+        "source": "ONS Regional GDHI",
+        "source_url": (
+            "https://www.ons.gov.uk/economy/regionalaccounts/"
+            "grossdisposablehouseholdincome/datasets/"
+            "regionalgrossdisposablehouseholdincomegdhi"
         ),
         "access_date": "2026-05-16",
     },
