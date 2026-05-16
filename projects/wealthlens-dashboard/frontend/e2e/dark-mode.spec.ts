@@ -48,7 +48,7 @@ test.describe('Dark mode', () => {
     }
 
     const stored = await page.evaluate(() =>
-      localStorage.getItem('wl-theme'),
+      localStorage.getItem('wealthlens-theme'),
     )
     expect(stored).toBe('dark')
 
@@ -59,7 +59,7 @@ test.describe('Dark mode', () => {
   test.fixme('toggle back to light mode', async ({ page }) => {
     await page.goto('/')
     await page.evaluate(() =>
-      localStorage.setItem('wl-theme', 'dark'),
+      localStorage.setItem('wealthlens-theme', 'dark'),
     )
     await page.reload()
     await expect(page.locator('html')).toHaveClass(/dark/)
