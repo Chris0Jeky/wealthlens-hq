@@ -10,14 +10,8 @@ Verifies that the RateLimitMiddleware correctly:
 
 from __future__ import annotations
 
-import asyncio
-from unittest.mock import patch
-
-import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from starlette.requests import Request
-from starlette.responses import JSONResponse
 
 from app.rate_limit import RateLimitMiddleware
 
