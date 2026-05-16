@@ -34,16 +34,6 @@ const colorClass = computed(() => {
   }
 })
 
-/** Colored dot class for visual reinforcement (not the sole indicator) */
-const dotClass = computed(() => {
-  switch (status.value) {
-    case 'healthy': return 'bg-green-500'
-    case 'degraded': return 'bg-yellow-500'
-    case 'unavailable': return 'bg-red-500'
-    case 'error': return 'bg-gray-400'
-    default: return 'bg-gray-400'
-  }
-})
 
 onMounted(async () => {
   try {
@@ -71,6 +61,7 @@ onMounted(async () => {
       v-if="status === 'healthy'"
       class="h-3 w-3 flex-shrink-0"
       aria-hidden="true"
+      focusable="false"
       viewBox="0 0 16 16"
       fill="currentColor"
     >
@@ -81,6 +72,7 @@ onMounted(async () => {
       v-else-if="status === 'degraded'"
       class="h-3 w-3 flex-shrink-0"
       aria-hidden="true"
+      focusable="false"
       viewBox="0 0 16 16"
       fill="currentColor"
     >
@@ -91,6 +83,7 @@ onMounted(async () => {
       v-else-if="status === 'unavailable'"
       class="h-3 w-3 flex-shrink-0"
       aria-hidden="true"
+      focusable="false"
       viewBox="0 0 16 16"
       fill="currentColor"
     >
@@ -101,6 +94,7 @@ onMounted(async () => {
       v-else-if="status === 'error'"
       class="h-3 w-3 flex-shrink-0"
       aria-hidden="true"
+      focusable="false"
       viewBox="0 0 16 16"
       fill="currentColor"
     >
@@ -109,7 +103,7 @@ onMounted(async () => {
     <!-- Dot for loading -->
     <span
       v-else
-      :class="['inline-block h-2 w-2 rounded-full', dotClass]"
+      class="inline-block h-2 w-2 rounded-full bg-gray-400"
       aria-hidden="true"
     ></span>
 
