@@ -4,8 +4,9 @@
   "sources": [
     {
       "name": "World Inequality Database",
+      "publication": "Top wealth shares, Great Britain",
       "url": "https://wid.world/",
-      "licence": "Creative Commons"
+      "licence": "CC-BY"
     }
   ],
   "access_date": "2026-05-14",

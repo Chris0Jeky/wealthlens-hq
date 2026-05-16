@@ -4,6 +4,7 @@
   "sources": [
     {
       "name": "ONS Wealth and Assets Survey",
+      "publication": "Total wealth: Wealth in Great Britain",
       "url": "https://www.ons.gov.uk/peoplepopulationandcommunity/personalandhouseholdfinances/incomeandwealth/datasets/totalwealthwealthingreatbritain",
       "licence": "OGL v3.0"
     }

@@ -2,14 +2,14 @@
 
 Last updated: 2026-05-16
 
-Every dataset used in WealthLens UK must document its source, licence, URL, and the date it was accessed. This file is the central reference; each processed CSV also has a `.meta.json` sidecar with the same information.
+Every dataset used in WealthLens UK must document its source, licence, URL, and the date it was accessed. This file is the central reference. Static `.meta.json` sidecars live in `automation/data-pipelines/metadata/`; some pipelines (e.g. generational wealth) generate their sidecar at runtime into `data/processed/`.
 
 ## World Inequality Database (WID)
 
 - **Dataset:** `wid_wealth_shares_gb.csv`
 - **Description:** Top 1% and top 10% wealth shares in Great Britain
 - **URL:** <https://wid.world/>
-- **Licence:** Creative Commons
+- **Licence:** CC-BY
 - **Access date:** 2026-05-14
 - **Update frequency:** Annual
 
