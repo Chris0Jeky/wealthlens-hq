@@ -255,6 +255,11 @@ onBeforeUnmount(clearTimer);
   color: var(--wl-red);
 }
 
+.share-panel__btn--error {
+  border-color: var(--wl-red);
+  color: var(--wl-red);
+}
+
 .share-panel__icon {
   width: 14px;
   height: 14px;

@@ -227,6 +227,11 @@ onBeforeUnmount(clearTimer);
   border-color: var(--wl-ink);
 }
 
+.embed-code__copy--error {
+  border-color: var(--wl-red);
+  color: var(--wl-red);
+}
+
 .embed-code__copy:focus-visible {
   outline: 2px solid var(--wl-red);
   outline-offset: 2px;
