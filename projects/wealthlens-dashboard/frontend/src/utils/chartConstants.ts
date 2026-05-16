@@ -15,7 +15,7 @@ const CHARTS = {
     name: "housing-affordability",
     title: "Housing Affordability — Price-to-Earnings Ratios by Region",
     description:
-      "House price to earnings ratio by region, 1997–2025 (ONS)",
+      "House price to earnings ratio by region, 1997-2025 (ONS)",
   },
   "cgt-concentration": {
     name: "cgt-concentration",
@@ -32,9 +32,11 @@ const CHARTS = {
 
 export type ChartName = keyof typeof CHARTS;
 
-export const CHART_METADATA: Record<ChartName, ChartMeta> = CHARTS;
+export const CHART_METADATA: typeof CHARTS = CHARTS;
 
-export const SUPPORTED_CHART_NAMES = new Set<string>(Object.keys(CHARTS));
+export const SUPPORTED_CHART_NAMES: ReadonlySet<ChartName> = new Set<ChartName>(
+  Object.keys(CHARTS) as ChartName[],
+);
 
 export function isValidChart(name: string): name is ChartName {
   return SUPPORTED_CHART_NAMES.has(name);
