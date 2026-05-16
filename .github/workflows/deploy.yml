@@ -32,12 +32,13 @@ jobs:
           python-version: "3.11"
 
       - name: Install pipeline dependencies
-        run: pip install pandas
+        run: pip install -r automation/data-pipelines/requirements.txt
         working-directory: .
 
       - name: Run data pipelines (with fallback)
         run: |
-          for script in automation/data-pipelines/fetch_*.py; do
+          cd automation/data-pipelines
+          for script in fetch_*.py; do
             echo "Running $script..."
             python "$script" || echo "  -> fell back to embedded data"
           done
