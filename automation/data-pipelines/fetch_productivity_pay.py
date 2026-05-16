@@ -321,7 +321,8 @@ def process(
         out_path = PROCESSED_DIR / "productivity_pay_gap.csv"
         df.to_csv(out_path, index=False)
         logger.info("Processed data saved to %s", out_path)
-        return df
+        _write_sidecar_meta(out_path, is_fallback=True)
+        return df, True
 
     df = pd.DataFrame({
         "year": merged["year"],
