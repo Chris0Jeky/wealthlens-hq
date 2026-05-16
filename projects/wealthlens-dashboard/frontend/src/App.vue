@@ -1,8 +1,16 @@
 <script setup lang="ts">
+import { onMounted } from 'vue'
 import { RouterView } from 'vue-router'
 import ErrorBoundary from '@/components/ErrorBoundary.vue'
 import AppHeader from '@/components/AppHeader.vue'
 import AppFooter from '@/components/AppFooter.vue'
+import { useAnalytics } from '@/composables/useAnalytics'
+
+const { init: initAnalytics } = useAnalytics()
+
+onMounted(() => {
+  initAnalytics()
+})
 </script>
 
 <template>
