@@ -1,17 +1,12 @@
 <script setup lang="ts">
-import { ref } from "vue";
-
-interface FaqItem {
-  question: string;
-  answer: string;
-}
+import Accordion from "@/components/Accordion.vue";
 
 interface GlossaryEntry {
   term: string;
   definition: string;
 }
 
-const faqs: FaqItem[] = [
+const faqs = [
   {
     question: "Where does the data come from?",
     answer:
@@ -52,7 +47,7 @@ const faqs: FaqItem[] = [
     answer:
       "Real terms means adjusted for inflation (using CPI). A wage figure 'in real terms' shows what the money is actually worth in today's purchasing power, removing the effect of price increases over time.",
   },
-];
+] as const;
 
 const glossary: GlossaryEntry[] = [
   { term: "Decile", definition: "One-tenth of a population when sorted by a measure (e.g., wealth). The bottom decile is the poorest 10%, the top decile is the richest 10%." },
@@ -68,75 +63,40 @@ const glossary: GlossaryEntry[] = [
   { term: "WID (World Inequality Database)", definition: "An academic database combining tax records and national accounts to estimate wealth and income distributions globally." },
   { term: "ASHE", definition: "Annual Survey of Hours and Earnings. The ONS's main source for earnings data, covering 1% of all UK employees via PAYE records." },
 ];
-
-const openIndex = ref<number | null>(null);
-
-function toggle(index: number) {
-  openIndex.value = openIndex.value === index ? null : index;
-}
 </script>
 
 <template>
   <article class="max-w-3xl mx-auto px-6 py-12">
-    <h1 class="text-3xl font-bold tracking-tight mb-2">FAQ & Glossary</h1>
-    <p class="text-gray-600 mb-10">
+    <h1 class="text-3xl font-bold tracking-tight mb-2 dark:text-gray-100">FAQ & Glossary</h1>
+    <p class="text-gray-600 dark:text-gray-400 mb-10">
       Common questions about the data and key terms used across the site.
     </p>
 
     <!-- FAQ Section -->
     <section class="mb-14">
-      <h2 class="text-xl font-semibold mb-6">Frequently Asked Questions</h2>
-      <div class="space-y-2">
-        <div
+      <h2 class="text-xl font-semibold mb-6 dark:text-gray-100">Frequently Asked Questions</h2>
+      <div class="divide-y divide-gray-200 dark:divide-gray-700 border-t border-gray-200 dark:border-gray-700">
+        <Accordion
           v-for="(item, index) in faqs"
           :key="index"
-          class="border border-gray-200 rounded-lg"
+          :title="item.question"
         >
-          <button
-            class="w-full text-left px-5 py-4 flex justify-between items-center gap-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--wl-red)]"
-            :aria-expanded="openIndex === index"
-            :aria-controls="`faq-answer-${index}`"
-            @click="toggle(index)"
-          >
-            <span class="font-medium text-gray-900">{{ item.question }}</span>
-            <svg
-              class="w-5 h-5 shrink-0 text-gray-500 transition-transform duration-200"
-              :class="{ 'rotate-180': openIndex === index }"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-              aria-hidden="true"
-            >
-              <path
-                fill-rule="evenodd"
-                d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
-                clip-rule="evenodd"
-              />
-            </svg>
-          </button>
-          <div
-            v-show="openIndex === index"
-            :id="`faq-answer-${index}`"
-            role="region"
-            :aria-labelledby="`faq-question-${index}`"
-            class="px-5 pb-4"
-          >
-            <p class="text-gray-700 leading-relaxed">{{ item.answer }}</p>
-          </div>
-        </div>
+          <p class="leading-relaxed">{{ item.answer }}</p>
+        </Accordion>
       </div>
     </section>
 
     <!-- Glossary Section -->
     <section>
-      <h2 class="text-xl font-semibold mb-6">Glossary</h2>
+      <h2 class="text-xl font-semibold mb-6 dark:text-gray-100">Glossary</h2>
       <dl class="space-y-4">
         <div
           v-for="entry in glossary"
           :key="entry.term"
-          class="border-l-4 border-gray-300 pl-4"
+          class="border-l-4 border-gray-300 dark:border-gray-600 pl-4"
         >
-          <dt class="font-semibold text-gray-900">{{ entry.term }}</dt>
-          <dd class="text-gray-700 text-sm leading-relaxed mt-1">
+          <dt class="font-semibold text-gray-900 dark:text-gray-100">{{ entry.term }}</dt>
+          <dd class="text-gray-700 dark:text-gray-400 text-sm leading-relaxed mt-1">
             {{ entry.definition }}
           </dd>
         </div>
