@@ -132,7 +132,27 @@ import { RouterLink } from 'vue-router'
 
   .cta-actions {
     flex-direction: column;
-    align-items: center;
+    align-items: stretch;
+  }
+
+  .cta-actions .wl-btn {
+    justify-content: center;
+    min-height: 44px;
+    text-align: center;
+  }
+}
+
+@media (max-width: 375px) {
+  .cta {
+    padding: 48px 0;
+  }
+
+  .cta h2 {
+    font-size: clamp(28px, 7vw, 48px);
+  }
+
+  .cta-lead {
+    font-size: 15px;
   }
 }
 </style>

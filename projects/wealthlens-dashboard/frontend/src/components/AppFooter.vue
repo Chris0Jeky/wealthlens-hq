@@ -254,6 +254,10 @@ const year = new Date().getFullYear()
 
 /* --- Responsive ---------------------------------------------- */
 @media (max-width: 768px) {
+  .foot {
+    padding: 40px 0 24px;
+  }
+
   .foot-inner {
     grid-template-columns: 1fr 1fr;
     gap: 32px;
@@ -262,6 +266,16 @@ const year = new Date().getFullYear()
 
   .foot-brand {
     grid-column: 1 / -1;
+  }
+
+  .foot-col a {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .foot-col ul {
+    gap: 4px;
   }
 
   .foot-base {
@@ -274,13 +288,13 @@ const year = new Date().getFullYear()
   .foot-inner {
     grid-template-columns: 1fr;
     gap: 24px;
-    padding: 0 12px;
+    padding: 0 16px;
   }
 
   .foot-base {
     flex-direction: column;
     gap: 8px;
-    padding: 16px 12px 0;
+    padding: 16px 16px 0;
   }
 }
 </style>
