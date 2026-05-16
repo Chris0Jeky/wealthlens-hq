@@ -31,7 +31,7 @@ def write_accessible_chart(
     )
 
     # Optional Plausible analytics — enabled when PLAUSIBLE_DOMAIN is set.
-    plausible_domain = os.environ.get("PLAUSIBLE_DOMAIN", "")
+    plausible_domain = os.environ.get("PLAUSIBLE_DOMAIN", "").strip()
     plausible_tag = ""
     if plausible_domain:
         safe_domain = html.escape(plausible_domain, quote=True)
