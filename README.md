@@ -13,22 +13,29 @@
 
 WealthLens UK publishes source-backed, mobile-responsive, accessible interactive charts about wealth inequality in the United Kingdom. Every chart cites its data source, is WCAG AA accessible, and can be freely shared and embedded.
 
-### Live charts (v0.1)
+### Live site
+
+**[chris0jeky.github.io/wealthlens-hq](https://chris0jeky.github.io/wealthlens-hq/)**
+
+Interactive charts with broadsheet aesthetic, dark mode, keyboard navigation, and WCAG AA compliance:
 
 - **UK Wealth Shares (1820–2024)** — Top 1% and top 10% share of net personal wealth (WID.world)
 - **Housing Affordability by Region** — House price to earnings ratios across England (ONS)
 - **Capital Gains Concentration** — How gains are concentrated among top taxpayers (HMRC)
+- **Wealth by Decile** — Distribution of wealth across population deciles (ONS WAS)
+
+Plus 10 backend datasets covering productivity-pay gap, GDHI by region, tax composition, BoE rates, child poverty, and generational wealth.
 
 ## Tech stack
 
 | Layer | Technology |
 |---|---|
-| Data pipelines | Python 3.11+, Pandas, Requests |
-| Charts | Plotly (static HTML, no server needed) |
-| Backend (planned) | FastAPI, Pydantic, SQLite/PostgreSQL |
-| Frontend (planned) | Vue 3, TypeScript, Pinia, TailwindCSS, D3.js |
-| Infrastructure | GitHub Pages, GitHub Actions |
-| Dev tools | ruff, mypy, pytest, Make |
+| Data pipelines | Python 3.11+, Pandas, Requests (10 pipelines) |
+| Backend API | FastAPI, Pydantic, SQLite (dev) / PostgreSQL (prod) |
+| Frontend | Vue 3, TypeScript, Pinia, TailwindCSS, D3.js, Vite |
+| Infrastructure | GitHub Pages, GitHub Actions (CI + deploy) |
+| Dev tools | ruff, mypy, bandit, pytest, ESLint, vue-tsc, vitest |
+| Tests | 874 passing (156 root + 135 backend + 583 frontend) |
 
 ## Quick start
 
@@ -37,35 +44,40 @@ WealthLens UK publishes source-backed, mobile-responsive, accessible interactive
 git clone https://github.com/Chris0Jeky/wealthlens-hq.git
 cd wealthlens-hq
 
-# Set up Python environment
+# Backend
+cd projects/wealthlens-dashboard/backend
 python -m venv .venv
 source .venv/bin/activate   # or .venv\Scripts\Activate.ps1 on Windows
-pip install -r automation/data-pipelines/requirements.txt
+pip install -r requirements.txt -r requirements-dev.txt
+uvicorn app.main:app --reload          # API at http://localhost:8000
 
-# Run all data pipelines (fetches live data and generates charts)
-make pipelines
+# Frontend (separate terminal)
+cd projects/wealthlens-dashboard/frontend
+npm install
+npm run dev                            # Vite dev server at http://localhost:3000
 
-# Open the charts
-open projects/wealthlens-dashboard/charts/index.html
+# Data pipelines
+cd automation/data-pipelines
+pip install -r requirements.txt
+python run_all.py                      # Fetches live data, generates CSVs
 ```
 
 ## Project structure
 
 ```
 wealthlens-hq/
-├── projects/wealthlens-dashboard/   # Charts, data, backend, frontend
-│   ├── charts/                      # Interactive HTML charts (deployed)
-│   ├── data/                        # Raw + processed datasets (gitignored)
-│   ├── backend/                     # FastAPI app (planned)
-│   └── frontend/                    # Vue 3 app (planned)
+├── projects/wealthlens-dashboard/
+│   ├── charts/                      # Static Plotly HTML charts (deployed)
+│   ├── data/processed/              # Pipeline output CSVs (10 datasets)
+│   ├── backend/                     # FastAPI app (health, data, metadata, CSV, stats)
+│   └── frontend/                    # Vue 3 + TypeScript + Pinia + TailwindCSS
 ├── automation/
-│   ├── data-pipelines/              # Python fetch/process/chart scripts
-│   ├── analysis/                    # Research processing (stubs)
-│   └── workflows/                   # CI/CD references
+│   ├── data-pipelines/              # 10 Python fetch/process scripts
+│   └── social-media/               # chart_to_social.py (4 platform sizes)
 ├── research/                        # Raw inputs, synthesised insights, data sources
 ├── strategy/                        # Branding, content, outreach playbooks
 ├── tasks/                           # Sprint, inbox, done, outreach tracking
-└── .github/workflows/               # GitHub Actions (deploy, data update)
+└── .github/workflows/               # CI: backend, frontend, CodeQL, deploy, weekly-update
 ```
 
 ## API Documentation
@@ -85,10 +97,12 @@ Start the backend with `make dev-backend` or `uvicorn app.main:app --reload` fro
 |--------|------|-------------|
 | GET | `/health` | Health check |
 | GET | `/api/data/` | List available datasets |
-| GET | `/api/data/metadata` | Metadata for all datasets |
+| GET | `/api/data/metadata` | Metadata for all datasets (with source citations) |
 | GET | `/api/data/{name}/metadata` | Metadata for a single dataset |
-| GET | `/api/data/{name}` | Paginated dataset rows (supports `?page=` and `?limit=`) |
-| GET | `/api/health/data` | Data availability health check |
+| GET | `/api/data/{name}` | Paginated dataset rows (`?page=` and `?limit=`) |
+| GET | `/api/data/{name}/columns` | Per-column metadata (dtype, null/unique counts) |
+| GET | `/api/data/{name}/summary` | Descriptive statistics for numeric columns |
+| GET | `/api/data/{name}/download` | Download dataset as streaming CSV |
 
 ## How to contribute
 

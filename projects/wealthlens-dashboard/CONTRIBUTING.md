@@ -88,7 +88,7 @@ python automation/data-pipelines/validate.py
 automation/data-pipelines/   — Python scripts that fetch, process, and chart data
 projects/wealthlens-dashboard/
   backend/                   — FastAPI API serving processed datasets as JSON
-  frontend/                  — Vue 3 + TypeScript UI (in development)
+  frontend/                  — Vue 3 + TypeScript + Pinia + TailwindCSS
   charts/                    — Generated interactive HTML charts
   data/raw/                  — Downloaded source files
   data/processed/            — Cleaned CSV outputs

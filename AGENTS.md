@@ -154,17 +154,17 @@ Repo-local Codex skills live under `.agents/skills/` and supplement this file. U
 
 ### Product
 
-- `projects/wealthlens-dashboard/backend/` — FastAPI application (planned)
-- `projects/wealthlens-dashboard/frontend/` — Vue 3 + TypeScript UI (planned)
-- `projects/wealthlens-dashboard/data/` — processed datasets (planned)
-- `projects/wealthlens-dashboard/docs/` — product documentation (planned)
+- `projects/wealthlens-dashboard/backend/` — FastAPI application (health, data, metadata, columns, summary, CSV)
+- `projects/wealthlens-dashboard/frontend/` — Vue 3 + TypeScript + Pinia + TailwindCSS (40+ components)
+- `projects/wealthlens-dashboard/data/` — processed datasets (10 pipeline outputs)
+- `projects/wealthlens-dashboard/docs/` — product documentation
 
 ### Automation
 
-- `automation/data-pipelines/` — data fetching scripts (stubs)
-- `automation/analysis/` — research processing scripts (stubs)
-- `automation/social-media/` — social asset generation (stubs)
-- `automation/workflows/` — CI/CD workflow definitions (placeholders)
+- `automation/data-pipelines/` — 10 Python fetch/process/chart scripts + run_all.py + validate.py
+- `automation/analysis/` — research processing scripts (extract_action_items.py)
+- `automation/social-media/` — chart_to_social.py (generates 4 platform sizes)
+- `automation/workflows/` — CI/CD workflow references
 
 ### Strategy and operations
 
