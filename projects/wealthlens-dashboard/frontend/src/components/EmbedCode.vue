@@ -1,0 +1,241 @@
+<script setup lang="ts">
+/**
+ * EmbedCode — Displays a copyable iframe embed snippet for a chart.
+ *
+ * Shows a pre-formatted iframe code block with a width selector (600px,
+ * 800px, 100%) and a copy button with confirmation feedback.
+ *
+ * @example
+ * <EmbedCode chart-name="wealth-shares" />
+ */
+import { ref, computed, onBeforeUnmount } from "vue";
+
+const props = defineProps<{
+  /** The chart route name, e.g. "wealth-shares" */
+  chartName: string;
+}>();
+
+/** Available width options for the iframe embed. */
+const widthOptions = [
+  { label: "600px", value: "600" },
+  { label: "800px", value: "800" },
+  { label: "100%", value: "100%" },
+] as const;
+
+const selectedWidth = ref<string>("100%");
+
+/** The base URL for chart embeds (GitHub Pages deployment). */
+const baseUrl = "https://chris0jeky.github.io/wealthlens-hq/charts";
+
+/** Computed iframe snippet based on selected width. */
+const embedSnippet = computed(() => {
+  const widthAttr =
+    selectedWidth.value === "100%" ? '100%' : selectedWidth.value;
+  return `<iframe src="${baseUrl}/${props.chartName}" width="${widthAttr}" height="500" frameborder="0" title="WealthLens UK chart"></iframe>`;
+});
+
+const copied = ref(false);
+let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+function clearTimer(): void {
+  if (timeoutId) {
+    clearTimeout(timeoutId);
+    timeoutId = null;
+  }
+}
+
+async function copyEmbed(): Promise<void> {
+  if (typeof navigator === "undefined" || !navigator.clipboard) return;
+
+  try {
+    await navigator.clipboard.writeText(embedSnippet.value);
+    copied.value = true;
+    clearTimer();
+    timeoutId = setTimeout(() => {
+      copied.value = false;
+      timeoutId = null;
+    }, 2000);
+  } catch {
+    // Clipboard write failed — silently ignore.
+  }
+}
+
+onBeforeUnmount(clearTimer);
+</script>
+
+<template>
+  <div class="embed-code" aria-labelledby="embed-code-heading">
+    <h3 id="embed-code-heading" class="embed-code__heading">
+      Embed this chart
+    </h3>
+
+    <!-- Width selector -->
+    <fieldset class="embed-code__widths">
+      <legend class="embed-code__legend">Width</legend>
+      <label
+        v-for="opt in widthOptions"
+        :key="opt.value"
+        class="embed-code__radio-label"
+      >
+        <input
+          type="radio"
+          name="embed-width"
+          :value="opt.value"
+          v-model="selectedWidth"
+          class="embed-code__radio"
+        />
+        {{ opt.label }}
+      </label>
+    </fieldset>
+
+    <!-- Code block -->
+    <div class="embed-code__block">
+      <pre class="embed-code__pre"><code>{{ embedSnippet }}</code></pre>
+    </div>
+
+    <!-- Copy button -->
+    <button
+      type="button"
+      class="embed-code__copy"
+      :aria-label="copied ? 'Embed code copied' : 'Copy embed code'"
+      @click="copyEmbed"
+    >
+      <svg
+        v-if="!copied"
+        viewBox="0 0 16 16"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.5"
+        aria-hidden="true"
+        class="embed-code__icon"
+      >
+        <rect x="5" y="5" width="8" height="9" rx="1" />
+        <path d="M3 11V3a1 1 0 0 1 1-1h6" />
+      </svg>
+      <svg
+        v-else
+        viewBox="0 0 16 16"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        aria-hidden="true"
+        class="embed-code__icon"
+      >
+        <path d="M3 8.5l3 3 7-7" />
+      </svg>
+      {{ copied ? "Copied!" : "Copy code" }}
+    </button>
+
+    <!-- Live region for screen readers -->
+    <span role="status" aria-live="polite" class="sr-only">
+      {{ copied ? "Embed code copied to clipboard" : "" }}
+    </span>
+  </div>
+</template>
+
+<style scoped>
+.embed-code {
+  padding: 16px 0 0;
+  border-top: 1px solid var(--wl-rule);
+}
+
+.embed-code__heading {
+  font-family: var(--wl-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  color: var(--wl-ink-muted);
+  text-transform: uppercase;
+  margin: 0 0 12px;
+}
+
+.embed-code__widths {
+  border: none;
+  padding: 0;
+  margin: 0 0 12px;
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.embed-code__legend {
+  font-family: var(--wl-mono);
+  font-size: 11px;
+  color: var(--wl-ink-muted);
+  margin-right: 8px;
+}
+
+.embed-code__radio-label {
+  font-family: var(--wl-mono);
+  font-size: 11px;
+  color: var(--wl-ink-body);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.embed-code__radio {
+  accent-color: var(--wl-red);
+}
+
+.embed-code__block {
+  background: var(--wl-bg-muted, #f5f5f5);
+  border: 1px solid var(--wl-rule);
+  padding: 12px 16px;
+  overflow-x: auto;
+  margin-bottom: 12px;
+}
+
+.embed-code__pre {
+  margin: 0;
+  font-family: var(--wl-mono);
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--wl-ink-body);
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.embed-code__copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  background: var(--wl-card);
+  border: 1px solid var(--wl-rule-strong);
+  font-family: var(--wl-mono);
+  font-size: 11px;
+  color: var(--wl-ink-body);
+  cursor: pointer;
+  letter-spacing: 0.04em;
+}
+
+.embed-code__copy:hover {
+  background: var(--wl-ink);
+  color: var(--wl-paper);
+  border-color: var(--wl-ink);
+}
+
+.embed-code__copy:focus-visible {
+  outline: 2px solid var(--wl-red);
+  outline-offset: 2px;
+}
+
+.embed-code__icon {
+  width: 14px;
+  height: 14px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+</style>
