@@ -6,6 +6,7 @@ title, aria-label, skip link, and noscript fallback.
 
 from __future__ import annotations
 
+import html
 import logging
 import os
 from pathlib import Path
@@ -33,18 +34,22 @@ def write_accessible_chart(
     plausible_domain = os.environ.get("PLAUSIBLE_DOMAIN", "")
     plausible_tag = ""
     if plausible_domain:
+        safe_domain = html.escape(plausible_domain, quote=True)
         plausible_tag = (
-            f'  <script defer data-domain="{plausible_domain}" '
+            f'  <script defer data-domain="{safe_domain}" '
             f'src="https://plausible.io/js/script.js"></script>\n'
         )
 
-    html = f"""<!DOCTYPE html>
+    safe_title = html.escape(title, quote=True)
+    safe_desc = html.escape(description, quote=True)
+
+    page = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{title} — WealthLens UK</title>
-  <meta name="description" content="{description}">
+  <title>{safe_title} — WealthLens UK</title>
+  <meta name="description" content="{safe_desc}">
 {plausible_tag}  <style>
     body {{ margin: 0; padding: 1rem; font-family: system-ui, -apple-system, sans-serif; background: #fff; }}
     .skip-link {{ position: absolute; top: -40px; left: 0; background: #1f77b4; color: #fff; padding: 8px 16px; z-index: 100; }}
@@ -59,7 +64,7 @@ def write_accessible_chart(
   <a class="skip-link" href="#chart">Skip to chart</a>
   <div class="chart-container">
     <a class="back-link" href="index.html">&larr; All charts</a>
-    <div id="chart" role="img" aria-label="{description}">
+    <div id="chart" role="img" aria-label="{safe_desc}">
       {chart_div}
     </div>
   </div>
@@ -67,5 +72,5 @@ def write_accessible_chart(
 </body>
 </html>"""
 
-    out_path.write_text(html, encoding="utf-8")
+    out_path.write_text(page, encoding="utf-8")
     logger.info("Chart saved to %s", out_path)
