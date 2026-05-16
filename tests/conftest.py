@@ -32,10 +32,11 @@ DATA_DIR = (
 _SEED_CSVS: dict[str, str] = {
     "wid_wealth_shares_gb.csv": (
         "variable,country,year,value\n"
-        "shweal_p99p100,GB,2020,0.21\n"
-        "shweal_p99p100,GB,2021,0.22\n"
-        "shweal_p90p100,GB,2020,0.52\n"
-        "shweal_p90p100,GB,2021,0.53\n"
+        + "".join(
+            f"shweal_p99p100,GB,{y},0.{20 + y - 2016}\n"
+            f"shweal_p90p100,GB,{y},0.{50 + y - 2016}\n"
+            for y in range(2016, 2023)
+        )
     ),
     "ons_housing_affordability_by_region.csv": (
         "region,year,ratio\n"
@@ -70,7 +71,13 @@ def _seed_data_files() -> list[Path]:
     return created
 
 
-_seeded_files: list[Path] = _seed_data_files()
+@pytest.fixture(autouse=True, scope="session")
+def _seed_test_data():
+    """Seed minimal CSV fixtures before tests, clean up after."""
+    created = _seed_data_files()
+    yield
+    for path in created:
+        path.unlink(missing_ok=True)
 
 
 @pytest.fixture
