@@ -16,14 +16,16 @@ const safeUrl = computed(() => {
 </script>
 
 <template>
-  <p class="text-sm text-gray-500 mt-4 text-center">
-    Source:
-    <a
-      :href="safeUrl"
-      target="_blank"
-      rel="noopener noreferrer"
-      class="underline hover:text-gray-700"
-    >{{ source }}<span class="sr-only"> (opens in new tab)</span></a>,
-    accessed {{ accessDate }}
-  </p>
+  <footer class="mt-4 pt-3 border-t border-[var(--wl-rule)] text-xs text-[var(--wl-ink-muted)]">
+    <p>
+      Source:
+      <a
+        :href="safeUrl"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="underline hover:text-[var(--wl-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--wl-red)] rounded"
+      >{{ source }}<span class="sr-only"> (opens in new tab)</span></a>.
+      Accessed {{ accessDate }}.
+    </p>
+  </footer>
 </template>
