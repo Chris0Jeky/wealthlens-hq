@@ -28,6 +28,9 @@ build/
 coverage/
 *.tsbuildinfo
 
+# Transpile artifacts — TypeScript source is canonical
+projects/wealthlens-dashboard/frontend/src/**/*.js
+
 # Data and generated artefacts
 *.parquet
 *.feather
