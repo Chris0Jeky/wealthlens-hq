@@ -9,7 +9,7 @@ test.describe('Navigation', () => {
 
   test('navigate to about page', async ({ page }) => {
     await page.goto('/')
-    const nav = page.locator('.nav-links')
+    const nav = page.getByRole('navigation', { name: /site/i })
     await nav.getByRole('link', { name: /about/i }).click()
     await expect(page).toHaveURL(/\/about/)
     await expect(page.getByRole('heading').first()).toBeVisible()
@@ -28,7 +28,7 @@ test.describe('Navigation', () => {
 
   test('back button works', async ({ page }) => {
     await page.goto('/')
-    const nav = page.locator('.nav-links')
+    const nav = page.getByRole('navigation', { name: /site/i })
     await nav.getByRole('link', { name: /about/i }).click()
     await expect(page).toHaveURL(/\/about/)
     await page.goBack()

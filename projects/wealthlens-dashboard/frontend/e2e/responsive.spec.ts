@@ -12,9 +12,8 @@ test.describe('Responsive layout', () => {
     })
     await expect(hamburger).toBeVisible()
 
-    // Desktop nav links should be hidden at mobile width
-    const desktopNav = page.locator('.nav-links')
-    await expect(desktopNav).not.toBeVisible()
+    const nav = page.getByRole('navigation', { name: /site/i })
+    await expect(nav.getByRole('link', { name: /about/i })).not.toBeVisible()
   })
 
   test('clicking hamburger opens mobile nav', async ({ page }) => {
@@ -42,10 +41,7 @@ test.describe('Responsive layout', () => {
     })
     await expect(hamburger).not.toBeVisible()
 
-    // Desktop nav links should be visible
-    const aboutLink = page.locator('.nav-links').getByRole('link', {
-      name: /about/i,
-    })
-    await expect(aboutLink).toBeVisible()
+    const nav = page.getByRole('navigation', { name: /site/i })
+    await expect(nav.getByRole('link', { name: /about/i })).toBeVisible()
   })
 })
