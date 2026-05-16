@@ -54,6 +54,19 @@ describe('fetchWithRetry', () => {
     expect(fetch).toHaveBeenCalledTimes(1)
   })
 
+  it('throws after 5xx retries exhausted', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({ status: 500, ok: false }),
+    )
+
+    await expect(
+      fetchWithRetry('/api/test', undefined, 2, 1),
+    ).rejects.toThrow('HTTP 500')
+    // 1 initial + 2 retries = 3 total attempts
+    expect(fetch).toHaveBeenCalledTimes(3)
+  })
+
   it('throws after max retries exhausted', async () => {
     vi.stubGlobal(
       'fetch',
