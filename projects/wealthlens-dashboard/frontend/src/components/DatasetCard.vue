@@ -20,7 +20,7 @@ const chartAvailable =
     <router-link
       v-if="chartAvailable"
       :to="`/charts/${name}`"
-      class="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-800"
+      class="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded"
     >
       View Chart &rarr;
     </router-link>
