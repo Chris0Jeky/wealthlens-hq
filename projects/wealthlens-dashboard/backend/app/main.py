@@ -13,6 +13,7 @@ from starlette.middleware.gzip import GZipMiddleware
 
 from app.lifespan import lifespan
 from app.logging_config import setup_logging
+from app.logging_middleware import RequestLoggingMiddleware
 from app.middleware import SecurityHeadersMiddleware
 from app.routers import data
 from app.timeout_middleware import TimeoutMiddleware
@@ -70,6 +71,8 @@ app.add_middleware(
 app.add_middleware(SecurityHeadersMiddleware)
 
 app.add_middleware(GZipMiddleware, minimum_size=1000)
+
+app.add_middleware(RequestLoggingMiddleware)
 
 app.include_router(data.router, prefix="/api/data", tags=["data"])
 
