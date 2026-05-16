@@ -13,6 +13,9 @@ const store = useDataStore()
 const metadataLoading = ref(true)
 const metadataError = ref<string | null>(null)
 
+/** Connectivity warning when fetchDatasets fails (non-blocking — cards are hardcoded). */
+const datasetsError = ref<string | null>(null)
+
 /** All 10 datasets in display order. */
 const ALL_DATASETS = [
   'wealth-shares',
@@ -64,6 +67,13 @@ onMounted(async () => {
   ])
 
   metadataLoading.value = false
+
+  // Report dataset fetch failure (non-blocking — card list is hardcoded)
+  if (results[0].status === 'rejected') {
+    datasetsError.value = results[0].reason instanceof Error
+      ? results[0].reason.message
+      : 'Failed to connect to data service'
+  }
 
   // Report metadata enrichment failure (non-blocking — fallback descriptions used)
   if (results[1].status === 'rejected') {
@@ -117,6 +127,17 @@ onMounted(async () => {
       <h2 id="datasets-heading" class="text-xl font-semibold mb-4">
         Available Datasets
       </h2>
+
+      <!-- Dataset connectivity warning (non-blocking — cards are hardcoded) -->
+      <div
+        v-if="datasetsError"
+        role="status"
+        class="rounded-lg border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950 p-4 mb-4"
+      >
+        <p class="text-sm text-amber-800 dark:text-amber-200">
+          Unable to reach the data service — showing cached dataset list.
+        </p>
+      </div>
 
       <!-- Metadata enrichment error (non-blocking) -->
       <div

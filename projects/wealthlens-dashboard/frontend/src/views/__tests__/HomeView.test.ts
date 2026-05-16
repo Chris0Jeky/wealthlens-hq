@@ -157,6 +157,46 @@ describe('HomeView', () => {
     })
   })
 
+  describe('datasets connectivity error', () => {
+    it('does not show connectivity warning by default', () => {
+      const wrapper = mount(HomeView, createMountOptions())
+      expect(wrapper.text()).not.toContain('Unable to reach the data service')
+    })
+
+    it('shows connectivity warning when fetchDatasets rejects', async () => {
+      const router = createRouter({
+        history: createMemoryHistory(),
+        routes: [
+          { path: '/', component: HomeView },
+          { path: '/charts/:name', component: { template: '<div />' } },
+          { path: '/datasets/:name', component: { template: '<div />' } },
+        ],
+      })
+      const pinia = createTestingPinia({
+        createSpy: vi.fn,
+        initialState: {
+          data: { datasets: [], metadata: new Map(), loading: false, error: null },
+        },
+      })
+      const store = useDataStore(pinia)
+      ;(store.fetchDatasets as ReturnType<typeof vi.fn>).mockRejectedValue(
+        new Error('Network error'),
+      )
+
+      const wrapper = mount(HomeView, { global: { plugins: [router, pinia] } })
+
+      // Wait for the onMounted Promise.allSettled to settle
+      await new Promise((r) => setTimeout(r, 10))
+      expect(wrapper.text()).toContain('Unable to reach the data service')
+    })
+
+    it('cards remain visible even when fetchDatasets fails', async () => {
+      const wrapper = mount(HomeView, createMountOptions({ error: 'Connection refused' }))
+      const items = wrapper.findAll('[role="listitem"]')
+      expect(items.length).toBe(10)
+    })
+  })
+
   describe('accessibility', () => {
     it('has aria-labelledby on hero section', () => {
       const wrapper = mount(HomeView, createMountOptions())
