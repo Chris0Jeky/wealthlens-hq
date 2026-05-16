@@ -22,6 +22,7 @@ const hasCalculated = ref(false);
 
 const parsedSalary = computed(() => {
   const cleaned = salaryInput.value.replace(/[£,\s]/g, "");
+  if (cleaned === "") return null;
   const num = Number(cleaned);
   return Number.isFinite(num) && num >= 0 ? num : null;
 });

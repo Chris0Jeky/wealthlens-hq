@@ -20,7 +20,7 @@ describe("TaxCalculator", () => {
   it("disables calculate button when input is empty", () => {
     const wrapper = mount(TaxCalculator);
     const btn = wrapper.find("button.calc__btn");
-    expect(btn.attributes("disabled")).toBeDefined();
+    expect((btn.element as HTMLButtonElement).disabled).toBe(true);
   });
 
   it("enables calculate button when valid number is entered", async () => {

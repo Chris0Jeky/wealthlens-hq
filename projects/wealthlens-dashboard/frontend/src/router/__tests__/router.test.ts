@@ -26,8 +26,8 @@ describe("Router configuration", () => {
 
   it("has the expected number of route definitions", () => {
     // home, dataset-detail, chart, methodology, about (x2), contribute,
-    // wealth-calculator, not-found catch-all
-    expect(router.getRoutes()).toHaveLength(8);
+    // wealth-calculator, tax-calculator, not-found catch-all
+    expect(router.getRoutes()).toHaveLength(9);
   });
 
   it('the "chart" route has a dynamic :name param', () => {
