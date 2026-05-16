@@ -11,6 +11,7 @@ dev = [
     "ruff>=0.4",
     "mypy>=1.10",
     "pytest>=8.0",
+    "bandit>=1.7",
     "pandas-stubs>=2.1",
     "types-requests>=2.31",
 ]
@@ -63,6 +64,10 @@ module = [
     "summarise_research",
 ]
 disallow_untyped_defs = true
+
+[tool.bandit]
+exclude_dirs = ["tests"]
+skips = ["B101"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
