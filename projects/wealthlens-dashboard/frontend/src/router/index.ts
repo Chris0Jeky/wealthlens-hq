@@ -15,6 +15,11 @@ const router = createRouter({
       component: () => import("@/views/HomeView.vue"),
     },
     {
+      path: "/datasets/:name",
+      name: "dataset-detail",
+      component: () => import("@/views/DatasetDetailView.vue"),
+    },
+    {
       path: "/charts/:name",
       name: "chart",
       component: () => import("@/views/ChartView.vue"),
