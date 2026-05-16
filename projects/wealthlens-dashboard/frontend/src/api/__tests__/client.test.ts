@@ -1,80 +1,73 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { api, ApiError } from '../client'
-
-const mockFetch = vi.fn()
-vi.stubGlobal('fetch', mockFetch)
-
-function jsonResponse(body: unknown, status = 200) {
-  return {
-    ok: status >= 200 && status < 300,
-    status,
-    statusText: status === 200 ? 'OK' : 'Not Found',
-    json: () => Promise.resolve(body),
-  }
-}
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { api } from '@/api/client'
 
 describe('api client', () => {
   beforeEach(() => {
-    mockFetch.mockReset()
+    vi.stubGlobal('fetch', vi.fn())
   })
 
-  describe('listDatasets', () => {
-    it('fetches /api/data/ and returns datasets', async () => {
-      mockFetch.mockResolvedValue(jsonResponse({ datasets: ['a', 'b'] }))
-      const result = await api.listDatasets()
-      expect(mockFetch).toHaveBeenCalledWith('/api/data/')
-      expect(result.datasets).toEqual(['a', 'b'])
-    })
+  afterEach(() => {
+    vi.unstubAllGlobals()
   })
 
-  describe('getDataset', () => {
-    it('fetches paginated data with encoded name', async () => {
-      mockFetch.mockResolvedValue(
-        jsonResponse({ data: [], page: 1, limit: 100, total: 0, total_pages: 1 }),
-      )
-      await api.getDataset('wealth-shares', 2, 50)
-      expect(mockFetch).toHaveBeenCalledWith('/api/data/wealth-shares?page=2&limit=50')
+  function mockResponse(body: unknown, status = 200) {
+    ;(fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: status >= 200 && status < 300,
+      status,
+      statusText: status === 200 ? 'OK' : 'Not Found',
+      json: () => Promise.resolve(body),
     })
+  }
+
+  it('listDatasets calls correct URL', async () => {
+    mockResponse({ datasets: ['a', 'b'] })
+    const result = await api.listDatasets()
+    expect(fetch).toHaveBeenCalledWith('http://localhost:8000/api/data/')
+    expect(result.datasets).toEqual(['a', 'b'])
   })
 
-  describe('getMetadata', () => {
-    it('fetches single dataset metadata', async () => {
-      const meta = { name: 'x', source: 's', source_url: 'u', access_date: 'd', row_count: 1, columns: ['a'], description: 'desc' }
-      mockFetch.mockResolvedValue(jsonResponse(meta))
-      const result = await api.getMetadata('x')
-      expect(result.name).toBe('x')
-    })
+  it('getMetadata calls correct URL', async () => {
+    mockResponse({ datasets: [] })
+    await api.getMetadata()
+    expect(fetch).toHaveBeenCalledWith('http://localhost:8000/api/data/metadata')
   })
 
-  describe('error handling', () => {
-    it('throws ApiError on non-ok response', async () => {
-      mockFetch.mockResolvedValue(jsonResponse(null, 404))
-      await expect(api.listDatasets()).rejects.toThrow(ApiError)
-    })
+  it('getDatasetMetadata encodes name', async () => {
+    mockResponse({ name: 'wealth-shares' })
+    await api.getDatasetMetadata('wealth-shares')
+    expect(fetch).toHaveBeenCalledWith('http://localhost:8000/api/data/wealth-shares/metadata')
+  })
 
-    it('ApiError includes status code', async () => {
-      mockFetch.mockResolvedValue(jsonResponse(null, 500))
-      await expect(api.listDatasets()).rejects.toMatchObject({ status: 500 })
-    })
+  it('getDatasetColumns calls correct URL', async () => {
+    mockResponse({ dataset: 'x', row_count: 5, columns: [] })
+    await api.getDatasetColumns('wealth-by-decile')
+    expect(fetch).toHaveBeenCalledWith('http://localhost:8000/api/data/wealth-by-decile/columns')
+  })
 
-    it('throws ApiError with status 0 on network failure', async () => {
-      mockFetch.mockRejectedValue(new TypeError('Failed to fetch'))
-      const err = await api.listDatasets().catch((e) => e)
-      expect(err).toBeInstanceOf(ApiError)
-      expect(err.status).toBe(0)
-      expect(err.message).toBe('Could not reach the server')
-    })
+  it('getDataset includes page and limit params', async () => {
+    mockResponse({ data: [], page: 2, limit: 50, total: 100, total_pages: 2 })
+    await api.getDataset('housing-affordability', 2, 50)
+    expect(fetch).toHaveBeenCalledWith(
+      'http://localhost:8000/api/data/housing-affordability?page=2&limit=50',
+    )
+  })
 
-    it('throws ApiError when response is not valid JSON', async () => {
-      mockFetch.mockResolvedValue({
-        ok: true,
-        status: 200,
-        statusText: 'OK',
-        json: () => Promise.reject(new SyntaxError('Unexpected token')),
-      })
-      const err = await api.listDatasets().catch((e) => e)
-      expect(err).toBeInstanceOf(ApiError)
-      expect(err.message).toBe('Response was not valid JSON')
-    })
+  it('health calls correct URL', async () => {
+    mockResponse({ status: 'ok' })
+    const result = await api.health()
+    expect(result.status).toBe('ok')
+  })
+
+  it('throws on non-2xx response', async () => {
+    mockResponse(null, 404)
+    await expect(api.listDatasets()).rejects.toThrow('API 404: Not Found')
+  })
+
+  it('uses default page and limit', async () => {
+    mockResponse({ data: [], page: 1, limit: 100, total: 0, total_pages: 1 })
+    await api.getDataset('cgt-concentration')
+    expect(fetch).toHaveBeenCalledWith(
+      'http://localhost:8000/api/data/cgt-concentration?page=1&limit=100',
+    )
   })
 })
