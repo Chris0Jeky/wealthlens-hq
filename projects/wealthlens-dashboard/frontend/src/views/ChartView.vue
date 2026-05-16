@@ -21,7 +21,9 @@ import type { SeriesLegendItem } from "@/components/ChartToolbar.vue";
 import ShareBar from "@/components/ShareBar.vue";
 import RelatedCharts from "@/components/RelatedCharts.vue";
 import type { RelatedChartItem } from "@/components/RelatedCharts.vue";
+import ExportButton from "@/components/ExportButton.vue";
 import { useAnalytics } from "@/composables/useAnalytics";
+import { useChartExport } from "@/composables/useChartExport";
 
 /** Lazy-load chart components to avoid bundling ECharts on every route. */
 const WealthSharesChart = defineAsyncComponent(
@@ -40,6 +42,24 @@ const WealthByDecileChart = defineAsyncComponent(
 const route = useRoute();
 const { trackEvent } = useAnalytics();
 const chartName = computed(() => route.params.name as string);
+
+/** Ref to the chart component instance for export functionality. */
+const chartComponentRef = ref<{ chart: any } | null>(null);
+const { exportPNG, exportSVG } = useChartExport(chartComponentRef);
+
+/** Handle export button format selection. */
+function onExport(format: "png" | "svg") {
+  const name = chartName.value || "chart";
+  const sourceText = config.value?.source?.name;
+  const opts = { filename: `wealthlens-${name}`, source: sourceText };
+
+  if (format === "png") {
+    exportPNG(opts);
+  } else {
+    exportSVG(opts);
+  }
+  trackEvent("export_chart", { chart: name, format });
+}
 
 /* ------------------------------------------------------------------ */
 /* Chart content configuration                                         */
@@ -377,16 +397,21 @@ watch(chartName, (name) => {
     <!-- Chart card -->
     <div class="chart-wrap">
       <div class="chart-card">
-        <ChartToolbar
-          :title="config.toolbar.title"
-          :unit="config.toolbar.unit"
-          :series="config.toolbar.series"
-          :ranges="config.toolbar.ranges"
-          :active-range="activeRange"
-          @range-change="onRangeChange"
-        />
+        <div class="chart-card__toolbar-row">
+          <ChartToolbar
+            :title="config.toolbar.title"
+            :unit="config.toolbar.unit"
+            :series="config.toolbar.series"
+            :ranges="config.toolbar.ranges"
+            :active-range="activeRange"
+            @range-change="onRangeChange"
+          />
+          <div class="chart-card__export">
+            <ExportButton @export="onExport" />
+          </div>
+        </div>
         <div class="chart-stage">
-          <WealthSharesChart v-if="chartName === 'wealth-shares'" />
+          <WealthSharesChart v-if="chartName === 'wealth-shares'" ref="chartComponentRef" />
         </div>
         <div class="chart-source-bar">
           <div class="chart-source-bar__left">
@@ -502,15 +527,21 @@ watch(chartName, (name) => {
 
       <div class="chart-wrap">
         <div class="chart-card">
+          <div class="chart-card__export chart-card__export--simple">
+            <ExportButton @export="onExport" />
+          </div>
           <div class="chart-stage">
             <HousingAffordabilityChart
               v-if="chartName === 'housing-affordability'"
+              ref="chartComponentRef"
             />
             <CgtConcentrationChart
               v-if="chartName === 'cgt-concentration'"
+              ref="chartComponentRef"
             />
             <WealthByDecileChart
               v-if="chartName === 'wealth-by-decile'"
+              ref="chartComponentRef"
             />
           </div>
         </div>
@@ -719,6 +750,24 @@ watch(chartName, (name) => {
   background: var(--wl-card);
   border: 1px solid var(--wl-ink);
   overflow: hidden;
+  position: relative;
+}
+
+.chart-card__toolbar-row {
+  display: flex;
+  align-items: center;
+}
+
+.chart-card__export {
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.chart-card__export--simple {
+  justify-content: flex-end;
+  padding: 12px 16px 0;
 }
 
 .chart-stage {
