@@ -1,9 +1,13 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { ref } from 'vue'
-import { useChartExport } from '@/composables/useChartExport'
+import {
+  useChartExport,
+  type ChartComponentRef,
+  type EChartsExportable,
+} from '@/composables/useChartExport'
 
 describe('useChartExport', () => {
-  let mockChart: {
+  let mockChart: EChartsExportable & {
     getOption: ReturnType<typeof vi.fn>
     setOption: ReturnType<typeof vi.fn>
     getDataURL: ReturnType<typeof vi.fn>
@@ -16,10 +20,14 @@ describe('useChartExport', () => {
 
   beforeEach(() => {
     mockChart = {
-      getOption: vi.fn(() => ({ graphic: [] })),
-      setOption: vi.fn(),
-      getDataURL: vi.fn(() => 'data:image/png;base64,fakedata'),
-      getConnectedDataURL: vi.fn(() => 'data:image/svg+xml;charset=UTF-8,%3Csvg%3E%3C/svg%3E'),
+      getOption: vi.fn<() => { graphic?: unknown[] }>(() => ({ graphic: [] })),
+      setOption: vi.fn<(option: Record<string, unknown>) => void>(),
+      getDataURL: vi.fn<
+        (opts: { type: string; pixelRatio: number; backgroundColor: string }) => string
+      >(() => 'data:image/png;base64,fakedata'),
+      getConnectedDataURL: vi.fn<(opts: { type: string }) => string>(
+        () => 'data:image/svg+xml;charset=UTF-8,%3Csvg%3E%3C/svg%3E',
+      ),
     }
 
     linkClicked = false
@@ -58,7 +66,7 @@ describe('useChartExport', () => {
 
   describe('exportPNG', () => {
     it('returns true and triggers download on success', () => {
-      const chartRef = ref({ chart: mockChart })
+      const chartRef = ref<ChartComponentRef>({ chart: mockChart })
       const { exportPNG } = useChartExport(chartRef)
 
       const result = exportPNG({ filename: 'test-chart' })
@@ -74,7 +82,7 @@ describe('useChartExport', () => {
     })
 
     it('uses custom pixelRatio and backgroundColor', () => {
-      const chartRef = ref({ chart: mockChart })
+      const chartRef = ref<ChartComponentRef>({ chart: mockChart })
       const { exportPNG } = useChartExport(chartRef)
 
       exportPNG({ filename: 'test', pixelRatio: 3, backgroundColor: '#000' })
@@ -87,7 +95,7 @@ describe('useChartExport', () => {
     })
 
     it('clamps pixelRatio to minimum of 1', () => {
-      const chartRef = ref({ chart: mockChart })
+      const chartRef = ref<ChartComponentRef>({ chart: mockChart })
       const { exportPNG } = useChartExport(chartRef)
 
       exportPNG({ filename: 'test', pixelRatio: -1 })
@@ -98,7 +106,7 @@ describe('useChartExport', () => {
     })
 
     it('adds and removes watermark during export', () => {
-      const chartRef = ref({ chart: mockChart })
+      const chartRef = ref<ChartComponentRef>({ chart: mockChart })
       const { exportPNG } = useChartExport(chartRef)
 
       exportPNG({ filename: 'test', source: 'WID.world' })
@@ -111,7 +119,7 @@ describe('useChartExport', () => {
 
     it('removes watermark even when getDataURL throws', () => {
       mockChart.getDataURL.mockImplementation(() => { throw new Error('Canvas tainted') })
-      const chartRef = ref({ chart: mockChart })
+      const chartRef = ref<ChartComponentRef>({ chart: mockChart })
       const { exportPNG } = useChartExport(chartRef)
 
       const result = exportPNG({ filename: 'test' })
@@ -128,7 +136,7 @@ describe('useChartExport', () => {
     it('restores previous graphic elements after export', () => {
       const existingGraphic = [{ id: 'existing-annotation', type: 'text' }]
       mockChart.getOption.mockReturnValue({ graphic: existingGraphic })
-      const chartRef = ref({ chart: mockChart })
+      const chartRef = ref<ChartComponentRef>({ chart: mockChart })
       const { exportPNG } = useChartExport(chartRef)
 
       exportPNG({ filename: 'test' })
@@ -140,21 +148,21 @@ describe('useChartExport', () => {
     })
 
     it('returns false when chart ref is null', () => {
-      const chartRef = ref(null)
+      const chartRef = ref<ChartComponentRef>(null)
       const { exportPNG } = useChartExport(chartRef)
 
       expect(exportPNG({ filename: 'test' })).toBe(false)
     })
 
     it('returns false when chart instance is null', () => {
-      const chartRef = ref({ chart: null })
+      const chartRef = ref<ChartComponentRef>({ chart: null })
       const { exportPNG } = useChartExport(chartRef)
 
       expect(exportPNG({ filename: 'test' })).toBe(false)
     })
 
     it('returns false for empty filename', () => {
-      const chartRef = ref({ chart: mockChart })
+      const chartRef = ref<ChartComponentRef>({ chart: mockChart })
       const { exportPNG } = useChartExport(chartRef)
 
       expect(exportPNG({ filename: '' })).toBe(false)
@@ -162,14 +170,14 @@ describe('useChartExport', () => {
 
     it('returns false when getDataURL returns invalid data', () => {
       mockChart.getDataURL.mockReturnValue('')
-      const chartRef = ref({ chart: mockChart })
+      const chartRef = ref<ChartComponentRef>({ chart: mockChart })
       const { exportPNG } = useChartExport(chartRef)
 
       expect(exportPNG({ filename: 'test' })).toBe(false)
     })
 
     it('sanitizes filename by stripping special characters', () => {
-      const chartRef = ref({ chart: mockChart })
+      const chartRef = ref<ChartComponentRef>({ chart: mockChart })
       const { exportPNG } = useChartExport(chartRef)
 
       exportPNG({ filename: 'wealth../../etc/passwd' })
@@ -180,7 +188,7 @@ describe('useChartExport', () => {
 
   describe('exportSVG', () => {
     it('returns true and triggers download on success', () => {
-      const chartRef = ref({ chart: mockChart })
+      const chartRef = ref<ChartComponentRef>({ chart: mockChart })
       const { exportSVG } = useChartExport(chartRef)
 
       const result = exportSVG({ filename: 'test-chart' })
@@ -192,7 +200,7 @@ describe('useChartExport', () => {
     })
 
     it('creates and revokes a blob URL', () => {
-      const chartRef = ref({ chart: mockChart })
+      const chartRef = ref<ChartComponentRef>({ chart: mockChart })
       const { exportSVG } = useChartExport(chartRef)
 
       exportSVG({ filename: 'test' })
@@ -205,7 +213,7 @@ describe('useChartExport', () => {
       const svgContent = '<svg><text>hello</text></svg>'
       const base64 = btoa(svgContent)
       mockChart.getConnectedDataURL.mockReturnValue(`data:image/svg+xml;base64,${base64}`)
-      const chartRef = ref({ chart: mockChart })
+      const chartRef = ref<ChartComponentRef>({ chart: mockChart })
       const { exportSVG } = useChartExport(chartRef)
 
       const result = exportSVG({ filename: 'test' })
@@ -219,7 +227,7 @@ describe('useChartExport', () => {
         getConnectedDataURL: undefined,
         renderToSVGString: vi.fn(() => '<svg></svg>'),
       }
-      const chartRef = ref({ chart })
+      const chartRef = ref<ChartComponentRef>({ chart })
       const { exportSVG } = useChartExport(chartRef)
 
       const result = exportSVG({ filename: 'test' })
@@ -234,7 +242,7 @@ describe('useChartExport', () => {
         getConnectedDataURL: undefined,
         renderToSVGString: undefined,
       }
-      const chartRef = ref({ chart })
+      const chartRef = ref<ChartComponentRef>({ chart })
       const { exportSVG } = useChartExport(chartRef)
 
       const result = exportSVG({ filename: 'test' })
@@ -244,7 +252,7 @@ describe('useChartExport', () => {
 
     it('removes watermark even when getConnectedDataURL throws', () => {
       mockChart.getConnectedDataURL.mockImplementation(() => { throw new Error('fail') })
-      const chartRef = ref({ chart: mockChart })
+      const chartRef = ref<ChartComponentRef>({ chart: mockChart })
       const { exportSVG } = useChartExport(chartRef)
 
       const result = exportSVG({ filename: 'test' })
@@ -259,21 +267,21 @@ describe('useChartExport', () => {
 
     it('returns false when getConnectedDataURL returns invalid format', () => {
       mockChart.getConnectedDataURL.mockReturnValue('invalid-no-comma')
-      const chartRef = ref({ chart: mockChart })
+      const chartRef = ref<ChartComponentRef>({ chart: mockChart })
       const { exportSVG } = useChartExport(chartRef)
 
       expect(exportSVG({ filename: 'test' })).toBe(false)
     })
 
     it('returns false when chart ref is null', () => {
-      const chartRef = ref(null)
+      const chartRef = ref<ChartComponentRef>(null)
       const { exportSVG } = useChartExport(chartRef)
 
       expect(exportSVG({ filename: 'test' })).toBe(false)
     })
 
     it('adds watermark with source citation', () => {
-      const chartRef = ref({ chart: mockChart })
+      const chartRef = ref<ChartComponentRef>({ chart: mockChart })
       const { exportSVG } = useChartExport(chartRef)
 
       exportSVG({ filename: 'test', source: 'ONS' })
