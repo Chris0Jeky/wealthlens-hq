@@ -2,18 +2,13 @@
 import { onMounted } from 'vue'
 import { useDataStore } from '@/stores/data'
 import DatasetCard from '@/components/DatasetCard.vue'
+import { CHART_METADATA } from '@/utils/chartConstants'
 
 const store = useDataStore()
 
-const descriptions: Record<string, string> = {
-  'wealth-shares':
-    'Top 1% and 10% share of UK net personal wealth since 1820 (WID)',
-  'housing-affordability':
-    'House price to earnings ratio by region, 1997-2025 (ONS)',
-  'wealth-by-decile':
-    'Total net wealth by decile group in Great Britain (ONS WAS)',
-  'cgt-concentration': 'Capital gains concentration by size of gain (HMRC)',
-}
+const descriptions: Record<string, string> = Object.fromEntries(
+  Object.values(CHART_METADATA).map((c) => [c.name, c.description]),
+)
 
 onMounted(() => {
   store.fetchDatasets()
