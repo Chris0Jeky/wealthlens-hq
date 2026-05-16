@@ -8,7 +8,7 @@
  *
  * Accessibility: WCAG AA high-contrast colors, aria-label, escapeHtml tooltips.
  */
-import { computed, onMounted, ref } from "vue";
+import { computed } from "vue";
 import { use } from "echarts/core";
 import { CanvasRenderer } from "echarts/renderers";
 import { LineChart } from "echarts/charts";
@@ -19,7 +19,7 @@ import {
   LegendComponent,
 } from "echarts/components";
 import VChart from "vue-echarts";
-import { useDataStore, type DatasetRow } from "@/stores/data";
+import { useChartData } from "@/composables/useChartData";
 import { escapeHtml, safeMinMax } from "@/utils/chart";
 
 // Register only the ECharts modules we need (tree-shaking)
@@ -32,21 +32,7 @@ use([
   LegendComponent,
 ]);
 
-const store = useDataStore();
-const rows = ref<DatasetRow[]>([]);
-const loading = ref(true);
-const error = ref<string | null>(null);
-
-onMounted(async () => {
-  try {
-    rows.value = await store.fetchDataset("housing-affordability");
-  } catch (e) {
-    error.value =
-      e instanceof Error ? e.message : "Failed to load housing affordability data";
-  } finally {
-    loading.value = false;
-  }
-});
+const { rows, loading, error } = useChartData("housing-affordability");
 
 /**
  * WCAG AA high-contrast colors against white (#fff).
