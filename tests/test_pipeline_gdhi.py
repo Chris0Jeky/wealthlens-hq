@@ -10,15 +10,16 @@ import pandas as pd
 import pytest
 
 # Make the pipeline importable without installing it as a package.
-PIPELINE_DIR = Path(__file__).resolve().parents[3] / ".." / "automation" / "data-pipelines"
-PIPELINE_DIR = PIPELINE_DIR.resolve()
+PIPELINE_DIR = Path(__file__).resolve().parents[1] / "automation" / "data-pipelines"
 if str(PIPELINE_DIR) not in sys.path:
     sys.path.insert(0, str(PIPELINE_DIR))
 
 import fetch_ons_gdhi  # noqa: E402
 
 DATA_PATH = (
-    Path(__file__).resolve().parents[2]
+    Path(__file__).resolve().parents[1]
+    / "projects"
+    / "wealthlens-dashboard"
     / "data"
     / "processed"
     / "ons_gdhi_by_region.csv"
