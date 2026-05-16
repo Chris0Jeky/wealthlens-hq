@@ -123,7 +123,7 @@ describe('usePageMeta', () => {
       defineComponent({
         setup() {
           usePageMeta({ title, description })
-          return { title, description }
+          return {}
         },
         template: '<div />',
       }),
@@ -132,8 +132,8 @@ describe('usePageMeta', () => {
     expect(document.title).toBe('Page One — WealthLens UK')
     expect(getMeta('property', 'og:title')).toBe('Page One')
 
-    wrapper.vm.title = 'Page Two'
-    wrapper.vm.description = 'Second page'
+    title.value = 'Page Two'
+    description.value = 'Second page'
     await nextTick()
 
     expect(document.title).toBe('Page Two — WealthLens UK')
