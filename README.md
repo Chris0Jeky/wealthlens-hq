@@ -85,9 +85,9 @@ Start the backend with `make dev-backend` or `uvicorn app.main:app --reload` fro
 |--------|------|-------------|
 | GET | `/health` | Health check |
 | GET | `/api/data/` | List available datasets |
-| GET | `/api/data/{name}` | Paginated dataset rows (supports `?page=` and `?limit=`) |
 | GET | `/api/data/metadata` | Metadata for all datasets |
 | GET | `/api/data/{name}/metadata` | Metadata for a single dataset |
+| GET | `/api/data/{name}` | Paginated dataset rows (supports `?page=` and `?limit=`) |
 | GET | `/api/health/data` | Data availability health check |
 
 ## How to contribute
