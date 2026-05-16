@@ -51,3 +51,5 @@
   /* Layout */
   --container-wl: 1280px;
 }
+
+@custom-variant dark (&:where(.dark, .dark *));
