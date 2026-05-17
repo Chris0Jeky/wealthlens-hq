@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { mount, VueWrapper } from "@vue/test-utils";
 import { createRouter, createWebHistory, Router } from "vue-router";
 import App from "@/App.vue";
+import i18n from "@/i18n";
 
 function makeRouter(): Router {
   return createRouter({
@@ -17,7 +18,7 @@ describe("App layout accessibility", () => {
     const router = makeRouter();
     router.push("/");
     await router.isReady();
-    wrapper = mount(App, { global: { plugins: [router] } });
+    wrapper = mount(App, { global: { plugins: [router, i18n] } });
   });
 
   afterEach(() => {

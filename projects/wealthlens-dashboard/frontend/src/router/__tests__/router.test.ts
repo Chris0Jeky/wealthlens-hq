@@ -26,8 +26,9 @@ describe("Router configuration", () => {
 
   it("has the expected number of route definitions", () => {
     // home, dataset-detail, chart, methodology, data-sources, about,
-    // contribute, wealth-calculator, wealth-tax-simulator, not-found catch-all
-    expect(router.getRoutes()).toHaveLength(10);
+    // contribute, wealth-calculator, wealth-tax-simulator, tax-calculator,
+    // not-found catch-all
+    expect(router.getRoutes()).toHaveLength(11);
   });
 
   it('resolves /tools/wealth-tax-simulator to the "wealth-tax-simulator" route', () => {
@@ -38,6 +39,11 @@ describe("Router configuration", () => {
   it('resolves /data-sources to the "data-sources" route', () => {
     const resolved = router.resolve("/data-sources");
     expect(resolved.name).toBe("data-sources");
+  });
+
+  it('resolves /tools/tax-calculator to the "tax-calculator" route', () => {
+    const resolved = router.resolve("/tools/tax-calculator");
+    expect(resolved.name).toBe("tax-calculator");
   });
 
   it('the "chart" route has a dynamic :name param', () => {
