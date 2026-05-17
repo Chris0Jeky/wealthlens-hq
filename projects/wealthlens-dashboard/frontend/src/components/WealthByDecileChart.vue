@@ -10,7 +10,7 @@
  *
  * Accessibility: WCAG AA high-contrast colors, aria-label, escapeHtml tooltips.
  */
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { use } from "echarts/core";
 import { CanvasRenderer } from "echarts/renderers";
 import { BarChart } from "echarts/charts";
@@ -21,7 +21,8 @@ import {
 } from "echarts/components";
 import VChart from "vue-echarts";
 import { useChartData } from "@/composables/useChartData";
-import { escapeHtml } from "@/utils/chart";
+import type { EChartsExportable } from "@/composables/useChartExport";
+import { escapeHtml, warnIfSignificantDataLoss } from "@/utils/chart";
 
 // Register only the ECharts modules we need (tree-shaking)
 use([
@@ -33,6 +34,9 @@ use([
 ]);
 
 const { rows, loading, error } = useChartData("wealth-by-decile");
+const chart = ref<EChartsExportable | null>(null);
+
+defineExpose({ chart });
 
 /**
  * Respect prefers-reduced-motion (WCAG 2.3.3).
@@ -50,12 +54,15 @@ const COLOR_NEGATIVE = "#b91c1c";
 
 /** Parsed data rows preserving CSV order (1st poorest to 10th richest). */
 const parsedData = computed(() => {
-  return rows.value
-    .map((r) => ({
-      decile: String(r.decile ?? ""),
-      totalWealthBn: Number(r.total_wealth_bn),
-    }))
-    .filter((r) => r.decile && !isNaN(r.totalWealthBn));
+  const mapped = rows.value.map((r) => ({
+    decile: String(r.decile ?? ""),
+    totalWealthBn: Number(r.total_wealth_bn),
+  }));
+  const filtered = mapped.filter((r) => r.decile && !isNaN(r.totalWealthBn));
+
+  warnIfSignificantDataLoss("wealth-by-decile", mapped.length, filtered.length);
+
+  return filtered;
 });
 
 const hasData = computed(() => parsedData.value.length > 0);
@@ -181,6 +188,7 @@ const option = computed(() => {
       class="w-full"
     >
       <VChart
+        ref="chart"
         class="w-full"
         style="height: 480px"
         :option="option"

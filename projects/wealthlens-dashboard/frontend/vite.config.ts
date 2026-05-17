@@ -12,10 +12,20 @@ export default defineConfig({
     },
   },
   build: {
+    chunkSizeWarningLimit: 600,
     rollupOptions: {
       output: {
         manualChunks: {
-          echarts: ["echarts", "echarts/core", "echarts/renderers", "echarts/charts", "echarts/components", "vue-echarts"],
+          // Heavy charting library — isolated so it only loads on chart routes
+          echarts: [
+            "echarts",
+            "echarts/core",
+            "echarts/renderers",
+            "echarts/charts",
+            "echarts/components",
+            "vue-echarts",
+          ],
+          // Framework core — cached across all routes
           "vue-vendor": ["vue", "vue-router", "pinia"],
         },
       },
