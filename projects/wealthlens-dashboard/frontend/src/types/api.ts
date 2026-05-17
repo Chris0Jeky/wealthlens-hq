@@ -23,6 +23,7 @@ export interface DatasetMetadataResponse {
   access_date: string
   row_count: number
   columns: string[]
+  last_updated?: string | null
 }
 
 /** GET /api/data/metadata — metadata for every dataset. */
@@ -44,4 +45,23 @@ export interface PaginatedDatasetResponse {
   limit: number
   total: number
   total_pages: number
+}
+
+/** Freshness info for a single dataset. */
+export interface DatasetFreshnessEntry {
+  last_updated: string | null
+  age_hours: number | null
+  status: 'fresh' | 'stale' | 'expired' | 'unknown'
+}
+
+/** Thresholds used to classify dataset freshness. */
+export interface FreshnessThresholds {
+  fresh_hours: number
+  stale_hours: number
+}
+
+/** GET /api/data/freshness — freshness status for all datasets. */
+export interface FreshnessResponse {
+  datasets: Record<string, DatasetFreshnessEntry>
+  thresholds: FreshnessThresholds
 }

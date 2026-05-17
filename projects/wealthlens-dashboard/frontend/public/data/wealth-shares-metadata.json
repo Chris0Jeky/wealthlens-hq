@@ -1,0 +1,1 @@
+{"name": "wealth-shares", "description": "Top 1%/10% wealth shares in GB", "source": "World Inequality Database", "source_url": "https://wid.world/", "access_date": "2026-05-14", "row_count": 250, "columns": ["variable", "country", "year", "value", "percentile"]}

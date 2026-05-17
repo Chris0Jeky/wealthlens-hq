@@ -22,7 +22,7 @@ import {
 import VChart from "vue-echarts";
 import { useChartData } from "@/composables/useChartData";
 import type { EChartsExportable } from "@/composables/useChartExport";
-import { escapeHtml } from "@/utils/chart";
+import { escapeHtml, warnIfSignificantDataLoss } from "@/utils/chart";
 
 // Register only the ECharts modules we need (tree-shaking)
 use([
@@ -54,12 +54,15 @@ const COLOR_NEGATIVE = "#b91c1c";
 
 /** Parsed data rows preserving CSV order (1st poorest to 10th richest). */
 const parsedData = computed(() => {
-  return rows.value
-    .map((r) => ({
-      decile: String(r.decile ?? ""),
-      totalWealthBn: Number(r.total_wealth_bn),
-    }))
-    .filter((r) => r.decile && !isNaN(r.totalWealthBn));
+  const mapped = rows.value.map((r) => ({
+    decile: String(r.decile ?? ""),
+    totalWealthBn: Number(r.total_wealth_bn),
+  }));
+  const filtered = mapped.filter((r) => r.decile && !isNaN(r.totalWealthBn));
+
+  warnIfSignificantDataLoss("wealth-by-decile", mapped.length, filtered.length);
+
+  return filtered;
 });
 
 const hasData = computed(() => parsedData.value.length > 0);
