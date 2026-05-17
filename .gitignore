@@ -47,6 +47,11 @@ projects/wealthlens-dashboard/data/raw/
 projects/wealthlens-dashboard/data/processed/
 projects/wealthlens-dashboard/social-assets/
 
+# Playwright
+test-results/
+playwright-report/
+blob-report/
+
 # OS / editor noise
 .DS_Store
 Thumbs.db

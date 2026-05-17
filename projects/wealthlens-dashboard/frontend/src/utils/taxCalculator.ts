@@ -247,4 +247,3 @@ export function calculateEffectiveRate(salary: number): EffectiveRates {
 export function formatPercent(n: number): string {
   return `${(n * 100).toFixed(1)}%`;
 }
-

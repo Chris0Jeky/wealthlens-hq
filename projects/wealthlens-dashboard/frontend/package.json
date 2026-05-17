@@ -14,6 +14,8 @@
     "typecheck": "vue-tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed",
     "lighthouse": "lhci autorun --config=lighthouserc.cjs",
     "generate:sitemap": "python ../../../scripts/generate_sitemap.py"
   },
@@ -29,6 +31,7 @@
     "@lhci/cli": "^0.15.1",
     "@vitest/coverage-v8": "^4.1.6",
     "@pinia/testing": "^1.0.3",
+    "@playwright/test": "^1.60.0",
     "@tailwindcss/vite": "^4.1.0",
     "@types/node": "^25.8.0",
     "@vitejs/plugin-vue": "^6.0.7",
