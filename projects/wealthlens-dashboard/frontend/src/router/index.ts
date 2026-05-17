@@ -32,7 +32,7 @@ const router = createRouter({
     {
       path: "/methodology",
       name: "methodology",
-      component: () => import("@/views/HomeView.vue"),
+      component: () => import("@/views/MethodologyView.vue"),
     },
     {
       path: "/data-sources",
