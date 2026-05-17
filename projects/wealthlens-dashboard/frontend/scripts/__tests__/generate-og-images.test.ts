@@ -40,7 +40,7 @@ describe("OG Metadata", () => {
       expect(entry.source, `${slug} missing source`).toBeTruthy();
       expect(
         entry.sourceAccessDate,
-        `${slug} missing sourceAccessDate`
+        `${slug} missing sourceAccessDate`,
       ).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     }
   });
@@ -50,30 +50,37 @@ describe("OG Metadata", () => {
     const chartNames = new Set(VALID_CHART_NAMES);
     // Every metadata key should be a valid chart name
     for (const key of metadataKeys) {
-      expect(chartNames.has(key), `"${key}" in OG_METADATA but not in VALID_CHART_NAMES`).toBe(
-        true
-      );
+      expect(
+        chartNames.has(key),
+        `"${key}" in OG_METADATA but not in VALID_CHART_NAMES`,
+      ).toBe(true);
     }
   });
 });
 
 describe("OG Generated Images", () => {
   // These tests verify the output after the generate script has run.
-  // They will be skipped if images don't exist (e.g., in CI before generation).
 
   const chartNames = Array.from(VALID_CHART_NAMES);
 
-  describe.runIf(existsSync(OUTPUT_DIR))("image files", () => {
+  it("has generated OG output directory", () => {
+    expect(existsSync(OUTPUT_DIR), `${OUTPUT_DIR} does not exist`).toBe(true);
+  });
+
+  describe("image files", () => {
     it.each(chartNames)("generates %s.png as valid PNG", (chartName) => {
       const filePath = join(OUTPUT_DIR, `${chartName}.png`);
-      expect(existsSync(filePath), `${chartName}.png does not exist`).toBe(true);
+      expect(existsSync(filePath), `${chartName}.png does not exist`).toBe(
+        true,
+      );
 
       const fileBuffer = readFileSync(filePath);
       // Check PNG magic bytes
       const header = fileBuffer.subarray(0, 8);
-      expect(header.equals(PNG_MAGIC_BYTES), `${chartName}.png has invalid PNG header`).toBe(
-        true
-      );
+      expect(
+        header.equals(PNG_MAGIC_BYTES),
+        `${chartName}.png has invalid PNG header`,
+      ).toBe(true);
     });
 
     it("generates og-default.png as valid PNG", () => {
@@ -82,30 +89,33 @@ describe("OG Generated Images", () => {
 
       const fileBuffer = readFileSync(filePath);
       const header = fileBuffer.subarray(0, 8);
-      expect(header.equals(PNG_MAGIC_BYTES), "og-default.png has invalid PNG header").toBe(
-        true
-      );
+      expect(
+        header.equals(PNG_MAGIC_BYTES),
+        "og-default.png has invalid PNG header",
+      ).toBe(true);
     });
 
     it.each(chartNames)("%s.png is under size limit", (chartName) => {
       const filePath = join(OUTPUT_DIR, `${chartName}.png`);
-      if (!existsSync(filePath)) return;
+      expect(existsSync(filePath), `${chartName}.png does not exist`).toBe(
+        true,
+      );
 
       const fileBuffer = readFileSync(filePath);
       expect(
         fileBuffer.length,
-        `${chartName}.png exceeds ${MAX_FILE_SIZE_BYTES / 1024}KB limit`
+        `${chartName}.png exceeds ${MAX_FILE_SIZE_BYTES / 1024}KB limit`,
       ).toBeLessThan(MAX_FILE_SIZE_BYTES);
     });
 
     it("og-default.png is under size limit", () => {
       const filePath = join(OUTPUT_DIR, "og-default.png");
-      if (!existsSync(filePath)) return;
+      expect(existsSync(filePath), "og-default.png does not exist").toBe(true);
 
       const fileBuffer = readFileSync(filePath);
       expect(
         fileBuffer.length,
-        `og-default.png exceeds ${MAX_FILE_SIZE_BYTES / 1024}KB limit`
+        `og-default.png exceeds ${MAX_FILE_SIZE_BYTES / 1024}KB limit`,
       ).toBeLessThan(MAX_FILE_SIZE_BYTES);
     });
 

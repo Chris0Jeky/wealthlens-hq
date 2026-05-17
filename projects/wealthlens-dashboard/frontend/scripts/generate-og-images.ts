@@ -49,86 +49,63 @@ const COLORS = {
 
 // --- Font loading ---
 
+const FONT_FILES = [
+  {
+    name: "Inter",
+    filename: "Inter-Regular.ttf",
+    weight: 400,
+    style: "normal",
+    source: "@fontsource/inter@5.2.8 latin-400-normal.ttf",
+  },
+  {
+    name: "Inter",
+    filename: "Inter-Bold.ttf",
+    weight: 700,
+    style: "normal",
+    source: "@fontsource/inter@5.2.8 latin-700-normal.ttf",
+  },
+  {
+    name: "Playfair Display",
+    filename: "PlayfairDisplay-Bold.ttf",
+    weight: 700,
+    style: "normal",
+    source: "@fontsource/playfair-display@5.2.8 latin-700-normal.ttf",
+  },
+] as const;
+
+function toArrayBuffer(buffer: Buffer): ArrayBuffer {
+  return buffer.buffer.slice(
+    buffer.byteOffset,
+    buffer.byteOffset + buffer.byteLength,
+  ) as ArrayBuffer;
+}
+
 /**
- * Load font files for satori. We bundle two weights of a serif and a sans font.
- * Falls back to fetching from Google Fonts if local fonts are not available.
+ * Load vendored font files for satori.
+ *
+ * Font sources are pinned in FONT_FILES and the TTF files are committed so OG
+ * generation does not depend on outbound network access or mutable CDN aliases.
  */
 async function loadFonts(): Promise<
   Array<{ name: string; data: ArrayBuffer; weight: number; style: string }>
 > {
-  // Try to load local font files first
-  const fonts: Array<{
-    name: string;
-    data: ArrayBuffer;
-    weight: number;
-    style: string;
-  }> = [];
-
-  // We'll use system-available fonts bundled with the script
-  // For the build script, we download and cache fonts on first run
-  const fontCacheDir = FONTS_DIR;
-  if (!existsSync(fontCacheDir)) {
-    mkdirSync(fontCacheDir, { recursive: true });
+  const missingFonts = FONT_FILES.filter(
+    (font) => !existsSync(join(FONTS_DIR, font.filename)),
+  );
+  if (missingFonts.length > 0) {
+    const missing = missingFonts.map((font) => font.filename).join(", ");
+    throw new Error(
+      `Missing vendored OG font files in ${FONTS_DIR}: ${missing}. ` +
+        "Restore the committed fonts before running generate:og.",
+    );
   }
 
-  // Use Inter for sans-serif (subtitle, source, footer)
-  const interRegularPath = join(fontCacheDir, "Inter-Regular.ttf");
-  const interBoldPath = join(fontCacheDir, "Inter-Bold.ttf");
-
-  // Use Playfair Display for serif headlines
-  const playfairBoldPath = join(fontCacheDir, "PlayfairDisplay-Bold.ttf");
-
-  // Download fonts if not cached
-  if (
-    !existsSync(interRegularPath) ||
-    !existsSync(interBoldPath) ||
-    !existsSync(playfairBoldPath)
-  ) {
-    console.log("Downloading fonts (first run only)...");
-    await downloadFont(
-      "https://cdn.jsdelivr.net/fontsource/fonts/inter@latest/latin-400-normal.ttf",
-      interRegularPath
-    );
-    await downloadFont(
-      "https://cdn.jsdelivr.net/fontsource/fonts/inter@latest/latin-700-normal.ttf",
-      interBoldPath
-    );
-    await downloadFont(
-      "https://cdn.jsdelivr.net/fontsource/fonts/playfair-display@latest/latin-700-normal.ttf",
-      playfairBoldPath
-    );
-    console.log("Fonts cached successfully.");
-  }
-
-  fonts.push({
-    name: "Inter",
-    data: readFileSync(interRegularPath).buffer as ArrayBuffer,
-    weight: 400,
-    style: "normal",
-  });
-  fonts.push({
-    name: "Inter",
-    data: readFileSync(interBoldPath).buffer as ArrayBuffer,
-    weight: 700,
-    style: "normal",
-  });
-  fonts.push({
-    name: "Playfair Display",
-    data: readFileSync(playfairBoldPath).buffer as ArrayBuffer,
-    weight: 700,
-    style: "normal",
-  });
-
-  return fonts;
-}
-
-async function downloadFont(url: string, dest: string): Promise<void> {
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`Failed to download font from ${url}: ${response.statusText}`);
-  }
-  const buffer = Buffer.from(await response.arrayBuffer());
-  writeFileSync(dest, buffer);
+  return FONT_FILES.map((font) => ({
+    name: font.name,
+    data: toArrayBuffer(readFileSync(join(FONTS_DIR, font.filename))),
+    weight: font.weight,
+    style: font.style,
+  }));
 }
 
 // --- Image generation ---
@@ -383,7 +360,7 @@ function buildDefaultLayout(): SatoriNode {
  */
 async function renderToPng(
   layout: SatoriNode,
-  fonts: Awaited<ReturnType<typeof loadFonts>>
+  fonts: Awaited<ReturnType<typeof loadFonts>>,
 ): Promise<Buffer> {
   const svg = await satori(layout, {
     width: WIDTH,
@@ -424,7 +401,9 @@ async function main() {
   for (const chartName of VALID_CHART_NAMES) {
     const metadata = OG_METADATA[chartName];
     if (!metadata) {
-      console.warn(`WARNING: No OG metadata for chart "${chartName}" - skipping`);
+      console.warn(
+        `WARNING: No OG metadata for chart "${chartName}" - skipping`,
+      );
       continue;
     }
 
