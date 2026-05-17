@@ -14,11 +14,13 @@ export interface FreshnessInfo {
 let cachedData: Record<string, FreshnessEntry> | null = null;
 let fetchPromise: Promise<Record<string, FreshnessEntry> | null> | null = null;
 
+const FRESHNESS_URL = `${import.meta.env.BASE_URL}data/freshness.json`;
+
 async function loadFreshnessData(): Promise<Record<string, FreshnessEntry> | null> {
   if (cachedData) return cachedData;
 
   if (!fetchPromise) {
-    fetchPromise = fetch("/data/freshness.json")
+    fetchPromise = fetch(FRESHNESS_URL)
       .then((res) => {
         if (!res.ok) {
           fetchPromise = null;
@@ -57,7 +59,7 @@ export function useDataFreshness(dataset: Ref<string> | string) {
       }
 
       const entry = data[slug];
-      const lastUpdated = new Date(entry.last_updated);
+      const lastUpdated = parseDateOnly(entry.last_updated);
 
       freshnessInfo.value = {
         lastUpdated,
@@ -75,6 +77,12 @@ export function daysAgo(date: Date): number {
   const todayUTC = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
   const dateUTC = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
   return Math.max(0, Math.floor((todayUTC - dateUTC) / (1000 * 60 * 60 * 24)));
+}
+
+function parseDateOnly(value: string): Date {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) return new Date(value);
+  return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
 }
 
 export function relativeTime(date: Date): string {
