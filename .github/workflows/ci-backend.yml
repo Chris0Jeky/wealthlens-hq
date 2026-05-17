@@ -64,10 +64,9 @@ jobs:
           # mypy tests/
 
       - name: Bandit security scan
-        # TODO: remove --exit-zero once baseline findings are triaged
         run: |
-          bandit -r projects/wealthlens-dashboard/backend/ -c pyproject.toml --exit-zero
-          bandit -r automation/ -c pyproject.toml --exit-zero
+          bandit -r projects/wealthlens-dashboard/backend/ -c pyproject.toml
+          bandit -r automation/ -c pyproject.toml
 
       - name: Run tests with coverage
         run: |
