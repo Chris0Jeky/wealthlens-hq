@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { mount, flushPromises } from '@vue/test-utils'
 import { createTestingPinia } from '@pinia/testing'
 import { createRouter, createMemoryHistory } from 'vue-router'
 import HomeView from '../HomeView.vue'
@@ -118,7 +118,7 @@ describe('HomeView', () => {
 
     it('uses fallback descriptions when metadata unavailable', () => {
       const wrapper = mount(HomeView, createMountOptions())
-      expect(wrapper.text()).toContain('Gap between productivity growth and median pay')
+      expect(wrapper.text()).toContain('UK productivity and real pay indexed over time')
     })
   })
 
@@ -162,6 +162,20 @@ describe('HomeView', () => {
       const wrapper = mount(HomeView, createMountOptions({ error: 'Server down' }))
       const items = wrapper.findAll('[role="listitem"]')
       expect(items.length).toBe(10)
+    })
+  })
+
+  describe('dataset search', () => {
+    it('filters dataset cards when search is active', async () => {
+      const wrapper = mount(HomeView, createMountOptions())
+
+      await wrapper.find('input[type="search"]').setValue('affordability')
+      await new Promise((resolve) => window.setTimeout(resolve, 250))
+      await flushPromises()
+
+      const items = wrapper.findAll('[aria-labelledby="datasets-heading"] [role="listitem"]')
+      expect(items).toHaveLength(1)
+      expect(items[0].text()).toContain('housing-affordability')
     })
   })
 

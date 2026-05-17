@@ -72,6 +72,7 @@ export const simpleChartTitles: Record<string, string> = {
   "wealth-by-decile": "Total Household Wealth by Decile",
   "wage-stagnation":
     "Real Wage Stagnation — UK Median Earnings Since 2008",
+  "inheritance-tax": "Inheritance Tax — How Few Estates Actually Pay",
 };
 
 /**

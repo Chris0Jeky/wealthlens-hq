@@ -12,10 +12,27 @@ Every dataset used in WealthLens charts is listed here with its licence and attr
 | Housing Affordability in England and Wales | ONS | OGL v3.0 | Yes — "Source: ONS" | https://www.ons.gov.uk/peoplepopulationandcommunity/housing/datasets/ratioofhousepricetoworkplacebasedearningslowerquartileandmedian |
 | Total Wealth in Great Britain (WAS) | ONS | OGL v3.0 | Yes — "Source: ONS" | https://www.ons.gov.uk/peoplepopulationandcommunity/personalandhouseholdfinances/incomeandwealth/bulletins/totalwealthingreatbritain/latest |
 | Capital Gains Tax Statistics | HMRC | OGL v3.0 | Yes — "Contains public sector information licensed under the Open Government Licence v3.0" | https://www.gov.uk/government/statistics/capital-gains-tax-statistics |
+| Inheritance Tax Statistics | HMRC | OGL v3.0 | Yes — "Contains public sector information licensed under the Open Government Licence v3.0" | https://www.gov.uk/government/statistics/inheritance-tax-statistics |
 | Regional Gross Disposable Household Income | ONS | OGL v3.0 | Yes — "Source: ONS" | https://www.ons.gov.uk/economy/regionalaccounts/grossdisposablehouseholdincome/datasets/regionalgrossdisposablehouseholdincomegdhi |
 | Tax and NIC Receipts | HMRC | OGL v3.0 | Yes — "Contains public sector information licensed under the Open Government Licence v3.0" | https://www.gov.uk/government/statistics/hmrc-tax-and-nics-receipts-for-the-uk |
 | Bank Rate and CPI Inflation | Bank of England | OGL v3.0 | Yes — "Source: Bank of England" | https://www.bankofengland.co.uk/boeapps/database/ |
 | Real Wage Stagnation | ONS | OGL v3.0 | Yes — "Source: ONS ASHE" | https://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/earningsandworkinghours/datasets/ashe1702 |
+
+## Currently used in tools
+
+| Tool | Estimate/source | Publisher | Licence | Access date | URL |
+|---|---|---|---|---|---|
+| Wealth tax simulator | Total wealth and household wealth distribution anchors | ONS | OGL v3.0 | 2026-05-16 | https://www.ons.gov.uk/peoplepopulationandcommunity/personalandhouseholdfinances/incomeandwealth/bulletins/totalwealthingreatbritain/april2018tomarch2020 |
+| Wealth tax simulator | Threshold taxpayer counts and taxable-base revenue modelling | Fiscal Studies / Wealth Tax Commission authors | CC-BY 4.0 | 2026-05-17 | https://doi.org/10.1111/1475-5890.12280 |
+| Wealth tax simulator | Wealth tax design context and behavioural caveats | Wealth Tax Commission | CC-BY 4.0 | 2026-05-17 | https://www.ukwealth.tax/ |
+| Wealth tax simulator | NHS England resource budget comparison | NHS England | OGL v3.0 | 2026-05-17 | https://www.england.nhs.uk/long-read/our-2023-24-business-plan/ |
+| Wealth tax simulator | Social housing grant funding comparison | Shelter / Cebr | Source attribution required | 2026-05-17 | https://england.shelter.org.uk/media/press_release/investing_in_social_housing_could_add_over_50bn_to_the_economy_ |
+| Wealth tax simulator | Higher education funding comparison | Institute for Fiscal Studies | Source attribution required | 2026-05-17 | https://ifs.org.uk/articles/labours-higher-education-proposals-will-cost-ps8bn-year-although-increase-deficit-more |
+| Wealth tax simulator | Free school meals comparison | Institute for Fiscal Studies | Source attribution required | 2026-05-17 | https://ifs.org.uk/articles/benefits-and-costs-expanding-access-free-school-meals-will-grow-over-time |
+
+## Provenance notes
+
+- Inheritance Tax chart: HMRC Inheritance Tax Statistics 2021-22, Table 12.1 ("Estates notified and liable to IHT"), accessed 2026-05-16, transformed into `frontend/public/data/inheritance-tax.json`.
 
 ## Licence summaries
 

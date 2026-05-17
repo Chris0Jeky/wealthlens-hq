@@ -2,6 +2,7 @@
 import { onMounted, computed, ref } from 'vue'
 import { useDataStore } from '@/stores/data'
 import DatasetCard from '@/components/DatasetCard.vue'
+import DatasetSearch from '@/components/DatasetSearch.vue'
 import ResponsiveGrid from '@/components/ResponsiveGrid.vue'
 import NumberStat from '@/components/NumberStat.vue'
 import { CHART_METADATA, SUPPORTED_CHART_NAMES } from '@/utils/chartConstants'
@@ -9,6 +10,10 @@ import { prefetchRouteComponents } from '@/utils/prefetch'
 import { usePageMeta } from '@/composables/usePageMeta'
 
 const store = useDataStore()
+const searchFilter = ref<{ active: boolean; names: string[] }>({
+  active: false,
+  names: [],
+})
 
 usePageMeta({
   title: 'UK Wealth Inequality Dashboard',
@@ -53,6 +58,16 @@ const FALLBACK_DESCRIPTIONS: Record<string, string> = {
   'boe-rates': 'Bank of England base interest rate history (BoE)',
   'child-poverty': 'Children in relative poverty by UK region and nation (DWP)',
   'generational-wealth': 'Wealth distribution across generations in Great Britain (ONS WAS)',
+}
+
+const visibleDatasets = computed(() => {
+  if (!searchFilter.value.active) return ALL_DATASETS
+  const allowed = new Set(searchFilter.value.names)
+  return ALL_DATASETS.filter((name) => allowed.has(name))
+})
+
+function onSearchFiltered(payload: { active: boolean; names: string[] }) {
+  searchFilter.value = payload
 }
 
 /** Get description for a dataset from metadata or fallback. */
@@ -140,6 +155,9 @@ onMounted(async () => {
       </div>
     </section>
 
+    <!-- Dataset search/filter -->
+    <DatasetSearch @filtered-change="onSearchFiltered" />
+
     <!-- Dataset cards section -->
     <section aria-labelledby="datasets-heading">
       <h2 id="datasets-heading" class="text-xl font-semibold mb-4">
@@ -170,11 +188,11 @@ onMounted(async () => {
 
       <!-- Dataset cards always render (hardcoded data, no API dependency) -->
       <ResponsiveGrid min-width="280px" gap="1.5rem" role="list">
-        <div v-for="name in ALL_DATASETS" :key="name" role="listitem">
+        <div v-for="name in visibleDatasets" :key="name" role="listitem">
           <DatasetCard
             :name="name"
             :description="getDescription(name)"
-            :freshness="store.freshness[name]"
+            :freshness="store.freshness?.[name]"
           />
         </div>
       </ResponsiveGrid>

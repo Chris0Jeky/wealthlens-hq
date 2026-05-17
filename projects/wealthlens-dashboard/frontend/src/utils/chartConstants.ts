@@ -28,6 +28,36 @@ const CHARTS = {
     description:
       "Total net wealth by decile group in Great Britain (ONS WAS)",
   },
+  "productivity-pay": {
+    name: "productivity-pay",
+    title: "Productivity and Pay",
+    description:
+      "UK productivity and real pay indexed over time (ONS Labour Productivity and AWE)",
+  },
+  "gdhi-by-region": {
+    name: "gdhi-by-region",
+    title: "Regional Disposable Income",
+    description:
+      "Gross disposable household income by UK region (ONS regional accounts)",
+  },
+  "tax-composition": {
+    name: "tax-composition",
+    title: "Tax Composition",
+    description:
+      "UK tax revenue composition by source (HMRC and OBR)",
+  },
+  "boe-rates": {
+    name: "boe-rates",
+    title: "Bank of England Rates",
+    description:
+      "Bank Rate history and monetary policy changes (Bank of England)",
+  },
+  "child-poverty": {
+    name: "child-poverty",
+    title: "Child Poverty",
+    description:
+      "Children in relative poverty after housing costs (DWP households below average income)",
+  },
   "generational-wealth": {
     name: "generational-wealth",
     title: "Generational Wealth",
