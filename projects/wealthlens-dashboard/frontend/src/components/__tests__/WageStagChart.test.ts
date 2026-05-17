@@ -153,6 +153,30 @@ describe("WageStagChart", () => {
       expect(wrapper.text()).toContain("/year lost");
     });
 
+    it("shades only the actual-to-counterfactual gap", () => {
+      const wrapper = mount(WageStagChart);
+      const option = wrapper.findComponent({ name: "VChart" }).props("option") as {
+        series: Array<{
+          name: string;
+          stack?: string;
+          areaStyle?: unknown;
+          data: Array<number | null>;
+        }>;
+      };
+
+      const actual = option.series.find((series) => series.name === "Actual earnings");
+      const gap = option.series.find((series) => series.name === "Lost wage gap");
+      const counterfactual = option.series.find(
+        (series) => series.name === "If 1.5% growth continued",
+      );
+
+      expect(actual?.stack).toBe("lost-wage-gap");
+      expect(gap?.stack).toBe("lost-wage-gap");
+      expect(gap?.areaStyle).toBeDefined();
+      expect(counterfactual?.areaStyle).toBeUndefined();
+      expect(gap?.data).toEqual([null, 0, 156]);
+    });
+
     it("displays the source citation", () => {
       const wrapper = mount(WageStagChart);
 

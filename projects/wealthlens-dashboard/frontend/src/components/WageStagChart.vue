@@ -96,6 +96,14 @@ const counterfactualValues = computed(() => {
   });
 });
 
+/** Difference between counterfactual and actual, used to shade only the gap. */
+const gapValues = computed(() => {
+  return counterfactualValues.value.map((counterfactual, index) => {
+    if (counterfactual == null) return null;
+    return Math.max(0, counterfactual - actualValues.value[index]);
+  });
+});
+
 /** The gap in pounds per week between counterfactual and actual in 2024. */
 const weeklyGap = computed(() => {
   const data = actualData.value;
@@ -198,6 +206,7 @@ const option = computed(() => {
       {
         name: "Actual earnings",
         type: "line" as const,
+        stack: "lost-wage-gap",
         data: actualValues.value,
         smooth: !prefersReducedMotion,
         lineStyle: { width: 3, color: COLOR_ACTUAL },
@@ -224,6 +233,22 @@ const option = computed(() => {
         areaStyle: undefined,
       },
       {
+        name: "Lost wage gap",
+        type: "line" as const,
+        stack: "lost-wage-gap",
+        data: gapValues.value,
+        smooth: !prefersReducedMotion,
+        lineStyle: { opacity: 0 },
+        itemStyle: { opacity: 0 },
+        symbol: "none",
+        areaStyle: {
+          color: COLOR_GAP_FILL,
+        },
+        silent: true,
+        tooltip: { show: false },
+        z: -1,
+      },
+      {
         name: "If 1.5% growth continued",
         type: "line" as const,
         data: counterfactualValues.value,
@@ -235,11 +260,7 @@ const option = computed(() => {
         },
         itemStyle: { color: COLOR_COUNTERFACTUAL },
         symbol: "none",
-        areaStyle: {
-          color: COLOR_GAP_FILL,
-          origin: "auto" as const,
-        },
-        z: -1,
+        z: 1,
       },
     ],
   };
