@@ -97,6 +97,34 @@ describe("DataFreshnessBadge", () => {
     expect(wrapper.find(".freshness-badge").exists()).toBe(false);
   });
 
+  it("rejects invalid date-only freshness entries", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockFreshnessResponse("2026-13-01"),
+    } as Response);
+
+    const wrapper = mount(DataFreshnessBadge, {
+      props: { dataset: "wealth-shares" },
+    });
+    await flushPromises();
+
+    expect(wrapper.find(".freshness-badge").exists()).toBe(false);
+  });
+
+  it("rejects malformed freshness dates", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockFreshnessResponse("not-a-date"),
+    } as Response);
+
+    const wrapper = mount(DataFreshnessBadge, {
+      props: { dataset: "wealth-shares" },
+    });
+    await flushPromises();
+
+    expect(wrapper.find(".freshness-badge").exists()).toBe(false);
+  });
+
   it("gracefully handles fetch failure (renders nothing)", async () => {
     vi.spyOn(globalThis, "fetch").mockRejectedValueOnce(new Error("Network error"));
 
