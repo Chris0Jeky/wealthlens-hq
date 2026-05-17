@@ -19,6 +19,7 @@ import ChartToolbar from "@/components/ChartToolbar.vue";
 import ShareBar from "@/components/ShareBar.vue";
 import SharePanel from "@/components/SharePanel.vue";
 import RelatedCharts from "@/components/RelatedCharts.vue";
+import DataFreshnessBadge from "@/components/DataFreshnessBadge.vue";
 import ExportButton from "@/components/ExportButton.vue";
 import { useAnalytics } from "@/composables/useAnalytics";
 import { useChartExport, type ChartComponentRef, type ExportFormat } from "@/composables/useChartExport";
@@ -266,6 +267,7 @@ usePageMeta({
             {{ config.headlineEmphasis }}
           </em>
         </h1>
+        <DataFreshnessBadge :dataset="chartName" />
         <p class="article-head__lede">{{ toPlainText(config.lede) }}</p>
       </div>
       <aside class="meta-card" aria-label="Chart metadata">
@@ -464,6 +466,8 @@ usePageMeta({
         {{ simpleChartTitles[chartName] || chartName }}
       </h1>
 
+      <DataFreshnessBadge :dataset="chartName" />
+
       <div class="chart-wrap">
         <div class="chart-card">
           <div class="chart-card__export chart-card__export--simple">
@@ -649,6 +653,9 @@ usePageMeta({
   font-weight: 500;
 }
 
+.article-head :deep(.freshness-badge) {
+  margin-bottom: 14px;
+}
 .article-head__lede {
   font-size: 20px;
   color: var(--wl-ink-body);
@@ -979,7 +986,10 @@ usePageMeta({
   line-height: 1.05;
   letter-spacing: -0.018em;
   color: var(--wl-ink);
-  margin: 24px 32px 32px;
+  margin: 24px 32px 12px;
+}
+.simple-layout :deep(.freshness-badge) {
+  margin: 0 32px 24px;
 }
 
 /* ============================================================ */
