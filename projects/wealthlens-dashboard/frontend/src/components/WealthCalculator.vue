@@ -40,15 +40,18 @@ const mode = ref<CalcMode>("single");
 /** Raw text input from the user (single mode) */
 const wealthInput = ref("");
 
+function parseWealthInput(input: string): number | null {
+  const cleaned = input.replace(/[£,\s]/g, "");
+  if (cleaned.length === 0) return null;
+  const num = Number(cleaned);
+  return Number.isFinite(num) ? num : null;
+}
+
 /** Whether the user has triggered a calculation (single mode) */
 const hasCalculated = ref(false);
 
 /** Parse the input, stripping £, commas, and whitespace */
-const parsedWealth = computed(() => {
-  const cleaned = wealthInput.value.replace(/[£,\s]/g, "");
-  const num = Number(cleaned);
-  return Number.isFinite(num) ? num : null;
-});
+const parsedWealth = computed(() => parseWealthInput(wealthInput.value));
 
 /** Whether the current input is valid */
 const isValid = computed(() => parsedWealth.value !== null);
@@ -127,18 +130,10 @@ const compareInputB = ref("");
 const hasCompared = ref(false);
 
 /** Parse Amount A */
-const parsedA = computed(() => {
-  const cleaned = compareInputA.value.replace(/[£,\s]/g, "");
-  const num = Number(cleaned);
-  return Number.isFinite(num) ? num : null;
-});
+const parsedA = computed(() => parseWealthInput(compareInputA.value));
 
 /** Parse Amount B */
-const parsedB = computed(() => {
-  const cleaned = compareInputB.value.replace(/[£,\s]/g, "");
-  const num = Number(cleaned);
-  return Number.isFinite(num) ? num : null;
-});
+const parsedB = computed(() => parseWealthInput(compareInputB.value));
 
 /** Whether both comparison inputs are valid */
 const isCompareValid = computed(() => parsedA.value !== null && parsedB.value !== null);

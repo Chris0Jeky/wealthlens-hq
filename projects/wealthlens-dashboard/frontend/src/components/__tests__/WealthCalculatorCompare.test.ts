@@ -123,6 +123,17 @@ describe("WealthCalculator — compare mode inputs", () => {
     expect(btn.attributes("disabled")).toBeDefined();
   });
 
+  it("compare button stays disabled when inputs are blank", async () => {
+    const wrapper = mountCalc();
+    await wrapper.find("#tab-compare").trigger("click");
+
+    await wrapper.find("#compare-input-a").setValue("");
+    await wrapper.find("#compare-input-b").setValue("");
+
+    const btn = wrapper.find(".calc__btn--compare");
+    expect(btn.attributes("disabled")).toBeDefined();
+  });
+
   it("compare button enables when both inputs have valid values", async () => {
     const wrapper = mountCalc();
     await wrapper.find("#tab-compare").trigger("click");
