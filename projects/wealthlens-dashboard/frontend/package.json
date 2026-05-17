@@ -24,6 +24,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@vitest/coverage-v8": "^4.1.6",
     "@pinia/testing": "^1.0.3",
     "@tailwindcss/vite": "^4.1.0",
     "@types/node": "^25.8.0",
@@ -40,6 +41,7 @@
     "typescript-eslint": "^8.59.3",
     "vite": "^6.3.0",
     "vitest": "^4.1.6",
+    "vitest-axe": "^0.1.0",
     "vue-tsc": "^2.2.0"
   }
 }
