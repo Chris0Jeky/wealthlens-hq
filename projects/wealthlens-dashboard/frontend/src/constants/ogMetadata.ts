@@ -91,6 +91,13 @@ export const OG_METADATA: Record<string, OgMetadataEntry> = {
     source: "Resolution Foundation and ONS WAS",
     sourceAccessDate: "2026-05-16",
   },
+  "inheritance-tax": {
+    title: "Who Pays Inheritance Tax?",
+    subtitle:
+      "Only 4.6% of UK estates were liable for inheritance tax in 2021-22",
+    source: "HMRC Inheritance Tax Statistics",
+    sourceAccessDate: "2026-05-16",
+  },
 };
 
 /**

@@ -1,4 +1,5 @@
 import { ref, watch, type Ref } from 'vue'
+import { getStorageItem, setStorageItem } from '@/utils/browserStorage'
 
 export function useLocalStorage<T>(key: string, defaultValue: T): Ref<T> {
   const stored = read(key)
@@ -16,9 +17,8 @@ export function useLocalStorage<T>(key: string, defaultValue: T): Ref<T> {
 }
 
 function read(key: string): unknown | null {
-  if (typeof window === 'undefined') return null
   try {
-    const raw = localStorage.getItem(key)
+    const raw = getStorageItem(key)
     if (raw === null) return null
     return JSON.parse(raw)
   } catch {
@@ -27,9 +27,8 @@ function read(key: string): unknown | null {
 }
 
 function write(key: string, value: unknown): void {
-  if (typeof window === 'undefined') return
   try {
-    localStorage.setItem(key, JSON.stringify(value))
+    setStorageItem(key, JSON.stringify(value))
   } catch {
     // QuotaExceededError or SecurityError — fail silently
   }

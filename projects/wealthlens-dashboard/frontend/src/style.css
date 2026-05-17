@@ -58,9 +58,10 @@
  * WCAG 2.4.7 — Global focus-visible fallback.
  * Ensures all interactive elements have a visible focus indicator
  * for keyboard users. Individual components can override this.
+ * Uses the WealthLens red brand token for consistency.
  */
 :focus-visible {
-  outline: 2px solid #1a56db;
+  outline: 2px solid var(--wl-red);
   outline-offset: 2px;
 }
 
