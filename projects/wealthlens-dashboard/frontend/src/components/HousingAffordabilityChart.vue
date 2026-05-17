@@ -20,7 +20,7 @@ import {
 } from "echarts/components";
 import VChart from "vue-echarts";
 import { useChartData } from "@/composables/useChartData";
-import { escapeHtml, safeMinMax } from "@/utils/chart";
+import { escapeHtml, safeMinMax, warnIfSignificantDataLoss } from "@/utils/chart";
 
 // Register only the ECharts modules we need (tree-shaking)
 use([
@@ -64,16 +64,22 @@ const MAX_REGIONS = 8;
 /** Group data by region, returning sorted region names and their series. */
 const regionData = computed(() => {
   const byRegion = new Map<string, { year: number; ratio: number }[]>();
+  let skippedRows = 0;
 
   for (const row of rows.value) {
     const region = String(row.region ?? "");
     const year = Number(row.year);
     const ratio = Number(row.ratio);
-    if (!region || isNaN(year) || isNaN(ratio)) continue;
+    if (!region || isNaN(year) || isNaN(ratio)) {
+      skippedRows++;
+      continue;
+    }
 
     if (!byRegion.has(region)) byRegion.set(region, []);
     byRegion.get(region)!.push({ year, ratio });
   }
+
+  warnIfSignificantDataLoss("housing-affordability", rows.value.length, rows.value.length - skippedRows);
 
   // Sort each region's data by year
   for (const data of byRegion.values()) {

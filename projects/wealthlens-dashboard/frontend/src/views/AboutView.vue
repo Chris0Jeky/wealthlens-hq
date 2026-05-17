@@ -3,6 +3,16 @@
  * AboutView — project methodology, data sources, and limitations.
  * Provides transparency about where the data comes from and how it is used.
  */
+import { usePageMeta } from '@/composables/usePageMeta'
+
+usePageMeta({
+  title: 'About',
+  description:
+    'About WealthLens UK — our mission, data sources, methodology, limitations, and open-source commitment.',
+  url: 'https://chris0jeky.github.io/wealthlens-hq/about',
+  image: 'https://chris0jeky.github.io/wealthlens-hq/og/og-landing.png',
+  imageAlt: 'WealthLens UK — About the project',
+})
 </script>
 
 <template>

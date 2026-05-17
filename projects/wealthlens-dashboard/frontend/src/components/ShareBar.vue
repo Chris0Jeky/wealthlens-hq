@@ -71,6 +71,9 @@ defineProps<{
     <button class="share-bar__btn" type="button" aria-label="Share on X">
       &rarr; X
     </button>
+
+    <!-- Append slot for additional toolbar controls -->
+    <slot name="append" />
   </div>
 </template>
 

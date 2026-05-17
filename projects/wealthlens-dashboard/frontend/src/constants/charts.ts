@@ -4,4 +4,10 @@ export const VALID_CHART_NAMES = new Set([
   "wealth-by-decile",
   "cgt-concentration",
   "wage-stagnation",
+  "productivity-pay",
+  "gdhi-by-region",
+  "tax-composition",
+  "boe-rates",
+  "child-poverty",
+  "generational-wealth",
 ]);
