@@ -9,7 +9,7 @@
  *
  * Accessibility: WCAG AA high-contrast colors, aria-label, keyboard tooltip.
  */
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { use } from "echarts/core";
 import { CanvasRenderer } from "echarts/renderers";
 import { LineChart } from "echarts/charts";
@@ -21,6 +21,7 @@ import {
 } from "echarts/components";
 import VChart from "vue-echarts";
 import { useChartData } from "@/composables/useChartData";
+import type { EChartsExportable } from "@/composables/useChartExport";
 import { escapeHtml, safeMinMax } from "@/utils/chart";
 
 // Register only the ECharts modules we need (tree-shaking)
@@ -34,6 +35,9 @@ use([
 ]);
 
 const { rows, loading, error } = useChartData("wealth-shares");
+const chart = ref<EChartsExportable | null>(null);
+
+defineExpose({ chart });
 
 /**
  * Respect prefers-reduced-motion (WCAG 2.3.3).
@@ -207,6 +211,7 @@ const option = computed(() => {
       class="w-full"
     >
       <VChart
+        ref="chart"
         class="w-full"
         style="height: 480px"
         :option="option"
