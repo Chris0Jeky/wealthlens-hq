@@ -82,25 +82,26 @@
 
 /* === LATE EDITION (dark theme) === */
 [data-theme="dark"] {
-  --wl-paper:        #0E0D0B;
-  --wl-paper-tint:   #15130F;
-  --wl-paper-deep:   #1E1B16;
-  --wl-bg:           #0E0D0B;
-  --wl-bg-muted:     #15130F;
-  --wl-bg-section:   #15130F;
-  --wl-card:         #15130F;
-  --wl-ink:          #F4EFE6;
-  --wl-ink-body:     #ECE6DA;
-  --wl-ink-muted:    #A39A8B;
-  --wl-ink-faint:    #6B6359;
-  --wl-rule:         #2A261F;
-  --wl-rule-strong:  #3D372D;
-  --wl-red:          #E63946;
-  --wl-red-deep:     #C8161D;
-  --wl-red-soft:     #2A1010;
+  --wl-paper:        #1a1a1a;
+  --wl-paper-tint:   #222222;
+  --wl-paper-deep:   #2a2a2a;
+  --wl-bg:           #1a1a1a;
+  --wl-bg-muted:     #2a2a2a;
+  --wl-bg-section:   #2a2a2a;
+  --wl-card:         #242424;
+  --wl-ink:          #e8e8e8;
+  --wl-ink-body:     #ccc;
+  --wl-ink-muted:    #999;
+  --wl-ink-faint:    #666;
+  --wl-rule:         #333;
+  --wl-rule-strong:  #444;
+  --wl-red:          #ef4444;
+  --wl-red-deep:     #dc2626;
+  --wl-red-soft:     #2a1010;
+  --wl-teal:         #5AB89D;
   --wl-blue:         var(--wl-ink);
   --wl-blue-ink:     #FFFFFF;
-  --wl-blue-soft:    #2A261F;
+  --wl-blue-soft:    #2a2a2a;
   --wl-shadow-sm:    0 1px 0 rgba(0,0,0,0.5);
   --wl-shadow:       0 1px 2px rgba(0,0,0,0.5);
   --wl-shadow-lg:    0 8px 24px rgba(0,0,0,0.6), 0 2px 6px rgba(0,0,0,0.4);
