@@ -379,10 +379,19 @@ def dataset_metadata(
 
 
 @router.get("/{dataset_name}/columns", response_model=DatasetColumnsResponse)
-def dataset_columns(dataset_name: str) -> dict[str, Any]:
+def dataset_columns(
+    dataset_name: str = Path(
+        ...,
+        pattern=r"^[a-z0-9-]{1,50}$",
+        description="Dataset identifier (lowercase, digits, hyphens only)",
+    ),
+) -> dict[str, Any]:
     """Return per-column metadata: dtype, null count, unique count."""
     if dataset_name not in DATASETS:
         raise HTTPException(status_code=404, detail=f"Unknown dataset: {dataset_name}")
+
+    if dataset_name in _columns_cache:
+        return _columns_cache[dataset_name]
 
     df = _read_csv(dataset_name)
     columns = []
@@ -395,15 +404,25 @@ def dataset_columns(dataset_name: str) -> dict[str, Any]:
                 "unique_count": int(df[col].nunique()),
             }
         )
-    return {"dataset": dataset_name, "row_count": len(df), "columns": columns}
+    result: dict[str, Any] = {"dataset": dataset_name, "row_count": len(df), "columns": columns}
+    _columns_cache[dataset_name] = result
+    return result
 
+
+_columns_cache: dict[str, dict[str, Any]] = {}
 
 _summary_cache: dict[str, dict[str, Any]] = {}
 
 
 @router.get("/{dataset_name}/summary", response_model=DatasetSummaryResponse,
             summary="Summary statistics for a dataset")
-def dataset_summary(dataset_name: str) -> dict[str, Any]:
+def dataset_summary(
+    dataset_name: str = Path(
+        ...,
+        pattern=r"^[a-z0-9-]{1,50}$",
+        description="Dataset identifier (lowercase, digits, hyphens only)",
+    ),
+) -> dict[str, Any]:
     """Return descriptive statistics for numeric columns in a dataset."""
     if dataset_name not in DATASETS:
         raise HTTPException(status_code=404, detail=f"Unknown dataset: {dataset_name}")
@@ -437,7 +456,13 @@ def dataset_summary(dataset_name: str) -> dict[str, Any]:
 
 
 @router.get("/{dataset_name}/download", summary="Download dataset as CSV")
-def download_dataset(dataset_name: str) -> StreamingResponse:
+def download_dataset(
+    dataset_name: str = Path(
+        ...,
+        pattern=r"^[a-z0-9-]{1,50}$",
+        description="Dataset identifier (lowercase, digits, hyphens only)",
+    ),
+) -> StreamingResponse:
     """Download a dataset as a CSV file streamed directly from disk."""
     if dataset_name not in DATASETS:
         raise HTTPException(status_code=404, detail=f"Unknown dataset: {dataset_name}")

@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#C8161D" />
+    <title>Offline — WealthLens UK</title>
+    <style>
+      :root {
+        --wl-paper: #F4EFE6;
+        --wl-ink: #1a1a1a;
+        --wl-ink-muted: #6b6b6b;
+        --wl-red: #C8161D;
+        --wl-serif: 'Newsreader', Georgia, serif;
+        --wl-sans: 'IBM Plex Sans', -apple-system, sans-serif;
+        --wl-mono: 'IBM Plex Mono', monospace;
+      }
+
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+
+      body {
+        font-family: var(--wl-sans);
+        background: var(--wl-paper);
+        color: var(--wl-ink);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+      }
+
+      .container {
+        text-align: center;
+        max-width: 480px;
+      }
+
+      .icon {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto 32px;
+      }
+
+      h1 {
+        font-family: var(--wl-serif);
+        font-size: 28px;
+        font-weight: 700;
+        margin-bottom: 16px;
+        letter-spacing: -0.02em;
+      }
+
+      p {
+        font-size: 16px;
+        line-height: 1.6;
+        color: var(--wl-ink-muted);
+        margin-bottom: 32px;
+      }
+
+      a {
+        display: inline-block;
+        font-family: var(--wl-mono);
+        font-size: 13px;
+        letter-spacing: 0.05em;
+        color: var(--wl-red);
+        text-decoration: none;
+        border: 1.5px solid var(--wl-red);
+        padding: 10px 24px;
+        border-radius: 4px;
+        transition: background 0.15s, color 0.15s;
+      }
+
+      a:hover {
+        background: var(--wl-red);
+        color: #fff;
+      }
+
+      a:focus-visible {
+        outline: 2px solid var(--wl-red);
+        outline-offset: 3px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <svg class="icon" viewBox="0 0 192 192" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <circle cx="96" cy="96" r="90" fill="#F4EFE6" stroke="#1a1a1a" stroke-width="4"/>
+        <line x1="40" y1="152" x2="152" y2="40" stroke="#1a1a1a" stroke-width="2" stroke-dasharray="6 4" opacity="0.4"/>
+        <path d="M 40 152 Q 100 152 126 130 Q 152 100 152 40" stroke="#C8161D" stroke-width="6" fill="none" stroke-linecap="round"/>
+      </svg>
+      <h1>You're offline</h1>
+      <p>
+        WealthLens UK needs an internet connection to load fresh data.
+        Please check your connection and try again.
+      </p>
+      <a href="/wealthlens-hq/">Try again</a>
+    </div>
+  </body>
+</html>

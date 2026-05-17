@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="240" fill="#F4EFE6"/>
+  <circle cx="256" cy="256" r="240" fill="none" stroke="#1a1a1a" stroke-width="8"/>
+  <!-- Equality line (diagonal) -->
+  <line x1="96" y1="416" x2="416" y2="96" stroke="#1a1a1a" stroke-width="4" stroke-dasharray="12 8" opacity="0.4"/>
+  <!-- Lorenz curve (red) — bowed below equality line -->
+  <path
+    d="M 96 416 Q 270 416 340 348 Q 416 270 416 96"
+    stroke="#C8161D"
+    stroke-width="14"
+    fill="none"
+    stroke-linecap="round"
+  />
+</svg>
