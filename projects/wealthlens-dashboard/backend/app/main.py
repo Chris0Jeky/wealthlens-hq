@@ -8,9 +8,9 @@ from __future__ import annotations
 import logging
 import os
 import platform
-import subprocess
 import time
 from datetime import UTC, datetime
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -35,25 +35,67 @@ def _get_git_commit() -> str:
     """Return the short git commit hash, or 'unknown' if unavailable.
 
     Checks the GIT_COMMIT environment variable first (standard in CI/CD),
-    then falls back to subprocess.  Gracefully handles missing git binary,
-    missing .git directory, timeouts, and any other subprocess failures so
-    CI environments without git still start cleanly.
+    then falls back to reading local Git metadata. Gracefully handles
+    packaged deployments and CI environments without a .git directory.
     """
     env_commit = os.environ.get("GIT_COMMIT")
     if env_commit:
         return env_commit[:7]
-    try:
-        result = subprocess.run(
-            ["git", "rev-parse", "--short", "HEAD"],
-            capture_output=True,
-            text=True,
-            timeout=5,
-        )
-        if result.returncode == 0 and result.stdout.strip():
-            return result.stdout.strip()
-    except (OSError, subprocess.SubprocessError):
-        pass
+
+    repo_root = Path(__file__).resolve().parents[4]
+    git_dir = _resolve_git_dir(repo_root)
+    if git_dir is None:
+        return "unknown"
+
+    commit = _read_git_head(git_dir)
+    if commit:
+        return commit[:7]
     return "unknown"
+
+
+def _resolve_git_dir(repo_root: Path) -> Path | None:
+    """Resolve the Git metadata directory for normal and worktree checkouts."""
+    dot_git = repo_root / ".git"
+    try:
+        if dot_git.is_dir():
+            return dot_git
+        if dot_git.is_file():
+            marker = dot_git.read_text(encoding="utf-8").strip()
+            if marker.startswith("gitdir:"):
+                git_dir = Path(marker.removeprefix("gitdir:").strip())
+                if not git_dir.is_absolute():
+                    git_dir = (repo_root / git_dir).resolve()
+                return git_dir
+    except OSError:
+        return None
+    return None
+
+
+def _read_git_head(git_dir: Path) -> str | None:
+    """Read the current commit hash directly from Git metadata."""
+    try:
+        head = (git_dir / "HEAD").read_text(encoding="utf-8").strip()
+        if not head:
+            return None
+        if not head.startswith("ref:"):
+            return head
+
+        ref = head.removeprefix("ref:").strip()
+        ref_path = git_dir / ref
+        if ref_path.is_file():
+            return ref_path.read_text(encoding="utf-8").strip()
+
+        packed_refs = git_dir / "packed-refs"
+        if packed_refs.is_file():
+            for line in packed_refs.read_text(encoding="utf-8").splitlines():
+                if line.startswith("#") or line.startswith("^"):
+                    continue
+                parts = line.split(" ", 1)
+                if len(parts) == 2 and parts[1] == ref:
+                    return parts[0]
+    except OSError:
+        return None
+    return None
 
 
 _git_commit: str = _get_git_commit()

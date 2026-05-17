@@ -49,6 +49,13 @@ export const OG_METADATA: Record<string, OgMetadataEntry> = {
     source: "HMRC Capital Gains Tax Statistics",
     sourceAccessDate: "2026-05-14",
   },
+  "wage-stagnation": {
+    title: "Real Wage Stagnation",
+    subtitle:
+      "Median real weekly earnings remain below their 2008 peak",
+    source: "ONS Annual Survey of Hours and Earnings",
+    sourceAccessDate: "2026-05-16",
+  },
   "productivity-pay": {
     title: "The Productivity-Pay Gap",
     subtitle:
