@@ -1,38 +1,49 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 import { useTheme } from '@/composables/useTheme'
-import type { ThemePreference } from '@/composables/useTheme'
 
-const { preference, setPreference } = useTheme()
-
-const options: { value: ThemePreference; label: string }[] = [
-  { value: 'light', label: 'Light' },
-  { value: 'dark', label: 'Dark' },
-  { value: 'system', label: 'System' },
-]
-
-const nextOption = computed(() => {
-  const idx = options.findIndex((o) => o.value === preference.value)
-  return options[(idx + 1) % options.length]
-})
-
-function cycle() {
-  setPreference(nextOption.value.value)
-}
-
-const currentLabel = computed(() => options.find((o) => o.value === preference.value)?.label)
+const { theme, toggleTheme } = useTheme()
 </script>
 
 <template>
   <button
     type="button"
-    :aria-label="`Switch theme to ${nextOption.label} (current: ${currentLabel})`"
-    class="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 transition-colors"
-    @click="cycle"
+    aria-label="Toggle dark mode"
+    :aria-pressed="theme === 'dark'"
+    class="theme-toggle"
+    @click="toggleTheme"
   >
-    <span v-if="preference === 'light'" aria-hidden="true">&#9728;</span>
-    <span v-else-if="preference === 'dark'" aria-hidden="true">&#9790;</span>
-    <span v-else aria-hidden="true">&#9881;</span>
-    <span class="sr-only sm:not-sr-only">{{ currentLabel }}</span>
+    <span v-if="theme === 'dark'" aria-hidden="true" class="theme-toggle__icon">&#9728;</span>
+    <span v-else aria-hidden="true" class="theme-toggle__icon">&#9789;</span>
   </button>
 </template>
+
+<style scoped>
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--wl-rule-strong);
+  border-radius: var(--wl-radius);
+  background: var(--wl-bg-muted);
+  color: var(--wl-ink);
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+.theme-toggle:hover {
+  border-color: var(--wl-ink-muted);
+}
+
+.theme-toggle:focus-visible {
+  outline: 2px solid var(--wl-red);
+  outline-offset: 2px;
+}
+
+.theme-toggle__icon {
+  font-size: 16px;
+  line-height: 1;
+}
+</style>
