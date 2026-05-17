@@ -33,7 +33,10 @@ coverage/
 projects/wealthlens-dashboard/frontend/src/**/*.js
 
 # Generated static API data (built by scripts/generate_static_api.py)
-projects/wealthlens-dashboard/frontend/public/data/
+# Ignore generated files but whitelist committed static fallbacks.
+projects/wealthlens-dashboard/frontend/public/data/*
+!projects/wealthlens-dashboard/frontend/public/data/wealth-shares.json
+!projects/wealthlens-dashboard/frontend/public/data/wealth-shares-metadata.json
 
 # Data and generated artefacts
 *.parquet

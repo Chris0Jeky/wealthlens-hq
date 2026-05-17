@@ -3,11 +3,16 @@
 from __future__ import annotations
 
 import importlib
+import os
 import sys
 from pathlib import Path
 from types import ModuleType
 
 import pytest
+
+# Keep any explicitly enabled test rate limit high; the application default is
+# disabled unless RATE_LIMIT_ENABLED is set.
+os.environ.setdefault("RATE_LIMIT_RPM", "10000")
 
 
 @pytest.fixture()

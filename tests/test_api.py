@@ -16,8 +16,8 @@ def test_health_returns_ok():
     assert response.status_code == 200
     body = response.json()
     assert body["status"] == "ok"
-    assert "version" in body
-    assert "uptime_seconds" in body
+    assert "datasets_loaded" in body
+    assert "timestamp" in body
 
 
 def test_list_datasets():
