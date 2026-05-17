@@ -85,16 +85,55 @@ const COLOR_LIABLE = "#b91c1c";
 const COLOR_NOT_LIABLE = "#1a56db";
 const COLOR_BAR = "#1a56db";
 
+const isFiniteNumber = (value: unknown): value is number =>
+  typeof value === "number" && Number.isFinite(value);
+
+const isValidIhtData = (value: unknown): value is IhtData => {
+  if (typeof value !== "object" || value === null) return false;
+
+  const candidate = value as Partial<IhtData>;
+  const summary = candidate.summary;
+
+  return (
+    typeof candidate.meta?.source === "string" &&
+    typeof candidate.meta.url === "string" &&
+    typeof candidate.meta.accessed === "string" &&
+    typeof candidate.meta.notes === "string" &&
+    typeof summary === "object" &&
+    summary !== null &&
+    isFiniteNumber(summary.total_deaths) &&
+    isFiniteNumber(summary.estates_liable) &&
+    isFiniteNumber(summary.liability_rate_pct) &&
+    isFiniteNumber(summary.total_iht_revenue_bn) &&
+    isFiniteNumber(summary.nil_rate_band) &&
+    isFiniteNumber(summary.residence_nil_rate_band) &&
+    Array.isArray(candidate.by_year) &&
+    candidate.by_year.length > 0 &&
+    candidate.by_year.every(
+      (row) =>
+        typeof row.year === "string" &&
+        isFiniteNumber(row.deaths) &&
+        isFiniteNumber(row.liable) &&
+        isFiniteNumber(row.rate_pct) &&
+        isFiniteNumber(row.revenue_bn),
+    ) &&
+    Array.isArray(candidate.by_estate_size) &&
+    candidate.by_estate_size.every(
+      (row) =>
+        typeof row.band === "string" &&
+        isFiniteNumber(row.estates) &&
+        isFiniteNumber(row.tax_paid_m),
+    )
+  );
+};
+
 onMounted(async () => {
   try {
     const baseUrl = import.meta.env.BASE_URL ?? "/";
     const res = await fetchWithRetry(`${baseUrl}data/inheritance-tax.json`, undefined, 0);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const parsed = await res.json();
-    if (
-      typeof parsed?.summary?.liability_rate_pct !== "number" ||
-      !Array.isArray(parsed.by_year)
-    ) {
+    if (!isValidIhtData(parsed)) {
       throw new Error("Unexpected data format");
     }
     data.value = parsed;

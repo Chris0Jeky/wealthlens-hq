@@ -128,6 +128,52 @@ describe("InheritanceTaxChart", () => {
     });
   });
 
+  it("renders error state when summary fields used by the template are missing", async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          ...MOCK_IHT_DATA,
+          summary: {
+            ...MOCK_IHT_DATA.summary,
+            estates_liable: undefined,
+          },
+        }),
+    });
+    const wrapper = mount(InheritanceTaxChart);
+
+    await vi.waitFor(() => {
+      expect(wrapper.find("[role='alert']").exists()).toBe(true);
+    });
+    expect(wrapper.text()).toContain("Unexpected data format");
+    expect(wrapper.find(".vchart-stub").exists()).toBe(false);
+  });
+
+  it("renders error state when by_year rows are partially malformed", async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          ...MOCK_IHT_DATA,
+          by_year: [
+            {
+              year: "2021-22",
+              deaths: 600000,
+              liable: 27800,
+              revenue_bn: 7.1,
+            },
+          ],
+        }),
+    });
+    const wrapper = mount(InheritanceTaxChart);
+
+    await vi.waitFor(() => {
+      expect(wrapper.find("[role='alert']").exists()).toBe(true);
+    });
+    expect(wrapper.text()).toContain("Unexpected data format");
+    expect(wrapper.find(".vchart-stub").exists()).toBe(false);
+  });
+
   it("renders chart container on successful data load", async () => {
     const wrapper = mount(InheritanceTaxChart);
 
