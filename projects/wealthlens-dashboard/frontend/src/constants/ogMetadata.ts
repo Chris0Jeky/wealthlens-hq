@@ -49,6 +49,48 @@ export const OG_METADATA: Record<string, OgMetadataEntry> = {
     source: "HMRC Capital Gains Tax Statistics",
     sourceAccessDate: "2026-05-14",
   },
+  "productivity-pay": {
+    title: "The Productivity-Pay Gap",
+    subtitle:
+      "UK productivity has outpaced real pay growth since the late 1990s",
+    source: "ONS Labour Productivity and AWE",
+    sourceAccessDate: "2026-05-16",
+  },
+  "gdhi-by-region": {
+    title: "Regional Disposable Income",
+    subtitle:
+      "Disposable income varies sharply across UK regions",
+    source: "ONS Regional Gross Disposable Household Income",
+    sourceAccessDate: "2026-05-16",
+  },
+  "tax-composition": {
+    title: "What Britain Taxes",
+    subtitle:
+      "A breakdown of UK tax receipts by revenue source",
+    source: "HMRC Tax and NIC Receipts",
+    sourceAccessDate: "2026-05-16",
+  },
+  "boe-rates": {
+    title: "Bank Rate and Inflation",
+    subtitle:
+      "Bank of England rates alongside CPI inflation history",
+    source: "Bank of England Interactive Database",
+    sourceAccessDate: "2026-05-16",
+  },
+  "child-poverty": {
+    title: "Child Poverty by Region",
+    subtitle:
+      "Children in relative poverty after housing costs",
+    source: "DWP/HMRC Children in Low Income Families",
+    sourceAccessDate: "2026-05-16",
+  },
+  "generational-wealth": {
+    title: "The Generational Wealth Gap",
+    subtitle:
+      "Median household wealth differs sharply by generation",
+    source: "Resolution Foundation and ONS WAS",
+    sourceAccessDate: "2026-05-16",
+  },
 };
 
 /**
