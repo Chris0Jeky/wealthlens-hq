@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { defineComponent, h } from 'vue'
 import AppFooter from '@/components/AppFooter.vue'
+import i18n from '@/i18n'
 
 const RouterLinkStub = defineComponent({
   name: 'RouterLink',
@@ -19,6 +20,7 @@ const RouterLinkStub = defineComponent({
 function mountFooter() {
   return mount(AppFooter, {
     global: {
+      plugins: [i18n],
       stubs: { RouterLink: RouterLinkStub },
     },
   })

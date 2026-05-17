@@ -46,50 +46,45 @@ const year = new Date().getFullYear()
           <span class="brand-text">WealthLens</span>
           <span class="brand-uk">UK</span>
         </RouterLink>
-        <p>
-          Every statistic on this site links to its primary source.
-          Source-backed. Open-source. Impossible to ignore.
-        </p>
+        <p>{{ $t('footer.description') }}</p>
       </div>
 
       <!-- Explore column -->
       <div class="foot-col">
-        <h4>Explore</h4>
+        <h4>{{ $t('footer.explore') }}</h4>
         <ul>
           <li>
-            <RouterLink to="/charts/wealth-shares">All charts</RouterLink>
+            <RouterLink to="/charts/wealth-shares">{{ $t('footer.allCharts') }}</RouterLink>
           </li>
           <li>
-            <RouterLink to="/charts/wealth-shares">Wealth</RouterLink>
+            <RouterLink to="/charts/wealth-shares">{{ $t('footer.wealth') }}</RouterLink>
           </li>
           <li>
-            <RouterLink to="/charts/housing-affordability">Housing</RouterLink>
+            <RouterLink to="/charts/housing-affordability">{{ $t('footer.housing') }}</RouterLink>
           </li>
           <li>
-            <RouterLink to="/charts/cgt-concentration">Tax</RouterLink>
+            <RouterLink to="/charts/cgt-concentration">{{ $t('footer.tax') }}</RouterLink>
           </li>
           <li>
-            <RouterLink to="/charts/wealth-by-decile">
-              Income &amp; opportunity
-            </RouterLink>
+            <RouterLink to="/charts/wealth-by-decile">{{ $t('footer.incomeOpportunity') }}</RouterLink>
           </li>
         </ul>
       </div>
 
       <!-- Project column -->
       <div class="foot-col">
-        <h4>Project</h4>
+        <h4>{{ $t('footer.project') }}</h4>
         <ul>
-          <li><RouterLink to="/about">About</RouterLink></li>
-          <li><RouterLink to="/methodology">Methodology</RouterLink></li>
-          <li><RouterLink to="/contribute">Contribute</RouterLink></li>
+          <li><RouterLink to="/about">{{ $t('nav.about') }}</RouterLink></li>
+          <li><RouterLink to="/methodology">{{ $t('nav.methodology') }}</RouterLink></li>
+          <li><RouterLink to="/contribute">{{ $t('nav.contribute') }}</RouterLink></li>
           <li>
             <a
               href="https://github.com/Chris0Jeky/wealthlens-hq/blob/main/LICENSE"
               target="_blank"
               rel="noopener"
             >
-              Licence (MIT)
+              {{ $t('footer.licence') }}
             </a>
           </li>
         </ul>
@@ -97,7 +92,7 @@ const year = new Date().getFullYear()
 
       <!-- Follow column -->
       <div class="foot-col">
-        <h4>Follow</h4>
+        <h4>{{ $t('footer.follow') }}</h4>
         <ul>
           <li>
             <a
@@ -137,9 +132,9 @@ const year = new Date().getFullYear()
 
     <!-- Bottom bar -->
     <div class="foot-base">
-      <span>&copy; {{ year }} WealthLens UK · MIT licensed</span>
+      <span>{{ $t('footer.copyright', { year }) }} · {{ $t('footer.mitLicensed') }}</span>
       <HealthStatus />
-      <span>Made in London · Independent · Non-partisan</span>
+      <span>{{ $t('footer.tagline') }}</span>
     </div>
   </footer>
 </template>
