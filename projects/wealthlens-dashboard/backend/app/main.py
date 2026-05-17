@@ -66,14 +66,22 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-_rpm_raw = os.environ.get("RATE_LIMIT_RPM", "60")
-try:
-    _rpm = max(int(_rpm_raw), 1)
-except (ValueError, TypeError):
-    logger.warning("Invalid RATE_LIMIT_RPM value %r, defaulting to 60", _rpm_raw)
-    _rpm = 60
+_rate_limit_enabled = os.environ.get("RATE_LIMIT_ENABLED", "").strip().lower() in {
+    "1",
+    "true",
+    "yes",
+    "on",
+}
 
-app.add_middleware(RateLimitMiddleware, requests_per_minute=_rpm)
+if _rate_limit_enabled:
+    _rpm_raw = os.environ.get("RATE_LIMIT_RPM", "60")
+    try:
+        _rpm = max(int(_rpm_raw), 1)
+    except (ValueError, TypeError):
+        logger.warning("Invalid RATE_LIMIT_RPM value %r, defaulting to 60", _rpm_raw)
+        _rpm = 60
+
+    app.add_middleware(RateLimitMiddleware, requests_per_minute=_rpm)
 app.add_middleware(TimeoutMiddleware)
 
 app.add_middleware(

@@ -10,8 +10,8 @@ from types import ModuleType
 
 import pytest
 
-# Disable rate limiting during tests — the test client fires many requests
-# from a single IP within a single second.
+# Keep any explicitly enabled test rate limit high; the application default is
+# disabled unless RATE_LIMIT_ENABLED is set.
 os.environ.setdefault("RATE_LIMIT_RPM", "10000")
 
 
