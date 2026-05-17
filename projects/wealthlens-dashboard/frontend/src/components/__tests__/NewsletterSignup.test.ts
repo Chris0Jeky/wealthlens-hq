@@ -5,10 +5,6 @@ import NewsletterSignup from '@/components/NewsletterSignup.vue'
 describe('NewsletterSignup', () => {
   beforeEach(() => {
     vi.stubGlobal('fetch', vi.fn())
-    vi.stubGlobal('AbortSignal', {
-      any: (signals: AbortSignal[]) => signals[0],
-      timeout: () => new AbortController().signal,
-    })
   })
 
   afterEach(() => {
@@ -162,11 +158,12 @@ describe('NewsletterSignup', () => {
     await flushPromises()
 
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining('buttondown.email'),
+      expect.stringContaining('buttondown.com'),
       expect.objectContaining({ method: 'POST' }),
     )
     const body = mockFetch.mock.calls[0][1].body as FormData
     expect(body.get('email')).toBe('user@domain.co.uk')
+    expect(body.get('embed')).toBe('1')
   })
 
   it('passes abort signal to fetch', async () => {
@@ -179,5 +176,18 @@ describe('NewsletterSignup', () => {
     await flushPromises()
 
     expect(mockFetch.mock.calls[0][1].signal).toBeDefined()
+  })
+
+  it('does not depend on AbortSignal.any or AbortSignal.timeout', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({ ok: true })
+    vi.stubGlobal('fetch', mockFetch)
+    vi.stubGlobal('AbortSignal', AbortSignal)
+
+    const wrapper = mount(NewsletterSignup)
+    await wrapper.find('input[type="email"]').setValue('test@example.com')
+    await wrapper.find('form').trigger('submit')
+    await flushPromises()
+
+    expect(wrapper.find('.newsletter__success').exists()).toBe(true)
   })
 })

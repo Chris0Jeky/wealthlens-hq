@@ -8,7 +8,7 @@ const state = ref<FormState>('idle')
 const errorMessage = ref('')
 
 const newsletterId = import.meta.env.VITE_BUTTONDOWN_NEWSLETTER_ID || 'wealthlens'
-const apiUrl = `https://buttondown.email/api/emails/embed-subscribe/${newsletterId}`
+const apiUrl = `https://buttondown.com/api/emails/embed-subscribe/${newsletterId}`
 
 const isValidEmail = computed(() => {
   const pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -19,6 +19,7 @@ const isDisabled = computed(() => state.value === 'submitting')
 
 let abortController: AbortController | null = null
 let inflight = false
+let requestTimedOut = false
 
 onUnmounted(() => {
   abortController?.abort()
@@ -30,21 +31,24 @@ async function handleSubmit() {
 
   abortController?.abort()
   abortController = new AbortController()
+  requestTimedOut = false
 
   state.value = 'submitting'
   errorMessage.value = ''
+  const timeoutId = window.setTimeout(() => {
+    requestTimedOut = true
+    abortController?.abort()
+  }, 15_000)
 
   try {
     const body = new FormData()
     body.append('email', email.value)
+    body.append('embed', '1')
 
     const response = await fetch(apiUrl, {
       method: 'POST',
       body,
-      signal: AbortSignal.any([
-        abortController.signal,
-        AbortSignal.timeout(15_000),
-      ]),
+      signal: abortController.signal,
     })
 
     if (!response.ok) {
@@ -71,8 +75,11 @@ async function handleSubmit() {
     state.value = 'success'
     email.value = ''
   } catch (err) {
-    if (err instanceof DOMException && err.name === 'AbortError') return
-    if (err instanceof DOMException && err.name === 'TimeoutError') {
+    if (err instanceof DOMException && err.name === 'AbortError' && !requestTimedOut) return
+    if (
+      (err instanceof DOMException && err.name === 'TimeoutError') ||
+      (err instanceof DOMException && err.name === 'AbortError' && requestTimedOut)
+    ) {
       state.value = 'error'
       errorMessage.value = 'Request timed out. Please check your connection and try again.'
       return
@@ -89,6 +96,7 @@ async function handleSubmit() {
       errorMessage.value = 'Something went wrong. Please try again.'
     }
   } finally {
+    window.clearTimeout(timeoutId)
     inflight = false
   }
 }
