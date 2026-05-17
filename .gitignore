@@ -27,6 +27,7 @@ build/
 .vite/
 coverage/
 *.tsbuildinfo
+.lighthouseci/
 
 # Transpile artifacts — TypeScript source is canonical
 projects/wealthlens-dashboard/frontend/src/**/*.js

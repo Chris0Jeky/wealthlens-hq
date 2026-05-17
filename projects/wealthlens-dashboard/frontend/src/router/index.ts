@@ -32,7 +32,7 @@ const router = createRouter({
     {
       path: "/methodology",
       name: "methodology",
-      component: () => import("@/views/HomeView.vue"),
+      component: () => import("@/views/MethodologyView.vue"),
     },
     {
       path: "/data-sources",
@@ -47,7 +47,7 @@ const router = createRouter({
     {
       path: "/contribute",
       name: "contribute",
-      component: () => import("@/views/HomeView.vue"),
+      component: () => import("@/views/ContributeView.vue"),
     },
     {
       path: "/tools/wealth-calculator",
