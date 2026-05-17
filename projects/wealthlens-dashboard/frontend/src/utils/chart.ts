@@ -18,3 +18,30 @@ export function safeMinMax(arr: number[]): { min: number; max: number } {
   }
   return { min, max };
 }
+
+/**
+ * Warn in the console when a significant proportion of rows are dropped
+ * during NaN filtering. Helps surface data quality issues during development
+ * without breaking the UI.
+ *
+ * @param datasetName - Human-readable name of the dataset (e.g. "productivity-pay")
+ * @param totalRows - Number of rows before filtering
+ * @param validRows - Number of rows after filtering
+ * @param threshold - Fraction of dropped rows that triggers the warning (default 0.2 = 20%)
+ */
+export function warnIfSignificantDataLoss(
+  datasetName: string,
+  totalRows: number,
+  validRows: number,
+  threshold = 0.2,
+): void {
+  if (totalRows === 0) return;
+  const dropped = totalRows - validRows;
+  const dropRate = dropped / totalRows;
+  if (dropRate > threshold) {
+    console.warn(
+      `[WealthLens] Dataset "${datasetName}": ${dropped}/${totalRows} rows (${(dropRate * 100).toFixed(1)}%) were filtered out due to invalid/NaN values. ` +
+        `This may indicate changed column names or malformed data.`,
+    );
+  }
+}

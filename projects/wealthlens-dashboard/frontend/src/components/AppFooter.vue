@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router'
 import NewsletterSignup from '@/components/NewsletterSignup.vue'
+import HealthStatus from './HealthStatus.vue'
 
 const year = new Date().getFullYear()
 </script>
@@ -139,6 +140,7 @@ const year = new Date().getFullYear()
     <!-- Bottom bar -->
     <div class="foot-base">
       <span>&copy; {{ year }} WealthLens UK · MIT licensed</span>
+      <HealthStatus />
       <span>Made in London · Independent · Non-partisan</span>
     </div>
   </footer>
