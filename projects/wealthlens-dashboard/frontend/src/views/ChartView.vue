@@ -104,6 +104,13 @@ const GenerationalWealthChart = defineAsyncComponent({
   delay: 200,
   timeout: 10000,
 });
+const InheritanceTaxChart = defineAsyncComponent({
+  loader: () => import("@/components/InheritanceTaxChart.vue"),
+  loadingComponent: ChartSkeleton,
+  errorComponent: ChartLoadError,
+  delay: 200,
+  timeout: 10000,
+});
 
 const route = useRoute();
 const { trackEvent } = useAnalytics();
@@ -324,6 +331,7 @@ usePageMeta({
           <BoeRatesChart v-else-if="chartName === 'boe-rates'" ref="chartComponentRef" />
           <ChildPovertyChart v-else-if="chartName === 'child-poverty'" ref="chartComponentRef" />
           <GenerationalWealthChart v-else-if="chartName === 'generational-wealth'" ref="chartComponentRef" />
+          <InheritanceTaxChart v-else-if="chartName === 'inheritance-tax'" ref="chartComponentRef" />
         </div>
         <div class="chart-source-bar">
           <div class="chart-source-bar__left">
@@ -485,6 +493,9 @@ usePageMeta({
             <WealthByDecileChart
               v-else-if="chartName === 'wealth-by-decile'"
               ref="chartComponentRef"
+            />
+            <InheritanceTaxChart
+              v-else-if="chartName === 'inheritance-tax'"
             />
           </div>
         </div>
