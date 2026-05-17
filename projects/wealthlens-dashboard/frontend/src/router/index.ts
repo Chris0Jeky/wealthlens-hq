@@ -55,6 +55,11 @@ const router = createRouter({
       component: () => import("@/views/WealthCalculatorView.vue"),
     },
     {
+      path: "/tools/wealth-scale",
+      name: "wealth-scale",
+      component: () => import("@/views/WealthScaleView.vue"),
+    },
+    {
       path: "/faq",
       name: "faq",
       component: () => import("@/views/FaqView.vue"),
