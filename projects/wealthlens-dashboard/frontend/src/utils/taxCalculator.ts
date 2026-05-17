@@ -1,19 +1,22 @@
 /**
- * UK 2025-26 tax calculation utilities.
+ * UK 2026-27 tax calculation utilities.
  *
  * Calculates income tax, National Insurance, and effective tax rates
  * for comparison with capital gains tax — highlighting the disparity
  * between how earned income and investment gains are taxed.
  *
- * Source: HMRC Income Tax rates and bands 2025-26
+ * Income Tax rates are for England, Wales, and Northern Ireland. Scotland uses
+ * different bands for non-savings, non-dividend income.
+ *
+ * Source: HMRC Income Tax rates and bands 2026-27
  * URL: https://www.gov.uk/income-tax-rates
  * Accessed: 2026-05-17
  *
- * Source: HMRC National Insurance rates 2025-26
+ * Source: HMRC National Insurance rates 2026-27
  * URL: https://www.gov.uk/national-insurance-rates-letters
  * Accessed: 2026-05-17
  *
- * Source: HMRC Capital Gains Tax rates 2025-26
+ * Source: HMRC Capital Gains Tax rates 2026-27
  * URL: https://www.gov.uk/capital-gains-tax/rates
  * Accessed: 2026-05-17
  */
@@ -89,7 +92,8 @@ export function getPersonalAllowance(salary: number): number {
 }
 
 /**
- * Calculates income tax for a given annual gross salary using 2025-26 bands.
+ * Calculates income tax for a given annual gross salary using 2026-27
+ * England, Wales, and Northern Ireland bands.
  *
  * Personal allowance tapers by £1 for every £2 over £100,000.
  */
@@ -148,7 +152,7 @@ export function calculateIncomeTax(salary: number): TaxBreakdown {
 
 /**
  * Calculates Class 1 employee National Insurance for a given annual salary.
- * 2025-26 rates: 0% up to £12,570, 8% from £12,571 to £50,270, 2% above.
+ * 2026-27 rates: 0% up to £12,570, 8% from £12,571 to £50,270, 2% above.
  */
 export function calculateNI(salary: number): NIBreakdown {
   if (salary <= 0) {
@@ -191,7 +195,7 @@ export function calculateNI(salary: number): NIBreakdown {
 /**
  * Calculates the effective capital gains tax rate if the same amount
  * were received as capital gains rather than salary.
- * Uses 2025-26 rates (general assets, not residential property).
+ * Uses 2026-27 rates (general assets, not carried interest).
  */
 function calculateCGTComparison(amount: number): {
   basicRate: number;

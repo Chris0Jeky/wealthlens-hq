@@ -6,7 +6,7 @@
  * with a comparison to capital gains tax to highlight the disparity
  * between how earned income and investment gains are taxed in the UK.
  *
- * Source: HMRC Income Tax rates and National Insurance rates 2025-26
+ * Source: HMRC Income Tax rates and National Insurance rates 2026-27
  * URL: https://www.gov.uk/income-tax-rates
  * Accessed: 2026-05-17
  */
@@ -90,7 +90,9 @@ function formatGBP(value: number): string {
       </label>
       <p id="salary-input-help" class="calc__help">
         Enter your total annual salary before tax. This calculates
-        <strong>employee</strong> income tax and Class 1 National Insurance.
+        <strong>employee</strong> income tax for England, Wales, and Northern
+        Ireland, plus Class 1 National Insurance. Scottish Income Tax uses
+        different bands and is outside this calculator.
       </p>
 
       <div class="calc__input-row">
@@ -266,9 +268,9 @@ function formatGBP(value: number): string {
             </span>.
           </p>
           <p class="calc__comparison-note">
-            Capital gains tax (2025-26): 18% basic rate / 24% higher rate,
+            Capital gains tax (2026-27): 18% basic rate / 24% higher rate,
             with a £3,000 annual exempt amount. This comparison uses general
-            asset rates (not residential property).
+            asset rates (not carried interest).
           </p>
         </div>
       </div>
@@ -277,7 +279,8 @@ function formatGBP(value: number): string {
       <div class="calc__source">
         <span class="wl-source">
           HMRC Income Tax rates, National Insurance rates, and Capital Gains
-          Tax rates for the 2025-26 tax year.
+          Tax rates for the 2026-27 tax year. Income Tax calculations use
+          England, Wales, and Northern Ireland bands.
         </span>
         <p class="calc__source-detail">
           <a

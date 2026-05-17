@@ -17,6 +17,12 @@ describe("TaxCalculator", () => {
     expect(input.exists()).toBe(true);
   });
 
+  it("states the income tax jurisdiction scope", () => {
+    const wrapper = mount(TaxCalculator);
+    expect(wrapper.text()).toContain("England, Wales, and Northern Ireland");
+    expect(wrapper.text()).toContain("Scottish Income Tax uses");
+  });
+
   it("disables calculate button when input is empty", () => {
     const wrapper = mount(TaxCalculator);
     const btn = wrapper.find("button.calc__btn");
@@ -55,6 +61,7 @@ describe("TaxCalculator", () => {
     await wrapper.find("button.calc__btn").trigger("click");
     expect(wrapper.find(".calc__comparison").exists()).toBe(true);
     expect(wrapper.find(".calc__comparison-text").text()).toContain("capital gains");
+    expect(wrapper.find(".calc__comparison-note").text()).toContain("2026-27");
   });
 
   it("applies preset value when preset button is clicked", async () => {
