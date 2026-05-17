@@ -70,6 +70,8 @@ export const simpleChartTitles: Record<string, string> = {
   "cgt-concentration":
     "Capital Gains Tax — Concentration by Size of Gain",
   "wealth-by-decile": "Total Household Wealth by Decile",
+  "wage-stagnation":
+    "Real Wage Stagnation — UK Median Earnings Since 2008",
   "inheritance-tax": "Inheritance Tax — How Few Estates Actually Pay",
 };
 

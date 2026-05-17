@@ -56,6 +56,7 @@ DATASETS: dict[str, str] = {
     "boe-rates": "boe_rates.csv",
     "child-poverty": "child_poverty_by_region.csv",
     "generational-wealth": "generational_wealth_gap.csv",
+    "wage-stagnation": "wage_stagnation.csv",
 }
 
 # Source citations — every dataset must document where the data came from.
@@ -141,6 +142,15 @@ DATASET_META: dict[str, dict[str, str]] = {
         "description": "Median household wealth by generation at equivalent ages",
         "source": "Resolution Foundation / ONS Wealth and Assets Survey",
         "source_url": "https://www.resolutionfoundation.org/publications/",
+        "access_date": "2026-05-16",
+    },
+    "wage-stagnation": {
+        "description": "Median real weekly earnings in 2024 prices",
+        "source": "ONS Annual Survey of Hours and Earnings (ASHE), Table 1",
+        "source_url": (
+            "https://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/"
+            "earningsandworkinghours/datasets/ashe1702"
+        ),
         "access_date": "2026-05-16",
     },
 }

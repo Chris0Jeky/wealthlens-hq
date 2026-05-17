@@ -52,6 +52,7 @@ vi.mock("echarts/components", () => ({
   TooltipComponent: {},
   TitleComponent: {},
   LegendComponent: {},
+  MarkPointComponent: {},
   MarkLineComponent: {},
 }));
 
@@ -60,6 +61,7 @@ import WealthSharesChart from "@/components/WealthSharesChart.vue";
 import HousingAffordabilityChart from "@/components/HousingAffordabilityChart.vue";
 import CgtConcentrationChart from "@/components/CgtConcentrationChart.vue";
 import WealthByDecileChart from "@/components/WealthByDecileChart.vue";
+import WageStagChart from "@/components/WageStagChart.vue";
 import ProductivityPayChart from "@/components/ProductivityPayChart.vue";
 import GdhiByRegionChart from "@/components/GdhiByRegionChart.vue";
 import TaxCompositionChart from "@/components/TaxCompositionChart.vue";
@@ -77,6 +79,7 @@ const chartComponents = [
   { name: "HousingAffordabilityChart", component: HousingAffordabilityChart, dataset: "housing-affordability" },
   { name: "CgtConcentrationChart", component: CgtConcentrationChart, dataset: "cgt-concentration" },
   { name: "WealthByDecileChart", component: WealthByDecileChart, dataset: "wealth-by-decile" },
+  { name: "WageStagChart", component: WageStagChart, dataset: "wage-stagnation" },
   { name: "ProductivityPayChart", component: ProductivityPayChart, dataset: "productivity-pay" },
   { name: "GdhiByRegionChart", component: GdhiByRegionChart, dataset: "gdhi-by-region" },
   { name: "TaxCompositionChart", component: TaxCompositionChart, dataset: "tax-composition" },

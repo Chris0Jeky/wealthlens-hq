@@ -108,7 +108,7 @@ def test_version_debug_returns_404_in_production() -> None:
 
 
 def test_version_debug_uses_git_commit_env_var() -> None:
-    """GIT_COMMIT env var should be preferred over subprocess."""
+    """GIT_COMMIT env var should be preferred over local Git metadata."""
     with patch.dict(os.environ, {"GIT_COMMIT": "abc1234567890", "APP_ENV": "development"}):
         # Need to reimport to pick up the env var — but since _git_commit
         # is resolved at import time, we test the function directly.

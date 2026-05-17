@@ -62,6 +62,13 @@ const WealthByDecileChart = defineAsyncComponent({
   delay: 200,
   timeout: 10000,
 });
+const WageStagChart = defineAsyncComponent({
+  loader: () => import("@/components/WageStagChart.vue"),
+  loadingComponent: ChartSkeleton,
+  errorComponent: ChartLoadError,
+  delay: 200,
+  timeout: 10000,
+});
 const ProductivityPayChart = defineAsyncComponent({
   loader: () => import("@/components/ProductivityPayChart.vue"),
   loadingComponent: ChartSkeleton,
@@ -496,6 +503,9 @@ usePageMeta({
             />
             <InheritanceTaxChart
               v-else-if="chartName === 'inheritance-tax'"
+            />
+            <WageStagChart
+              v-else-if="chartName === 'wage-stagnation'"
             />
           </div>
         </div>

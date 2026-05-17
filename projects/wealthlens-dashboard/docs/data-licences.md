@@ -16,6 +16,7 @@ Every dataset used in WealthLens charts is listed here with its licence and attr
 | Regional Gross Disposable Household Income | ONS | OGL v3.0 | Yes — "Source: ONS" | https://www.ons.gov.uk/economy/regionalaccounts/grossdisposablehouseholdincome/datasets/regionalgrossdisposablehouseholdincomegdhi |
 | Tax and NIC Receipts | HMRC | OGL v3.0 | Yes — "Contains public sector information licensed under the Open Government Licence v3.0" | https://www.gov.uk/government/statistics/hmrc-tax-and-nics-receipts-for-the-uk |
 | Bank Rate and CPI Inflation | Bank of England | OGL v3.0 | Yes — "Source: Bank of England" | https://www.bankofengland.co.uk/boeapps/database/ |
+| Real Wage Stagnation | ONS | OGL v3.0 | Yes — "Source: ONS ASHE" | https://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/earningsandworkinghours/datasets/ashe1702 |
 
 ## Currently used in tools
 

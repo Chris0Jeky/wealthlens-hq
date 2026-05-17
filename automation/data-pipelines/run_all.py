@@ -25,6 +25,7 @@ SCRIPTS = [
     "fetch_ons_gdhi.py",
     "fetch_tax_composition.py",
     "fetch_boe_rates.py",
+    "fetch_wage_stagnation.py",
 ]
 
 
