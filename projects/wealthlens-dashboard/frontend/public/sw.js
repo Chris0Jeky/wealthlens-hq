@@ -3,10 +3,17 @@
 //
 // IMPORTANT: Base path '/wealthlens-hq/' is coupled to vite.config.ts `base`.
 // If deploying to a custom domain at '/', update all paths below.
+// This worker is served from '/wealthlens-hq/sw.js' and is scoped to
+// '/wealthlens-hq/'. It cannot intercept root '/api/' requests unless the
+// server sends a broader Service-Worker-Allowed header.
 // Bump CACHE_NAME on breaking changes to force cache invalidation.
 
 const CACHE_NAME = 'wl-v1'
 const OFFLINE_URL = '/wealthlens-hq/offline.html'
+const API_OFFLINE_BODY = JSON.stringify({
+  error: 'service_unavailable',
+  message: 'The WealthLens API is unavailable while offline.',
+})
 
 // Static assets to pre-cache on install
 const PRECACHE_URLS = [
@@ -18,7 +25,7 @@ const PRECACHE_URLS = [
 // --- Install: pre-cache offline fallback and icons ---
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE_URLS))
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE_URLS)),
   )
   self.skipWaiting()
 })
@@ -26,13 +33,15 @@ self.addEventListener('install', (event) => {
 // --- Activate: clean up old caches ---
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(
-        keys
-          .filter((key) => key !== CACHE_NAME)
-          .map((key) => caches.delete(key))
-      )
-    )
+    caches
+      .keys()
+      .then((keys) =>
+        Promise.all(
+          keys
+            .filter((key) => key !== CACHE_NAME)
+            .map((key) => caches.delete(key)),
+        ),
+      ),
   )
   self.clients.claim()
 })
@@ -41,17 +50,31 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const { request } = event
   const url = new URL(request.url)
+  const isApiRequest = url.pathname.startsWith('/wealthlens-hq/api/')
 
   // Only handle same-origin requests
   if (url.origin !== self.location.origin) return
 
-  // HTML and API requests: network-first
-  if (
-    request.mode === 'navigate' ||
-    request.destination === 'document' ||
-    url.pathname.startsWith('/api/') ||
-    url.pathname.startsWith('/wealthlens-hq/api/')
-  ) {
+  // API requests under the worker scope: network-first, JSON error fallback.
+  if (isApiRequest) {
+    event.respondWith(
+      fetch(request).catch(
+        () =>
+          new Response(API_OFFLINE_BODY, {
+            status: 503,
+            statusText: 'Service Unavailable',
+            headers: {
+              'Content-Type': 'application/json; charset=utf-8',
+              'Cache-Control': 'no-store',
+            },
+          }),
+      ),
+    )
+    return
+  }
+
+  // HTML requests: network-first, offline page fallback.
+  if (request.mode === 'navigate' || request.destination === 'document') {
     event.respondWith(
       fetch(request)
         .then((response) => {
@@ -65,8 +88,8 @@ self.addEventListener('fetch', (event) => {
         .catch(() =>
           caches
             .match(request)
-            .then((cached) => cached || caches.match(OFFLINE_URL))
-        )
+            .then((cached) => cached || caches.match(OFFLINE_URL)),
+        ),
     )
     return
   }
@@ -88,14 +111,12 @@ self.addEventListener('fetch', (event) => {
               caches.open(CACHE_NAME).then((cache) => cache.put(request, clone))
             }
             return response
-          })
-      )
+          }),
+      ),
     )
     return
   }
 
   // Everything else: network with cache fallback
-  event.respondWith(
-    fetch(request).catch(() => caches.match(request))
-  )
+  event.respondWith(fetch(request).catch(() => caches.match(request)))
 })

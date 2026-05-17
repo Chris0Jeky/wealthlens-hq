@@ -13,7 +13,7 @@ app.mount('#app')
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker
-      .register('/wealthlens-hq/sw.js')
+      .register('/wealthlens-hq/sw.js', { scope: '/wealthlens-hq/' })
       .then((reg) => {
         console.log('[SW] Registered:', reg.scope)
       })
