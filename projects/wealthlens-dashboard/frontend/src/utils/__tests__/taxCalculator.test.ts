@@ -71,21 +71,30 @@ describe("calculateIncomeTax", () => {
   it("calculates additional rate correctly for £200,000", () => {
     const result = calculateIncomeTax(200_000);
     // Personal allowance = 0 (fully tapered)
-    // Basic: £50,270 * 0.20 = £10,054
-    // Higher: (£125,140 - £50,270) * 0.40 = £29,948
+    // Basic: £37,700 * 0.20 = £7,540
+    // Higher: (£125,140 - £37,700) * 0.40 = £34,976
     // Additional: (£200,000 - £125,140) * 0.45 = £33,687
-    // Total: £73,689 (with potential rounding)
-    expect(result.totalTax).toBeCloseTo(10_054 + 29_948 + 33_687, 0);
+    // Total: £76,203 (with potential rounding)
+    expect(result.totalTax).toBeCloseTo(7_540 + 34_976 + 33_687, 0);
     expect(result.bands).toHaveLength(3);
   });
 
   it("applies personal allowance taper for £120,000", () => {
     const result = calculateIncomeTax(120_000);
     // PA = £12,570 - £10,000 = £2,570
-    // Basic: (£50,270 - £2,570) * 0.20 = £9,540
-    // Higher: (£120,000 - £50,270) * 0.40 = £27,892
-    // Total: £37,432
-    expect(result.totalTax).toBeCloseTo(9_540 + 27_892, 0);
+    // Basic: £37,700 * 0.20 = £7,540
+    // Higher: (£120,000 - £40,270) * 0.40 = £31,892
+    // Total: £39,432
+    expect(result.totalTax).toBeCloseTo(7_540 + 31_892, 0);
+  });
+
+  it("keeps the basic band width at £37,700 when personal allowance tapers", () => {
+    const result = calculateIncomeTax(120_000);
+    const basicBand = result.bands.find((band) => band.name === "Basic rate (20%)");
+
+    expect(basicBand?.from).toBe(2_570);
+    expect(basicBand?.to).toBe(40_270);
+    expect((basicBand?.to ?? 0) - (basicBand?.from ?? 0)).toBe(37_700);
   });
 });
 
@@ -144,8 +153,8 @@ describe("calculateEffectiveRate", () => {
 
   it("provides CGT comparison with basic and higher rates", () => {
     const result = calculateEffectiveRate(50_000);
-    expect(result.capitalGainsComparison.basicRate).toBe(0.10);
-    expect(result.capitalGainsComparison.higherRate).toBe(0.20);
+    expect(result.capitalGainsComparison.basicRate).toBe(0.18);
+    expect(result.capitalGainsComparison.higherRate).toBe(0.24);
     expect(result.capitalGainsComparison.effectiveRate).toBeGreaterThan(0);
   });
 });

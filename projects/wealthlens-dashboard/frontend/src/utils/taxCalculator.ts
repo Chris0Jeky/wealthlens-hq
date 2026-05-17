@@ -1,21 +1,21 @@
 /**
- * UK 2024-25 tax calculation utilities.
+ * UK 2025-26 tax calculation utilities.
  *
  * Calculates income tax, National Insurance, and effective tax rates
  * for comparison with capital gains tax — highlighting the disparity
  * between how earned income and investment gains are taxed.
  *
- * Source: HMRC Income Tax rates and bands 2024-25
+ * Source: HMRC Income Tax rates and bands 2025-26
  * URL: https://www.gov.uk/income-tax-rates
- * Accessed: 2026-05-16
+ * Accessed: 2026-05-17
  *
- * Source: HMRC National Insurance rates 2024-25
+ * Source: HMRC National Insurance rates 2025-26
  * URL: https://www.gov.uk/national-insurance-rates-letters
- * Accessed: 2026-05-16
+ * Accessed: 2026-05-17
  *
- * Source: HMRC Capital Gains Tax rates 2024-25
+ * Source: HMRC Capital Gains Tax rates 2025-26
  * URL: https://www.gov.uk/capital-gains-tax/rates
- * Accessed: 2026-05-16
+ * Accessed: 2026-05-17
  */
 
 export interface TaxBand {
@@ -62,13 +62,15 @@ export interface EffectiveRates {
 const PERSONAL_ALLOWANCE = 12_570;
 const PERSONAL_ALLOWANCE_TAPER_START = 100_000;
 const PERSONAL_ALLOWANCE_TAPER_RATE = 0.5;
+const INCOME_TAX_BASIC_BAND_WIDTH = 37_700;
+const INCOME_TAX_ADDITIONAL_RATE_THRESHOLD = 125_140;
 
 const NI_PRIMARY_THRESHOLD = 12_570;
 const NI_UPPER_EARNINGS_LIMIT = 50_270;
 
 const CGT_ANNUAL_EXEMPT = 3_000;
-const CGT_BASIC_RATE = 0.10;
-const CGT_HIGHER_RATE = 0.20;
+const CGT_BASIC_RATE = 0.18;
+const CGT_HIGHER_RATE = 0.24;
 const CGT_BASIC_RATE_BAND_WIDTH = 37_700;
 
 /**
@@ -87,7 +89,7 @@ export function getPersonalAllowance(salary: number): number {
 }
 
 /**
- * Calculates income tax for a given annual gross salary using 2024-25 bands.
+ * Calculates income tax for a given annual gross salary using 2025-26 bands.
  *
  * Personal allowance tapers by £1 for every £2 over £100,000.
  */
@@ -99,11 +101,22 @@ export function calculateIncomeTax(salary: number): TaxBreakdown {
   const personalAllowance = getPersonalAllowance(salary);
   const bands: TaxBand[] = [];
 
+  const basicRateLimit = personalAllowance + INCOME_TAX_BASIC_BAND_WIDTH;
   const taxBands = [
     { name: "Personal Allowance", from: 0, to: personalAllowance, rate: 0 },
-    { name: "Basic rate (20%)", from: personalAllowance, to: 50_270, rate: 0.20 },
-    { name: "Higher rate (40%)", from: 50_270, to: 125_140, rate: 0.40 },
-    { name: "Additional rate (45%)", from: 125_140, to: Infinity, rate: 0.45 },
+    { name: "Basic rate (20%)", from: personalAllowance, to: basicRateLimit, rate: 0.20 },
+    {
+      name: "Higher rate (40%)",
+      from: basicRateLimit,
+      to: INCOME_TAX_ADDITIONAL_RATE_THRESHOLD,
+      rate: 0.40,
+    },
+    {
+      name: "Additional rate (45%)",
+      from: INCOME_TAX_ADDITIONAL_RATE_THRESHOLD,
+      to: Infinity,
+      rate: 0.45,
+    },
   ];
 
   let totalTax = 0;
@@ -135,7 +148,7 @@ export function calculateIncomeTax(salary: number): TaxBreakdown {
 
 /**
  * Calculates Class 1 employee National Insurance for a given annual salary.
- * 2024-25 rates: 0% up to £12,570, 8% from £12,571 to £50,270, 2% above.
+ * 2025-26 rates: 0% up to £12,570, 8% from £12,571 to £50,270, 2% above.
  */
 export function calculateNI(salary: number): NIBreakdown {
   if (salary <= 0) {
@@ -178,7 +191,7 @@ export function calculateNI(salary: number): NIBreakdown {
 /**
  * Calculates the effective capital gains tax rate if the same amount
  * were received as capital gains rather than salary.
- * Uses 2024-25 rates (general assets, not residential property).
+ * Uses 2025-26 rates (general assets, not residential property).
  */
 function calculateCGTComparison(amount: number): {
   basicRate: number;

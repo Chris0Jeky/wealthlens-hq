@@ -6,9 +6,9 @@
  * with a comparison to capital gains tax to highlight the disparity
  * between how earned income and investment gains are taxed in the UK.
  *
- * Source: HMRC Income Tax rates and National Insurance rates 2024-25
+ * Source: HMRC Income Tax rates and National Insurance rates 2025-26
  * URL: https://www.gov.uk/income-tax-rates
- * Accessed: 2026-05-16
+ * Accessed: 2026-05-17
  */
 import { ref, computed } from "vue";
 import {
@@ -266,7 +266,7 @@ function formatGBP(value: number): string {
             </span>.
           </p>
           <p class="calc__comparison-note">
-            Capital gains tax (2024-25): 10% basic rate / 20% higher rate,
+            Capital gains tax (2025-26): 18% basic rate / 24% higher rate,
             with a £3,000 annual exempt amount. This comparison uses general
             asset rates (not residential property).
           </p>
@@ -277,7 +277,7 @@ function formatGBP(value: number): string {
       <div class="calc__source">
         <span class="wl-source">
           HMRC Income Tax rates, National Insurance rates, and Capital Gains
-          Tax rates for the 2024-25 tax year.
+          Tax rates for the 2025-26 tax year.
         </span>
         <p class="calc__source-detail">
           <a
@@ -303,7 +303,7 @@ function formatGBP(value: number): string {
           >
             CGT rates
           </a>
-          &middot; Accessed 2026-05-16
+          &middot; Accessed 2026-05-17
         </p>
       </div>
 
