@@ -49,6 +49,7 @@ self.addEventListener('fetch', (event) => {
   if (
     request.mode === 'navigate' ||
     request.destination === 'document' ||
+    url.pathname.startsWith('/api/') ||
     url.pathname.startsWith('/wealthlens-hq/api/')
   ) {
     event.respondWith(
