@@ -146,6 +146,20 @@ describe('DatasetSearch', () => {
     expect(pushMock.mock.calls[0][0]).toMatch(/^\/charts\//)
   })
 
+  it('falls back to dataset detail route when a result has no chart route', async () => {
+    const wrapper = factory()
+    const input = wrapper.find('input[type="search"]')
+    await input.setValue('manual-only')
+    await flushPromises()
+
+    const vm = wrapper.vm as unknown as {
+      navigateToDataset: (entry: { name: string }) => void
+    }
+    vm.navigateToDataset({ name: 'manual-only' })
+
+    expect(pushMock).toHaveBeenCalledWith('/datasets/manual-only')
+  })
+
   it('supports keyboard navigation with ArrowDown', async () => {
     const wrapper = factory()
     const input = wrapper.find('input[type="search"]')
@@ -193,6 +207,18 @@ describe('DatasetSearch', () => {
     await input.trigger('keydown', { key: 'Escape' })
     await flushPromises()
     expect(wrapper.find('#dataset-search-results').exists()).toBe(false)
+  })
+
+  it('clears a zero-result search on Escape key', async () => {
+    const wrapper = factory()
+    const input = wrapper.find('input[type="search"]')
+    await input.setValue('xyznonexistent')
+    await flushPromises()
+    expect(wrapper.text()).toContain('No datasets match your search')
+    await input.trigger('keydown', { key: 'Escape' })
+    await flushPromises()
+    expect(wrapper.find('#dataset-search-results').exists()).toBe(false)
+    expect((input.element as HTMLInputElement).value).toBe('')
   })
 
   it('has aria-live region for result count', () => {

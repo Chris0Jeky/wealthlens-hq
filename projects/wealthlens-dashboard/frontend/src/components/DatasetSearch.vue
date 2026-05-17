@@ -2,6 +2,7 @@
 import { ref, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useDatasetSearch, DATASET_CATEGORIES } from '@/composables/useDatasetSearch'
+import { isValidChart } from '@/utils/chartConstants'
 import type { DatasetEntry } from '@/composables/useDatasetSearch'
 
 const router = useRouter()
@@ -38,6 +39,12 @@ watch(
 )
 
 function onKeydown(event: KeyboardEvent) {
+  if (event.key === 'Escape') {
+    event.preventDefault()
+    clearSearch()
+    return
+  }
+
   const count = filteredDatasets.value.length
   if (count === 0) return
 
@@ -58,10 +65,6 @@ function onKeydown(event: KeyboardEvent) {
         navigateToDataset(filteredDatasets.value[activeIndex.value])
       }
       break
-    case 'Escape':
-      event.preventDefault()
-      clearSearch()
-      break
   }
 }
 
@@ -75,7 +78,7 @@ function scrollActiveIntoView() {
 }
 
 function navigateToDataset(entry: DatasetEntry) {
-  router.push(`/charts/${entry.name}`)
+  router.push(isValidChart(entry.name) ? `/charts/${entry.name}` : `/datasets/${entry.name}`)
 }
 
 function toggleCategory(id: string) {

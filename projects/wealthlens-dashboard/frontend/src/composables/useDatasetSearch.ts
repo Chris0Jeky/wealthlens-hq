@@ -38,14 +38,14 @@ function categoriseDataset(meta: ChartMeta): { category: CategoryId; tags: strin
   if (text.includes('cgt') || text.includes('capital gains') || text.includes('tax')) {
     return { category: 'tax', tags: ['tax', 'hmrc', 'capital gains'] }
   }
+  if (text.includes('region')) {
+    return { category: 'regional', tags: ['regional'] }
+  }
   if (text.includes('income') || text.includes('earnings') || text.includes('pay')) {
     return { category: 'income', tags: ['income', 'earnings'] }
   }
   if (text.includes('wealth') || text.includes('decile')) {
     return { category: 'wealth', tags: ['wealth', 'inequality', 'ons'] }
-  }
-  if (text.includes('region')) {
-    return { category: 'regional', tags: ['regional'] }
   }
 
   return { category: 'wealth', tags: ['inequality'] }
