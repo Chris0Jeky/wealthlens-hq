@@ -1,11 +1,15 @@
 <script setup lang="ts">
 import { SUPPORTED_CHART_NAMES } from '@/utils/chartConstants'
+import FreshnessIndicator from '@/components/FreshnessIndicator.vue'
+import type { DatasetFreshnessEntry } from '@/types/api'
 
 const props = defineProps<{
   name: string
   description: string
   /** Override chart availability. When omitted, checks SUPPORTED_CHART_NAMES. */
   hasChart?: boolean
+  /** Freshness info for this dataset (optional — hidden if not provided). */
+  freshness?: DatasetFreshnessEntry
 }>()
 
 const chartAvailable =
@@ -21,7 +25,10 @@ const downloadUrl = `/api/data/${props.name}/download`
     :aria-label="`Dataset: ${name}`"
     class="rounded-lg border border-[var(--wl-rule)] p-6 hover:shadow-md transition-shadow"
   >
-    <h3 class="text-lg font-semibold mb-2">{{ name }}</h3>
+    <div class="flex items-center justify-between mb-2">
+      <h3 class="text-lg font-semibold">{{ name }}</h3>
+      <FreshnessIndicator v-if="freshness" :freshness="freshness" />
+    </div>
     <p class="text-sm text-[var(--wl-ink-muted)] mb-3">{{ description }}</p>
     <div class="flex items-center gap-4">
       <router-link
