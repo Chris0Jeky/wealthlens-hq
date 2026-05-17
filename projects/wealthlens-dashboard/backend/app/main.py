@@ -6,6 +6,8 @@ Serves processed UK wealth inequality datasets as JSON for the Vue 3 frontend.
 from __future__ import annotations
 
 import os
+import platform
+import subprocess
 import time
 from datetime import UTC, datetime
 
@@ -24,6 +26,34 @@ from app.timeout_middleware import TimeoutMiddleware
 setup_logging(os.environ.get("LOG_LEVEL", "INFO"))
 
 _started_at: float = time.time()
+
+
+def _get_git_commit() -> str:
+    """Return the short git commit hash, or 'unknown' if unavailable.
+
+    Checks the GIT_COMMIT environment variable first (standard in CI/CD),
+    then falls back to subprocess.  Gracefully handles missing git binary,
+    missing .git directory, timeouts, and any other subprocess failures so
+    CI environments without git still start cleanly.
+    """
+    env_commit = os.environ.get("GIT_COMMIT")
+    if env_commit:
+        return env_commit[:7]
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "--short", "HEAD"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            return result.stdout.strip()
+    except (OSError, subprocess.SubprocessError):
+        pass
+    return "unknown"
+
+
+_git_commit: str = _get_git_commit()
 
 # ---------------------------------------------------------------------------
 # CORS configuration
@@ -45,7 +75,7 @@ tags_metadata = [
 
 app = FastAPI(
     title="WealthLens UK API",
-    version="0.1.0",
+    version="0.2.0",
     description=(
         "Open API for UK wealth inequality data. "
         "Serves processed datasets from the World Inequality Database, "
@@ -96,14 +126,49 @@ def health_data() -> dict:
 
 @app.get("/health", tags=["health"], summary="Liveness probe")
 def health() -> dict:
-    """Liveness probe with version and uptime info.
+    """Enhanced liveness probe with dataset availability info.
 
-    Returns status, version, start time and uptime for load balancers
-    and uptime monitors.
+    Returns status, dataset count, and ISO timestamp for load balancers
+    and uptime monitors.  Preserves backward-compatible ``"status": "ok"``
+    while adding new informational fields.
     """
     return {
         "status": "ok",
+        "datasets_loaded": len(data.DATASETS),
+        "timestamp": datetime.now(tz=UTC).isoformat(),
+    }
+
+
+@app.get("/api/version", tags=["health"], summary="API version info")
+def version() -> dict:
+    """Return public API version metadata.
+
+    Only exposes fields safe for unauthenticated access and consumed by
+    the frontend health status widget: version, dataset count, and status.
+    """
+    return {
         "version": app.version,
-        "started_at_utc": datetime.fromtimestamp(_started_at, tz=UTC).isoformat(),
-        "uptime_seconds": int(time.time() - _started_at),
+        "datasets_available": len(data.DATASETS),
+        "status": "ok",
+    }
+
+
+@app.get("/api/version/debug", tags=["health"], summary="Debug runtime info")
+def version_debug() -> dict:
+    """Return detailed runtime info for debugging deployments.
+
+    Only available in non-production environments.  Returns 404 when
+    APP_ENV is set to 'production'.
+    """
+    from fastapi import HTTPException
+
+    if os.environ.get("APP_ENV") == "production":
+        raise HTTPException(status_code=404, detail="Not found")
+    return {
+        "version": app.version,
+        "commit": _git_commit,
+        "environment": os.environ.get("APP_ENV", "development"),
+        "python_version": platform.python_version(),
+        "datasets_available": len(data.DATASETS),
+        "uptime_seconds": round(time.time() - _started_at, 2),
     }
