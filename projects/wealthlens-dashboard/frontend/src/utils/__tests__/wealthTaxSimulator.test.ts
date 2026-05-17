@@ -2,14 +2,18 @@ import { describe, it, expect } from "vitest";
 import {
   simulateWealthTax,
   estimateHouseholdsAbove,
+  estimateWealthAbove,
   estimateExcessWealth,
   formatRevenue,
   formatHouseholds,
   formatThreshold,
   getSpendingComparison,
   PRESET_SCENARIOS,
+  SIMULATOR_SOURCES,
+  SPENDING_COMPARISONS,
   TOTAL_HOUSEHOLDS,
   UK_GDP,
+  WEALTH_THRESHOLDS,
 } from "@/utils/wealthTaxSimulator";
 
 describe("simulateWealthTax", () => {
@@ -123,6 +127,18 @@ describe("estimateHouseholdsAbove", () => {
     expect(at1m).toBeGreaterThan(2_000_000);
     expect(at1m).toBeLessThan(4_000_000);
   });
+
+  it("uses empirical low-threshold anchors instead of the fallback", () => {
+    expect(estimateHouseholdsAbove(250_000)).toBe(15_537_000);
+    expect(estimateHouseholdsAbove(500_000)).toBe(8_246_000);
+    expect(estimateHouseholdsAbove(1_000_000)).toBe(3_004_000);
+  });
+});
+
+describe("estimateWealthAbove", () => {
+  it("uses the empirical first threshold anchor at GBP250k", () => {
+    expect(estimateWealthAbove(250_000)).toBe(12_217_000_000_000);
+  });
 });
 
 describe("estimateExcessWealth", () => {
@@ -206,5 +222,19 @@ describe("getSpendingComparison", () => {
   it("mentions a relevant spending item", () => {
     const result = getSpendingComparison(10_000_000_000);
     expect(result).not.toBeNull();
+  });
+});
+
+describe("source metadata", () => {
+  it("keeps estimate anchors backed by source URLs and access dates", () => {
+    expect(WEALTH_THRESHOLDS.length).toBeGreaterThan(0);
+    for (const source of SIMULATOR_SOURCES.references) {
+      expect(source.url).toMatch(/^https:\/\//);
+      expect(source.accessDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    }
+    for (const comparison of SPENDING_COMPARISONS) {
+      expect(comparison.sourceUrl).toMatch(/^https:\/\//);
+      expect(comparison.accessDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    }
   });
 });

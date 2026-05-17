@@ -10,9 +10,13 @@
  * - ONS Wealth and Assets Survey, Round 7, April 2018 to March 2020
  *   URL: https://www.ons.gov.uk/peoplepopulationandcommunity/personalandhouseholdfinances/incomeandwealth/bulletins/totalwealthingreatbritain/april2018tomarch2020
  *   Accessed: 2026-05-16
- * - Wealth Tax Commission (2020)
+ * - Advani, Hughson and Tarrant (2021), Revenue and distributional
+ *   modelling for a UK wealth tax
+ *   URL: https://doi.org/10.1111/1475-5890.12280
+ *   Accessed: 2026-05-17
+ * - Wealth Tax Commission (2020), A wealth tax for the UK
  *   URL: https://www.ukwealth.tax/
- *   Accessed: 2026-05-16
+ *   Accessed: 2026-05-17
  *
  * All calculation is client-side. No personal data is stored or transmitted.
  */
@@ -263,7 +267,7 @@ function onSliderChange() {
       <!-- Stats grid -->
       <div class="sim__stat-grid">
         <div class="sim__stat">
-          <span class="sim__stat-label">Households affected</span>
+          <span class="sim__stat-label">Taxable units affected</span>
           <span class="sim__stat-value wl-num">
             {{ formatHouseholds(results.affectedHouseholds) }}
           </span>
@@ -305,23 +309,20 @@ function onSliderChange() {
       <div class="sim__source">
         <span class="wl-source">Sources:</span>
         <p class="sim__source-detail">
-          <a
-            :href="SIMULATOR_SOURCES.primaryUrl"
-            target="_blank"
-            rel="noopener"
+          <span
+            v-for="source in SIMULATOR_SOURCES.references"
+            :key="source.url"
+            class="sim__source-item"
           >
-            {{ SIMULATOR_SOURCES.primary }}
-          </a>
-          <br />
-          <a
-            :href="SIMULATOR_SOURCES.secondaryUrl"
-            target="_blank"
-            rel="noopener"
-          >
-            {{ SIMULATOR_SOURCES.secondary }}
-          </a>
-          <br />
-          Accessed {{ SIMULATOR_SOURCES.accessed }}
+            <a
+              :href="source.url"
+              target="_blank"
+              rel="noopener"
+            >
+              {{ source.label }}
+            </a>
+            <span>Accessed {{ source.accessDate }}</span>
+          </span>
         </p>
       </div>
     </footer>
@@ -695,11 +696,19 @@ function onSliderChange() {
 }
 
 .sim__source-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
   font-family: var(--wl-mono);
   font-size: 11px;
   color: var(--wl-ink-muted);
   margin: 8px 0 0;
-  line-height: 1.8;
+  line-height: 1.5;
+}
+.sim__source-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 .sim__source-detail a {
   color: var(--wl-red);

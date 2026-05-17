@@ -171,11 +171,14 @@ describe("WealthTaxSimulator", () => {
       global: { stubs: globalStubs },
     });
     const links = wrapper.findAll(".sim__source-detail a");
-    expect(links.length).toBeGreaterThanOrEqual(2);
+    expect(links.length).toBeGreaterThanOrEqual(3);
     // First link should point to ONS
     expect(links[0].attributes("href")).toContain("ons.gov.uk");
-    // Second link should point to wealth tax commission
-    expect(links[1].attributes("href")).toContain("ukwealth.tax");
+    // Threshold modelling source should be included
+    expect(links[1].attributes("href")).toContain("doi.org");
+    // Wealth Tax Commission source should be included
+    expect(links[2].attributes("href")).toContain("ukwealth.tax");
+    expect(wrapper.text()).toContain("Accessed 2026-05-17");
   });
 
   it("has aria-live on results section for screen reader updates", () => {

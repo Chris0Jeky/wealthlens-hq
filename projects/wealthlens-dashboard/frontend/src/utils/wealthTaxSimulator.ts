@@ -10,10 +10,13 @@
  * - ONS Wealth and Assets Survey, Round 7, April 2018 to March 2020
  *   URL: https://www.ons.gov.uk/peoplepopulationandcommunity/personalandhouseholdfinances/incomeandwealth/bulletins/totalwealthingreatbritain/april2018tomarch2020
  *   Accessed: 2026-05-16
- * - Wealth Tax Commission (2020)
+ * - Advani, Hughson and Tarrant (2021), Revenue and distributional
+ *   modelling for a UK wealth tax
+ *   URL: https://doi.org/10.1111/1475-5890.12280
+ *   Accessed: 2026-05-17
+ * - Wealth Tax Commission (2020), A wealth tax for the UK
  *   URL: https://www.ukwealth.tax/
- *   Accessed: 2026-05-16
- * - Resolution Foundation wealth distribution estimates
+ *   Accessed: 2026-05-17
  */
 
 // ============================================================
@@ -77,23 +80,30 @@ export const PARETO_ALPHA = 1.5;
 export const PARETO_XMIN = 250_000;
 
 /**
- * Wealth distribution reference points used for estimating
- * the number of households above each threshold.
- * Source: ONS WAS Round 7 + Wealth Tax Commission estimates
+ * Wealth distribution reference points used for estimating affected
+ * taxable units and wealth above each threshold.
+ *
+ * Low-threshold taxpayer counts and taxable-base anchors are from
+ * Advani, Hughson and Tarrant's Wealth Tax Commission modelling. The
+ * published tables give taxpayers above each threshold and the flat
+ * annual rate required to raise GBP10bn before administration costs;
+ * taxable bases below are derived as GBP10bn / published rate, then
+ * converted to total wealth above threshold by adding the exempt slice.
+ *
+ * Source URL: https://doi.org/10.1111/1475-5890.12280
+ * Accessed: 2026-05-17
  */
 export const WEALTH_THRESHOLDS: ReadonlyArray<{
   threshold: number;
   householdsAbove: number;
   wealthAbove: number;
 }> = [
-  { threshold: 250_000, householdsAbove: 14_050_000, wealthAbove: 13_700_000_000_000 },
-  { threshold: 500_000, householdsAbove: 7_025_000, wealthAbove: 11_400_000_000_000 },
-  { threshold: 1_000_000, householdsAbove: 2_810_000, wealthAbove: 7_800_000_000_000 },
-  { threshold: 1_600_000, householdsAbove: 1_405_000, wealthAbove: 5_300_000_000_000 },
-  { threshold: 2_000_000, householdsAbove: 984_000, wealthAbove: 4_500_000_000_000 },
-  { threshold: 3_600_000, householdsAbove: 281_000, wealthAbove: 2_900_000_000_000 },
-  { threshold: 5_000_000, householdsAbove: 150_000, wealthAbove: 2_200_000_000_000 },
-  { threshold: 10_000_000, householdsAbove: 50_000, wealthAbove: 1_200_000_000_000 },
+  { threshold: 250_000, householdsAbove: 15_537_000, wealthAbove: 12_217_000_000_000 },
+  { threshold: 500_000, householdsAbove: 8_246_000, wealthAbove: 9_679_000_000_000 },
+  { threshold: 1_000_000, householdsAbove: 3_004_000, wealthAbove: 6_230_000_000_000 },
+  { threshold: 2_000_000, householdsAbove: 626_000, wealthAbove: 3_006_000_000_000 },
+  { threshold: 5_000_000, householdsAbove: 83_000, wealthAbove: 1_514_000_000_000 },
+  { threshold: 10_000_000, householdsAbove: 22_000, wealthAbove: 1_113_000_000_000 },
 ];
 
 // ============================================================
@@ -111,14 +121,20 @@ export const WEALTH_THRESHOLDS: ReadonlyArray<{
  */
 export function estimateHouseholdsAbove(threshold: number): number {
   if (threshold <= 0) return TOTAL_HOUSEHOLDS;
-  if (threshold <= PARETO_XMIN) {
-    // Linear interpolation below the Pareto range
-    const fraction = 1 - threshold / (PARETO_XMIN * 2);
-    return Math.round(fraction * TOTAL_HOUSEHOLDS);
+  if (threshold < PARETO_XMIN) {
+    // Linear interpolation from all households to the first empirical anchor.
+    const firstPoint = WEALTH_THRESHOLDS[0];
+    const fraction = threshold / PARETO_XMIN;
+    return Math.round(
+      TOTAL_HOUSEHOLDS + fraction * (firstPoint.householdsAbove - TOTAL_HOUSEHOLDS),
+    );
   }
 
   // Find bracketing known thresholds
   const points = WEALTH_THRESHOLDS;
+  const exactPoint = points.find((point) => point.threshold === threshold);
+  if (exactPoint) return exactPoint.householdsAbove;
+
   for (let i = 0; i < points.length - 1; i++) {
     if (threshold >= points[i].threshold && threshold <= points[i + 1].threshold) {
       // Log-linear interpolation between known points
@@ -150,14 +166,18 @@ export function estimateHouseholdsAbove(threshold: number): number {
  */
 export function estimateWealthAbove(threshold: number): number {
   if (threshold <= 0) return TOTAL_UK_WEALTH;
-  if (threshold <= PARETO_XMIN) {
-    // Linear interpolation
-    const fraction = 1 - threshold / PARETO_XMIN;
-    return TOTAL_UK_WEALTH * (0.5 + 0.5 * fraction);
+  if (threshold < PARETO_XMIN) {
+    // Linear interpolation from all wealth to the first empirical anchor.
+    const firstPoint = WEALTH_THRESHOLDS[0];
+    const fraction = threshold / PARETO_XMIN;
+    return TOTAL_UK_WEALTH + fraction * (firstPoint.wealthAbove - TOTAL_UK_WEALTH);
   }
 
   // Find bracketing known thresholds
   const points = WEALTH_THRESHOLDS;
+  const exactPoint = points.find((point) => point.threshold === threshold);
+  if (exactPoint) return exactPoint.wealthAbove;
+
   for (let i = 0; i < points.length - 1; i++) {
     if (threshold >= points[i].threshold && threshold <= points[i + 1].threshold) {
       // Log-linear interpolation between known points
@@ -317,18 +337,43 @@ export function formatThreshold(value: number): string {
 
 /**
  * Public spending comparisons for context (approximate annual costs).
- * Source: Various UK Government departmental reports, 2023-24
+ * Each estimate keeps a source URL and access date for the repo's
+ * data-integrity rule, even though getSpendingComparison only returns
+ * the display label.
  */
 export const SPENDING_COMPARISONS: ReadonlyArray<{
   label: string;
   annualCost: number;
+  sourceUrl: string;
+  accessDate: string;
 }> = [
-  { label: "NHS England annual budget", annualCost: 165_000_000_000 },
-  { label: "building 100,000 social homes per year", annualCost: 20_000_000_000 },
-  { label: "tripling the state pension top-up", annualCost: 15_000_000_000 },
-  { label: "abolishing university tuition fees", annualCost: 10_000_000_000 },
-  { label: "doubling the schools budget increase", annualCost: 8_000_000_000 },
-  { label: "free school meals for all primary pupils", annualCost: 1_000_000_000 },
+  {
+    label: "NHS England resource budget",
+    annualCost: 168_800_000_000,
+    sourceUrl: "https://www.england.nhs.uk/long-read/our-2023-24-business-plan/",
+    accessDate: "2026-05-17",
+  },
+  {
+    label: "government grant funding for 90,000 social homes",
+    annualCost: 11_800_000_000,
+    sourceUrl:
+      "https://england.shelter.org.uk/media/press_release/investing_in_social_housing_could_add_over_50bn_to_the_economy_",
+    accessDate: "2026-05-17",
+  },
+  {
+    label: "abolishing tuition fees and restoring maintenance grants",
+    annualCost: 8_000_000_000,
+    sourceUrl:
+      "https://ifs.org.uk/articles/labours-higher-education-proposals-will-cost-ps8bn-year-although-increase-deficit-more",
+    accessDate: "2026-05-17",
+  },
+  {
+    label: "expanded free school meals in England",
+    annualCost: 1_000_000_000,
+    sourceUrl:
+      "https://ifs.org.uk/articles/benefits-and-costs-expanding-access-free-school-meals-will-grow-over-time",
+    accessDate: "2026-05-17",
+  },
 ];
 
 /**
@@ -396,12 +441,23 @@ export const PRESET_SCENARIOS: readonly PresetScenario[] = [
 // ============================================================
 
 export const SIMULATOR_SOURCES = {
-  primary: "ONS Wealth and Assets Survey, Round 7, April 2018 to March 2020",
-  primaryUrl:
-    "https://www.ons.gov.uk/peoplepopulationandcommunity/personalandhouseholdfinances/incomeandwealth/bulletins/totalwealthingreatbritain/april2018tomarch2020",
-  secondary: "Wealth Tax Commission (2020)",
-  secondaryUrl: "https://www.ukwealth.tax/",
-  accessed: "2026-05-16",
+  references: [
+    {
+      label: "ONS Wealth and Assets Survey, Round 7, April 2018 to March 2020",
+      url: "https://www.ons.gov.uk/peoplepopulationandcommunity/personalandhouseholdfinances/incomeandwealth/bulletins/totalwealthingreatbritain/april2018tomarch2020",
+      accessDate: "2026-05-16",
+    },
+    {
+      label: "Advani, Hughson and Tarrant (2021), Revenue and distributional modelling for a UK wealth tax",
+      url: "https://doi.org/10.1111/1475-5890.12280",
+      accessDate: "2026-05-17",
+    },
+    {
+      label: "Wealth Tax Commission (2020), A wealth tax for the UK",
+      url: "https://www.ukwealth.tax/",
+      accessDate: "2026-05-17",
+    },
+  ],
   disclaimer:
     "This is a simplified model for illustration. Actual revenue would depend on behavioral responses, avoidance, and implementation details.",
 } as const;
