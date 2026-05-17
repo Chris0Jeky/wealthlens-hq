@@ -25,14 +25,36 @@ describe("Router configuration", () => {
   });
 
   it("has the expected number of route definitions", () => {
-    // home, dataset-detail, chart, methodology, about (x2), contribute,
-    // wealth-calculator, not-found catch-all
-    expect(router.getRoutes()).toHaveLength(8);
+    // home, dataset-detail, chart, methodology, data-sources, about,
+    // contribute, wealth-calculator, tax-calculator, not-found catch-all
+    expect(router.getRoutes()).toHaveLength(10);
+  });
+
+  it('resolves /data-sources to the "data-sources" route', () => {
+    const resolved = router.resolve("/data-sources");
+    expect(resolved.name).toBe("data-sources");
+  });
+
+  it('resolves /tools/tax-calculator to the "tax-calculator" route', () => {
+    const resolved = router.resolve("/tools/tax-calculator");
+    expect(resolved.name).toBe("tax-calculator");
   });
 
   it('the "chart" route has a dynamic :name param', () => {
     const chartRoute = router.getRoutes().find((r) => r.name === "chart");
     expect(chartRoute).toBeDefined();
     expect(chartRoute!.path).toBe("/charts/:name");
+  });
+});
+
+describe("Route-level code splitting", () => {
+  it("all route components use lazy loading (function components)", () => {
+    const routes = router.getRoutes();
+    for (const route of routes) {
+      const components = route.components ?? {};
+      for (const [, comp] of Object.entries(components)) {
+        expect(typeof comp).toBe("function");
+      }
+    }
   });
 });

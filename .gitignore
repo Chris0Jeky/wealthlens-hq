@@ -27,12 +27,16 @@ build/
 .vite/
 coverage/
 *.tsbuildinfo
+.lighthouseci/
 
 # Transpile artifacts — TypeScript source is canonical
 projects/wealthlens-dashboard/frontend/src/**/*.js
 
 # Generated static API data (built by scripts/generate_static_api.py)
-projects/wealthlens-dashboard/frontend/public/data/
+# Ignore generated files but whitelist committed static fallbacks.
+projects/wealthlens-dashboard/frontend/public/data/*
+!projects/wealthlens-dashboard/frontend/public/data/wealth-shares.json
+!projects/wealthlens-dashboard/frontend/public/data/wealth-shares-metadata.json
 
 # Data and generated artefacts
 *.parquet
@@ -42,6 +46,11 @@ projects/wealthlens-dashboard/frontend/public/data/
 projects/wealthlens-dashboard/data/raw/
 projects/wealthlens-dashboard/data/processed/
 projects/wealthlens-dashboard/social-assets/
+
+# Playwright
+test-results/
+playwright-report/
+blob-report/
 
 # OS / editor noise
 .DS_Store

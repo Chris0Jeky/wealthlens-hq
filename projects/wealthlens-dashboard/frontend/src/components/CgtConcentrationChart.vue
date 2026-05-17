@@ -10,7 +10,7 @@
  *
  * Accessibility: WCAG AA high-contrast colors, aria-label, escapeHtml tooltips.
  */
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { use } from "echarts/core";
 import { CanvasRenderer } from "echarts/renderers";
 import { BarChart, LineChart } from "echarts/charts";
@@ -22,7 +22,8 @@ import {
 } from "echarts/components";
 import VChart from "vue-echarts";
 import { useChartData } from "@/composables/useChartData";
-import { escapeHtml } from "@/utils/chart";
+import type { EChartsExportable } from "@/composables/useChartExport";
+import { escapeHtml, warnIfSignificantDataLoss } from "@/utils/chart";
 
 // Register only the ECharts modules we need (tree-shaking)
 use([
@@ -36,6 +37,9 @@ use([
 ]);
 
 const { rows, loading, error } = useChartData("cgt-concentration");
+const chart = ref<EChartsExportable | null>(null);
+
+defineExpose({ chart });
 
 /**
  * Respect prefers-reduced-motion (WCAG 2.3.3).
@@ -53,15 +57,15 @@ const COLOR_LINE = "#dc2626";
 
 /** Parsed and sorted data rows. */
 const sortedData = computed(() => {
-  return rows.value
-    .map((r) => ({
-      gainBand: String(r.gain_band ?? ""),
-      bandLower: Number(r.band_lower),
-      shareOfGainsPct: Number(r.share_of_gains_pct),
-      cumulGainsFromTopPct: Number(r.cumul_gains_from_top_pct),
-      shareOfTaxpayersPct: Number(r.share_of_taxpayers_pct),
-      cumulTaxpayersFromTopPct: Number(r.cumul_taxpayers_from_top_pct),
-    }))
+  const mapped = rows.value.map((r) => ({
+    gainBand: String(r.gain_band ?? ""),
+    bandLower: Number(r.band_lower),
+    shareOfGainsPct: Number(r.share_of_gains_pct),
+    cumulGainsFromTopPct: Number(r.cumul_gains_from_top_pct),
+    shareOfTaxpayersPct: Number(r.share_of_taxpayers_pct),
+    cumulTaxpayersFromTopPct: Number(r.cumul_taxpayers_from_top_pct),
+  }));
+  const filtered = mapped
     .filter(
       (r) =>
         r.gainBand &&
@@ -70,6 +74,10 @@ const sortedData = computed(() => {
         !isNaN(r.cumulGainsFromTopPct),
     )
     .sort((a, b) => a.bandLower - b.bandLower);
+
+  warnIfSignificantDataLoss("cgt-concentration", mapped.length, filtered.length);
+
+  return filtered;
 });
 
 const hasData = computed(() => sortedData.value.length > 0);
@@ -219,6 +227,7 @@ const option = computed(() => {
       class="w-full"
     >
       <VChart
+        ref="chart"
         class="w-full"
         style="height: 480px"
         :option="option"

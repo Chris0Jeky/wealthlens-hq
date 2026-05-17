@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { useDataStore, type DatasetRow } from '@/stores/data'
+import { usePageMeta } from '@/composables/usePageMeta'
 
 const route = useRoute()
 const store = useDataStore()
@@ -29,6 +30,24 @@ const chartTitles: Record<string, string> = {
 }
 
 const hasChart = computed(() => datasetName.value in chartTitles)
+
+const pageTitle = computed(
+  () => chartTitles[datasetName.value] ?? datasetName.value,
+)
+
+usePageMeta({
+  title: computed(() => `${pageTitle.value} — Data Source`),
+  description: computed(
+    () => `Data source details and preview for the ${pageTitle.value} dataset on WealthLens UK.`,
+  ),
+  url: computed(
+    () => `https://chris0jeky.github.io/wealthlens-hq/datasets/${datasetName.value}`,
+  ),
+  image: computed(
+    () => `https://chris0jeky.github.io/wealthlens-hq/og/${datasetName.value}.png`,
+  ),
+  imageAlt: computed(() => `${pageTitle.value} dataset — WealthLens UK`),
+})
 
 onMounted(async () => {
   try {
