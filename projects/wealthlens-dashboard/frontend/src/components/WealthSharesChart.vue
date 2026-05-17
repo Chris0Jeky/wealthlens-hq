@@ -21,7 +21,7 @@ import {
 } from "echarts/components";
 import VChart from "vue-echarts";
 import { useChartData } from "@/composables/useChartData";
-import { escapeHtml, safeMinMax } from "@/utils/chart";
+import { escapeHtml, safeMinMax, warnIfSignificantDataLoss } from "@/utils/chart";
 
 // Register only the ECharts modules we need (tree-shaking)
 use([
@@ -46,13 +46,16 @@ const prefersReducedMotion =
 
 /** Extract sorted year+value pairs for a given percentile key. */
 function seriesFor(percentile: string): { years: number[]; values: number[] } {
-  const filtered = rows.value
-    .filter((r) => r.percentile === percentile)
-    .map((r) => ({
-      year: Number(r.year),
-      value: Number(r.value),
-    }))
+  const matched = rows.value.filter((r) => r.percentile === percentile);
+  const mapped = matched.map((r) => ({
+    year: Number(r.year),
+    value: Number(r.value),
+  }));
+  const filtered = mapped
+    .filter((r) => !isNaN(r.year) && !isNaN(r.value))
     .sort((a, b) => a.year - b.year);
+
+  warnIfSignificantDataLoss(`wealth-shares[${percentile}]`, mapped.length, filtered.length);
 
   return {
     years: filtered.map((r) => r.year),

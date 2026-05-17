@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router'
+import HealthStatus from './HealthStatus.vue'
 
 const year = new Date().getFullYear()
 </script>
@@ -128,6 +129,7 @@ const year = new Date().getFullYear()
     <!-- Bottom bar -->
     <div class="foot-base">
       <span>{{ $t('footer.copyright', { year }) }} · {{ $t('footer.mitLicensed') }}</span>
+      <HealthStatus />
       <span>{{ $t('footer.tagline') }}</span>
     </div>
   </footer>

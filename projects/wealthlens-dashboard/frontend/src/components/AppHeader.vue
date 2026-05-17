@@ -102,6 +102,9 @@ const today = new Date().toLocaleDateString('en-GB', {
         <RouterLink to="/charts/wealth-shares" class="nav-link" active-class="active" @click="closeMenu()">
           {{ $t('nav.data') }}
         </RouterLink>
+        <RouterLink to="/data-sources" class="nav-link" active-class="active" @click="closeMenu()">
+          {{ $t('nav.sources') }}
+        </RouterLink>
         <RouterLink to="/methodology" class="nav-link" active-class="active" @click="closeMenu()">
           {{ $t('nav.methodology') }}
         </RouterLink>
@@ -157,6 +160,9 @@ const today = new Date().toLocaleDateString('en-GB', {
       </RouterLink>
       <RouterLink to="/charts/wealth-shares" class="mobile-link" active-class="active" @click="closeMenu()">
         {{ $t('nav.data') }}
+      </RouterLink>
+      <RouterLink to="/data-sources" class="mobile-link" active-class="active" @click="closeMenu()">
+        {{ $t('nav.sources') }}
       </RouterLink>
       <RouterLink to="/methodology" class="mobile-link" active-class="active" @click="closeMenu()">
         {{ $t('nav.methodology') }}

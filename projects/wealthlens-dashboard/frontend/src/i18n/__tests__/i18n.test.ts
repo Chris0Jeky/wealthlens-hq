@@ -41,6 +41,7 @@ describe('i18n configuration', () => {
   it('loads the English locale messages', () => {
     expect(i18n.global.t('nav.home')).toBe('Front page')
     expect(i18n.global.t('nav.data')).toBe('The data')
+    expect(i18n.global.t('nav.sources')).toBe('Sources')
     expect(i18n.global.t('nav.methodology')).toBe('Methodology')
   })
 
