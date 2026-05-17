@@ -1,11 +1,10 @@
 <script setup lang="ts">
 /**
- * WealthSharesChart — Interactive line chart showing top 1% and top 10%
- * wealth share in the UK over time.
+ * ProductivityPayChart — Diverging line chart showing the growing gap
+ * between productivity growth and real pay growth in the UK since 1970.
  *
- * Data source: World Inequality Database (wid.world)
- * Columns: year, percentile, value
- * Percentile filters: p99p100 (top 1%), p90p100 (top 10%)
+ * Data source: ONS Labour Productivity / ASHE (illustrative composite)
+ * Columns: year, productivity_index, pay_index, gap_pct
  *
  * Accessibility: WCAG AA high-contrast colors, aria-label, keyboard tooltip.
  */
@@ -33,77 +32,58 @@ use([
   LegendComponent,
 ]);
 
-const { rows, loading, error } = useChartData("wealth-shares");
+const { rows, loading, error } = useChartData("productivity-pay");
 
 /**
  * Respect prefers-reduced-motion (WCAG 2.3.3).
- * Disables ECharts smooth lines and animations when the user has
- * requested reduced motion in their OS settings.
  */
 const prefersReducedMotion =
   typeof window !== "undefined" &&
   window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-/** Extract sorted year+value pairs for a given percentile key. */
-function seriesFor(percentile: string): { years: number[]; values: number[] } {
-  const matched = rows.value.filter((r) => r.percentile === percentile);
-  const mapped = matched.map((r) => ({
+// WCAG AA high-contrast colors
+const COLOR_PRODUCTIVITY = "#1a56db"; // Blue — ~7.2:1
+const COLOR_PAY = "#dc2626"; // Red — ~4.6:1
+
+/** Sorted data extracted from rows. */
+const chartData = computed(() => {
+  const mapped = rows.value.map((r) => ({
     year: Number(r.year),
-    value: Number(r.value),
+    productivity: Number(r.productivity_index),
+    pay: Number(r.pay_index),
   }));
-  const filtered = mapped
-    .filter((r) => !isNaN(r.year) && !isNaN(r.value))
+  const sorted = mapped
+    .filter((r) => !isNaN(r.year) && !isNaN(r.productivity) && !isNaN(r.pay))
     .sort((a, b) => a.year - b.year);
 
-  warnIfSignificantDataLoss(`wealth-shares[${percentile}]`, mapped.length, filtered.length);
+  warnIfSignificantDataLoss("productivity-pay", mapped.length, sorted.length);
 
   return {
-    years: filtered.map((r) => r.year),
-    values: filtered.map((r) => r.value),
+    years: sorted.map((r) => r.year),
+    productivity: sorted.map((r) => r.productivity),
+    pay: sorted.map((r) => r.pay),
   };
-}
-
-// WCAG AA high-contrast colors against white background
-// #1a56db (blue) contrast ratio ~7.2:1 — top 10%
-// #dc2626 (red)  contrast ratio ~4.6:1 — top 1%
-const COLOR_TOP_10 = "#1a56db";
-const COLOR_TOP_1 = "#dc2626";
-
-/** Pre-computed series data for top 1% and top 10%. */
-const top1Data = computed(() => seriesFor("p99p100"));
-const top10Data = computed(() => seriesFor("p90p100"));
-
-/** True when the API returned actual data to display. */
-const hasData = computed(
-  () => top1Data.value.years.length > 0 || top10Data.value.years.length > 0,
-);
-
-/** Year range across all series, with empty-array guards. */
-const yearRange = computed(() => {
-  const years = [
-    ...top1Data.value.years,
-    ...top10Data.value.years,
-  ];
-  return safeMinMax(years);
 });
 
-/** Safe min/max for top 10% series values. */
-const top10Range = computed(() => safeMinMax(top10Data.value.values));
+/** True when the API returned actual data to display. */
+const hasData = computed(() => chartData.value.years.length > 0);
 
-/** Safe min/max for top 1% series values. */
-const top1Range = computed(() => safeMinMax(top1Data.value.values));
+/** Year range for aria-label. */
+const yearRange = computed(() => safeMinMax(chartData.value.years));
+
+/** Productivity range for aria-label. */
+const productivityRange = computed(() => safeMinMax(chartData.value.productivity));
+
+/** Pay range for aria-label. */
+const payRange = computed(() => safeMinMax(chartData.value.pay));
 
 const option = computed(() => {
-  const top1 = top1Data.value;
-  const top10 = top10Data.value;
-
-  // Use the longer year array for the x-axis (they should match)
-  const years = top10.years.length >= top1.years.length ? top10.years : top1.years;
+  const data = chartData.value;
 
   return {
     animation: !prefersReducedMotion,
     title: {
-      text: "UK Wealth Concentration Over Time",
+      text: "Productivity vs Pay — The Growing Divergence",
       left: "center",
       textStyle: {
         fontSize: 16,
@@ -118,15 +98,15 @@ const option = computed(() => {
         if (!Array.isArray(params) || params.length === 0) return "";
         let html = `<strong>${escapeHtml(String(params[0].axisValue))}</strong><br/>`;
         for (const p of params) {
-          const pct = typeof p.value === "number" ? p.value.toFixed(1) : String(p.value);
-          html += `${escapeHtml(String(p.seriesName))}: ${escapeHtml(pct)}%<br/>`;
+          const val = typeof p.value === "number" ? p.value.toFixed(1) : String(p.value);
+          html += `${escapeHtml(String(p.seriesName))}: ${escapeHtml(val)}<br/>`;
         }
         return html;
       },
     },
     legend: {
       bottom: 0,
-      data: ["Top 10%", "Top 1%"],
+      data: ["Productivity (index)", "Real Pay (index)"],
       textStyle: { color: "#374151" },
     },
     grid: {
@@ -138,43 +118,42 @@ const option = computed(() => {
     },
     xAxis: {
       type: "category" as const,
-      data: years,
+      data: data.years,
       name: "Year",
       nameLocation: "middle" as const,
       nameGap: 30,
       axisLabel: {
         color: "#374151",
-        rotate: years.length > 30 ? 45 : 0,
+        rotate: data.years.length > 30 ? 45 : 0,
       },
     },
     yAxis: {
       type: "value" as const,
-      name: "Share of wealth (%)",
+      name: "Index (1997 = 100)",
       nameLocation: "middle" as const,
       nameGap: 50,
       axisLabel: {
         color: "#374151",
-        formatter: "{value}%",
       },
     },
     series: [
       {
-        name: "Top 10%",
+        name: "Productivity (index)",
         type: "line" as const,
-        data: top10.values,
+        data: data.productivity,
         smooth: !prefersReducedMotion,
-        lineStyle: { width: 2.5, color: COLOR_TOP_10 },
-        itemStyle: { color: COLOR_TOP_10 },
+        lineStyle: { width: 2.5, color: COLOR_PRODUCTIVITY },
+        itemStyle: { color: COLOR_PRODUCTIVITY },
         symbol: "circle",
         symbolSize: 4,
       },
       {
-        name: "Top 1%",
+        name: "Real Pay (index)",
         type: "line" as const,
-        data: top1.values,
+        data: data.pay,
         smooth: !prefersReducedMotion,
-        lineStyle: { width: 2.5, color: COLOR_TOP_1 },
-        itemStyle: { color: COLOR_TOP_1 },
+        lineStyle: { width: 2.5, color: COLOR_PAY },
+        itemStyle: { color: COLOR_PAY },
         symbol: "circle",
         symbolSize: 4,
       },
@@ -206,7 +185,7 @@ const option = computed(() => {
   <div v-else>
     <div
       role="img"
-      :aria-label="`Line chart showing UK wealth concentration from ${yearRange.min} to ${yearRange.max}. The top 10 percent held between ${Math.round(top10Range.min)}% and ${Math.round(top10Range.max)}% of total wealth. The top 1 percent held between ${Math.round(top1Range.min)}% and ${Math.round(top1Range.max)}% of total wealth.`"
+      :aria-label="`Line chart showing productivity vs real pay divergence from ${yearRange.min} to ${yearRange.max}. Productivity index ranges from ${productivityRange.min.toFixed(0)} to ${productivityRange.max.toFixed(0)}. Real pay index ranges from ${payRange.min.toFixed(0)} to ${payRange.max.toFixed(0)}.`"
       class="w-full"
     >
       <VChart
@@ -217,16 +196,16 @@ const option = computed(() => {
       />
     </div>
 
-    <!-- Source citation — visible text, not just tooltip (WCAG AA) -->
+    <!-- Source citation -->
     <p class="text-sm text-[var(--wl-ink-muted)] mt-4 text-center">
       Source:
       <a
-        href="https://wid.world"
+        href="https://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/labourproductivity"
         target="_blank"
         rel="noopener"
         class="underline hover:text-[var(--wl-ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--wl-red)] rounded"
       >
-        World Inequality Database (wid.world)<span class="sr-only"> (opens in new tab)</span></a>, accessed 2026-05-14
+        ONS Labour Productivity<span class="sr-only"> (opens in new tab)</span></a>, accessed 2026-05-14
     </p>
   </div>
 </template>
