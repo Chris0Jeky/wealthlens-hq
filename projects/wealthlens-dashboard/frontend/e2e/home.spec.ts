@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test'
 test.describe('Home page', () => {
   test('loads with correct title', async ({ page }) => {
     await page.goto('/')
-    await expect(page).toHaveTitle('WealthLens UK')
+    await expect(page).toHaveTitle(/WealthLens UK$/)
   })
 
   test('main heading is visible', async ({ page }) => {

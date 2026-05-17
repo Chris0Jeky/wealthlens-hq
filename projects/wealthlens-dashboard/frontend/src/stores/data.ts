@@ -2,11 +2,13 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import type {
   DatasetRow,
+  FreshnessResponse,
+  DatasetFreshnessEntry,
 } from '@/types/api'
 import { fetchWithRetry } from '@/utils/fetchWithRetry'
 
 // Re-export so existing component imports from '@/stores/data' keep working.
-export type { DatasetRow } from '@/types/api'
+export type { DatasetRow, DatasetFreshnessEntry } from '@/types/api'
 
 export interface DatasetMetadata {
   name: string
@@ -64,6 +66,7 @@ function toStaticUrl(apiPath: string): string {
 export const useDataStore = defineStore('data', () => {
   const datasets = ref<string[]>([])
   const metadata = ref<Map<string, DatasetMetadata>>(new Map())
+  const freshness = ref<Record<string, DatasetFreshnessEntry>>({})
   const loading = ref(false)
   const error = ref<string | null>(null)
 
@@ -107,6 +110,17 @@ export const useDataStore = defineStore('data', () => {
     return json.datasets
   }
 
+  async function fetchFreshness(): Promise<Record<string, DatasetFreshnessEntry>> {
+    try {
+      const json = await request<FreshnessResponse>('/freshness')
+      freshness.value = json.datasets
+      return json.datasets
+    } catch (e) {
+      console.warn('[WealthLens] Failed to load dataset freshness:', e instanceof Error ? e.message : e)
+      return {}
+    }
+  }
+
   function clearMetadata(name?: string): void {
     if (name) {
       metadata.value.delete(name)
@@ -118,12 +132,14 @@ export const useDataStore = defineStore('data', () => {
   return {
     datasets,
     metadata,
+    freshness,
     loading,
     error,
     fetchDatasets,
     fetchDataset,
     fetchMetadata,
     fetchAllMetadata,
+    fetchFreshness,
     clearMetadata,
   }
 })

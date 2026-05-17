@@ -14,7 +14,8 @@ test.describe('Wealth Calculator', () => {
   test('enter value and calculate shows results', async ({ page }) => {
     await page.locator('#wealth-input').fill('150000')
     await page.getByRole('button', { name: /calculate/i }).click()
-    await expect(page.getByText(/your position/i)).toBeVisible()
+    const results = page.getByLabel('Your wealth position')
+    await expect(results.getByText(/your position/i)).toBeVisible()
     await expect(page.getByText(/decile/i)).toBeVisible()
   })
 
