@@ -134,3 +134,19 @@ class TestRateLimitAppConfig:
 
         assert client.get("/openapi.json").status_code == 200
         assert client.get("/openapi.json").status_code == 429
+
+    def test_invalid_rate_limit_rpm_defaults_to_safe_limit(
+        self,
+        monkeypatch: MonkeyPatch,
+    ) -> None:
+        monkeypatch.setenv("RATE_LIMIT_ENABLED", "true")
+        monkeypatch.setenv("RATE_LIMIT_RPM", "not-a-number")
+
+        import app.main as main
+
+        reloaded_main = importlib.reload(main)
+        client = TestClient(reloaded_main.app)
+
+        for _ in range(60):
+            assert client.get("/openapi.json").status_code == 200
+        assert client.get("/openapi.json").status_code == 429
