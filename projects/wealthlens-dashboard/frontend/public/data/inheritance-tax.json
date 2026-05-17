@@ -1,0 +1,31 @@
+{
+  "meta": {
+    "source": "HMRC Inheritance Tax Statistics 2021-22",
+    "url": "https://www.gov.uk/government/statistics/inheritance-tax-statistics",
+    "accessed": "2026-05-16",
+    "notes": "Table 12.1 — Estates notified and liable to IHT"
+  },
+  "summary": {
+    "total_deaths": 600000,
+    "estates_liable": 27800,
+    "liability_rate_pct": 4.6,
+    "total_iht_revenue_bn": 7.1,
+    "nil_rate_band": 325000,
+    "residence_nil_rate_band": 175000
+  },
+  "by_year": [
+    { "year": "2016-17", "deaths": 597200, "liable": 24500, "rate_pct": 4.1, "revenue_bn": 5.0 },
+    { "year": "2017-18", "deaths": 607200, "liable": 25000, "rate_pct": 4.1, "revenue_bn": 5.4 },
+    { "year": "2018-19", "deaths": 614200, "liable": 25400, "rate_pct": 4.1, "revenue_bn": 5.4 },
+    { "year": "2019-20", "deaths": 604200, "liable": 23500, "rate_pct": 3.9, "revenue_bn": 5.2 },
+    { "year": "2020-21", "deaths": 689700, "liable": 27100, "rate_pct": 3.9, "revenue_bn": 5.8 },
+    { "year": "2021-22", "deaths": 600000, "liable": 27800, "rate_pct": 4.6, "revenue_bn": 7.1 }
+  ],
+  "by_estate_size": [
+    { "band": "£325k-£500k", "estates": 8900, "tax_paid_m": 570 },
+    { "band": "£500k-£1m", "estates": 11200, "tax_paid_m": 2100 },
+    { "band": "£1m-£2m", "estates": 5400, "tax_paid_m": 2300 },
+    { "band": "£2m-£5m", "estates": 1800, "tax_paid_m": 1500 },
+    { "band": "Over £5m", "estates": 500, "tax_paid_m": 600 }
+  ]
+}

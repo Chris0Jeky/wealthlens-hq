@@ -1,127 +1,65 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { mount } from '@vue/test-utils'
-import { defineComponent, nextTick } from 'vue'
 import { useTheme, _resetForTesting } from '@/composables/useTheme'
 
-function mountWithTheme() {
-  const Comp = defineComponent({
-    setup() {
-      return useTheme()
-    },
-    template: '<div />',
-  })
-  return mount(Comp)
-}
-
 describe('useTheme', () => {
-  let listeners: Array<() => void>
-  let matchesDark: boolean
-  const localStorageDescriptor = Object.getOwnPropertyDescriptor(window, 'localStorage')
-
   beforeEach(() => {
-    if (localStorageDescriptor) {
-      Object.defineProperty(window, 'localStorage', localStorageDescriptor)
-    }
     _resetForTesting()
-    listeners = []
-    matchesDark = false
     localStorage.clear()
-    document.documentElement.classList.remove('dark')
 
     window.matchMedia = vi.fn().mockImplementation(() => ({
-      get matches() {
-        return matchesDark
-      },
-      addEventListener: (_: string, cb: () => void) => listeners.push(cb),
+      matches: false,
+      addEventListener: vi.fn(),
       removeEventListener: vi.fn(),
     }))
   })
 
-  it('defaults to system preference (light)', () => {
-    const wrapper = mountWithTheme()
-    expect(wrapper.vm.preference).toBe('system')
-    expect(wrapper.vm.resolved).toBe('light')
+  it('defaults to light theme', () => {
+    const { theme } = useTheme()
+    expect(theme.value).toBe('light')
   })
 
-  it('resolves dark when system is dark', () => {
-    matchesDark = true
-    const wrapper = mountWithTheme()
-    expect(wrapper.vm.resolved).toBe('dark')
+  it('reads from localStorage if set', () => {
+    localStorage.setItem('wl-theme', 'dark')
+    _resetForTesting(true)
+
+    const { theme } = useTheme()
+    expect(theme.value).toBe('dark')
   })
 
-  it('applies dark class to documentElement', () => {
-    matchesDark = true
-    mountWithTheme()
-    expect(document.documentElement.classList.contains('dark')).toBe(true)
+  it('respects prefers-color-scheme when no localStorage value', () => {
+    window.matchMedia = vi.fn().mockImplementation(() => ({
+      matches: true,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }))
+
+    _resetForTesting(true)
+
+    const { theme } = useTheme()
+    expect(theme.value).toBe('dark')
   })
 
-  it('persists user preference to localStorage', () => {
-    const wrapper = mountWithTheme()
-    wrapper.vm.setPreference('dark')
-    expect(localStorage.getItem('wealthlens-theme')).toBe('dark')
+  it('toggleTheme switches and persists', () => {
+    const { theme, toggleTheme } = useTheme()
+    expect(theme.value).toBe('light')
+
+    toggleTheme()
+    expect(theme.value).toBe('dark')
+    expect(localStorage.getItem('wl-theme')).toBe('dark')
+
+    toggleTheme()
+    expect(theme.value).toBe('light')
+    expect(localStorage.getItem('wl-theme')).toBe('light')
   })
 
-  it('removes localStorage key when set to system', () => {
-    localStorage.setItem('wealthlens-theme', 'dark')
-    const wrapper = mountWithTheme()
-    wrapper.vm.setPreference('system')
-    expect(localStorage.getItem('wealthlens-theme')).toBeNull()
-  })
+  it('sets data-theme attribute on documentElement', () => {
+    const { toggleTheme } = useTheme()
+    expect(document.documentElement.getAttribute('data-theme')).toBe('light')
 
-  it('reads stored preference on mount', () => {
-    localStorage.setItem('wealthlens-theme', 'dark')
-    const wrapper = mountWithTheme()
-    expect(wrapper.vm.preference).toBe('dark')
-    expect(wrapper.vm.resolved).toBe('dark')
-  })
+    toggleTheme()
+    expect(document.documentElement.getAttribute('data-theme')).toBe('dark')
 
-  it('reacts to system media change', async () => {
-    const wrapper = mountWithTheme()
-    expect(wrapper.vm.resolved).toBe('light')
-
-    matchesDark = true
-    listeners.forEach((cb) => cb())
-    await nextTick()
-    expect(wrapper.vm.resolved).toBe('dark')
-  })
-
-  it('uses system preference when localStorage reads fail', () => {
-    Object.defineProperty(window, 'localStorage', {
-      configurable: true,
-      value: {
-        getItem: vi.fn(() => {
-          throw new DOMException('Storage blocked', 'SecurityError')
-        }),
-        setItem: vi.fn(),
-        removeItem: vi.fn(),
-        clear: vi.fn(),
-      },
-    })
-
-    const wrapper = mountWithTheme()
-
-    expect(wrapper.vm.preference).toBe('system')
-    expect(wrapper.vm.resolved).toBe('light')
-  })
-
-  it('updates theme preference when localStorage writes fail', () => {
-    Object.defineProperty(window, 'localStorage', {
-      configurable: true,
-      value: {
-        getItem: vi.fn(() => null),
-        setItem: vi.fn(() => {
-          throw new DOMException('Quota exceeded', 'QuotaExceededError')
-        }),
-        removeItem: vi.fn(() => {
-          throw new DOMException('Storage blocked', 'SecurityError')
-        }),
-        clear: vi.fn(),
-      },
-    })
-
-    const wrapper = mountWithTheme()
-    expect(() => wrapper.vm.setPreference('dark')).not.toThrow()
-    expect(wrapper.vm.preference).toBe('dark')
-    expect(wrapper.vm.resolved).toBe('dark')
+    toggleTheme()
+    expect(document.documentElement.getAttribute('data-theme')).toBe('light')
   })
 })

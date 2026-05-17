@@ -1,69 +1,100 @@
-import { ref, computed } from 'vue'
-import { getStorageItem, removeStorageItem, setStorageItem } from '@/utils/browserStorage'
+import { ref, watchEffect } from 'vue'
 
 export type Theme = 'light' | 'dark'
-export type ThemePreference = 'light' | 'dark' | 'system'
 
-const STORAGE_KEY = 'wealthlens-theme'
+const STORAGE_KEY = 'wl-theme'
+const OLD_STORAGE_KEY = 'wealthlens-theme'
 
-const preference = ref<ThemePreference>('system')
-const systemScheme = ref<Theme>('light')
-
-let mql: MediaQueryList | null = null
-let initialised = false
-
-function onMediaChange() {
-  systemScheme.value = mql?.matches ? 'dark' : 'light'
-  applyClass()
+function migrateOldKey(): void {
+  try {
+    const old = localStorage.getItem(OLD_STORAGE_KEY)
+    if (old === 'light' || old === 'dark') {
+      localStorage.setItem(STORAGE_KEY, old)
+      localStorage.removeItem(OLD_STORAGE_KEY)
+    }
+  } catch {
+    // localStorage unavailable
+  }
 }
 
-function applyClass() {
-  if (typeof document === 'undefined') return
-  const theme: Theme = preference.value === 'system' ? systemScheme.value : preference.value
-  document.documentElement.classList.toggle('dark', theme === 'dark')
-}
+function getInitialTheme(): Theme {
+  if (typeof window === 'undefined') return 'light'
 
-function init() {
-  if (initialised || typeof window === 'undefined' || typeof window.matchMedia !== 'function') return
-  initialised = true
+  migrateOldKey()
 
-  const stored = getStorageItem(STORAGE_KEY)
-  if (stored === 'light' || stored === 'dark') {
-    preference.value = stored
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY)
+    if (stored === 'light' || stored === 'dark') return stored
+  } catch {
+    // localStorage unavailable
   }
 
-  mql = window.matchMedia('(prefers-color-scheme: dark)')
-  systemScheme.value = mql.matches ? 'dark' : 'light'
-  mql.addEventListener('change', onMediaChange)
-  applyClass()
+  if (typeof window.matchMedia === 'function') {
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+  }
+
+  return 'light'
 }
 
-init()
-
-export function _resetForTesting() {
-  if (mql) mql.removeEventListener('change', onMediaChange)
-  mql = null
-  initialised = false
-  preference.value = 'system'
-  systemScheme.value = 'light'
+function hasExplicitPreference(): boolean {
+  try {
+    return localStorage.getItem(STORAGE_KEY) !== null
+  } catch {
+    return false
+  }
 }
+
+const theme = ref<Theme>(getInitialTheme())
+
+function applyTheme() {
+  if (typeof document === 'undefined') return
+  document.documentElement.setAttribute('data-theme', theme.value)
+  document.documentElement.classList.toggle('dark', theme.value === 'dark')
+}
+
+// Single module-scoped watcher — runs once regardless of how many components call useTheme()
+let watcherCreated = false
+
+function ensureWatcher() {
+  if (watcherCreated) return
+  watcherCreated = true
+  watchEffect(applyTheme)
+}
+
+// Listen for system theme changes when no explicit preference is set
+if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
+  const mql = window.matchMedia('(prefers-color-scheme: dark)')
+  mql.addEventListener('change', (e) => {
+    if (!hasExplicitPreference()) {
+      theme.value = e.matches ? 'dark' : 'light'
+    }
+  })
+}
+
+applyTheme()
 
 export function useTheme() {
-  init()
+  ensureWatcher()
 
-  const resolved = computed<Theme>(() =>
-    preference.value === 'system' ? systemScheme.value : preference.value,
-  )
-
-  function setPreference(pref: ThemePreference) {
-    preference.value = pref
-    if (pref === 'system') {
-      removeStorageItem(STORAGE_KEY)
-    } else {
-      setStorageItem(STORAGE_KEY, pref)
+  function toggleTheme() {
+    theme.value = theme.value === 'light' ? 'dark' : 'light'
+    try {
+      localStorage.setItem(STORAGE_KEY, theme.value)
+    } catch {
+      // localStorage unavailable
     }
-    applyClass()
+    applyTheme()
   }
 
-  return { preference, resolved, setPreference }
+  return { theme, toggleTheme }
+}
+
+export function _resetForTesting(detectFromEnv = false) {
+  watcherCreated = false
+  if (detectFromEnv) {
+    theme.value = getInitialTheme()
+  } else {
+    theme.value = 'light'
+  }
+  applyTheme()
 }

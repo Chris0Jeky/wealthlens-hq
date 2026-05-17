@@ -10,9 +10,12 @@ Verifies that the RateLimitMiddleware correctly:
 
 from __future__ import annotations
 
+import importlib
+
 from app.rate_limit import RateLimitMiddleware
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+from pytest import MonkeyPatch
 
 
 def _create_app(requests_per_minute: int = 5, trust_forwarded_for: bool = False) -> FastAPI:
@@ -103,3 +106,47 @@ class TestForwardedFor:
         client.get("/test", headers={"X-Forwarded-For": "1.1.1.1"})
         response = client.get("/test", headers={"X-Forwarded-For": "2.2.2.2"})
         assert response.status_code == 200
+
+
+class TestRateLimitAppConfig:
+    """Application-level rate limit toggle behavior."""
+
+    def test_rate_limit_default_off(self, monkeypatch: MonkeyPatch) -> None:
+        monkeypatch.delenv("RATE_LIMIT_ENABLED", raising=False)
+        monkeypatch.setenv("RATE_LIMIT_RPM", "1")
+
+        import app.main as main
+
+        reloaded_main = importlib.reload(main)
+        client = TestClient(reloaded_main.app)
+
+        assert client.get("/openapi.json").status_code == 200
+        assert client.get("/openapi.json").status_code == 200
+
+    def test_rate_limit_enabled_explicitly(self, monkeypatch: MonkeyPatch) -> None:
+        monkeypatch.setenv("RATE_LIMIT_ENABLED", "true")
+        monkeypatch.setenv("RATE_LIMIT_RPM", "1")
+
+        import app.main as main
+
+        reloaded_main = importlib.reload(main)
+        client = TestClient(reloaded_main.app)
+
+        assert client.get("/openapi.json").status_code == 200
+        assert client.get("/openapi.json").status_code == 429
+
+    def test_invalid_rate_limit_rpm_defaults_to_safe_limit(
+        self,
+        monkeypatch: MonkeyPatch,
+    ) -> None:
+        monkeypatch.setenv("RATE_LIMIT_ENABLED", "true")
+        monkeypatch.setenv("RATE_LIMIT_RPM", "not-a-number")
+
+        import app.main as main
+
+        reloaded_main = importlib.reload(main)
+        client = TestClient(reloaded_main.app)
+
+        for _ in range(60):
+            assert client.get("/openapi.json").status_code == 200
+        assert client.get("/openapi.json").status_code == 429

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router'
+import NewsletterSignup from '@/components/NewsletterSignup.vue'
 import HealthStatus from './HealthStatus.vue'
 
 const year = new Date().getFullYear()
@@ -102,28 +103,31 @@ const year = new Date().getFullYear()
               GitHub
             </a>
           </li>
-          <!-- TODO: Replace with actual WealthLens Bluesky profile URL once confirmed -->
           <li>
             <a
-              href="#"
+              href="https://bsky.app/profile/wealthlens.uk"
               target="_blank"
-              rel="noopener"
+              rel="noopener me"
             >
               Bluesky
             </a>
           </li>
-          <!-- TODO: Replace with actual WealthLens Mastodon profile URL once confirmed -->
           <li>
             <a
-              href="#"
+              href="https://mastodon.social/@wealthlens"
               target="_blank"
-              rel="noopener"
+              rel="noopener me"
             >
               Mastodon
             </a>
           </li>
         </ul>
       </div>
+    </div>
+
+    <!-- Newsletter -->
+    <div class="foot-newsletter">
+      <NewsletterSignup />
     </div>
 
     <!-- Bottom bar -->
@@ -236,6 +240,14 @@ const year = new Date().getFullYear()
   line-height: 1.5;
 }
 
+/* --- Newsletter ---------------------------------------------- */
+.foot-newsletter {
+  max-width: var(--wl-max);
+  margin: 40px auto 0;
+  padding: 32px 32px 0;
+  border-top: 1px solid var(--wl-rule);
+}
+
 /* --- Bottom bar ---------------------------------------------- */
 .foot-base {
   max-width: var(--wl-max);
@@ -263,6 +275,11 @@ const year = new Date().getFullYear()
     grid-column: 1 / -1;
   }
 
+  .foot-newsletter {
+    padding: 24px 16px 0;
+    margin-top: 24px;
+  }
+
   .foot-base {
     padding: 20px 16px 0;
     margin-top: 32px;
@@ -274,6 +291,11 @@ const year = new Date().getFullYear()
     grid-template-columns: 1fr;
     gap: 24px;
     padding: 0 12px;
+  }
+
+  .foot-newsletter {
+    padding: 20px 12px 0;
+    margin-top: 20px;
   }
 
   .foot-base {
