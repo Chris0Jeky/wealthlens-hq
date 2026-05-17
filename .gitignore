@@ -29,6 +29,11 @@ coverage/
 *.tsbuildinfo
 .lighthouseci/
 
+# OG image generation: vendored fonts for reproducible builds.
+projects/wealthlens-dashboard/frontend/scripts/fonts/*
+!projects/wealthlens-dashboard/frontend/scripts/fonts/*.ttf
+!projects/wealthlens-dashboard/frontend/scripts/fonts/README.md
+
 # Transpile artifacts — TypeScript source is canonical
 projects/wealthlens-dashboard/frontend/src/**/*.js
 
