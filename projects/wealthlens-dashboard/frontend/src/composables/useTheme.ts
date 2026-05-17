@@ -1,4 +1,5 @@
 import { ref, computed } from 'vue'
+import { getStorageItem, removeStorageItem, setStorageItem } from '@/utils/browserStorage'
 
 export type Theme = 'light' | 'dark'
 export type ThemePreference = 'light' | 'dark' | 'system'
@@ -22,24 +23,11 @@ function applyClass() {
   document.documentElement.classList.toggle('dark', theme === 'dark')
 }
 
-function safeStorage(action: 'get'): string | null
-function safeStorage(action: 'set', value: string): void
-function safeStorage(action: 'remove'): void
-function safeStorage(action: 'get' | 'set' | 'remove', value?: string): string | null | void {
-  try {
-    if (action === 'get') return localStorage.getItem(STORAGE_KEY)
-    if (action === 'set' && value != null) localStorage.setItem(STORAGE_KEY, value)
-    if (action === 'remove') localStorage.removeItem(STORAGE_KEY)
-  } catch {
-    return null
-  }
-}
-
 function init() {
   if (initialised || typeof window === 'undefined' || typeof window.matchMedia !== 'function') return
   initialised = true
 
-  const stored = safeStorage('get')
+  const stored = getStorageItem(STORAGE_KEY)
   if (stored === 'light' || stored === 'dark') {
     preference.value = stored
   }
@@ -70,9 +58,9 @@ export function useTheme() {
   function setPreference(pref: ThemePreference) {
     preference.value = pref
     if (pref === 'system') {
-      safeStorage('remove')
+      removeStorageItem(STORAGE_KEY)
     } else {
-      safeStorage('set', pref)
+      setStorageItem(STORAGE_KEY, pref)
     }
     applyClass()
   }

@@ -16,8 +16,12 @@ function mountWithTheme() {
 describe('useTheme', () => {
   let listeners: Array<() => void>
   let matchesDark: boolean
+  const localStorageDescriptor = Object.getOwnPropertyDescriptor(window, 'localStorage')
 
   beforeEach(() => {
+    if (localStorageDescriptor) {
+      Object.defineProperty(window, 'localStorage', localStorageDescriptor)
+    }
     _resetForTesting()
     listeners = []
     matchesDark = false
@@ -78,6 +82,46 @@ describe('useTheme', () => {
     matchesDark = true
     listeners.forEach((cb) => cb())
     await nextTick()
+    expect(wrapper.vm.resolved).toBe('dark')
+  })
+
+  it('uses system preference when localStorage reads fail', () => {
+    Object.defineProperty(window, 'localStorage', {
+      configurable: true,
+      value: {
+        getItem: vi.fn(() => {
+          throw new DOMException('Storage blocked', 'SecurityError')
+        }),
+        setItem: vi.fn(),
+        removeItem: vi.fn(),
+        clear: vi.fn(),
+      },
+    })
+
+    const wrapper = mountWithTheme()
+
+    expect(wrapper.vm.preference).toBe('system')
+    expect(wrapper.vm.resolved).toBe('light')
+  })
+
+  it('updates theme preference when localStorage writes fail', () => {
+    Object.defineProperty(window, 'localStorage', {
+      configurable: true,
+      value: {
+        getItem: vi.fn(() => null),
+        setItem: vi.fn(() => {
+          throw new DOMException('Quota exceeded', 'QuotaExceededError')
+        }),
+        removeItem: vi.fn(() => {
+          throw new DOMException('Storage blocked', 'SecurityError')
+        }),
+        clear: vi.fn(),
+      },
+    })
+
+    const wrapper = mountWithTheme()
+    expect(() => wrapper.vm.setPreference('dark')).not.toThrow()
+    expect(wrapper.vm.preference).toBe('dark')
     expect(wrapper.vm.resolved).toBe('dark')
   })
 })

@@ -21,7 +21,12 @@ function mockMatchMedia(prefersDark: boolean) {
 }
 
 describe('useDarkMode', () => {
+  const localStorageDescriptor = Object.getOwnPropertyDescriptor(window, 'localStorage')
+
   beforeEach(() => {
+    if (localStorageDescriptor) {
+      Object.defineProperty(window, 'localStorage', localStorageDescriptor)
+    }
     vi.resetModules()
     document.documentElement.classList.remove('dark')
     localStorage.clear()
@@ -95,5 +100,48 @@ describe('useDarkMode', () => {
     expect(a.isDark).toBe(b.isDark)
     a.toggle()
     expect(b.isDark.value).toBe(true)
+  })
+
+  it('falls back to system preference when localStorage reads fail', async () => {
+    mockMatchMedia(true)
+    Object.defineProperty(window, 'localStorage', {
+      configurable: true,
+      value: {
+        getItem: vi.fn(() => {
+          throw new DOMException('Storage blocked', 'SecurityError')
+        }),
+        setItem: vi.fn(),
+        removeItem: vi.fn(),
+        clear: vi.fn(),
+      },
+    })
+
+    const { useDarkMode } = await import('../useDarkMode')
+    const { isDark } = useDarkMode()
+
+    expect(isDark.value).toBe(true)
+    expect(document.documentElement.classList.contains('dark')).toBe(true)
+  })
+
+  it('toggles theme when localStorage writes fail', async () => {
+    mockMatchMedia(false)
+    Object.defineProperty(window, 'localStorage', {
+      configurable: true,
+      value: {
+        getItem: vi.fn(() => null),
+        setItem: vi.fn(() => {
+          throw new DOMException('Quota exceeded', 'QuotaExceededError')
+        }),
+        removeItem: vi.fn(),
+        clear: vi.fn(),
+      },
+    })
+
+    const { useDarkMode } = await import('../useDarkMode')
+    const { isDark, toggle } = useDarkMode()
+
+    expect(() => toggle()).not.toThrow()
+    expect(isDark.value).toBe(true)
+    expect(document.documentElement.classList.contains('dark')).toBe(true)
   })
 })

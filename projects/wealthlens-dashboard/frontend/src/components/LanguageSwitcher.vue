@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import { LOCALE_STORAGE_KEY } from '@/i18n'
+import { setStorageItem } from '@/utils/browserStorage'
 
 const { locale } = useI18n()
 
@@ -12,7 +13,7 @@ const languages = [
 
 function setLocale(code: string) {
   locale.value = code
-  localStorage.setItem(LOCALE_STORAGE_KEY, code)
+  setStorageItem(LOCALE_STORAGE_KEY, code)
 }
 </script>
 

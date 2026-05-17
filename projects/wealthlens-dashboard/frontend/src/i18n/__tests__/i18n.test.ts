@@ -1,9 +1,35 @@
-import { describe, it, expect } from 'vitest'
+import { afterEach, describe, it, expect, vi } from 'vitest'
 import { createI18n } from 'vue-i18n'
 import en from '../locales/en.json'
 import i18n from '../index'
 
+const localStorageDescriptor = Object.getOwnPropertyDescriptor(window, 'localStorage')
+
+function mockUnavailableLocalStorage() {
+  Object.defineProperty(window, 'localStorage', {
+    configurable: true,
+    value: {
+      getItem: vi.fn(() => {
+        throw new DOMException('Storage blocked', 'SecurityError')
+      }),
+      setItem: vi.fn(() => {
+        throw new DOMException('Storage blocked', 'SecurityError')
+      }),
+      removeItem: vi.fn(() => {
+        throw new DOMException('Storage blocked', 'SecurityError')
+      }),
+      clear: vi.fn(),
+    },
+  })
+}
+
 describe('i18n configuration', () => {
+  afterEach(() => {
+    if (localStorageDescriptor) {
+      Object.defineProperty(window, 'localStorage', localStorageDescriptor)
+    }
+  })
+
   it('creates an i18n instance with English as default locale', () => {
     expect(i18n.global.locale.value).toBe('en')
   })
@@ -49,5 +75,14 @@ describe('i18n configuration', () => {
     expect(messages).toHaveProperty('common')
     expect(messages).toHaveProperty('calculator')
     expect(messages).toHaveProperty('footer')
+  })
+
+  it('falls back to English when locale storage is unavailable during startup', async () => {
+    vi.resetModules()
+    mockUnavailableLocalStorage()
+
+    const module = await import('../index')
+
+    expect(module.default.global.locale.value).toBe('en')
   })
 })
