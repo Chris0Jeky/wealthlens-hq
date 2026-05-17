@@ -77,6 +77,17 @@ CHECKS: list[dict] = [
         "columns": {"date", "bank_rate"},
         "min_rows": 10,
     },
+    {
+        "file": "wage_stagnation.csv",
+        "columns": {"year", "real_weekly"},
+        "min_rows": 20,
+        "dtypes": {"year": "int", "real_weekly": "int"},
+        "ranges": {
+            "year": (2000, date.today().year + 5),
+            "real_weekly": (0, 2_000),
+        },
+        "unique_keys": ["year"],
+    },
 ]
 
 
