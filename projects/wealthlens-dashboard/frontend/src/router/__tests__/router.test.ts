@@ -26,8 +26,14 @@ describe("Router configuration", () => {
 
   it("has the expected number of route definitions", () => {
     // home, dataset-detail, chart, methodology, data-sources, about,
-    // contribute, wealth-calculator, tax-calculator, not-found catch-all
-    expect(router.getRoutes()).toHaveLength(10);
+    // contribute, wealth-calculator, wealth-tax-simulator, tax-calculator,
+    // not-found catch-all
+    expect(router.getRoutes()).toHaveLength(11);
+  });
+
+  it('resolves /tools/wealth-tax-simulator to the "wealth-tax-simulator" route', () => {
+    const resolved = router.resolve("/tools/wealth-tax-simulator");
+    expect(resolved.name).toBe("wealth-tax-simulator");
   });
 
   it('resolves /data-sources to the "data-sources" route', () => {
