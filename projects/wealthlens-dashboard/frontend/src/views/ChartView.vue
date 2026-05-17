@@ -19,7 +19,9 @@ import ChartToolbar from "@/components/ChartToolbar.vue";
 import ShareBar from "@/components/ShareBar.vue";
 import SharePanel from "@/components/SharePanel.vue";
 import RelatedCharts from "@/components/RelatedCharts.vue";
+import ExportButton from "@/components/ExportButton.vue";
 import { useAnalytics } from "@/composables/useAnalytics";
+import { useChartExport, type ChartComponentRef, type ExportFormat } from "@/composables/useChartExport";
 import { usePageMeta } from "@/composables/usePageMeta";
 import ChartSkeleton from "@/components/ChartSkeleton.vue";
 import ChartLoadError from "@/components/ChartLoadError.vue";
@@ -105,6 +107,8 @@ const GenerationalWealthChart = defineAsyncComponent({
 const route = useRoute();
 const { trackEvent } = useAnalytics();
 const chartName = computed(() => route.params.name as string);
+const chartComponentRef = ref<ChartComponentRef>(null);
+const { exportPNG, exportSVG } = useChartExport(chartComponentRef);
 
 /** Whether the current chart has a full article config. */
 const hasFullConfig = computed(
@@ -147,6 +151,20 @@ function toggleSharePanel(): void {
 
 function onRangeChange(range: string) {
   activeRange.value = range;
+}
+
+watch(chartName, () => {
+  chartComponentRef.value = null;
+});
+
+function onExport(format: ExportFormat) {
+  const name = chartName.value || "chart";
+  const sourceText = config.value?.source?.name;
+  const options = { filename: `wealthlens-${name}`, source: sourceText };
+  const success = format === "png" ? exportPNG(options) : exportSVG(options);
+  if (success) {
+    trackEvent("export_chart", { chart: name, format });
+  }
 }
 
 /** Convert legacy hardcoded HTML snippets to display/meta-safe plain text. */
@@ -283,22 +301,27 @@ usePageMeta({
     <!-- Chart card -->
     <div class="chart-wrap">
       <div class="chart-card">
-        <ChartToolbar
-          :title="config.toolbar.title"
-          :unit="config.toolbar.unit"
-          :series="config.toolbar.series"
-          :ranges="config.toolbar.ranges"
-          :active-range="activeRange"
-          @range-change="onRangeChange"
-        />
+        <div class="chart-card__toolbar-row">
+          <ChartToolbar
+            :title="config.toolbar.title"
+            :unit="config.toolbar.unit"
+            :series="config.toolbar.series"
+            :ranges="config.toolbar.ranges"
+            :active-range="activeRange"
+            @range-change="onRangeChange"
+          />
+          <div class="chart-card__export">
+            <ExportButton @export="onExport" />
+          </div>
+        </div>
         <div class="chart-stage">
-          <WealthSharesChart v-if="chartName === 'wealth-shares'" />
-          <ProductivityPayChart v-else-if="chartName === 'productivity-pay'" />
-          <GdhiByRegionChart v-else-if="chartName === 'gdhi-by-region'" />
-          <TaxCompositionChart v-else-if="chartName === 'tax-composition'" />
-          <BoeRatesChart v-else-if="chartName === 'boe-rates'" />
-          <ChildPovertyChart v-else-if="chartName === 'child-poverty'" />
-          <GenerationalWealthChart v-else-if="chartName === 'generational-wealth'" />
+          <WealthSharesChart v-if="chartName === 'wealth-shares'" ref="chartComponentRef" />
+          <ProductivityPayChart v-else-if="chartName === 'productivity-pay'" ref="chartComponentRef" />
+          <GdhiByRegionChart v-else-if="chartName === 'gdhi-by-region'" ref="chartComponentRef" />
+          <TaxCompositionChart v-else-if="chartName === 'tax-composition'" ref="chartComponentRef" />
+          <BoeRatesChart v-else-if="chartName === 'boe-rates'" ref="chartComponentRef" />
+          <ChildPovertyChart v-else-if="chartName === 'child-poverty'" ref="chartComponentRef" />
+          <GenerationalWealthChart v-else-if="chartName === 'generational-wealth'" ref="chartComponentRef" />
         </div>
         <div class="chart-source-bar">
           <div class="chart-source-bar__left">
@@ -443,15 +466,21 @@ usePageMeta({
 
       <div class="chart-wrap">
         <div class="chart-card">
+          <div class="chart-card__export chart-card__export--simple">
+            <ExportButton @export="onExport" />
+          </div>
           <div class="chart-stage">
             <HousingAffordabilityChart
               v-if="chartName === 'housing-affordability'"
+              ref="chartComponentRef"
             />
             <CgtConcentrationChart
               v-else-if="chartName === 'cgt-concentration'"
+              ref="chartComponentRef"
             />
             <WealthByDecileChart
               v-else-if="chartName === 'wealth-by-decile'"
+              ref="chartComponentRef"
             />
           </div>
         </div>
@@ -689,6 +718,24 @@ usePageMeta({
   background: var(--wl-card);
   border: 1px solid var(--wl-ink);
   overflow: hidden;
+}
+
+.chart-card__toolbar-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.chart-card__export {
+  flex-shrink: 0;
+  padding: 18px 18px 0 0;
+}
+
+.chart-card__export--simple {
+  display: flex;
+  justify-content: flex-end;
+  padding: 16px 16px 0;
 }
 
 .chart-stage {
