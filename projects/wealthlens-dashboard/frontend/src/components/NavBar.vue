@@ -136,4 +136,3 @@ function closeMobile() {
     </div>
   </header>
 </template>
-
