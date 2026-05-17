@@ -92,13 +92,36 @@ describe("WealthScaleScroller", () => {
     expect(names).toContain("Top 0.1%");
   });
 
-  it("has a scrollable container with keyboard accessibility", () => {
+  it("has a scrollable region with keyboard accessibility", () => {
     const wrapper = mount(WealthScaleScroller);
     const container = wrapper.find(".wealth-scroller__container");
     expect(container.exists()).toBe(true);
     expect(container.attributes("tabindex")).toBe("0");
-    expect(container.attributes("role")).toBe("slider");
-    expect(container.attributes("aria-label")).toContain("arrow keys");
+    expect(container.attributes("role")).toBe("region");
+    expect(container.attributes("aria-labelledby")).toBe("wealth-scale-scroll-heading");
+    expect(container.attributes("aria-describedby")).toContain(
+      "wealth-scale-scroll-instructions",
+    );
+    expect(container.attributes("aria-describedby")).toContain(
+      "wealth-scale-current-position",
+    );
+  });
+
+  it("does not expose the rich marker track as a slider", () => {
+    const wrapper = mount(WealthScaleScroller);
+    expect(wrapper.find('[role="slider"]').exists()).toBe(false);
+    const container = wrapper.find(".wealth-scroller__container");
+    expect(container.attributes("aria-valuenow")).toBeUndefined();
+    expect(container.attributes("aria-valuemin")).toBeUndefined();
+    expect(container.attributes("aria-valuemax")).toBeUndefined();
+  });
+
+  it("keeps marker labels and values exposed inside the scrollable region", () => {
+    const wrapper = mount(WealthScaleScroller);
+    const container = wrapper.find(".wealth-scroller__container");
+    expect(container.text()).toContain("Median (50%)");
+    expect(container.text()).toContain("£303k");
+    expect(container.text()).toContain("Top 0.1%");
   });
 
   it("renders the end indicator mentioning richest individual", () => {

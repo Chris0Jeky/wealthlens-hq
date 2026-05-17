@@ -245,15 +245,20 @@ onBeforeUnmount(() => {
     </div>
 
     <!-- Main scrollable area -->
+    <h3 id="wealth-scale-scroll-heading" class="sr-only">
+      Scrollable UK household wealth distribution
+    </h3>
+    <p id="wealth-scale-scroll-instructions" class="sr-only">
+      Use arrow keys, Home, End, or horizontal scrolling to explore the wealth scale. Marker
+      labels remain visible as you move through the scale.
+    </p>
     <div
       ref="scrollContainer"
       class="wealth-scroller__container"
       tabindex="0"
-      role="slider"
-      :aria-valuenow="currentWealthPosition"
-      aria-valuemin="0"
-      :aria-valuemax="TOTAL_WIDTH_PX * SCALE_FACTOR"
-      aria-label="Scroll to explore UK household wealth distribution. Use arrow keys or swipe."
+      role="region"
+      aria-labelledby="wealth-scale-scroll-heading"
+      aria-describedby="wealth-scale-scroll-instructions wealth-scale-current-position"
       @scroll.passive="onScroll"
       @keydown="onKeydown"
     >
@@ -336,7 +341,12 @@ onBeforeUnmount(() => {
     </div>
 
     <!-- Screen reader summary -->
-    <div class="sr-only" aria-live="polite" aria-atomic="true">
+    <div
+      id="wealth-scale-current-position"
+      class="sr-only"
+      aria-live="polite"
+      aria-atomic="true"
+    >
       Currently viewing approximately {{ formatGBP(currentWealthPosition) }} on the wealth scale.
     </div>
   </div>
