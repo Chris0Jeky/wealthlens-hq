@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { mount, flushPromises } from '@vue/test-utils'
 import { createTestingPinia } from '@pinia/testing'
 import { createRouter, createMemoryHistory } from 'vue-router'
 import HomeView from '../HomeView.vue'
@@ -55,6 +55,23 @@ describe('HomeView', () => {
     )
     const items = wrapper.findAll('[role="listitem"]')
     expect(items.length).toBe(2)
+  })
+
+  it('filters dataset cards when search is active', async () => {
+    const wrapper = mount(
+      HomeView,
+      createMountOptions({
+        datasets: ['wealth-shares', 'housing-affordability', 'cgt-concentration'],
+      }),
+    )
+
+    await wrapper.find('input[type="search"]').setValue('housing')
+    await new Promise((resolve) => window.setTimeout(resolve, 250))
+    await flushPromises()
+
+    const items = wrapper.findAll('[role="listitem"]')
+    expect(items).toHaveLength(1)
+    expect(items[0].text()).toContain('housing-affordability')
   })
 
   it('calls fetchDatasets on mount', () => {

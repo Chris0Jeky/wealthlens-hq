@@ -1,15 +1,29 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useDataStore } from '@/stores/data'
 import DatasetCard from '@/components/DatasetCard.vue'
 import DatasetSearch from '@/components/DatasetSearch.vue'
 import { CHART_METADATA } from '@/utils/chartConstants'
 
 const store = useDataStore()
+const searchFilter = ref<{ active: boolean; names: string[] }>({
+  active: false,
+  names: [],
+})
 
 const descriptions: Record<string, string> = Object.fromEntries(
   Object.values(CHART_METADATA).map((c) => [c.name, c.description]),
 )
+
+const visibleDatasets = computed(() => {
+  if (!searchFilter.value.active) return store.datasets
+  const allowed = new Set(searchFilter.value.names)
+  return store.datasets.filter((name) => allowed.has(name))
+})
+
+function onSearchFiltered(payload: { active: boolean; names: string[] }) {
+  searchFilter.value = payload
+}
 
 onMounted(() => {
   store.fetchDatasets()
@@ -27,7 +41,7 @@ onMounted(() => {
     </section>
 
     <!-- Dataset search/filter -->
-    <DatasetSearch />
+    <DatasetSearch @filtered-change="onSearchFiltered" />
 
     <section aria-labelledby="datasets-heading">
       <h2 id="datasets-heading" class="text-xl font-semibold mb-4">Available Datasets</h2>
@@ -40,7 +54,7 @@ onMounted(() => {
       </div>
 
       <div v-if="!store.loading && !store.error" class="grid gap-4 sm:grid-cols-2" role="list">
-        <div v-for="name in store.datasets" :key="name" role="listitem">
+        <div v-for="name in visibleDatasets" :key="name" role="listitem">
           <DatasetCard
             :name="name"
             :description="descriptions[name] ?? 'UK inequality dataset'"

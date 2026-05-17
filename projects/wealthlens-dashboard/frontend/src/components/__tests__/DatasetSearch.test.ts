@@ -70,6 +70,15 @@ describe('DatasetSearch', () => {
     expect(results.exists()).toBe(true)
   })
 
+  it('indexes all public datasets', async () => {
+    const wrapper = factory()
+    const input = wrapper.find('input[type="search"]')
+    await input.setValue('boe')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Bank of England Rates')
+  })
+
   it('filters datasets by search query', async () => {
     const wrapper = factory()
     const input = wrapper.find('input[type="search"]')
@@ -101,6 +110,19 @@ describe('DatasetSearch', () => {
     expect(results.exists()).toBe(true)
     const resultCards = wrapper.findAll('[role="option"]')
     expect(resultCards.length).toBeGreaterThanOrEqual(1)
+  })
+
+  it('emits filtered dataset names for the parent grid', async () => {
+    const wrapper = factory()
+    const input = wrapper.find('input[type="search"]')
+    await input.setValue('housing')
+    await flushPromises()
+
+    const emitted = wrapper.emitted('filtered-change') ?? []
+    const latest = emitted.at(-1)?.[0] as { active: boolean; names: string[] }
+    expect(latest.active).toBe(true)
+    expect(latest.names).toContain('housing-affordability')
+    expect(latest.names).not.toContain('wealth-shares')
   })
 
   it('marks selected category chip with aria-pressed=true', async () => {

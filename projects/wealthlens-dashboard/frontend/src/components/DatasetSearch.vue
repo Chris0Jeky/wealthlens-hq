@@ -5,6 +5,9 @@ import { useDatasetSearch, DATASET_CATEGORIES } from '@/composables/useDatasetSe
 import type { DatasetEntry } from '@/composables/useDatasetSearch'
 
 const router = useRouter()
+const emit = defineEmits<{
+  (e: 'filtered-change', payload: { active: boolean; names: string[] }): void
+}>()
 const {
   query,
   selectedCategories,
@@ -22,6 +25,17 @@ const resultsRef = ref<HTMLElement | null>(null)
 watch(filteredDatasets, () => {
   activeIndex.value = -1
 })
+
+watch(
+  [filteredDatasets, isSearchActive],
+  () => {
+    emit('filtered-change', {
+      active: isSearchActive.value,
+      names: filteredDatasets.value.map((entry) => entry.name),
+    })
+  },
+  { immediate: true },
+)
 
 function onKeydown(event: KeyboardEvent) {
   const count = filteredDatasets.value.length
