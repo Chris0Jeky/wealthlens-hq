@@ -47,7 +47,7 @@ const router = createRouter({
     {
       path: "/contribute",
       name: "contribute",
-      component: () => import("@/views/HomeView.vue"),
+      component: () => import("@/views/ContributeView.vue"),
     },
     {
       path: "/tools/wealth-calculator",
