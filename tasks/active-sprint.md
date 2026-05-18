@@ -1,6 +1,6 @@
 # Active Sprint
 
-Last updated: 2026-05-16
+Last updated: 2026-05-17
 
 This week's focus. Keep this list to 5-7 tasks.
 
@@ -36,5 +36,6 @@ This week's focus. Keep this list to 5-7 tasks.
 - [x] Scaffold Vue 3 + TypeScript + Pinia + TailwindCSS frontend (@Chris) [completed: 2026-05-15]
 - [x] Deploy Vue frontend to GitHub Pages as master site (@Chris) [completed: 2026-05-16]
 - [x] Merge all ~192 PRs (10 waves of reviewed, stacked PRs) — zero open PRs remain (@Chris) [completed: 2026-05-16]
+- [x] Resume interrupted PR cleanup and merge remaining reviewed PRs through #272; final main CI green and zero open PRs remain (@Codex) [completed: 2026-05-17]
 - [x] Post-merge health check — fix lint, types, tests; 874 tests passing, all CI green (@Chris) [completed: 2026-05-16]
 - [x] Clean up 292 local + 204 remote stale branches (@Chris) [completed: 2026-05-16]

@@ -5,7 +5,7 @@
 > **POST-MERGE CLEANUP COMPLETE** (2026-05-16): All 192 PRs handled, 874 tests passing, CI green, 496 stale branches deleted.
 > Merge history: [MERGE_ORCHESTRATION.md](.codex/memories/session_notes/MERGE_ORCHESTRATION.md) | PR creation history: [ORCHESTRATION.md](.codex/memories/session_notes/ORCHESTRATION.md) (archived)
 
-Last updated: 2026-05-16
+Last updated: 2026-05-17
 
 ## Current phase: Ready to Ship — Feature Complete v0.1
 
@@ -13,8 +13,8 @@ All code is on main. Site live. No open PRs. No stale branches. Codebase include
 - 10 data pipelines (WID, ONS housing, CGT, wealth-by-decile, productivity-pay, GDHI, tax composition, BoE rates, child poverty, generational wealth)
 - Vue 3 frontend: 40+ components/composables, dark mode, broadsheet chart redesign, WCAG AA, analytics
 - FastAPI backend: health, data, metadata, columns, summary stats, CSV download, security headers, GZip, rate limiting
-- 874 tests passing (156 root + 135 backend + 583 frontend)
-- CI/CD: ruff, mypy, bandit, pytest, ESLint, vue-tsc, vitest, vite build — all green
+- Latest frontend coverage in cleanup verification: 1125 tests passing; backend targeted/API checks green.
+- CI/CD: ruff, mypy, bandit, pytest, ESLint, vue-tsc, vitest coverage, vite build, Playwright E2E, Lighthouse, CodeQL, and Deploy all green on latest main.
 - Deployment: GitHub Pages auto-deploy on push to main
 
 ### Active focus areas
@@ -26,8 +26,8 @@ All code is on main. Site live. No open PRs. No stale branches. Codebase include
 | Backend API | Full-featured (health, data, metadata, columns, CSV, summary stats) | Deploy to staging |
 | Frontend | Vue 3 + TS + Pinia + TailwindCSS with dark mode, a11y, analytics | Wire up remaining chart components |
 | Deployment | Live at chris0jeky.github.io/wealthlens-hq/ | Automatic on push to main |
-| Testing | 874 tests passing (156 root + 135 backend + 583 frontend) | Maintain coverage |
-| CI/CD | All green — Backend + Frontend + CodeQL + Deploy + weekly-update | Monitor for failures |
+| Testing | Latest frontend coverage: 1125 tests passing; backend targeted/API checks green in cleanup | Maintain coverage |
+| CI/CD | Latest relevant main workflows green - Backend on `09c4ea5`, Frontend/CodeQL/E2E/Lighthouse/Deploy on `1f5318e` | Monitor for failures |
 | Social assets | chart_to_social.py generates 4 platform sizes | Generate assets for first LinkedIn post |
 | Social accounts | Twitter/X + Bluesky created | Update LinkedIn profile, write first post |
 | Outreach | Emails sent to mySociety + Democracy Club | Follow up |
@@ -36,6 +36,9 @@ All code is on main. Site live. No open PRs. No stale branches. Codebase include
 | Newsletters | 5 subscribed | Ongoing — read and note insights |
 
 ### Recent activity
+
+- 2026-05-17: **PR CLEANUP RESUME COMPLETE** - reviewed, repaired, and merged PRs through `#272`; latest relevant main workflows are green (`#271` CI Backend after backend changes; `#272` Frontend, CodeQL, E2E, Lighthouse, and Deploy); zero open PRs remain.
+- 2026-05-17: Fixed final merge train issues: OG coverage for wage-stagnation, Bandit-safe version metadata without subprocess, chart registry merge conflicts, Playwright assertions, i18n test plugins, and package metadata conflicts.
 
 - 2026-05-16: **REPO CLEANUP** — deleted 496 stale branches (292 local + 204 remote), updated all docs
 - 2026-05-16: Post-merge health check — all CI green, 874 tests passing

@@ -5,7 +5,13 @@
 >
 > **CRITICAL**: Update this file BEFORE every compaction risk (long tool calls, large diffs).
 
-Last updated: 2026-05-16T23:50Z
+Last updated: 2026-05-17T15:00Z
+
+## 2026-05-17 Recovery Status
+
+The autonomous cleanup/merge sweep has completed for the PR queue active during this recovery session. GitHub reports zero open PRs. PRs through `#272` are merged to `main`. Latest relevant main workflows are green: CI Backend on backend-affecting merge `09c4ea5`, and CI Frontend, CodeQL, E2E Tests, Lighthouse CI, and Deploy to GitHub Pages on latest merge `1f5318e`.
+
+The historical wave tables below are retained for provenance only and are no longer the live phase state. Use `.codex/memories/session_notes/CODEX_PR_CLEANUP_2026-05-16.md` for the detailed recovery log.
 
 ## Recovery Checklist (READ FIRST after compaction or session restart)
 
