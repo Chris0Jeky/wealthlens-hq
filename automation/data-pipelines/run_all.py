@@ -7,7 +7,7 @@ Usage: python automation/data-pipelines/run_all.py [--validate-only]
 from __future__ import annotations
 
 import logging
-import subprocess
+import subprocess  # nosec B404 - runner invokes a static allow-list of local pipeline scripts.
 import sys
 from pathlib import Path
 
@@ -25,6 +25,7 @@ SCRIPTS = [
     "fetch_ons_gdhi.py",
     "fetch_tax_composition.py",
     "fetch_boe_rates.py",
+    "fetch_wage_stagnation.py",
 ]
 
 
@@ -35,7 +36,7 @@ def run_pipelines() -> list[str]:
         path = PIPELINE_DIR / script
         logger.info("Running %s", script)
         try:
-            result = subprocess.run(
+            result = subprocess.run(  # nosec B603 - script path is selected from SCRIPTS allow-list.
                 [sys.executable, str(path)],
                 cwd=str(PIPELINE_DIR),
                 timeout=SCRIPT_TIMEOUT_SECONDS,
@@ -54,7 +55,7 @@ def run_validation() -> bool:
     """Run the validation module; returns True if all checks pass."""
     logger.info("Validating processed datasets")
     try:
-        result = subprocess.run(
+        result = subprocess.run(  # nosec B603 - validation script path is fixed within this repository.
             [sys.executable, str(PIPELINE_DIR / "validate.py")],
             timeout=SCRIPT_TIMEOUT_SECONDS,
         )

@@ -48,12 +48,52 @@ make ci-quick
 - Improve the accessibility of an existing chart.
 - Build a small chart prototype from a cited dataset.
 
+## Branch naming
+
+```
+<type>/<short-description>
+```
+
+Types: `feat`, `fix`, `refactor`, `test`, `chore`, `docs`
+
+Examples: `feat/wealth-calculator`, `fix/chart-contrast`, `docs/api-endpoints`
+
+## Commit messages
+
+Use imperative mood in the format `<area>: <summary>`:
+
+- `frontend: add wealth calculator comparison mode`
+- `backend: fix rate limiting for /api/data endpoints`
+- `pipeline: update ONS housing data fetch script`
+
 ## Pull request guidelines
 
-1. Fork the repo and create a feature branch.
-2. Make small, focused commits with descriptive messages.
+1. Fork the repo and create a feature branch from `main`.
+2. Make small, focused commits (one logical change per commit).
 3. Ensure tests and linting pass: `make ci-quick`
 4. Open a PR with a clear description of what changed and why.
+
+## Code style
+
+| Language | Formatter | Linter | Types |
+|----------|-----------|--------|-------|
+| Python | `ruff format` | `ruff check` | `mypy` |
+| TypeScript | Prettier | ESLint + vue plugin | `vue-tsc --noEmit` |
+
+## Testing
+
+- **Backend**: pytest (`projects/wealthlens-dashboard/backend/tests/`)
+- **Frontend**: vitest (`src/components/__tests__/`)
+- **E2E**: Playwright (planned — not yet configured)
+- **Full CI**: `make ci-full` (lint + tests + build + type check)
+
+## Accessibility requirements
+
+All UI changes must meet WCAG AA:
+- 4.5:1 minimum contrast ratio for text
+- Interactive elements keyboard-accessible
+- ARIA labels on non-text content
+- No information conveyed by colour alone
 
 ## Code of conduct
 

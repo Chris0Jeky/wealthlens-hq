@@ -8,7 +8,7 @@
  *
  * Accessibility: WCAG AA high-contrast colors, aria-label, escapeHtml tooltips.
  */
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { use } from "echarts/core";
 import { CanvasRenderer } from "echarts/renderers";
 import { LineChart } from "echarts/charts";
@@ -20,7 +20,8 @@ import {
 } from "echarts/components";
 import VChart from "vue-echarts";
 import { useChartData } from "@/composables/useChartData";
-import { escapeHtml, safeMinMax } from "@/utils/chart";
+import type { EChartsExportable } from "@/composables/useChartExport";
+import { escapeHtml, safeMinMax, warnIfSignificantDataLoss } from "@/utils/chart";
 
 // Register only the ECharts modules we need (tree-shaking)
 use([
@@ -33,6 +34,9 @@ use([
 ]);
 
 const { rows, loading, error } = useChartData("housing-affordability");
+const chart = ref<EChartsExportable | null>(null);
+
+defineExpose({ chart });
 
 /**
  * Respect prefers-reduced-motion (WCAG 2.3.3).
@@ -64,16 +68,22 @@ const MAX_REGIONS = 8;
 /** Group data by region, returning sorted region names and their series. */
 const regionData = computed(() => {
   const byRegion = new Map<string, { year: number; ratio: number }[]>();
+  let skippedRows = 0;
 
   for (const row of rows.value) {
     const region = String(row.region ?? "");
     const year = Number(row.year);
     const ratio = Number(row.ratio);
-    if (!region || isNaN(year) || isNaN(ratio)) continue;
+    if (!region || isNaN(year) || isNaN(ratio)) {
+      skippedRows++;
+      continue;
+    }
 
     if (!byRegion.has(region)) byRegion.set(region, []);
     byRegion.get(region)!.push({ year, ratio });
   }
+
+  warnIfSignificantDataLoss("housing-affordability", rows.value.length, rows.value.length - skippedRows);
 
   // Sort each region's data by year
   for (const data of byRegion.values()) {
@@ -252,6 +262,7 @@ const option = computed(() => {
       class="w-full"
     >
       <VChart
+        ref="chart"
         class="w-full"
         style="height: 480px"
         :option="option"

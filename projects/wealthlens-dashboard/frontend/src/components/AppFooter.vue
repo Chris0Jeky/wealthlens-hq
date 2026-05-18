@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router'
+import NewsletterSignup from '@/components/NewsletterSignup.vue'
+import HealthStatus from './HealthStatus.vue'
 
 const year = new Date().getFullYear()
 </script>
@@ -44,50 +46,45 @@ const year = new Date().getFullYear()
           <span class="brand-text">WealthLens</span>
           <span class="brand-uk">UK</span>
         </RouterLink>
-        <p>
-          Every statistic on this site links to its primary source.
-          Source-backed. Open-source. Impossible to ignore.
-        </p>
+        <p>{{ $t('footer.description') }}</p>
       </div>
 
       <!-- Explore column -->
       <div class="foot-col">
-        <h4>Explore</h4>
+        <h4>{{ $t('footer.explore') }}</h4>
         <ul>
           <li>
-            <RouterLink to="/charts/wealth-shares">All charts</RouterLink>
+            <RouterLink to="/charts/wealth-shares">{{ $t('footer.allCharts') }}</RouterLink>
           </li>
           <li>
-            <RouterLink to="/charts/wealth-shares">Wealth</RouterLink>
+            <RouterLink to="/charts/wealth-shares">{{ $t('footer.wealth') }}</RouterLink>
           </li>
           <li>
-            <RouterLink to="/charts/housing-affordability">Housing</RouterLink>
+            <RouterLink to="/charts/housing-affordability">{{ $t('footer.housing') }}</RouterLink>
           </li>
           <li>
-            <RouterLink to="/charts/cgt-concentration">Tax</RouterLink>
+            <RouterLink to="/charts/cgt-concentration">{{ $t('footer.tax') }}</RouterLink>
           </li>
           <li>
-            <RouterLink to="/charts/wealth-by-decile">
-              Income &amp; opportunity
-            </RouterLink>
+            <RouterLink to="/charts/wealth-by-decile">{{ $t('footer.incomeOpportunity') }}</RouterLink>
           </li>
         </ul>
       </div>
 
       <!-- Project column -->
       <div class="foot-col">
-        <h4>Project</h4>
+        <h4>{{ $t('footer.project') }}</h4>
         <ul>
-          <li><RouterLink to="/about">About</RouterLink></li>
-          <li><RouterLink to="/methodology">Methodology</RouterLink></li>
-          <li><RouterLink to="/contribute">Contribute</RouterLink></li>
+          <li><RouterLink to="/about">{{ $t('nav.about') }}</RouterLink></li>
+          <li><RouterLink to="/methodology">{{ $t('nav.methodology') }}</RouterLink></li>
+          <li><RouterLink to="/contribute">{{ $t('nav.contribute') }}</RouterLink></li>
           <li>
             <a
               href="https://github.com/Chris0Jeky/wealthlens-hq/blob/main/LICENSE"
               target="_blank"
               rel="noopener"
             >
-              Licence (MIT)
+              {{ $t('footer.licence') }}
             </a>
           </li>
         </ul>
@@ -95,7 +92,7 @@ const year = new Date().getFullYear()
 
       <!-- Follow column -->
       <div class="foot-col">
-        <h4>Follow</h4>
+        <h4>{{ $t('footer.follow') }}</h4>
         <ul>
           <li>
             <a
@@ -106,22 +103,20 @@ const year = new Date().getFullYear()
               GitHub
             </a>
           </li>
-          <!-- TODO: Replace with actual WealthLens Bluesky profile URL once confirmed -->
           <li>
             <a
-              href="#"
+              href="https://bsky.app/profile/wealthlens.uk"
               target="_blank"
-              rel="noopener"
+              rel="noopener me"
             >
               Bluesky
             </a>
           </li>
-          <!-- TODO: Replace with actual WealthLens Mastodon profile URL once confirmed -->
           <li>
             <a
-              href="#"
+              href="https://mastodon.social/@wealthlens"
               target="_blank"
-              rel="noopener"
+              rel="noopener me"
             >
               Mastodon
             </a>
@@ -130,10 +125,16 @@ const year = new Date().getFullYear()
       </div>
     </div>
 
+    <!-- Newsletter -->
+    <div class="foot-newsletter">
+      <NewsletterSignup />
+    </div>
+
     <!-- Bottom bar -->
     <div class="foot-base">
-      <span>&copy; {{ year }} WealthLens UK · MIT licensed</span>
-      <span>Made in London · Independent · Non-partisan</span>
+      <span>{{ $t('footer.copyright', { year }) }} · {{ $t('footer.mitLicensed') }}</span>
+      <HealthStatus />
+      <span>{{ $t('footer.tagline') }}</span>
     </div>
   </footer>
 </template>
@@ -239,6 +240,14 @@ const year = new Date().getFullYear()
   line-height: 1.5;
 }
 
+/* --- Newsletter ---------------------------------------------- */
+.foot-newsletter {
+  max-width: var(--wl-max);
+  margin: 40px auto 0;
+  padding: 32px 32px 0;
+  border-top: 1px solid var(--wl-rule);
+}
+
 /* --- Bottom bar ---------------------------------------------- */
 .foot-base {
   max-width: var(--wl-max);
@@ -266,6 +275,11 @@ const year = new Date().getFullYear()
     grid-column: 1 / -1;
   }
 
+  .foot-newsletter {
+    padding: 24px 16px 0;
+    margin-top: 24px;
+  }
+
   .foot-base {
     padding: 20px 16px 0;
     margin-top: 32px;
@@ -277,6 +291,11 @@ const year = new Date().getFullYear()
     grid-template-columns: 1fr;
     gap: 24px;
     padding: 0 12px;
+  }
+
+  .foot-newsletter {
+    padding: 20px 12px 0;
+    margin-top: 20px;
   }
 
   .foot-base {

@@ -10,8 +10,9 @@ from __future__ import annotations
 import logging
 import math
 import os
+from datetime import UTC, datetime
 from pathlib import Path as FilePath
-from typing import Any
+from typing import Any, Literal
 
 import pandas as pd
 from fastapi import APIRouter, HTTPException, Path, Query, Response
@@ -23,6 +24,7 @@ from app.routers.schemas import (
     DatasetListResponse,
     DatasetMetadataResponse,
     DatasetSummaryResponse,
+    FreshnessResponse,
     PaginatedDatasetResponse,
 )
 
@@ -54,6 +56,7 @@ DATASETS: dict[str, str] = {
     "boe-rates": "boe_rates.csv",
     "child-poverty": "child_poverty_by_region.csv",
     "generational-wealth": "generational_wealth_gap.csv",
+    "wage-stagnation": "wage_stagnation.csv",
 }
 
 # Source citations — every dataset must document where the data came from.
@@ -141,6 +144,15 @@ DATASET_META: dict[str, dict[str, str]] = {
         "source_url": "https://www.resolutionfoundation.org/publications/",
         "access_date": "2026-05-16",
     },
+    "wage-stagnation": {
+        "description": "Median real weekly earnings in 2024 prices",
+        "source": "ONS Annual Survey of Hours and Earnings (ASHE), Table 1",
+        "source_url": (
+            "https://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/"
+            "earningsandworkinghours/datasets/ashe1702"
+        ),
+        "access_date": "2026-05-16",
+    },
 }
 
 
@@ -191,6 +203,8 @@ def _build_metadata(dataset_name: str) -> dict[str, Any]:
 
     row_count, columns = _metadata_cache[dataset_name]
 
+    last_updated = _get_last_updated(dataset_name)
+
     return {
         "name": dataset_name,
         "description": meta["description"],
@@ -199,7 +213,37 @@ def _build_metadata(dataset_name: str) -> dict[str, Any]:
         "access_date": meta["access_date"],
         "row_count": row_count,
         "columns": columns,
+        "last_updated": last_updated,
     }
+
+
+# --- Freshness tracking ---
+# Thresholds for classifying dataset freshness.
+FRESHNESS_FRESH_HOURS = 168  # 7 days
+FRESHNESS_STALE_HOURS = 720  # 30 days
+
+
+def _get_last_updated(dataset_name: str) -> str | None:
+    """Return the ISO 8601 UTC modification time of a dataset's CSV file.
+
+    Returns None if the file does not exist or cannot be stat'd.
+    """
+    csv_path = DATA_DIR / DATASETS[dataset_name]
+    try:
+        mtime = csv_path.stat().st_mtime
+        return datetime.fromtimestamp(mtime, tz=UTC).isoformat()
+    except OSError as exc:
+        logger.warning("Cannot stat dataset %s: %s", dataset_name, exc)
+        return None
+
+
+def _freshness_status(age_hours: float) -> Literal["fresh", "stale", "expired"]:
+    """Classify a dataset's age into fresh/stale/expired."""
+    if age_hours <= FRESHNESS_FRESH_HOURS:
+        return "fresh"
+    if age_hours <= FRESHNESS_STALE_HOURS:
+        return "stale"
+    return "expired"
 
 
 def health_data() -> dict[str, Any]:
@@ -258,6 +302,51 @@ def list_datasets(response: Response) -> dict[str, list[str]]:
 
 
 @router.get(
+    "/freshness",
+    response_model=FreshnessResponse,
+    summary="Dataset freshness status",
+)
+def dataset_freshness(response: Response) -> dict[str, Any]:
+    """Return freshness status for all datasets.
+
+    Reads the modification time of each CSV file to determine how
+    recently the data was updated.  Classifies each dataset as
+    fresh (within 7 days), stale (within 30 days), or expired (older).
+    Returns null for last_updated and age_hours if the file is missing.
+    """
+    response.headers["Cache-Control"] = _CACHE_METADATA
+    now = datetime.now(tz=UTC)
+    datasets_freshness: dict[str, dict[str, Any]] = {}
+
+    for name in DATASETS:
+        csv_path = DATA_DIR / DATASETS[name]
+        try:
+            mtime = csv_path.stat().st_mtime
+            last_updated_dt = datetime.fromtimestamp(mtime, tz=UTC)
+            age_hours = (now - last_updated_dt).total_seconds() / 3600
+            datasets_freshness[name] = {
+                "last_updated": last_updated_dt.isoformat(),
+                "age_hours": round(age_hours, 1),
+                "status": _freshness_status(age_hours),
+            }
+        except OSError as exc:
+            logger.warning("Cannot stat dataset %s for freshness: %s", name, exc)
+            datasets_freshness[name] = {
+                "last_updated": None,
+                "age_hours": None,
+                "status": "unknown",
+            }
+
+    return {
+        "datasets": datasets_freshness,
+        "thresholds": {
+            "fresh_hours": FRESHNESS_FRESH_HOURS,
+            "stale_hours": FRESHNESS_STALE_HOURS,
+        },
+    }
+
+
+@router.get(
     "/metadata",
     response_model=AllDatasetsMetadataResponse,
     summary="Metadata for all datasets",
@@ -300,10 +389,19 @@ def dataset_metadata(
 
 
 @router.get("/{dataset_name}/columns", response_model=DatasetColumnsResponse)
-def dataset_columns(dataset_name: str) -> dict[str, Any]:
+def dataset_columns(
+    dataset_name: str = Path(
+        ...,
+        pattern=r"^[a-z0-9-]{1,50}$",
+        description="Dataset identifier (lowercase, digits, hyphens only)",
+    ),
+) -> dict[str, Any]:
     """Return per-column metadata: dtype, null count, unique count."""
     if dataset_name not in DATASETS:
         raise HTTPException(status_code=404, detail=f"Unknown dataset: {dataset_name}")
+
+    if dataset_name in _columns_cache:
+        return _columns_cache[dataset_name]
 
     df = _read_csv(dataset_name)
     columns = []
@@ -316,15 +414,25 @@ def dataset_columns(dataset_name: str) -> dict[str, Any]:
                 "unique_count": int(df[col].nunique()),
             }
         )
-    return {"dataset": dataset_name, "row_count": len(df), "columns": columns}
+    result: dict[str, Any] = {"dataset": dataset_name, "row_count": len(df), "columns": columns}
+    _columns_cache[dataset_name] = result
+    return result
 
+
+_columns_cache: dict[str, dict[str, Any]] = {}
 
 _summary_cache: dict[str, dict[str, Any]] = {}
 
 
 @router.get("/{dataset_name}/summary", response_model=DatasetSummaryResponse,
             summary="Summary statistics for a dataset")
-def dataset_summary(dataset_name: str) -> dict[str, Any]:
+def dataset_summary(
+    dataset_name: str = Path(
+        ...,
+        pattern=r"^[a-z0-9-]{1,50}$",
+        description="Dataset identifier (lowercase, digits, hyphens only)",
+    ),
+) -> dict[str, Any]:
     """Return descriptive statistics for numeric columns in a dataset."""
     if dataset_name not in DATASETS:
         raise HTTPException(status_code=404, detail=f"Unknown dataset: {dataset_name}")
@@ -358,7 +466,13 @@ def dataset_summary(dataset_name: str) -> dict[str, Any]:
 
 
 @router.get("/{dataset_name}/download", summary="Download dataset as CSV")
-def download_dataset(dataset_name: str) -> StreamingResponse:
+def download_dataset(
+    dataset_name: str = Path(
+        ...,
+        pattern=r"^[a-z0-9-]{1,50}$",
+        description="Dataset identifier (lowercase, digits, hyphens only)",
+    ),
+) -> StreamingResponse:
     """Download a dataset as a CSV file streamed directly from disk."""
     if dataset_name not in DATASETS:
         raise HTTPException(status_code=404, detail=f"Unknown dataset: {dataset_name}")
