@@ -396,6 +396,36 @@ class TestComputeEnforcementUplift:
         assert len(result.family_results) == 1
         assert result.total_theoretical_bn == 100.0
 
+    def test_all_six_families(self):
+        rates = {
+            TaxFamily.INCOME_TAX: (0.90, 0.95),
+            TaxFamily.CGT: (0.80, 0.88),
+            TaxFamily.IHT: (0.85, 0.92),
+            TaxFamily.VAT: (0.88, 0.93),
+            TaxFamily.CORPORATION_TAX: (0.92, 0.96),
+            TaxFamily.OTHER: (0.75, 0.85),
+        }
+        config = EnforcementConfig(
+            compliance_rates=tuple(
+                ComplianceRate(
+                    tax_family=tf, baseline_rate=b, scenario_rate=s,
+                )
+                for tf, (b, s) in rates.items()
+            ),
+            enforcement_cost_bn=1.0,
+        )
+        theoretical = {tf: 50.0 for tf in TaxFamily}
+        result = compute_enforcement_uplift(theoretical, config)
+
+        assert len(result.family_results) == 6
+        expected_uplift = sum(
+            50.0 * (s - b) for b, s in rates.values()
+        )
+        assert result.total_uplift_bn == pytest.approx(expected_uplift)
+        assert result.net_uplift_bn == pytest.approx(expected_uplift - 1.0)
+        families_in_result = {fr.tax_family for fr in result.family_results}
+        assert families_in_result == set(TaxFamily)
+
 
 class TestEnforcementResult:
     def test_round_trip(self):
