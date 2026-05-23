@@ -41,6 +41,7 @@ from wealthlens_sim.reforms.d_iht_reform import (
     HouseholdIHTResult,
     IHTConfig,
     IHTResult,
+    PersonIHTFlags,
     compute_aggregate_iht_revenue,
     compute_household_iht,
 )
@@ -71,6 +72,7 @@ __all__ = [
     "LevyRateBand",
     "OneOffLevyConfig",
     "OneOffLevyResult",
+    "PersonIHTFlags",
     "RateBand",
     "TaxUnit",
     "TaxpayerType",

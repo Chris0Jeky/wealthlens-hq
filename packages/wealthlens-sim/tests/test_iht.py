@@ -10,6 +10,7 @@ from wealthlens_sim.reforms.d_iht_reform import (
     HouseholdIHTResult,
     IHTConfig,
     IHTResult,
+    PersonIHTFlags,
     _compute_apr_bpr_relief,
     _compute_person_iht,
     _compute_rnrb,
@@ -485,3 +486,150 @@ class TestHouseholdIHTResultModel:
         r2 = HouseholdIHTResult.model_validate(data)
         assert r2.household_id == "hh1"
         assert len(r2.person_results) == 1
+
+
+class TestStatePensionExclusion:
+    """STATE_PENSION must always be excluded from the estate, even with include_pensions=True."""
+
+    def test_state_pension_excluded_by_default(self):
+        person = make_person(assets=[
+            (AssetType.STATE_PENSION, 200_000, 0),
+            (AssetType.FINANCIAL, 100_000, 0),
+        ])
+        hh = make_household([person])
+        result = compute_household_iht(hh, IHTConfig())
+        pr = result.person_results[0]
+        assert pr.estate_value == 100_000
+
+    def test_state_pension_excluded_even_with_include_pensions(self):
+        person = make_person(assets=[
+            (AssetType.STATE_PENSION, 200_000, 0),
+            (AssetType.DC_PENSION, 500_000, 0),
+            (AssetType.FINANCIAL, 100_000, 0),
+        ])
+        hh = make_household([person])
+        config = IHTConfig(include_pensions=True)
+        result = compute_household_iht(hh, config)
+        pr = result.person_results[0]
+        assert pr.estate_value == 600_000
+
+    def test_state_pension_only_estate_zero(self):
+        person = make_person(assets=[
+            (AssetType.STATE_PENSION, 300_000, 0),
+        ])
+        hh = make_household([person])
+        result = compute_household_iht(hh, IHTConfig(include_pensions=True))
+        pr = result.person_results[0]
+        assert pr.estate_value == 0.0
+        assert not result.is_liable
+
+
+class TestNRBRNRBBoundary:
+    """Estate exactly at £500k NRB+RNRB combined threshold."""
+
+    def test_estate_exactly_at_combined_nrb_rnrb(self):
+        config = IHTConfig()
+        estate = 500_000
+        result = _compute_person_iht(estate, True, True, 0, False, 0.0, config)
+        assert result.nil_rate_band_used == 325_000
+        assert result.rnrb_used == 175_000
+        assert result.taxable_estate == 0.0
+        assert not result.is_liable
+
+    def test_estate_one_pound_above_combined(self):
+        config = IHTConfig()
+        estate = 500_001
+        result = _compute_person_iht(estate, True, True, 0, False, 0.0, config)
+        assert result.taxable_estate == 1.0
+        assert result.is_liable
+        assert result.iht_liability == pytest.approx(0.40)
+
+
+class TestRNRBFullTaper:
+    """£2.35M estate fully tapers RNRB to zero."""
+
+    def test_full_taper_at_2_350_000(self):
+        config = IHTConfig()
+        estate = 2_350_000
+        result = _compute_person_iht(estate, True, True, 0, False, 0.0, config)
+        assert result.rnrb_used == 0.0
+        expected_taxable = estate - 325_000
+        assert result.taxable_estate == pytest.approx(expected_taxable)
+        assert result.iht_liability == pytest.approx(expected_taxable * 0.40)
+
+    def test_taper_one_below_full(self):
+        config = IHTConfig()
+        estate = 2_349_998
+        result = _compute_person_iht(estate, True, True, 0, False, 0.0, config)
+        assert result.rnrb_used == pytest.approx(1.0)
+
+
+class TestAPRBPRExceedsEstate:
+    """APR/BPR relief that exceeds the estate should floor taxable at zero."""
+
+    def test_apr_bpr_exceeds_estate(self):
+        config = IHTConfig()
+        estate = 1_000_000
+        qualifying = 2_000_000
+        result = _compute_person_iht(estate, False, False, qualifying, False, 0.0, config)
+        assert not result.is_liable
+        assert result.taxable_estate == 0.0
+
+    def test_apr_bpr_gross_value_used(self):
+        person = make_person(assets=[
+            (AssetType.PRIVATE_BUSINESS, 3_000_000, 500_000),
+            (AssetType.FINANCIAL, 1_000_000, 0),
+        ])
+        hh = make_household([person])
+        result = compute_household_iht(hh, IHTConfig())
+        pr = result.person_results[0]
+        expected_relief = 2_500_000 + (500_000 * 0.50)
+        assert pr.apr_bpr_relief == pytest.approx(expected_relief)
+
+
+class TestPersonIdPassthrough:
+    """_compute_person_iht should set person_id from the keyword argument."""
+
+    def test_person_id_default_empty(self):
+        result = _compute_person_iht(500_000, False, False, 0, False, 0.0, IHTConfig())
+        assert result.person_id == ""
+
+    def test_person_id_set(self):
+        result = _compute_person_iht(
+            500_000, False, False, 0, False, 0.0, IHTConfig(), person_id="test_person",
+        )
+        assert result.person_id == "test_person"
+
+    def test_household_sets_person_id(self):
+        person = make_person("custom_id", assets=[
+            (AssetType.FINANCIAL, 1_000_000, 0),
+        ])
+        hh = make_household([person])
+        result = compute_household_iht(hh, IHTConfig())
+        assert result.person_results[0].person_id == "custom_id"
+
+
+class TestPersonIHTFlagsType:
+    """PersonIHTFlags TypedDict provides type-safe person metadata."""
+
+    def test_typed_flags_accepted(self):
+        flags: PersonIHTFlags = {
+            "is_married": True,
+            "has_direct_descendants": True,
+            "charitable_fraction": 0.15,
+        }
+        person = make_person(assets=[(AssetType.FINANCIAL, 1_000_000, 0)])
+        hh = make_household([person])
+        result = compute_household_iht(hh, IHTConfig(), person_flags={"p1": flags})
+        assert not result.is_liable
+        assert result.person_results[0].is_spousal_exempt
+
+    def test_partial_flags(self):
+        flags: PersonIHTFlags = {"has_direct_descendants": True}
+        person = make_person(assets=[
+            (AssetType.MAIN_RESIDENCE, 700_000, 0),
+        ])
+        hh = make_household([person])
+        result = compute_household_iht(hh, IHTConfig(), person_flags={"p1": flags})
+        pr = result.person_results[0]
+        assert pr.rnrb_used == 175_000

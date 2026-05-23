@@ -42,6 +42,8 @@ Sources:
 
 from __future__ import annotations
 
+from typing import TypedDict
+
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from wealthlens_sim.schema.household import AssetType, Household
@@ -62,6 +64,23 @@ RESIDENCE_TYPES: frozenset[AssetType] = frozenset({
 APR_BPR_TYPES: frozenset[AssetType] = frozenset({
     AssetType.PRIVATE_BUSINESS,
 })
+
+ALWAYS_EXCLUDED_TYPES: frozenset[AssetType] = frozenset({
+    AssetType.STATE_PENSION,
+})
+
+
+class PersonIHTFlags(TypedDict, total=False):
+    """Per-person metadata for IHT computation.
+
+    Charitable fraction is the fraction of the *baseline* estate (before
+    NRB/RNRB/reliefs) left to charity. The caller must compute this
+    externally — the IHT module has no gift/bequest model in v0.1.
+    """
+
+    is_married: bool
+    has_direct_descendants: bool
+    charitable_fraction: float
 
 
 class IHTConfig(BaseModel):
@@ -208,9 +227,10 @@ def _compute_person_iht(
     is_married: bool,
     charitable_fraction: float,
     config: IHTConfig,
+    *,
+    person_id: str = "",
 ) -> IHTResult:
     """Compute IHT liability for a single person's estate."""
-    person_id = ""
 
     if estate_value <= 0:
         return IHTResult(
@@ -289,13 +309,11 @@ def _compute_person_iht(
 def compute_household_iht(
     household: Household,
     config: IHTConfig,
-    person_flags: dict[str, dict] | None = None,
+    person_flags: dict[str, PersonIHTFlags] | None = None,
 ) -> HouseholdIHTResult:
     """Compute IHT for all persons in a household.
 
-    person_flags optionally provides per-person metadata:
-      {person_id: {"is_married": bool, "has_direct_descendants": bool,
-                    "charitable_fraction": float}}
+    person_flags optionally provides per-person metadata keyed by person_id.
     If absent, defaults are: not married, no descendants, no charitable giving.
     """
     if person_flags is None:
@@ -315,17 +333,19 @@ def compute_household_iht(
         apr_bpr_qualifying = 0.0
 
         for asset in person.assets:
+            if asset.asset_type in ALWAYS_EXCLUDED_TYPES:
+                continue
             if asset.asset_type in pension_types and not config.include_pensions:
                 continue
             estate_value += asset.net_value
             if asset.asset_type in RESIDENCE_TYPES:
                 owns_residence = True
             if asset.asset_type in APR_BPR_TYPES:
-                apr_bpr_qualifying += asset.net_value
+                apr_bpr_qualifying += asset.gross_value
 
         estate_value = max(0.0, estate_value)
 
-        result = _compute_person_iht(
+        person_results.append(_compute_person_iht(
             estate_value=estate_value,
             owns_residence=owns_residence,
             has_direct_descendants=has_direct_descendants,
@@ -333,20 +353,7 @@ def compute_household_iht(
             is_married=is_married,
             charitable_fraction=charitable_fraction,
             config=config,
-        )
-
-        person_results.append(IHTResult(
             person_id=person.person_id,
-            estate_value=result.estate_value,
-            nil_rate_band_used=result.nil_rate_band_used,
-            rnrb_used=result.rnrb_used,
-            apr_bpr_relief=result.apr_bpr_relief,
-            taxable_estate=result.taxable_estate,
-            iht_rate_applied=result.iht_rate_applied,
-            iht_liability=result.iht_liability,
-            effective_rate=result.effective_rate,
-            is_liable=result.is_liable,
-            is_spousal_exempt=result.is_spousal_exempt,
         ))
 
     total = sum(r.iht_liability for r in person_results)
@@ -361,11 +368,11 @@ def compute_household_iht(
 def compute_aggregate_iht_revenue(
     households: list[Household],
     config: IHTConfig,
-    population_flags: dict[str, dict[str, dict]] | None = None,
+    population_flags: dict[str, dict[str, PersonIHTFlags]] | None = None,
 ) -> AggregateIHTRevenue:
     """Compute population-level IHT revenue across all households.
 
-    population_flags: {household_id: {person_id: {flags}}}
+    population_flags: {household_id: {person_id: PersonIHTFlags}}
     """
     if population_flags is None:
         population_flags = {}
