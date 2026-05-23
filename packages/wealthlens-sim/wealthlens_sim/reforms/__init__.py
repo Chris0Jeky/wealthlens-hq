@@ -36,6 +36,14 @@ from wealthlens_sim.reforms.c_cgt_reform import (
     compute_aggregate_cgt_revenue,
     compute_household_cgt,
 )
+from wealthlens_sim.reforms.d_iht_reform import (
+    AggregateIHTRevenue,
+    HouseholdIHTResult,
+    IHTConfig,
+    IHTResult,
+    compute_aggregate_iht_revenue,
+    compute_household_iht,
+)
 from wealthlens_sim.reforms.e_property_tax import (
     AggregateHVCTSRevenue,
     HVCTSBand,
@@ -48,6 +56,7 @@ from wealthlens_sim.reforms.e_property_tax import (
 __all__ = [
     "AggregateCGTRevenue",
     "AggregateHVCTSRevenue",
+    "AggregateIHTRevenue",
     "AggregateOneOffRevenue",
     "AggregateRevenue",
     "CGTConfig",
@@ -56,6 +65,9 @@ __all__ = [
     "HVCTSConfig",
     "HVCTSResult",
     "HouseholdCGTResult",
+    "HouseholdIHTResult",
+    "IHTConfig",
+    "IHTResult",
     "LevyRateBand",
     "OneOffLevyConfig",
     "OneOffLevyResult",
@@ -66,9 +78,11 @@ __all__ = [
     "WealthTaxResult",
     "compute_aggregate_cgt_revenue",
     "compute_aggregate_hvcts_revenue",
+    "compute_aggregate_iht_revenue",
     "compute_aggregate_one_off_revenue",
     "compute_aggregate_revenue",
     "compute_household_cgt",
+    "compute_household_iht",
     "compute_hvcts",
     "compute_one_off_levy",
     "compute_wealth_tax",
