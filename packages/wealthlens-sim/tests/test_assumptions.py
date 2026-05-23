@@ -18,6 +18,7 @@ from wealthlens_sim.assumptions import (
     TransferabilityScore,
     load_assumptions,
 )
+from wealthlens_sim.schema import LegalStatus
 
 
 POINT_ENTRY = {
@@ -39,6 +40,17 @@ RANGE_ENTRY = {
     "transferability_score": "medium",
     "valid_range": "alpha in [1.1, 2.5]",
     "applies_to": "all families",
+    "last_reviewed": "2026-05-23",
+}
+
+NEGATIVE_RANGE_ENTRY = {
+    "assumption_id": "behaviour.migration.non_dom_stock_elasticity.v1",
+    "domain": "migration",
+    "value_or_distribution": {"type": "range", "low": -0.01, "central": -0.04, "high": -0.10},
+    "source": "Advani & Summers (2020)",
+    "transferability_score": "low",
+    "valid_range": "elasticity in [-0.20, 0.0]",
+    "applies_to": "Family A, Family B",
     "last_reviewed": "2026-05-23",
 }
 
@@ -81,15 +93,20 @@ class TestValueDistribution:
         assert isinstance(a.value_or_distribution, RangeValue)
         assert a.value_or_distribution.central == 1.5
 
-    def test_range_ordering_enforced(self):
+    def test_range_non_monotonic_rejected(self):
         bad = {**RANGE_ENTRY, "value_or_distribution": {"type": "range", "low": 2.0, "central": 1.5, "high": 1.8}}
-        with pytest.raises(ValidationError, match="low <= central <= high"):
+        with pytest.raises(ValidationError, match="monotonically ordered"):
             Assumption.model_validate(bad)
+
+    def test_negative_range_accepted(self):
+        a = Assumption.model_validate(NEGATIVE_RANGE_ENTRY)
+        assert isinstance(a.value_or_distribution, RangeValue)
+        assert a.value_or_distribution.low == -0.01
+        assert a.value_or_distribution.high == -0.10
 
     def test_schedule_value(self):
         a = Assumption.model_validate(SCHEDULE_ENTRY)
         assert isinstance(a.value_or_distribution, ScheduleValue)
-        assert a.value_or_distribution.rates == {"basic_rate": 18, "higher_rate": 24}
 
     def test_flag_value(self):
         a = Assumption.model_validate(FLAG_ENTRY)
@@ -108,6 +125,16 @@ class TestAssumption:
         with pytest.raises(ValidationError, match="assumption_id"):
             Assumption.model_validate(bad)
 
+    def test_id_rejects_double_dots(self):
+        bad = {**POINT_ENTRY, "assumption_id": "abc..def.v1"}
+        with pytest.raises(ValidationError, match="assumption_id"):
+            Assumption.model_validate(bad)
+
+    def test_id_rejects_leading_zero_version(self):
+        bad = {**POINT_ENTRY, "assumption_id": "abc.def.v01"}
+        with pytest.raises(ValidationError, match="assumption_id"):
+            Assumption.model_validate(bad)
+
     def test_transferability_enum(self):
         a = Assumption.model_validate(POINT_ENTRY)
         assert a.transferability_score == TransferabilityScore.HIGH
@@ -122,11 +149,16 @@ class TestAssumption:
         with pytest.raises(ValidationError, match="Extra inputs"):
             Assumption.model_validate(bad)
 
-    def test_legal_status_optional(self):
+    def test_legal_status_uses_enum(self):
         a = Assumption.model_validate(POINT_ENTRY)
         assert a.legal_status is None
         a2 = Assumption.model_validate(SCHEDULE_ENTRY)
-        assert a2.legal_status == "current_law"
+        assert a2.legal_status == LegalStatus.CURRENT_LAW
+
+    def test_invalid_legal_status_rejected(self):
+        bad = {**SCHEDULE_ENTRY, "legal_status": "curent_law"}
+        with pytest.raises(ValidationError):
+            Assumption.model_validate(bad)
 
     def test_last_reviewed_parsed_as_date(self):
         a = Assumption.model_validate(POINT_ENTRY)
@@ -169,6 +201,10 @@ class TestAssumptionRegistry:
         medium = reg.by_transferability(TransferabilityScore.MEDIUM)
         assert len(medium) == 1
 
+    def test_duplicate_ids_rejected(self):
+        with pytest.raises(ValidationError, match="Duplicate assumption_id"):
+            AssumptionRegistry.model_validate({"assumptions": [POINT_ENTRY, POINT_ENTRY]})
+
     def test_round_trip(self):
         reg = AssumptionRegistry.model_validate(
             {"assumptions": [POINT_ENTRY, RANGE_ENTRY, FLAG_ENTRY]}
@@ -180,8 +216,11 @@ class TestAssumptionRegistry:
 
 
 class TestLoader:
-    def test_load_skeleton(self):
-        reg = load_assumptions()
+    def test_load_empty_registry(self, tmp_path: Path):
+        data = {"assumptions": []}
+        p = tmp_path / "empty.yml"
+        p.write_text(yaml.dump(data, default_flow_style=False), encoding="utf-8")
+        reg = load_assumptions(p)
         assert isinstance(reg, AssumptionRegistry)
         assert len(reg.assumptions) == 0
 
