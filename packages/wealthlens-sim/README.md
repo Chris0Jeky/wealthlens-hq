@@ -29,7 +29,7 @@ as the public-facing layer; this package provides the simulation engine.
 
 ## License
 
-AGPL-3.0-or-later. See [LICENSE](./LICENSE) for the full text.
+AGPL-3.0-or-later. The LICENSE file will be added in a follow-up branch (`chore/license-split`).
 
 The AGPL license is chosen for compatibility with PolicyEngine-UK (also
 AGPL-3.0) and to prevent private capture of a public-interest simulator.
