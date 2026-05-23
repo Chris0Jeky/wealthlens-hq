@@ -5,7 +5,7 @@
 >
 > **CRITICAL**: Update this file BEFORE every compaction risk (long tool calls, large diffs).
 
-Last updated: 2026-05-23T14:00Z
+Last updated: 2026-05-23T16:00Z
 
 ## 2026-05-23 New Cycle: Blueprint Foundation
 
@@ -70,15 +70,15 @@ See archived wave tables below for historical provenance.
 | 44 | License split (AGPL-3.0 for simulator) | `chore/license-split` | feat/sim-skeleton | #287 | R2 DONE | 2/2 | 2/2 |
 | 45 | Model Charter (docs/MODEL_CHARTER.md) | `docs/model-charter` | main | #284 | R2 DONE | 2/2 | 2/2 |
 | 46 | AI/LLM Disclosure (docs/AI_LLM_DISCLOSURE.md) | `docs/ai-disclosure` | main | #285 | R2 DONE | 2/2 | 2/2 |
-| 47 | Sources registry (registries/sources.yml) | `feat/sources-registry` | feat/sim-skeleton | #288 | R2 IN PROGRESS | 2/2 | 2/2 pending |
-| 48 | Assumptions registry (registries/assumptions.yml) | `feat/assumptions-registry` | feat/sim-skeleton | #289 | R1 IN PROGRESS | 2/2 pending | — |
-| 49 | Baselines registry (registries/baselines.yml) | `feat/baselines-registry` | feat/sim-skeleton | #290 | R1 IN PROGRESS | 2/2 pending | — |
+| 47 | Sources registry (registries/sources.yml) | `feat/sources-registry` | feat/sim-skeleton | #288 | R2 DONE | 2/2 | 2/2 |
+| 48 | Assumptions registry (registries/assumptions.yml) | `feat/assumptions-registry` | feat/sim-skeleton | #289 | R2 FIXES PUSHED | 2/2 | 2/2 fixes applied |
+| 49 | Baselines registry (registries/baselines.yml) | `feat/baselines-registry` | feat/sim-skeleton | #290 | R2 FIXES PUSHED | 2/2 | 2/2 fixes applied |
 
-### Wave 10 Candidates — Dependabot + Deps
+### Wave 10 — Dependabot + Housekeeping
 
-| # | Stream | Branch | Base | PR | Status |
-|---|--------|--------|------|----|--------|
-| 50 | Dependabot PRs (11 open: #273–#283) | various | main | #273-#283 | OPEN |
+| # | Stream | Branch | Base | PR | Status | R1 | R2 |
+|---|--------|--------|------|----|--------|----|----|
+| 50 | Batch Dependabot updates (11 PRs consolidated) | `chore/dependabot-batch-2026-05-23` | main | #291 | R1 IN PROGRESS | 2/2 pending | — |
 
 ### Wave 11+ Candidates (from blueprint/compass)
 
@@ -114,6 +114,9 @@ See archived wave tables below for historical provenance.
 | 2026-05-16 | CODE_OF_CONDUCT blocked by content filter; replaced with enhanced CONTRIBUTING.md | Agent couldn't produce CoC template; CONTRIBUTING covers conduct section |
 | 2026-05-16 | Wave 8: focus on engagement + viral shareability | Wealth scale scroller, search, OG images — make site compelling to share |
 | 2026-05-16 | Wage chart: corrected growth rate from 2% to 1.5% (actual 2000-2008 CAGR) | Data integrity guardrail — do not fabricate statistics |
+| 2026-05-23 | Batch all 11 Dependabot PRs into single PR #291 | Cleaner than merging 11 individual PRs; vue-tsc major bump verified locally |
+| 2026-05-23 | R2 found YAML 1.1 scientific notation bug in assumptions.yml | PyYAML requires e+ not bare e for float parsing — silent type error |
+| 2026-05-23 | R2 found Family G missing from baselines.yml | Added devolution property-tax baseline to cover all 7 policy families |
 
 ## Subagent Dispatch Reference
 
