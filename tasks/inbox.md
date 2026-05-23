@@ -6,6 +6,44 @@ Every concrete action item extracted from research. Triage into active-sprint, b
 
 ---
 
+## Build: WealthLens-Sim Microsimulator (Blueprint v5)
+
+### Gate 1: Schema + Registry Layer
+- [x] Pydantic schema module — households, policies, results (PR #292) [completed: 2026-05-23]
+- [x] Assumption registry loader with validation (PR #293) [completed: 2026-05-23]
+- [ ] Baselines registry loader (registries/baselines.yml → typed PolicyBaseline models)
+- [ ] Sources registry loader (registries/sources.yml → typed DataSource models)
+
+### Gate 2: Data Foundation
+- [ ] Top-tail Pareto reconstruction module (Blueprint §5.1-5.3) — Pareto tail fitting, calibration to Rich List
+- [ ] FRS-WAS data linker (Blueprint §7.1-7.2) — survey spine construction
+- [ ] Synthetic household generator for testing (Blueprint §13.5)
+- [ ] ONS WAS wave importer — parse SPSS/CSV into Household schema
+
+### Gate 3: Policy Family Calculators
+- [ ] Family A: Annual wealth tax calculator (Blueprint §9.1) — threshold, rate, exemptions
+- [ ] Family B: One-off wealth levy calculator (Blueprint §9.2) — emergency levy scenario
+- [ ] Family C: CGT reform module (Blueprint §9.3) — rate alignment, death charge, lock-in elasticity
+- [ ] Family D: IHT/transfer tax module (Blueprint §9.4) — nil-rate bands, APR/BPR cap, pension inclusion
+- [ ] Family E: Property tax / HVCTS module (Blueprint §9.5) — consultation bands, England-only scope
+- [ ] Family F: Enforcement module (Blueprint §9.6) — compliance yield, tax gap reduction
+- [ ] Family G: Devolution module (Blueprint §9.7) — nation-specific policy overrides
+
+### Gate 4: Behavioural + Uncertainty
+- [ ] Migration elasticity model (Blueprint §6.1) — non-dom stock, domiciled emigration
+- [ ] Avoidance/lock-in model (Blueprint §6.2) — CGT lock-in elasticity, wealth concealment
+- [ ] Liquidity constraint analyser (Blueprint §6.3) — income-to-wealth ratio, forced liquidation
+- [ ] Monte Carlo uncertainty engine (Blueprint §10) — parameter sweep, confidence intervals
+- [ ] Sensitivity analysis runner — tornado charts, one-at-a-time variation
+
+### Gate 5: Output + Integration
+- [ ] Provenance manifest system (Blueprint §13.4) — every published number carries full lineage
+- [ ] Revenue distribution calculator — aggregate + percentile-level revenue estimates
+- [ ] Nation-level disaggregation reporter — England/Scotland/Wales/NI breakdowns
+- [ ] PolicyEngine-UK integration skeleton (Blueprint §12) — validate against PE-UK baseline
+- [ ] Dashboard API bridge — JSON endpoints for revenue estimates, distributional charts
+- [ ] Assumptions sensitivity dashboard component — interactive slider → revenue impact
+
 ## Build: Charts and Visualisations
 
 - [ ] Build "Where Do You Fit in UK Wealth?" personal comparator calculator

@@ -1,27 +1,26 @@
 # Active Sprint
 
-Last updated: 2026-05-17
+Last updated: 2026-05-23
 
 This week's focus. Keep this list to 5-7 tasks.
 
-## Sprint: 2026-05-14 to 2026-05-21
+## Sprint: 2026-05-21 to 2026-05-28
 
-1. - [x] Deploy v0.1 prototype to GitHub Pages — live at https://chris0jeky.github.io/wealthlens-hq/ (@Chris) [completed: 2026-05-15]
-2. - [ ] Update LinkedIn headline and About section with WealthLens narrative (@Chris) [due: 2026-05-16]
-3. - [ ] Write and publish first LinkedIn post: "Why I'm building WealthLens UK" — personal story connecting WP work, trading systems, and the mission (@Chris) [due: 2026-05-19]
-4. - [ ] Make first open-source PR to mySociety, Democracy Club, or TJN repos (@Chris) [due: 2026-05-21]
-5. - [ ] Continue reading *The Trading Game* and start *A Brief History of Equality* when it arrives (@Chris) [due: 2026-05-21]
-6. - [ ] Wire up first Vue chart component to data store + backend API (@Chris) [due: 2026-05-21]
-7. - [ ] Handle deferred major dependency upgrades (pandas 3, TypeScript 6, Vite 8) — evaluate and plan (@Chris) [due: 2026-05-21]
+1. - [x] Sim skeleton: package structure, pyproject.toml, AGPL licence (@Chris) [completed: 2026-05-22]
+2. - [x] Pydantic schema module: households, policies, results (PR #292) (@Chris) [completed: 2026-05-23]
+3. - [x] Assumption registry loader with validation (PR #293) (@Chris) [completed: 2026-05-23]
+4. - [ ] Baselines registry loader with validation (@Chris) [due: 2026-05-25]
+5. - [ ] Top-tail Pareto reconstruction module (Blueprint §5.1-5.3) (@Chris) [due: 2026-05-27]
+6. - [ ] Family A: annual wealth tax calculator (Blueprint §9.1) (@Chris) [due: 2026-05-28]
+7. - [ ] Provenance manifest system (Blueprint §13.4) (@Chris) [due: 2026-05-28]
 
 ## Why These Seven
 
-- **Deploy (1):** Done — live at https://chris0jeky.github.io/wealthlens-hq/
-- **LinkedIn (2-3):** Deferred from day 1. Quick profile update + first post establishes public commitment.
-- **Open-source PR (4):** Three PRs in three weeks is the credibility target. Start the clock.
-- **Reading (5):** Foundation work continues in background.
-- **Chart wiring (6):** The frontend scaffold is built. Next step is connecting a real chart to the live API.
-- **Dep upgrades (7):** pandas 3, TS 6, Vite 8, vue-router 5, vue-tsc 3 were deferred — need a plan.
+- **Sim skeleton (1-3):** Gate 1 deliverables complete. Schema layer and assumption loader provide the type foundation for all policy modules.
+- **Baselines loader (4):** Parallel to assumption loader; loads registries/baselines.yml with policy status matrix.
+- **Top-tail (5):** Blueprint §5 is the critical data-quality layer — without Pareto reconstruction, wealth totals undercount the top by ~£600bn.
+- **Family A (6):** The headline policy module — annual wealth tax. Most requested, most visible, drives the revenue simulator.
+- **Provenance (7):** Blueprint §13.4 requires every published number to carry a provenance manifest. Wire this early before outputs proliferate.
 
 ## Completed This Sprint
 
