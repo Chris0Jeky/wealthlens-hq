@@ -274,6 +274,51 @@ class TestTypes:
             })
 
 
+class TestVariantConfigValidation:
+    def test_zero_visibility_raises(self):
+        """richlist_visibility=0.0 would cause division-by-zero; must reject."""
+        with pytest.raises(ValueError, match="richlist_visibility must be > 0"):
+            VariantConfig(
+                variant=BaselineVariant.RICH_LIST_AUGMENTED,
+                threshold=2_000_000,
+                richlist_visibility=0.0,
+            )
+
+    def test_negative_visibility_raises(self):
+        """Negative visibility is also nonsensical; must reject."""
+        with pytest.raises(ValueError, match="richlist_visibility must be > 0"):
+            VariantConfig(
+                variant=BaselineVariant.RICH_LIST_AUGMENTED,
+                threshold=2_000_000,
+                richlist_visibility=-0.5,
+            )
+
+    def test_valid_visibility_accepted(self):
+        """richlist_visibility=0.85 is a normal value and must work."""
+        config = VariantConfig(
+            variant=BaselineVariant.RICH_LIST_AUGMENTED,
+            threshold=2_000_000,
+            richlist_visibility=0.85,
+        )
+        assert config.richlist_visibility == 0.85
+
+
+class TestNegativeWealthShares:
+    def test_empirical_shares_clamped_with_negative_wealth(self):
+        """Negative net-wealth values must not produce shares > 1.0."""
+        wealth = np.array([100.0, -10.0])
+        shares = empirical_wealth_shares(wealth)
+        for label in ("top_10_pct", "top_1_pct", "top_01_pct"):
+            assert 0.0 <= shares[label] <= 1.0, f"{label} out of [0, 1]: {shares[label]}"
+
+    def test_empirical_shares_dominated_by_negative(self):
+        """When total is tiny due to negatives, shares stay in [0, 1]."""
+        wealth = np.array([1000.0, -999.0])
+        shares = empirical_wealth_shares(wealth)
+        for label in ("top_10_pct", "top_1_pct", "top_01_pct"):
+            assert 0.0 <= shares[label] <= 1.0, f"{label} out of [0, 1]: {shares[label]}"
+
+
 class TestRunVariant:
     def test_pareto_corrected_variant(self):
         data = _make_pareto_sample(alpha=1.5, n=2000)

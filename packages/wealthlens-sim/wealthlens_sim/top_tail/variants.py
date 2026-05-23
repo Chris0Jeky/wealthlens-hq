@@ -38,6 +38,11 @@ class VariantConfig:
     richlist_visibility: float = 1.0
     macro_scale_factor: float = 1.0
 
+    def __post_init__(self) -> None:
+        if self.richlist_visibility <= 0:
+            msg = f"richlist_visibility must be > 0, got {self.richlist_visibility}"
+            raise ValueError(msg)
+
 
 DEFAULT_CONFIGS = {
     BaselineVariant.SURVEY_ONLY: VariantConfig(
