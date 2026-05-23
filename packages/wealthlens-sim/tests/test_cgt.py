@@ -69,16 +69,20 @@ class TestCGTConfig:
         assert config.higher_rate == 0.0
 
     def test_death_uplift_false_rejected(self):
-        with pytest.raises(NotImplementedError, match="death_uplift"):
+        with pytest.raises(ValidationError, match="death_uplift"):
             CGTConfig(death_uplift=False)
 
     def test_main_residence_exempt_false_rejected(self):
-        with pytest.raises(NotImplementedError, match="main_residence_exempt"):
+        with pytest.raises(ValidationError, match="main_residence_exempt"):
             CGTConfig(main_residence_exempt=False)
 
     def test_badr_rate_override_rejected(self):
-        with pytest.raises(NotImplementedError, match="badr_rate"):
+        with pytest.raises(ValidationError, match="badr_rate"):
             CGTConfig(badr_rate=0.10)
+
+    def test_badr_rate_default_explicit_rejected(self):
+        with pytest.raises(ValidationError, match="badr_rate"):
+            CGTConfig(badr_rate=0.18)
 
 
 class TestComputePersonCGT:
@@ -156,6 +160,14 @@ class TestComputePersonCGT:
         config = CGTConfig()
         gains = 10_000_000
         _taxable, liability = _compute_person_cgt(gains, 200_000, config)
+        expected_taxable = gains - config.annual_exempt_amount
+        assert liability == pytest.approx(expected_taxable * 0.24)
+
+    def test_equal_rates_computation(self):
+        config = CGTConfig(basic_rate=0.24, higher_rate=0.24)
+        gains = 20_000
+        income = 30_000
+        _taxable, liability = _compute_person_cgt(gains, income, config)
         expected_taxable = gains - config.annual_exempt_amount
         assert liability == pytest.approx(expected_taxable * 0.24)
 

@@ -92,13 +92,13 @@ class CGTConfig(BaseModel):
     def _unimplemented_flags(self) -> CGTConfig:
         if not self.death_uplift:
             msg = "death_uplift=False is not yet implemented in the computation"
-            raise NotImplementedError(msg)
+            raise ValueError(msg)
         if not self.main_residence_exempt:
             msg = "main_residence_exempt=False is not yet implemented in the computation"
-            raise NotImplementedError(msg)
+            raise ValueError(msg)
         if "badr_rate" in self.model_fields_set:
             msg = "badr_rate is stored but not yet applied; BADR gains are not split in the data model"
-            raise NotImplementedError(msg)
+            raise ValueError(msg)
         return self
 
 
