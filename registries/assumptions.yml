@@ -57,7 +57,7 @@ assumptions:
     domain: top-tail
     value_or_distribution:
       type: point
-      value: -2.3e12
+      value: -2.3e+12
     source: ONS methodology change (December 2024)
     transferability_score: high
     valid_range: "adjustment in [-3.0e12, -1.5e12]"
@@ -214,7 +214,7 @@ assumptions:
         trustees: 24
     source: GOV.UK CGT rates page (accessed 2026-05-16)
     transferability_score: high
-    valid_range: n/a
+    valid_range: "n/a"
     applies_to: Family C baseline
     last_reviewed: "2026-05-23"
     notes: >
@@ -230,7 +230,7 @@ assumptions:
       residence_nil_rate_band: 175000
     source: GOV.UK IHT thresholds (accessed 2026-05-16)
     transferability_score: high
-    valid_range: n/a
+    valid_range: "n/a"
     applies_to: Family D baseline
     last_reviewed: "2026-05-23"
     notes: >
@@ -258,7 +258,7 @@ assumptions:
           charge: 7500
     source: MHCLG consultation document (19 May 2026)
     transferability_score: high
-    valid_range: n/a
+    valid_range: "n/a"
     applies_to: Family E (England only)
     last_reviewed: "2026-05-23"
     notes: >
@@ -294,7 +294,7 @@ assumptions:
       value: 2500000
     source: GOV.UK APR/BPR reform (accessed 2026-05-16)
     transferability_score: high
-    valid_range: n/a
+    valid_range: "n/a"
     applies_to: Family D baseline
     last_reviewed: "2026-05-23"
     notes: >
@@ -309,7 +309,7 @@ assumptions:
       value: true
     source: Finance Act 2026; GOV.UK technical note
     transferability_score: high
-    valid_range: n/a
+    valid_range: "n/a"
     applies_to: Family D baseline
     last_reviewed: "2026-05-23"
     notes: >
@@ -325,7 +325,7 @@ assumptions:
       value: 4
     source: GOV.UK non-dom replacement (accessed 2026-05-16)
     transferability_score: high
-    valid_range: n/a
+    valid_range: "n/a"
     applies_to: Family A, Family B (migration context)
     last_reviewed: "2026-05-23"
     notes: >
@@ -339,12 +339,12 @@ assumptions:
     value_or_distribution:
       type: schedule
       overall_tax_gap_pct: 5.3
-      overall_tax_gap_gbp: 46.8e9
-      wealthy_tax_gap_gbp: 1.9e9
-      compliance_yield_gbp: 5.2e9
+      overall_tax_gap_gbp: 46.8e+9
+      wealthy_tax_gap_gbp: 1.9e+9
+      compliance_yield_gbp: 5.2e+9
     source: HMRC Measuring tax gaps 2025 edition
     transferability_score: high
-    valid_range: n/a
+    valid_range: "n/a"
     applies_to: Family F baseline
     last_reviewed: "2026-05-23"
     notes: >
