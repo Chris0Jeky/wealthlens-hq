@@ -3,8 +3,139 @@
 # Schema per Blueprint v5 section 3.1:
 #   id, area, status (current_law | enacted_future | announced |
 #   consultation_stage | hypothetical), effective_date, description,
-#   wealthlens_treatment, source_url
+#   wealthlens_treatment, source_url, modelling_date, notes
 #
 # Every policy scenario carries a baseline version tag.
 
-baselines: []  # see Stream 49 for population with UK policy baseline
+modelling_date: "2026-05-21"
+
+baselines:
+  # --- Current law ---
+
+  - id: cgt-rates-2026
+    area: Capital Gains Tax
+    status: current_law
+    effective_date: "2026-04-06"
+    description: >
+      CGT rates of 18% (lower rate, BADR, Investors' Relief) and 24%
+      (higher rate, trustees, personal representatives).
+    wealthlens_treatment: Current-law baseline
+    source_url: https://www.gov.uk/capital-gains-tax/rates
+    notes: Family C baseline parameter.
+
+  - id: badr-investors-relief-18pct
+    area: Capital Gains Tax
+    status: current_law
+    effective_date: "2026-04-06"
+    description: >
+      Business Asset Disposal Relief and Investors' Relief at 18%
+      from 6 April 2026.
+    wealthlens_treatment: Current-law baseline
+    source_url: https://www.gov.uk/business-asset-disposal-relief
+
+  - id: iht-nil-rate-bands-frozen
+    area: Inheritance Tax
+    status: current_law
+    effective_date: "2026-04-06"
+    description: >
+      IHT nil-rate band frozen at £325,000 and residence nil-rate band
+      at £175,000. Tapering above £2m estate value.
+    wealthlens_treatment: Current-law baseline with version tag
+    source_url: https://www.gov.uk/inheritance-tax
+    notes: Family D baseline parameter.
+
+  - id: apr-bpr-reform
+    area: Inheritance Tax
+    status: current_law
+    effective_date: "2026-04-06"
+    description: >
+      APR/BPR £2.5 million combined allowance for 100% relief.
+      50% relief above that level.
+    wealthlens_treatment: Current-law baseline
+    source_url: https://www.gov.uk/government/publications/agricultural-property-relief-and-business-property-relief-reforms
+
+  - id: fig-regime-non-dom-replacement
+    area: Residence and mobility
+    status: current_law
+    effective_date: "2025-04-06"
+    description: >
+      Four-year Foreign Income and Gains (FIG) regime replacing the
+      non-dom remittance basis from 6 April 2025.
+    wealthlens_treatment: Residence/mobility baseline
+    source_url: https://www.gov.uk/government/publications/non-uk-domiciled-individuals
+    notes: Affects migration elasticity assumptions for Families A and B.
+
+  # --- Enacted future law ---
+
+  - id: pension-iht-2027
+    area: Inheritance Tax
+    status: enacted_future
+    effective_date: "2027-04-06"
+    description: >
+      IHT on unused pension funds for deaths on or after 6 April 2027.
+      Death-in-service benefits treated separately.
+    wealthlens_treatment: Future-law baseline scenario
+    source_url: https://www.gov.uk/government/publications/inheritance-tax-on-pensions
+
+  - id: death-in-service-exclusion
+    area: Inheritance Tax
+    status: enacted_future
+    effective_date: "2027-04-06"
+    description: >
+      Death-in-service exclusion from pension-IHT changes. Confirmed
+      in technical note.
+    wealthlens_treatment: Future-law baseline scenario
+    source_url: https://www.gov.uk/government/publications/inheritance-tax-on-pensions
+
+  # --- Announced / consultation-stage ---
+
+  - id: hvcts-2028
+    area: Property taxation
+    status: consultation_stage
+    effective_date: "2028-04-01"
+    description: >
+      High Value Council Tax Surcharge on properties £2m+ in England.
+      Proposed bands: £2-2.5m (£2,500), £2.5-3.5m (£3,500),
+      £3.5-5m (£5,000), £5m+ (£7,500). Consultation closes 14 July 2026.
+    wealthlens_treatment: Announced-policy / consultation-sensitive baseline
+    source_url: https://www.gov.uk/government/consultations/high-value-council-tax-surcharge
+    notes: >
+      Family E primary lever. OBR EFO estimated £0.4bn in 2029-30.
+      Design parameters may change before enactment. England only.
+
+  # --- HMRC enforcement (current practice + reform scenarios) ---
+
+  - id: enforcement-current-practice
+    area: Enforcement and observability
+    status: current_law
+    effective_date: "2026-05-21"
+    description: >
+      Current HMRC enforcement practice for wealth-related taxes.
+      Includes existing information powers, CRS reporting, and
+      compliance resources.
+    wealthlens_treatment: Separate policy family (Family F)
+    source_url: https://www.gov.uk/government/organisations/hm-revenue-customs
+
+  # --- Hypothetical ---
+
+  - id: annual-net-wealth-tax
+    area: Annual net wealth tax
+    status: hypothetical
+    effective_date: n/a
+    description: >
+      Hypothetical annual net wealth tax on personal net wealth above
+      specified thresholds. Design variables include threshold, rate
+      schedule, asset coverage, valuation methodology, and exemptions.
+    wealthlens_treatment: Counterfactual scenario family (Family A)
+    notes: Not announced, enacted, or in force. Modelled as counterfactual.
+
+  - id: one-off-wealth-levy
+    area: One-off wealth levy
+    status: hypothetical
+    effective_date: n/a
+    description: >
+      Hypothetical one-off levy on personal net wealth. Design variables
+      include threshold, rate, base date, payment schedule, and
+      anti-forestalling provisions.
+    wealthlens_treatment: Counterfactual scenario family (Family B)
+    notes: Not announced, enacted, or in force. Modelled as counterfactual.
