@@ -24,7 +24,7 @@ jobs:
       run:
         working-directory: projects/wealthlens-dashboard/frontend
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       # --- Python: generate data ---
       - uses: actions/setup-python@v6
@@ -51,7 +51,7 @@ jobs:
       # --- Node: build Vue app ---
       - uses: actions/setup-node@v6
         with:
-          node-version: "20"
+          node-version: "22"
           cache: npm
           cache-dependency-path: projects/wealthlens-dashboard/frontend/package-lock.json
 
