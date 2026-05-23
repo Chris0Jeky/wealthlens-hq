@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from wealthlens_sim.schema.base import Nation, VersionTag
 
@@ -26,6 +26,13 @@ class HouseholdResult(BaseModel):
     tax_liability: Annotated[float, Field(ge=0, default=0)]
     can_pay_from_income: bool = Field(default=True, description="Tax <= annual income")
     liquidity_constrained: bool = Field(default=False)
+
+    @model_validator(mode="after")
+    def _nation_must_be_constituent(self) -> HouseholdResult:
+        if self.nation == Nation.UK:
+            msg = "HouseholdResult must carry a constituent nation (England/Scotland/Wales/NI), not UK aggregate"
+            raise ValueError(msg)
+        return self
 
 
 class SimulationResult(BaseModel):
