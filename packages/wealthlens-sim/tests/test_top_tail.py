@@ -11,6 +11,7 @@ from wealthlens_sim.top_tail import (
     Interval,
     ParetoFit,
     TailEstimate,
+    VariantConfig,
     WealthShares,
     bootstrap_alpha,
     compute_wealth_shares,
@@ -18,6 +19,8 @@ from wealthlens_sim.top_tail import (
     fit_pareto_mle,
     ks_test_pareto,
     pareto_wealth_share,
+    run_all_variants,
+    run_variant,
 )
 
 
@@ -228,3 +231,100 @@ class TestTypes:
                 "top_01_pct": {"low": 0, "central": 0.1, "high": 0.2},
                 "top_50_pct": {"low": 0, "central": 0.9, "high": 1},
             })
+
+
+class TestRunVariant:
+    def test_pareto_corrected_variant(self):
+        data = _make_pareto_sample(alpha=1.5, n=2000)
+        config = VariantConfig(
+            variant=BaselineVariant.PARETO_CORRECTED,
+            threshold=1_000_000,
+            n_bootstrap=200,
+        )
+        result = run_variant(data, config, rng=np.random.default_rng(0))
+        assert result.variant == BaselineVariant.PARETO_CORRECTED
+        assert result.wealth_shares.top_1_pct.central > 0
+        assert result.total_wealth_imputed.central > 0
+
+    def test_survey_only_variant(self):
+        data = _make_pareto_sample(alpha=1.5, n=2000)
+        config = VariantConfig(
+            variant=BaselineVariant.SURVEY_ONLY,
+            threshold=1_000_000,
+            n_bootstrap=200,
+        )
+        result = run_variant(data, config, rng=np.random.default_rng(0))
+        assert result.variant == BaselineVariant.SURVEY_ONLY
+
+    def test_hidden_wealth_increases_total(self):
+        data = _make_pareto_sample(alpha=1.5, n=2000)
+        base_config = VariantConfig(
+            variant=BaselineVariant.PARETO_CORRECTED,
+            threshold=1_000_000,
+            n_bootstrap=100,
+        )
+        hidden_config = VariantConfig(
+            variant=BaselineVariant.HIDDEN_WEALTH_SENSITIVITY,
+            threshold=1_000_000,
+            n_bootstrap=100,
+            offshore_ratio=0.15,
+            trust_adjustment=0.10,
+        )
+        base = run_variant(data, base_config, rng=np.random.default_rng(0))
+        hidden = run_variant(data, hidden_config, rng=np.random.default_rng(0))
+        assert hidden.total_wealth_imputed.central > base.total_wealth_imputed.central
+
+    def test_richlist_augmented_changes_alpha(self):
+        data = _make_pareto_sample(alpha=1.5, n=2000)
+        base_config = VariantConfig(
+            variant=BaselineVariant.PARETO_CORRECTED,
+            threshold=1_000_000,
+            n_bootstrap=100,
+        )
+        rl_config = VariantConfig(
+            variant=BaselineVariant.RICH_LIST_AUGMENTED,
+            threshold=1_000_000,
+            n_bootstrap=100,
+            richlist_visibility=0.85,
+        )
+        base = run_variant(data, base_config, rng=np.random.default_rng(0))
+        rl = run_variant(data, rl_config, rng=np.random.default_rng(0))
+        assert base.pareto_fit.alpha.central != rl.pareto_fit.alpha.central
+
+
+class TestRunAllVariants:
+    def test_returns_all_five(self):
+        data = _make_pareto_sample(alpha=1.5, n=2000, threshold=1_000_000)
+        configs = {
+            v: VariantConfig(variant=v, threshold=1_000_000, n_bootstrap=100)
+            for v in BaselineVariant
+        }
+        configs[BaselineVariant.HIDDEN_WEALTH_SENSITIVITY] = VariantConfig(
+            variant=BaselineVariant.HIDDEN_WEALTH_SENSITIVITY,
+            threshold=1_000_000,
+            n_bootstrap=100,
+            offshore_ratio=0.15,
+            trust_adjustment=0.10,
+        )
+        configs[BaselineVariant.RICH_LIST_AUGMENTED] = VariantConfig(
+            variant=BaselineVariant.RICH_LIST_AUGMENTED,
+            threshold=1_000_000,
+            n_bootstrap=100,
+            richlist_visibility=0.85,
+        )
+        results = run_all_variants(data, configs, seed=42)
+        assert len(results) == 5
+        for variant in BaselineVariant:
+            assert variant in results
+            assert isinstance(results[variant], TailEstimate)
+
+    def test_reproducible_with_seed(self):
+        data = _make_pareto_sample(alpha=1.5, n=1000, threshold=1_000_000)
+        configs = {
+            v: VariantConfig(variant=v, threshold=1_000_000, n_bootstrap=100)
+            for v in BaselineVariant
+        }
+        r1 = run_all_variants(data, configs, seed=99)
+        r2 = run_all_variants(data, configs, seed=99)
+        for v in BaselineVariant:
+            assert r1[v].pareto_fit.alpha.central == r2[v].pareto_fit.alpha.central
