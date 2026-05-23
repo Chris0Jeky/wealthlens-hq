@@ -77,6 +77,18 @@ class HVCTSConfig(BaseModel):
         if len(lowers) != len(set(lowers)):
             msg = "bands must have unique lower bounds"
             raise ValueError(msg)
+        # Check for overlapping ranges: after sorting by lower bound, each
+        # band's upper (when finite) must not exceed the next band's lower.
+        sorted_bands = sorted(self.bands, key=lambda b: b.lower)
+        for i in range(len(sorted_bands) - 1):
+            current_upper = sorted_bands[i].upper
+            next_lower = sorted_bands[i + 1].lower
+            if current_upper is not None and current_upper > next_lower:
+                msg = (
+                    f"band {i} upper ({current_upper}) overlaps "
+                    f"band {i + 1} lower ({next_lower})"
+                )
+                raise ValueError(msg)
         if self.nation == Nation.UK:
             msg = "HVCTS must target a constituent nation, not UK aggregate"
             raise ValueError(msg)

@@ -84,6 +84,20 @@ class TestHVCTSConfig:
                 HVCTSBand(lower=2_000_000, upper=None, annual_surcharge=5_000),
             ))
 
+    def test_overlapping_bands_rejected(self):
+        with pytest.raises(ValidationError, match="overlaps"):
+            HVCTSConfig(bands=(
+                HVCTSBand(lower=2_000_000, upper=4_000_000, annual_surcharge=2_500),
+                HVCTSBand(lower=3_000_000, upper=5_000_000, annual_surcharge=5_000),
+            ))
+
+    def test_adjacent_bands_accepted(self):
+        config = HVCTSConfig(bands=(
+            HVCTSBand(lower=2_000_000, upper=3_000_000, annual_surcharge=2_500),
+            HVCTSBand(lower=3_000_000, upper=None, annual_surcharge=5_000),
+        ))
+        assert len(config.bands) == 2
+
     def test_uk_aggregate_rejected(self):
         with pytest.raises(ValidationError, match="constituent nation"):
             HVCTSConfig(nation=Nation.UK)
@@ -225,6 +239,30 @@ class TestComputeHVCTS:
         config = HVCTSConfig(nation=Nation.SCOTLAND)
         result = compute_hvcts(hh, config)
         assert result.is_liable
+
+    def test_boundary_2m_exactly(self):
+        """Property at exactly £1,999,999 is NOT liable; £2,000,000 IS liable."""
+        config = HVCTSConfig()
+
+        just_below = make_household(
+            [make_person(assets=[(AssetType.MAIN_RESIDENCE, 1_999_999, 0)])],
+            nation=Nation.ENGLAND,
+            household_id="hh_below_2m",
+        )
+        result_below = compute_hvcts(just_below, config)
+        assert not result_below.is_liable
+        assert result_below.total_surcharge == 0.0
+        assert result_below.properties_in_scope == 0
+
+        at_boundary = make_household(
+            [make_person(assets=[(AssetType.MAIN_RESIDENCE, 2_000_000, 0)])],
+            nation=Nation.ENGLAND,
+            household_id="hh_at_2m",
+        )
+        result_at = compute_hvcts(at_boundary, config)
+        assert result_at.is_liable
+        assert result_at.total_surcharge == 2_500
+        assert result_at.properties_in_scope == 1
 
 
 class TestAggregateHVCTSRevenue:
