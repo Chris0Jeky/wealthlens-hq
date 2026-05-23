@@ -113,21 +113,26 @@ class AggregateHVCTSRevenue(BaseModel):
 
     total_revenue_bn: float = Field(description="Total HVCTS revenue (GBP billions)")
     liable_household_count: float = Field(ge=0, description="Weighted count of liable households")
-    population_count: float = Field(ge=0, description="Weighted count of all in-scope households")
+    population_count: float = Field(ge=0, description="Weighted count of all households in the dataset")
     liable_sample_count: int = Field(ge=0, description="Unweighted count of liable survey households")
     properties_in_scope: float = Field(ge=0, description="Weighted count of properties subject to HVCTS")
-    mean_surcharge: float = Field(ge=0, description="Mean surcharge among liable households (GBP)")
+    mean_surcharge: float = Field(ge=0, description="Population-weighted mean surcharge among liable households (GBP)")
+    revenue_by_nation: dict[str, float] = Field(
+        default_factory=dict,
+        description="Revenue in GBP billions, keyed by Nation value",
+    )
 
 
 def _eligible_properties(household: Household, config: HVCTSConfig) -> list[Asset]:
     """Return residential properties in the target nation eligible for HVCTS."""
     if household.nation != config.nation:
         return []
+    min_threshold = min(b.lower for b in config.bands)
     return [
         a
         for p in household.persons
         for a in p.assets
-        if a.asset_type in config.property_types and a.gross_value >= config.bands[0].lower
+        if a.asset_type in config.property_types and a.gross_value >= min_threshold
     ]
 
 
@@ -158,6 +163,7 @@ def compute_aggregate_hvcts_revenue(
     population_weight = 0.0
     liable_count_unweighted = 0
     properties_weighted = 0.0
+    revenue_by_nation: dict[str, float] = {}
 
     for hh in households:
         result = compute_hvcts(hh, config)
@@ -166,11 +172,17 @@ def compute_aggregate_hvcts_revenue(
         population_weight += hh.weight
         properties_weighted += result.properties_in_scope * hh.weight
 
+        nation_key = hh.nation.value
+        revenue_by_nation[nation_key] = (
+            revenue_by_nation.get(nation_key, 0.0) + weighted_surcharge
+        )
+
         if result.is_liable:
             liable_weight += hh.weight
             liable_count_unweighted += 1
 
     mean_surcharge = total_revenue / liable_weight if liable_weight > 0 else 0.0
+    nation_bn = {k: v / 1e9 for k, v in revenue_by_nation.items()}
 
     return AggregateHVCTSRevenue(
         total_revenue_bn=total_revenue / 1e9,
@@ -179,4 +191,5 @@ def compute_aggregate_hvcts_revenue(
         liable_sample_count=liable_count_unweighted,
         properties_in_scope=properties_weighted,
         mean_surcharge=mean_surcharge,
+        revenue_by_nation=nation_bn,
     )

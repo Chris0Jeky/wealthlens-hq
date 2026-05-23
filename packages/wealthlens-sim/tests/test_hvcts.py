@@ -118,8 +118,14 @@ class TestSurchargeForProperty:
     def test_band_2(self):
         assert _surcharge_for_property(3_000_000, ANNOUNCED_BANDS) == 3_500
 
+    def test_at_band_boundary_3_5m(self):
+        assert _surcharge_for_property(3_500_000, ANNOUNCED_BANDS) == 5_000
+
     def test_band_3(self):
         assert _surcharge_for_property(4_000_000, ANNOUNCED_BANDS) == 5_000
+
+    def test_at_band_boundary_5m(self):
+        assert _surcharge_for_property(5_000_000, ANNOUNCED_BANDS) == 7_500
 
     def test_band_4_open(self):
         assert _surcharge_for_property(10_000_000, ANNOUNCED_BANDS) == 7_500
@@ -308,6 +314,37 @@ class TestAggregateHVCTSRevenue:
         total_rev = wealthy_surcharge * 500 + mid_surcharge * 2_000
         expected_mean = total_rev / (500 + 2_000)
         assert result.mean_surcharge == pytest.approx(expected_mean)
+
+    def test_revenue_by_nation(self):
+        config = HVCTSConfig()
+        result = compute_aggregate_hvcts_revenue(self._make_population(), config)
+        assert "england" in result.revenue_by_nation
+        assert result.revenue_by_nation["england"] > 0
+        assert result.revenue_by_nation.get("scotland", 0) == 0
+
+
+class TestUnsortedBands:
+    def test_unsorted_bands_eligible_properties(self):
+        bands = (
+            HVCTSBand(lower=5_000_000, upper=None, annual_surcharge=7_500),
+            HVCTSBand(lower=2_000_000, upper=5_000_000, annual_surcharge=2_500),
+        )
+        config = HVCTSConfig(bands=bands)
+        person = make_person(assets=[
+            (AssetType.MAIN_RESIDENCE, 3_000_000, 0),
+        ])
+        hh = make_household([person], nation=Nation.ENGLAND)
+        result = compute_hvcts(hh, config)
+        assert result.properties_in_scope == 1
+        assert result.total_surcharge == 2_500
+
+    def test_unsorted_bands_surcharge(self):
+        bands = (
+            HVCTSBand(lower=5_000_000, upper=None, annual_surcharge=7_500),
+            HVCTSBand(lower=2_000_000, upper=5_000_000, annual_surcharge=2_500),
+        )
+        assert _surcharge_for_property(3_000_000, bands) == 2_500
+        assert _surcharge_for_property(6_000_000, bands) == 7_500
 
 
 class TestHVCTSResult:
