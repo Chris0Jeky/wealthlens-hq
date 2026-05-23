@@ -15,7 +15,6 @@ from wealthlens_sim.schema import (
     load_baselines,
 )
 
-
 CURRENT_LAW_ENTRY = {
     "id": "cgt-rates-2026",
     "area": "Capital Gains Tax",
@@ -135,6 +134,10 @@ class TestBaselinesRegistry:
         assert len(reg2.baselines) == 2
         assert reg2.modelling_date.month == 5
 
+    def test_duplicate_ids_rejected(self):
+        with pytest.raises(ValidationError, match="Duplicate baseline id"):
+            self._make_registry([CURRENT_LAW_ENTRY, CURRENT_LAW_ENTRY])
+
     def test_modelling_date_required(self):
         with pytest.raises(ValidationError):
             BaselinesRegistry.model_validate({"baselines": []})
@@ -162,6 +165,12 @@ class TestLoader:
     def test_load_missing_file_raises(self, tmp_path: Path):
         with pytest.raises(FileNotFoundError):
             load_baselines(tmp_path / "nonexistent.yml")
+
+    def test_load_empty_file(self, tmp_path: Path):
+        p = tmp_path / "empty.yml"
+        p.write_text("", encoding="utf-8")
+        with pytest.raises(ValueError, match="empty"):
+            load_baselines(p)
 
     def test_load_invalid_schema_raises(self, tmp_path: Path):
         data = {"modelling_date": "2026-05-21", "baselines": [{"id": "bad"}]}

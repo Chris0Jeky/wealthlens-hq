@@ -7,7 +7,7 @@ Blueprint v5 §9: policy families A-G.
 from __future__ import annotations
 
 from datetime import date
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -15,7 +15,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from wealthlens_sim.schema.base import Nation
 
 
-class LegalStatus(str, Enum):
+class LegalStatus(StrEnum):
     CURRENT_LAW = "current_law"
     ENACTED_FUTURE = "enacted_future"
     ANNOUNCED = "announced"
@@ -23,7 +23,7 @@ class LegalStatus(str, Enum):
     HYPOTHETICAL = "hypothetical"
 
 
-class PolicyFamily(str, Enum):
+class PolicyFamily(StrEnum):
     A_ANNUAL_WEALTH = "A"
     B_ONE_OFF_LEVY = "B"
     C_CGT_REFORM = "C"

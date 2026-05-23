@@ -7,4 +7,5 @@
 #
 # Every policy scenario carries a baseline version tag.
 
+modelling_date: "2026-05-21"
 baselines: []  # see Stream 49 for population with UK policy baseline
