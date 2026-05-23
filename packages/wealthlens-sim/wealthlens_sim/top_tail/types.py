@@ -65,7 +65,9 @@ class TailEstimate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     variant: BaselineVariant
-    pareto_fit: ParetoFit
+    pareto_fit: ParetoFit | None = Field(
+        default=None, description="Pareto fit results (None for survey_only variant)"
+    )
     wealth_shares: WealthShares
     total_wealth_imputed: Interval = Field(
         description="Total wealth after top-tail adjustment (£bn)"
