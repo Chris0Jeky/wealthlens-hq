@@ -99,6 +99,45 @@ class TestOneOffLevyConfig:
             config.instalment_years = 5
 
 
+class TestConfigValidation:
+    def test_empty_rate_bands_rejected(self):
+        with pytest.raises(ValidationError):
+            OneOffLevyConfig(rate_bands=())
+
+    def test_duplicate_thresholds_rejected(self):
+        with pytest.raises(ValidationError, match="unique thresholds"):
+            OneOffLevyConfig(
+                rate_bands=(
+                    LevyRateBand(threshold=5_000_000, rate=0.03),
+                    LevyRateBand(threshold=5_000_000, rate=0.05),
+                ),
+            )
+
+    def test_conflicting_flat_and_progressive_rejected(self):
+        with pytest.raises(ValidationError, match="rate_bands is set"):
+            OneOffLevyConfig(
+                threshold=10_000_000,
+                rate=0.10,
+                rate_bands=(LevyRateBand(threshold=5_000_000, rate=0.05),),
+            )
+
+    def test_rate_bands_with_defaults_accepted(self):
+        config = OneOffLevyConfig(
+            rate_bands=(LevyRateBand(threshold=5_000_000, rate=0.05),),
+        )
+        assert config.rate_bands is not None
+
+    def test_negative_wealth_returns_zero(self):
+        config = OneOffLevyConfig(threshold=0, rate=0.05)
+        assert _compute_liability(-1_000_000, config) == 0.0
+
+    def test_negative_wealth_progressive_returns_zero(self):
+        config = OneOffLevyConfig(
+            rate_bands=(LevyRateBand(threshold=0, rate=0.05),),
+        )
+        assert _compute_liability(-500_000, config) == 0.0
+
+
 class TestComputeOneOffLevy:
     def test_below_threshold_no_liability(self):
         person = _make_person(assets=[

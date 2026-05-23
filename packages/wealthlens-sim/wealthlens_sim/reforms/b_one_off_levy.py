@@ -11,7 +11,7 @@ and credibly one-off.
 
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from wealthlens_sim.reforms.a_annual_wealth import (
     TaxUnit,
@@ -33,8 +33,8 @@ class OneOffLevyConfig(BaseModel):
     """Configuration for a one-off wealth levy.
 
     Use ``rate`` for a flat levy above ``threshold``, or ``rate_bands`` for
-    progressive schedules.  If ``rate_bands`` is set, ``rate`` and
-    ``threshold`` are ignored.
+    progressive schedules. Wealth below the first band's threshold is
+    untaxed (implicit 0% band).
 
     ``instalment_years`` controls how many years the levy payment is
     spread over.  When > 1 the total liability is unchanged but the
@@ -47,6 +47,7 @@ class OneOffLevyConfig(BaseModel):
     rate: float = Field(gt=0, le=1, default=0.05, description="One-off levy rate (e.g. 0.05 = 5%)")
     rate_bands: tuple[LevyRateBand, ...] | None = Field(
         default=None,
+        min_length=1,
         description="Progressive rate bands (overrides rate/threshold when set)",
     )
     tax_unit: TaxUnit = TaxUnit.INDIVIDUAL
@@ -57,6 +58,21 @@ class OneOffLevyConfig(BaseModel):
     instalment_years: int = Field(
         ge=1, default=1, description="Number of years over which to spread levy payments"
     )
+
+    @model_validator(mode="after")
+    def _validate_rate_bands(self) -> OneOffLevyConfig:
+        if self.rate_bands is not None:
+            thresholds = [b.threshold for b in self.rate_bands]
+            if len(thresholds) != len(set(thresholds)):
+                msg = "rate_bands must have unique thresholds"
+                raise ValueError(msg)
+            if self.threshold != 0 or self.rate != 0.05:
+                msg = (
+                    "When rate_bands is set, threshold and rate are ignored; "
+                    "leave them at defaults or omit them"
+                )
+                raise ValueError(msg)
+        return self
 
 
 class OneOffLevyResult(BaseModel):
@@ -93,6 +109,8 @@ class AggregateOneOffRevenue(BaseModel):
 
 def _compute_liability(wealth: float, config: OneOffLevyConfig) -> float:
     """Compute levy liability for a given wealth amount using flat or progressive rates."""
+    if wealth <= 0:
+        return 0.0
     if config.rate_bands is not None:
         bands = sorted(config.rate_bands, key=lambda b: b.threshold)
         liability = 0.0
