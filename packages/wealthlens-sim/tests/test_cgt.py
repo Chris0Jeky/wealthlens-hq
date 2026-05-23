@@ -60,6 +60,26 @@ class TestCGTConfig:
         config = CGTConfig(taxpayer_type=TaxpayerType.TRUSTEE)
         assert config.taxpayer_type == TaxpayerType.TRUSTEE
 
+    def test_zero_basic_rate_accepted(self):
+        config = CGTConfig(basic_rate=0.0, higher_rate=0.24)
+        assert config.basic_rate == 0.0
+
+    def test_zero_higher_rate_accepted(self):
+        config = CGTConfig(basic_rate=0.0, higher_rate=0.0, trustee_rate=0.0)
+        assert config.higher_rate == 0.0
+
+    def test_death_uplift_false_rejected(self):
+        with pytest.raises(NotImplementedError, match="death_uplift"):
+            CGTConfig(death_uplift=False)
+
+    def test_main_residence_exempt_false_rejected(self):
+        with pytest.raises(NotImplementedError, match="main_residence_exempt"):
+            CGTConfig(main_residence_exempt=False)
+
+    def test_badr_rate_override_rejected(self):
+        with pytest.raises(NotImplementedError, match="badr_rate"):
+            CGTConfig(badr_rate=0.10)
+
 
 class TestComputePersonCGT:
     def test_no_gains(self):
@@ -107,7 +127,7 @@ class TestComputePersonCGT:
         _taxable, liability = _compute_person_cgt(gains, income, config)
         expected_taxable = gains - config.annual_exempt_amount
         taxable_income = income - config.personal_allowance
-        remaining_basic = config.basic_rate_band - taxable_income
+        remaining_basic = max(0, config.basic_rate_band - taxable_income)
         basic_portion = remaining_basic
         higher_portion = expected_taxable - remaining_basic
         expected_liability = basic_portion * 0.18 + higher_portion * 0.24
@@ -136,6 +156,20 @@ class TestComputePersonCGT:
         config = CGTConfig()
         gains = 10_000_000
         _taxable, liability = _compute_person_cgt(gains, 200_000, config)
+        expected_taxable = gains - config.annual_exempt_amount
+        assert liability == pytest.approx(expected_taxable * 0.24)
+
+    def test_gains_one_above_aea(self):
+        config = CGTConfig()
+        taxable, liability = _compute_person_cgt(3_001, 30_000, config)
+        assert taxable == 1.0
+        assert liability == pytest.approx(0.18)
+
+    def test_income_exactly_fills_basic_band(self):
+        config = CGTConfig()
+        income = config.personal_allowance + config.basic_rate_band
+        gains = 10_000
+        _taxable, liability = _compute_person_cgt(gains, income, config)
         expected_taxable = gains - config.annual_exempt_amount
         assert liability == pytest.approx(expected_taxable * 0.24)
 

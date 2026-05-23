@@ -46,23 +46,27 @@ class CGTConfig(BaseModel):
         default=3_000, ge=0, description="Annual exempt amount (GBP)"
     )
     basic_rate: float = Field(
-        default=0.18, gt=0, le=1, description="CGT rate for basic-rate taxpayers"
+        default=0.18, ge=0, le=1, description="CGT rate for basic-rate taxpayers"
     )
     higher_rate: float = Field(
-        default=0.24, gt=0, le=1, description="CGT rate for higher-rate taxpayers"
+        default=0.24, ge=0, le=1, description="CGT rate for higher-rate taxpayers"
     )
     trustee_rate: float = Field(
-        default=0.24, gt=0, le=1, description="CGT rate for trustees/PRs"
+        default=0.24, ge=0, le=1, description="CGT rate for trustees/PRs"
     )
     badr_rate: float = Field(
-        default=0.18, gt=0, le=1,
-        description="Rate for Business Asset Disposal Relief / Investors' Relief gains",
+        default=0.18, ge=0, le=1,
+        description="Rate for BADR/IR gains (stored for future use; not yet applied in computation)",
     )
     death_uplift: bool = Field(
-        default=True, description="Whether gains are wiped on death (current law: True)"
+        default=True,
+        description="Whether gains are wiped on death (stored for future reform scenarios; "
+        "baseline assumes True, not yet applied in computation)",
     )
     main_residence_exempt: bool = Field(
-        default=True, description="Whether main-residence gains are fully exempt (PPR)"
+        default=True,
+        description="Whether main-residence gains are fully exempt (stored for future reform "
+        "scenarios; baseline assumes True, not yet applied in computation)",
     )
     basic_rate_band: float = Field(
         default=BASIC_RATE_BAND_2026, ge=0,
@@ -84,6 +88,19 @@ class CGTConfig(BaseModel):
             raise ValueError(msg)
         return self
 
+    @model_validator(mode="after")
+    def _unimplemented_flags(self) -> CGTConfig:
+        if not self.death_uplift:
+            msg = "death_uplift=False is not yet implemented in the computation"
+            raise NotImplementedError(msg)
+        if not self.main_residence_exempt:
+            msg = "main_residence_exempt=False is not yet implemented in the computation"
+            raise NotImplementedError(msg)
+        if "badr_rate" in self.model_fields_set:
+            msg = "badr_rate is stored but not yet applied; BADR gains are not split in the data model"
+            raise NotImplementedError(msg)
+        return self
+
 
 class CGTResult(BaseModel):
     """Per-person CGT computation result."""
@@ -94,7 +111,11 @@ class CGTResult(BaseModel):
     gains_realised: float = Field(ge=0, description="Total realised gains (GBP)")
     gains_taxable: float = Field(ge=0, description="Gains after AEA deduction (GBP)")
     cgt_liability: float = Field(ge=0, description="CGT due (GBP)")
-    effective_rate: float = Field(ge=0, description="CGT / gains_realised (0 if no gains)")
+    effective_rate: float = Field(
+        ge=0,
+        description="CGT / gains_realised, inclusive of AEA benefit "
+        "(for rate on taxable gains, use cgt_liability / gains_taxable)",
+    )
     is_liable: bool
 
 
@@ -114,7 +135,7 @@ class AggregateCGTRevenue(BaseModel):
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
-    total_revenue_bn: float = Field(description="Total CGT revenue (GBP billions)")
+    total_revenue_bn: float = Field(ge=0, description="Total CGT revenue (GBP billions)")
     taxpayer_count: float = Field(ge=0, description="Weighted count of liable households")
     population_count: float = Field(ge=0, description="Weighted count of all households in the dataset")
     liable_sample_count: int = Field(ge=0, description="Unweighted count of liable survey households")
@@ -144,6 +165,9 @@ def _compute_person_cgt(
     if config.taxpayer_type == TaxpayerType.TRUSTEE:
         return taxable, taxable * config.trustee_rate
 
+    # PA taper (£1 lost per £2 above £100k) is not modelled; has no practical
+    # effect on CGT band placement because remaining_basic is already zero
+    # for income above the basic rate band ceiling (~£50,270).
     taxable_income = max(0.0, annual_income - config.personal_allowance)
     remaining_basic = max(0.0, config.basic_rate_band - taxable_income)
 
