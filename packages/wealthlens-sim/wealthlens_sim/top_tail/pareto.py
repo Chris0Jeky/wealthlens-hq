@@ -21,14 +21,19 @@ def fit_pareto_mle(
     """Compute Pareto alpha via maximum likelihood on tail observations.
 
     Returns the MLE estimate of the Pareto tail exponent.
-    Raises ValueError if fewer than 2 observations exceed the threshold.
+    Raises ValueError if fewer than 2 observations exceed the threshold,
+    or if all tail values equal the threshold exactly.
     """
     tail = wealth[wealth >= threshold]
     n = len(tail)
     if n < 2:
         msg = f"Need at least 2 observations above threshold {threshold}, got {n}"
         raise ValueError(msg)
-    return float(n / np.sum(np.log(tail / threshold)))
+    log_sum = float(np.sum(np.log(tail / threshold)))
+    if log_sum <= 0:
+        msg = f"Log-ratio sum is {log_sum}; all tail values may equal the threshold"
+        raise ValueError(msg)
+    return float(n / log_sum)
 
 
 def bootstrap_alpha(
@@ -43,6 +48,7 @@ def bootstrap_alpha(
 
     Resamples tail observations with replacement, refits alpha each time,
     and returns the median with ci-level credible interval.
+    Degenerate samples (all values at threshold) are excluded from the CI.
     """
     if rng is None:
         rng = np.random.default_rng()
@@ -56,16 +62,16 @@ def bootstrap_alpha(
     alphas = np.empty(n_bootstrap)
     for i in range(n_bootstrap):
         sample = rng.choice(tail, size=n, replace=True)
-        log_ratio = np.log(sample / threshold)
-        log_ratio_sum = np.sum(log_ratio)
+        log_ratio_sum = float(np.sum(np.log(sample / threshold)))
         if log_ratio_sum > 0:
             alphas[i] = n / log_ratio_sum
         else:
-            alphas[i] = np.nan
+            alphas[i] = np.inf
 
-    alphas = alphas[~np.isnan(alphas)]
+    finite_mask = np.isfinite(alphas)
+    alphas = alphas[finite_mask]
     if len(alphas) == 0:
-        msg = "All bootstrap replicates produced invalid alpha estimates"
+        msg = "All bootstrap replicates produced degenerate alpha estimates"
         raise ValueError(msg)
 
     lo = (1 - ci) / 2
@@ -123,6 +129,33 @@ def pareto_wealth_share(alpha: float, p: float) -> float:
         msg = f"Population fraction p must be in (0, 1), got {p}"
         raise ValueError(msg)
     return float(p ** (1 - 1 / alpha))
+
+
+def pareto_tail_mean(alpha: float, threshold: float) -> float:
+    """Expected wealth per tail observation under Pareto(alpha, threshold).
+
+    E[W | W >= threshold] = threshold * alpha / (alpha - 1) for alpha > 1.
+    """
+    if alpha <= 1:
+        msg = f"Pareto alpha must be > 1 for finite mean, got {alpha}"
+        raise ValueError(msg)
+    return threshold * alpha / (alpha - 1)
+
+
+def empirical_wealth_shares(
+    wealth: NDArray[np.floating],
+) -> dict[str, float]:
+    """Compute top-10%, top-1%, top-0.1% shares from empirical data."""
+    total = float(np.sum(wealth))
+    if total <= 0:
+        return {"top_10_pct": 0.0, "top_1_pct": 0.0, "top_01_pct": 0.0}
+    sorted_w = np.sort(wealth)[::-1]
+    n = len(sorted_w)
+    result: dict[str, float] = {}
+    for label, frac in [("top_10_pct", 0.10), ("top_1_pct", 0.01), ("top_01_pct", 0.001)]:
+        k = max(1, int(np.ceil(n * frac)))
+        result[label] = float(np.sum(sorted_w[:k]) / total)
+    return result
 
 
 def compute_wealth_shares(alpha: Interval) -> dict[str, Interval]:

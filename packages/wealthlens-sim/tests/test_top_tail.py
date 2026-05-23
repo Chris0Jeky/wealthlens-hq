@@ -15,9 +15,11 @@ from wealthlens_sim.top_tail import (
     WealthShares,
     bootstrap_alpha,
     compute_wealth_shares,
+    empirical_wealth_shares,
     fit_pareto,
     fit_pareto_mle,
     ks_test_pareto,
+    pareto_tail_mean,
     pareto_wealth_share,
     run_all_variants,
     run_variant,
@@ -62,6 +64,11 @@ class TestParetoMLE:
         alpha = fit_pareto_mle(data, threshold=1_000_000)
         assert alpha > 0
 
+    def test_all_at_threshold_raises(self):
+        data = np.array([1_000_000.0, 1_000_000.0, 1_000_000.0])
+        with pytest.raises(ValueError, match="Log-ratio sum"):
+            fit_pareto_mle(data, threshold=1_000_000)
+
 
 class TestBootstrapAlpha:
     def test_interval_contains_true_alpha(self):
@@ -102,9 +109,9 @@ class TestKSTest:
         rng = np.random.default_rng(42)
         data = rng.normal(5_000_000, 100_000, 1000)
         data = data[data >= 1_000_000]
-        if len(data) >= 2:
-            ks = ks_test_pareto(data, threshold=1_000_000, alpha=1.5)
-            assert ks > 0.1
+        assert len(data) >= 2
+        ks = ks_test_pareto(data, threshold=1_000_000, alpha=1.5)
+        assert ks > 0.1
 
     def test_insufficient_data_returns_nan(self):
         data = np.array([500_000.0])
@@ -127,6 +134,27 @@ class TestFitPareto:
         assert result.alpha.low > 1.0
         assert result.alpha.high < 3.0
         assert result.alpha.low < result.alpha.central < result.alpha.high
+
+
+class TestParetoTailMean:
+    def test_known_mean(self):
+        mean = pareto_tail_mean(2.0, 1_000_000)
+        assert mean == 2_000_000.0
+
+    def test_alpha_le_1_raises(self):
+        with pytest.raises(ValueError, match="must be > 1"):
+            pareto_tail_mean(1.0, 1_000_000)
+
+
+class TestEmpiricalWealthShares:
+    def test_known_distribution(self):
+        wealth = np.array([10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0, 90.0, 100.0])
+        shares = empirical_wealth_shares(wealth)
+        assert shares["top_10_pct"] == pytest.approx(100.0 / 550.0, rel=0.01)
+
+    def test_empty_array(self):
+        shares = empirical_wealth_shares(np.array([0.0, 0.0]))
+        assert shares["top_1_pct"] == 0.0
 
 
 class TestParetoWealthShare:
@@ -194,6 +222,14 @@ class TestTypes:
         with pytest.raises(ValidationError, match="Extra inputs"):
             Interval.model_validate({"low": 0, "central": 0.5, "high": 1, "extra": True})
 
+    def test_interval_ordering_enforced(self):
+        with pytest.raises(ValidationError, match="low <= central <= high"):
+            Interval(low=5.0, central=2.0, high=0.1)
+
+    def test_interval_equal_bounds_valid(self):
+        i = Interval(low=1.0, central=1.0, high=1.0)
+        assert i.low == i.central == i.high
+
     def test_pareto_fit_threshold_non_negative(self):
         with pytest.raises(ValidationError):
             ParetoFit.model_validate({
@@ -246,7 +282,7 @@ class TestRunVariant:
         assert result.wealth_shares.top_1_pct.central > 0
         assert result.total_wealth_imputed.central > 0
 
-    def test_survey_only_variant(self):
+    def test_survey_only_uses_empirical_shares(self):
         data = _make_pareto_sample(alpha=1.5, n=2000)
         config = VariantConfig(
             variant=BaselineVariant.SURVEY_ONLY,
@@ -255,6 +291,35 @@ class TestRunVariant:
         )
         result = run_variant(data, config, rng=np.random.default_rng(0))
         assert result.variant == BaselineVariant.SURVEY_ONLY
+        assert result.wealth_shares.top_10_pct.low == result.wealth_shares.top_10_pct.high
+
+    def test_survey_only_differs_from_pareto(self):
+        data = _make_pareto_sample(alpha=1.5, n=2000)
+        survey = run_variant(
+            data,
+            VariantConfig(variant=BaselineVariant.SURVEY_ONLY, threshold=1_000_000, n_bootstrap=100),
+            rng=np.random.default_rng(0),
+        )
+        pareto = run_variant(
+            data,
+            VariantConfig(variant=BaselineVariant.PARETO_CORRECTED, threshold=1_000_000, n_bootstrap=100),
+            rng=np.random.default_rng(0),
+        )
+        assert survey.wealth_shares.top_1_pct.central != pareto.wealth_shares.top_1_pct.central
+
+    def test_macro_reconciled_differs_from_pareto(self):
+        data = _make_pareto_sample(alpha=1.5, n=2000)
+        pareto = run_variant(
+            data,
+            VariantConfig(variant=BaselineVariant.PARETO_CORRECTED, threshold=1_000_000, n_bootstrap=100),
+            rng=np.random.default_rng(0),
+        )
+        macro = run_variant(
+            data,
+            VariantConfig(variant=BaselineVariant.MACRO_RECONCILED, threshold=1_000_000, n_bootstrap=100, macro_scale_factor=1.08),
+            rng=np.random.default_rng(0),
+        )
+        assert macro.total_wealth_imputed.central > pareto.total_wealth_imputed.central
 
     def test_hidden_wealth_increases_total(self):
         data = _make_pareto_sample(alpha=1.5, n=2000)
@@ -274,22 +339,19 @@ class TestRunVariant:
         hidden = run_variant(data, hidden_config, rng=np.random.default_rng(0))
         assert hidden.total_wealth_imputed.central > base.total_wealth_imputed.central
 
-    def test_richlist_augmented_changes_alpha(self):
+    def test_richlist_augmented_lowers_alpha(self):
         data = _make_pareto_sample(alpha=1.5, n=2000)
-        base_config = VariantConfig(
-            variant=BaselineVariant.PARETO_CORRECTED,
-            threshold=1_000_000,
-            n_bootstrap=100,
+        base = run_variant(
+            data,
+            VariantConfig(variant=BaselineVariant.PARETO_CORRECTED, threshold=1_000_000, n_bootstrap=100),
+            rng=np.random.default_rng(0),
         )
-        rl_config = VariantConfig(
-            variant=BaselineVariant.RICH_LIST_AUGMENTED,
-            threshold=1_000_000,
-            n_bootstrap=100,
-            richlist_visibility=0.85,
+        rl = run_variant(
+            data,
+            VariantConfig(variant=BaselineVariant.RICH_LIST_AUGMENTED, threshold=1_000_000, n_bootstrap=100, richlist_visibility=0.85),
+            rng=np.random.default_rng(0),
         )
-        base = run_variant(data, base_config, rng=np.random.default_rng(0))
-        rl = run_variant(data, rl_config, rng=np.random.default_rng(0))
-        assert base.pareto_fit.alpha.central != rl.pareto_fit.alpha.central
+        assert rl.pareto_fit.alpha.central < base.pareto_fit.alpha.central
 
 
 class TestRunAllVariants:
@@ -311,6 +373,12 @@ class TestRunAllVariants:
             threshold=1_000_000,
             n_bootstrap=100,
             richlist_visibility=0.85,
+        )
+        configs[BaselineVariant.MACRO_RECONCILED] = VariantConfig(
+            variant=BaselineVariant.MACRO_RECONCILED,
+            threshold=1_000_000,
+            n_bootstrap=100,
+            macro_scale_factor=1.08,
         )
         results = run_all_variants(data, configs, seed=42)
         assert len(results) == 5

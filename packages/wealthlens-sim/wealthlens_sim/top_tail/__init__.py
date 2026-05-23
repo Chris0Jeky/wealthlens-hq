@@ -10,9 +10,11 @@ Reference: Blueprint v5 sections 2.3, 7.3.
 from wealthlens_sim.top_tail.pareto import (
     bootstrap_alpha,
     compute_wealth_shares,
+    empirical_wealth_shares,
     fit_pareto,
     fit_pareto_mle,
     ks_test_pareto,
+    pareto_tail_mean,
     pareto_wealth_share,
 )
 from wealthlens_sim.top_tail.types import (
@@ -37,9 +39,11 @@ __all__ = [
     "WealthShares",
     "bootstrap_alpha",
     "compute_wealth_shares",
+    "empirical_wealth_shares",
     "fit_pareto",
     "fit_pareto_mle",
     "ks_test_pareto",
+    "pareto_tail_mean",
     "pareto_wealth_share",
     "run_all_variants",
     "run_variant",
