@@ -5,7 +5,7 @@
 >
 > **CRITICAL**: Update this file BEFORE every compaction risk (long tool calls, large diffs).
 
-Last updated: 2026-05-23T16:00Z
+Last updated: 2026-05-24T03:15Z
 
 ## 2026-05-23 New Cycle: Blueprint Foundation
 
@@ -80,15 +80,38 @@ See archived wave tables below for historical provenance.
 |---|--------|--------|------|----|--------|----|----|
 | 50 | Batch Dependabot updates (11 PRs consolidated) | `chore/dependabot-batch-2026-05-23` | main | #291 | R1 IN PROGRESS | 2/2 pending | — |
 
-### Wave 11+ Candidates (from blueprint/compass)
+### Wave 11 — Simulator Core Modules (stacked on main)
 
-- PolicyEngine-UK integration skeleton
-- Top-tail reconstruction module (Pareto, GPD, rank correction)
-- HVCTS reform module (Family E)
-- Policy family stubs (Families A–G)
-- Provenance manifest system
-- Gate documentation (gates 0–9)
-- Synthetic FRS+WAS data generation skeleton
+Branch stack: `main` → `feat/sim-schema` → `feat/assumption-loader` → `feat/top-tail` → `feat/provenance` → `feat/wealth-tax` → `feat/one-off-levy` → `feat/hvcts` → `feat/cgt-baseline` → `feat/iht-baseline` → `feat/enforcement` → `feat/devolution`
+
+| # | Stream | Branch | Base | PR | Status | R1 | R2 |
+|---|--------|--------|------|----|--------|----|----|
+| 51 | Pydantic schema module | `feat/sim-schema` | feat/sim-skeleton | #292 | R2 APPROVED ✓ | Fixed: ConfigDict, Nation validator, VersionTag fields | Clean |
+| 52 | Assumption + baselines loaders | `feat/assumption-loader` | feat/sim-schema | #293 | R2 APPROVED ✓ | Fixed: monotonic range, StrEnum, duplicate IDs | Clean |
+| 53 | Top-tail Pareto reconstruction | `feat/top-tail` | feat/assumption-loader | #295 | R2 APPROVED ✓ | 8 fixes applied | 6 new fixes |
+| 54 | Provenance manifest + collector | `feat/provenance` | feat/top-tail | #296 | R2 APPROVED ✓ | 8 fixes | 4 fixes |
+| 55 | Family A annual wealth tax | `feat/wealth-tax` | feat/provenance | #297 | R2 APPROVED ✓ | 7 fixes, 14 new tests | 4 fixes, 10 new tests (47 total) |
+| 56 | Family B one-off wealth levy | `feat/one-off-levy` | feat/wealth-tax | #298 | R2 APPROVED ✓ | Fixed: shared _banding, LevyRateBand alias | 4 fixes |
+| 57 | Family E HVCTS (property tax) | `feat/hvcts` | feat/one-off-levy | #299 | R2 APPROVED ✓ | Fixed: revenue_by_nation, boundary tests | Overlapping-band validation |
+| 58 | Family C CGT baseline | `feat/cgt-baseline` | feat/hvcts | #300 | R2 APPROVED ✓ | Fixed: dead config guards, ge=0 rates | ValueError for validators |
+| 59 | Family D IHT baseline | `feat/iht-baseline` | feat/cgt-baseline | #301 | R2 APPROVED ✓ | 6 fixes, 14 boundary tests (72 IHT) | PENSION_TYPES constant, 2 integration tests |
+| 60 | Family F enforcement | `feat/enforcement` | feat/iht-baseline | #302 | R2 APPROVED ✓ | all-6-families test (38 enforcement) | Clean |
+| 61 | Family G devolution | `feat/devolution` | feat/enforcement | #303 | R2 APPROVED ✓ | 2 fixes: ValueError, reject contradictory nations (29 devolution) | 1 fix: stale field description |
+
+**All 7 policy families (A-G) implemented. 498 tests passing. Gate 1 policy family code complete.**
+
+PR #294 was absorbed into #293.
+
+### Wave 12+ Candidates (from blueprint/compass)
+
+- Static microsimulation engine (`engine/` module)
+- Synthetic FRS+WAS data generation (`synth/` module)
+- WAS/FRS reconstruction pipeline (`reconstruction/` module)
+- ONS NBS macro reconciliation (`reconcile/` module)
+- Uncertainty propagation (`uncertainty/` module)
+- PolicyEngine-UK integration (`rules/` module)
+- Output formatting + dashboard JSON (`outputs/` module)
+- Gate documentation (gates 0-9)
 - Dashboard components: ScenarioSelector, ProvenanceTooltip, ConfidenceFanChart
 - Behavioural priors registry (priors.yml)
 - CONTRIBUTING.md expansion with simulator dev workflow
@@ -117,6 +140,13 @@ See archived wave tables below for historical provenance.
 | 2026-05-23 | Batch all 11 Dependabot PRs into single PR #291 | Cleaner than merging 11 individual PRs; vue-tsc major bump verified locally |
 | 2026-05-23 | R2 found YAML 1.1 scientific notation bug in assumptions.yml | PyYAML requires e+ not bare e for float parsing — silent type error |
 | 2026-05-23 | R2 found Family G missing from baselines.yml | Added devolution property-tax baseline to cover all 7 policy families |
+| 2026-05-23 | Stacked branch strategy for sim | Each module depends on previous; stacking avoids merge conflicts |
+| 2026-05-23 | StrEnum migration across all schema enums | Ruff UP042 compliance; Python 3.11+ target |
+| 2026-05-23 | Shared _banding.py extracted from A/B duplication | RateBand + compute_banded_liability shared |
+| 2026-05-24 | All 7 policy families (A-G) implemented | Gate 1 policy family code complete (498 tests) |
+| 2026-05-24 | Family F enforcement as compliance-multiplier model | Revenue uplift from observability, not rate changes |
+| 2026-05-24 | Family G devolution as nation-scope routing layer | Composition over reimplementation |
+| 2026-05-24 | Preset scope rejects contradictory included_nations | R1 finding: silent discard is a footgun in fiscal simulation |
 
 ## Subagent Dispatch Reference
 
