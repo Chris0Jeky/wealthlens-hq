@@ -8,15 +8,18 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
-from wealthlens_sim.schema.base import VersionTag
+from wealthlens_sim.schema.base import Nation, VersionTag
 
 
 class HouseholdResult(BaseModel):
     """Tax and wealth outcomes for a single household under one scenario."""
 
+    model_config = ConfigDict(extra="forbid")
+
     household_id: str
+    nation: Nation
     weight: Annotated[float, Field(gt=0)]
     net_wealth_pre: float = Field(description="Net wealth before policy")
     net_wealth_post: float = Field(description="Net wealth after policy")
@@ -27,6 +30,8 @@ class HouseholdResult(BaseModel):
 
 class SimulationResult(BaseModel):
     """Aggregate results from a single scenario run."""
+
+    model_config = ConfigDict(extra="forbid")
 
     scenario_id: str
     version: VersionTag

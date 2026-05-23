@@ -9,7 +9,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import Annotated
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from wealthlens_sim.schema.base import Nation
 
@@ -28,8 +28,10 @@ class AssetType(str, Enum):
 class Asset(BaseModel):
     """A single wealth component held by a person or household."""
 
+    model_config = ConfigDict(extra="forbid")
+
     asset_type: AssetType
-    gross_value: Annotated[float, Field(description="Gross value in GBP")]
+    gross_value: Annotated[float, Field(ge=0, description="Gross value in GBP")]
     debt: Annotated[float, Field(ge=0, default=0, description="Debt secured against this asset")]
     is_liquid: bool = Field(default=False, description="Can be realised within 30 days without significant loss")
 
@@ -40,6 +42,8 @@ class Asset(BaseModel):
 
 class Person(BaseModel):
     """An individual within a household."""
+
+    model_config = ConfigDict(extra="forbid")
 
     person_id: str
     age: Annotated[int, Field(ge=0, le=120)]
@@ -62,13 +66,23 @@ class Household(BaseModel):
     """A household unit — the primary simulation entity.
 
     Blueprint v5 §8.2: nation is first-class, not derived.
+    Households must carry a constituent nation, not UK aggregate.
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     household_id: str
     nation: Nation
     region: str = Field(default="", description="Sub-national region, e.g. ITL1 code")
     weight: Annotated[float, Field(gt=0, description="Survey grossing weight")]
     persons: list[Person] = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def _nation_must_be_constituent(self) -> Household:
+        if self.nation == Nation.UK:
+            msg = "Households must carry a constituent nation (England/Scotland/Wales/NI), not UK aggregate"
+            raise ValueError(msg)
+        return self
 
     @property
     def total_net_wealth(self) -> float:

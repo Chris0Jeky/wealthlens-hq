@@ -6,7 +6,7 @@ Nation is a first-class field on every household and policy record.
 
 from wealthlens_sim.schema.base import Nation, VersionTag
 from wealthlens_sim.schema.household import Asset, AssetType, Household, Person
-from wealthlens_sim.schema.policy import LegalStatus, PolicyLever, PolicyScenario
+from wealthlens_sim.schema.policy import LegalStatus, PolicyFamily, PolicyLever, PolicyScenario
 from wealthlens_sim.schema.results import HouseholdResult, SimulationResult
 
 __all__ = [
@@ -17,6 +17,7 @@ __all__ = [
     "LegalStatus",
     "Nation",
     "Person",
+    "PolicyFamily",
     "PolicyLever",
     "PolicyScenario",
     "SimulationResult",

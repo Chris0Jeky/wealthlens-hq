@@ -6,10 +6,11 @@ Blueprint v5 §9: policy families A-G.
 
 from __future__ import annotations
 
+from datetime import date
 from enum import Enum
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from wealthlens_sim.schema.base import Nation
 
@@ -35,6 +36,8 @@ class PolicyFamily(str, Enum):
 class PolicyLever(BaseModel):
     """A single policy parameter that can be varied in scenarios."""
 
+    model_config = ConfigDict(extra="forbid")
+
     lever_id: str
     family: PolicyFamily
     legal_status: LegalStatus
@@ -45,8 +48,10 @@ class PolicyLever(BaseModel):
 class PolicyScenario(BaseModel):
     """A complete set of policy levers defining one simulation run."""
 
+    model_config = ConfigDict(extra="forbid")
+
     scenario_id: str
     label: str = Field(description="Human-readable scenario name")
     description: str = ""
     levers: list[PolicyLever] = Field(default_factory=list)
-    baseline_date: str = Field(description="Baselines registry snapshot date")
+    baseline_date: date = Field(description="Baselines registry snapshot date")
