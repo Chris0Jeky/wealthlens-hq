@@ -5,13 +5,19 @@
 >
 > **CRITICAL**: Update this file BEFORE every compaction risk (long tool calls, large diffs).
 
-Last updated: 2026-05-17T15:00Z
+Last updated: 2026-05-23T14:00Z
 
-## 2026-05-17 Recovery Status
+## 2026-05-23 New Cycle: Blueprint Foundation
 
-The autonomous cleanup/merge sweep has completed for the PR queue active during this recovery session. GitHub reports zero open PRs. PRs through `#272` are merged to `main`. Latest relevant main workflows are green: CI Backend on backend-affecting merge `09c4ea5`, and CI Frontend, CodeQL, E2E Tests, Lighthouse CI, and Deploy to GitHub Pages on latest merge `1f5318e`.
+Starting a new autonomous development cycle. The `resources/` directory contains a comprehensive Blueprint v5 and strategic plan that haven't been actioned. This cycle implements foundational infrastructure for the WealthLens-Sim microsimulation platform.
 
-The historical wave tables below are retained for provenance only and are no longer the live phase state. Use `.codex/memories/session_notes/CODEX_PR_CLEANUP_2026-05-16.md` for the detailed recovery log.
+**Source material**: `resources/1779367399635_WealthLens_UK_Unified_Blueprint_v5.md` (2000-line research blueprint) and `resources/compass_artifact_*.md` (strategic/technical bridge plan).
+
+**Prior state**: Waves 1-8 complete (PRs #232–#272 all merged). 11 Dependabot PRs open (#273–#283). Zero custom open PRs. Main CI green.
+
+## 2026-05-17 Recovery Status (archived)
+
+The autonomous cleanup/merge sweep completed. PRs through `#272` merged to `main`. CI green.
 
 ## Recovery Checklist (READ FIRST after compaction or session restart)
 
@@ -50,31 +56,42 @@ Types: feat, fix, refactor, test, chore, docs
 
 ## Current Phase
 
-**Phase: WAVE 8 — FIXING R1 + REVIEWING REMAINING**
+**Phase: WAVE 9 — BLUEPRINT FOUNDATION (started 2026-05-23)**
 
-### Waves 1-6: ALL R2 APPROVED ✓ (PRs #232-#260)
+### Waves 1-8: ALL MERGED ✓ (PRs #232–#272)
 
-### Wave 7 Streams — ALL R2 APPROVED ✓
+See archived wave tables below for historical provenance.
 
-| # | Stream | Branch | Base | PR | Status | R1 | R2 |
-|---|--------|--------|------|----|--------|----|----|
-| 31 | Component test coverage (top 6 components) | `test/component-coverage` | main | #262 | R2 APPROVED ✓ | Fixed: added keyboard interaction tests | APPROVED |
-| 32 | HealthBadge accessibility fix (color-only → icon+text) | `fix/healthbadge-accessibility` | main | #261 | R2 APPROVED ✓ | Fixed: focusable, dead code | APPROVED |
-| 33 | Inheritance tax chart page | `feat/inheritance-tax-chart` | main | #263 | R2 APPROVED ✓ | Fixed: data validation, fetchWithRetry, contrast | APPROVED |
-| 34 | i18n framework (vue-i18n) | `feat/i18n-setup` | main | #264 | R2 APPROVED ✓ | Fixed: unused t, localStorage persist, label i18n | APPROVED |
-| 35 | Architecture docs + CONTRIBUTING | `docs/architecture-and-conduct` | main | #265 | R2 APPROVED ✓ | Fixed: paths, composable refs, e2e ref | APPROVED |
-| 36 | Wealth tax revenue simulator with sliders | `feat/wealth-tax-simulator` | main | #266 | R2 APPROVED ✓ | Fixed: findIndex fallback, unused import | APPROVED |
-
-### Wave 8 Streams
+### Wave 9 Streams — Blueprint Foundation
 
 | # | Stream | Branch | Base | PR | Status | R1 | R2 |
 |---|--------|--------|------|----|--------|----|----|
-| 37 | "1 pixel = £1,000" wealth scale scroller | `feat/wealth-scale-scroller` | main | #268 | FIXING R1 | Invalid role, aria-live spam, valuemax, valuetext, tests | — |
-| 38 | Global dataset search/filter | `feat/dataset-search` | main | #269 | R1 IN PROGRESS | — | — |
-| 39 | OG-image generation (satori + resvg-js) | `feat/og-image-generation` | main | #270 | R1 IN PROGRESS | — | — |
-| 40 | Real wage stagnation chart | `feat/wage-stagnation-chart` | main | #271 | FIXING R1 | Data inconsistency (2% vs 1.5%), unused counterfactual, comments | — |
-| 41 | FAQ/glossary page | `feat/faq-glossary` | main | #267 | R2 APPROVED ✓ | Fixed: use Accordion, dark mode, headings | APPROVED |
-| 42 | Performance: loading UX polish | `feat/loading-ux-polish` | main | #272 | R1 IN PROGRESS | — | — |
+| 43 | Repository restructure (packages/wealthlens-sim/ + registries/) | `feat/sim-skeleton` | main | #286 | R2 DONE | 2/2 | 2/2 |
+| 44 | License split (AGPL-3.0 for simulator) | `chore/license-split` | feat/sim-skeleton | #287 | R2 DONE | 2/2 | 2/2 |
+| 45 | Model Charter (docs/MODEL_CHARTER.md) | `docs/model-charter` | main | #284 | R2 DONE | 2/2 | 2/2 |
+| 46 | AI/LLM Disclosure (docs/AI_LLM_DISCLOSURE.md) | `docs/ai-disclosure` | main | #285 | R2 DONE | 2/2 | 2/2 |
+| 47 | Sources registry (registries/sources.yml) | `feat/sources-registry` | feat/sim-skeleton | #288 | R2 IN PROGRESS | 2/2 | 2/2 pending |
+| 48 | Assumptions registry (registries/assumptions.yml) | `feat/assumptions-registry` | feat/sim-skeleton | #289 | R1 IN PROGRESS | 2/2 pending | — |
+| 49 | Baselines registry (registries/baselines.yml) | `feat/baselines-registry` | feat/sim-skeleton | #290 | R1 IN PROGRESS | 2/2 pending | — |
+
+### Wave 10 Candidates — Dependabot + Deps
+
+| # | Stream | Branch | Base | PR | Status |
+|---|--------|--------|------|----|--------|
+| 50 | Dependabot PRs (11 open: #273–#283) | various | main | #273-#283 | OPEN |
+
+### Wave 11+ Candidates (from blueprint/compass)
+
+- PolicyEngine-UK integration skeleton
+- Top-tail reconstruction module (Pareto, GPD, rank correction)
+- HVCTS reform module (Family E)
+- Policy family stubs (Families A–G)
+- Provenance manifest system
+- Gate documentation (gates 0–9)
+- Synthetic FRS+WAS data generation skeleton
+- Dashboard components: ScenarioSelector, ProvenanceTooltip, ConfidenceFanChart
+- Behavioural priors registry (priors.yml)
+- CONTRIBUTING.md expansion with simulator dev workflow
 
 ### Wave 8+ (future candidates)
 - Compare your effective tax rate to a billionaire
