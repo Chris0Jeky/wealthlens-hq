@@ -95,6 +95,10 @@ All UI changes must meet WCAG AA:
 - ARIA labels on non-text content
 - No information conveyed by colour alone
 
+## AI/LLM usage
+
+This project uses LLMs (Claude Code, Codex) as development assistants. All LLM-assisted output is reviewed by a human before merge. See [`docs/AI_LLM_DISCLOSURE.md`](docs/AI_LLM_DISCLOSURE.md) for the full disclosure policy, including what is declared, what is prohibited, and how LLM use is audited.
+
 ## Code of conduct
 
 Be kind, be patient, be constructive. This is a volunteer project built in the open.
