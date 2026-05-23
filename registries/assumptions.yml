@@ -9,6 +9,13 @@
 # This initial population covers foundational assumptions referenced in
 # the Blueprint and existing data pipelines. Entries will expand as
 # policy family modules are implemented.
+#
+# Domain vocabulary (analytical, not legal status):
+#   top-tail, migration, avoidance, compliance, valuation, liquidity,
+#   capital-gains, transfer-tax, property-tax, enforcement, residence
+#
+# Policy-parameter entries also carry a legal_status field:
+#   current_law, enacted_future, announced, consultation_stage, hypothetical
 
 assumptions:
   # --- Top-tail reconstruction ---
@@ -119,7 +126,7 @@ assumptions:
       realisations at higher rates). Relevant to revenue estimation for
       rate alignment scenarios.
 
-  - assumption_id: behaviour.avoidance.wealth_concealment.v1
+  - assumption_id: behaviour.compliance.wealth_concealment.v1
     domain: compliance
     value_or_distribution:
       type: range
@@ -195,24 +202,32 @@ assumptions:
   # --- Policy parameters (current law) ---
 
   - assumption_id: policy.cgt.rates_2026.v1
-    domain: current-law
+    domain: capital-gains
+    legal_status: current_law
     value_or_distribution:
-      type: point
-      value: "18/24"
+      type: schedule
+      rates:
+        basic_rate: 18
+        higher_rate: 24
+        badr: 18
+        investors_relief: 18
+        trustees: 24
     source: GOV.UK CGT rates page (accessed 2026-05-16)
     transferability_score: high
     valid_range: n/a
     applies_to: Family C baseline
     last_reviewed: "2026-05-23"
     notes: >
-      CGT rates from 6 April 2026: 18% (lower rate / BADR / Investors'
-      Relief) and 24% (higher rate and trustees). These are current law.
+      CGT rates from 6 April 2026. BADR rose to 18% from 14% in 2025-26.
+      These are current law.
 
   - assumption_id: policy.iht.nil_rate_bands_2026.v1
-    domain: current-law
+    domain: transfer-tax
+    legal_status: current_law
     value_or_distribution:
-      type: point
-      value: "325000/175000"
+      type: schedule
+      nil_rate_band: 325000
+      residence_nil_rate_band: 175000
     source: GOV.UK IHT thresholds (accessed 2026-05-16)
     transferability_score: high
     valid_range: n/a
@@ -224,17 +239,22 @@ assumptions:
       6 April 2026, 50% relief above.
 
   - assumption_id: policy.hvcts.rates_consultation.v1
-    domain: consultation-stage
+    domain: property-tax
+    legal_status: consultation_stage
     value_or_distribution:
       type: schedule
       bands:
-        - range: "2000000-2500000"
+        - low: 2000000
+          high: 2500000
           charge: 2500
-        - range: "2500000-3500000"
+        - low: 2500000
+          high: 3500000
           charge: 3500
-        - range: "3500000-5000000"
+        - low: 3500000
+          high: 5000000
           charge: 5000
-        - range: "5000000+"
+        - low: 5000000
+          high: null
           charge: 7500
     source: MHCLG consultation document (19 May 2026)
     transferability_score: high
@@ -247,7 +267,8 @@ assumptions:
       Parameters may change before enactment in April 2028.
 
   - assumption_id: policy.hvcts.affected_properties.v1
-    domain: consultation-stage
+    domain: property-tax
+    legal_status: consultation_stage
     value_or_distribution:
       type: range
       low: 70000
@@ -262,3 +283,71 @@ assumptions:
       Estimated number of residential properties valued at £2m+ in
       England. Uncertainty driven by valuation methodology and market
       movements since last VOA exercise.
+
+  # --- Missing Blueprint-required entries (added per R1 review) ---
+
+  - assumption_id: policy.iht.apr_bpr_cap_2026.v1
+    domain: transfer-tax
+    legal_status: current_law
+    value_or_distribution:
+      type: point
+      value: 2500000
+    source: GOV.UK APR/BPR reform (accessed 2026-05-16)
+    transferability_score: high
+    valid_range: n/a
+    applies_to: Family D baseline
+    last_reviewed: "2026-05-23"
+    notes: >
+      Combined APR/BPR cap for 100% relief. 50% relief on qualifying
+      value above £2.5m. From 6 April 2026.
+
+  - assumption_id: policy.iht.pension_inclusion_2027.v1
+    domain: transfer-tax
+    legal_status: enacted_future
+    value_or_distribution:
+      type: point
+      value: true
+    source: Finance Act 2026; GOV.UK technical note
+    transferability_score: high
+    valid_range: n/a
+    applies_to: Family D baseline
+    last_reviewed: "2026-05-23"
+    notes: >
+      IHT on unused pension funds for deaths on or after 6 April 2027.
+      Death-in-service benefits excluded per technical note. Major
+      structural change to wealth-transfer taxation.
+
+  - assumption_id: policy.fig_regime.residence_baseline.v1
+    domain: residence
+    legal_status: current_law
+    value_or_distribution:
+      type: point
+      value: 4
+    source: GOV.UK non-dom replacement (accessed 2026-05-16)
+    transferability_score: high
+    valid_range: n/a
+    applies_to: Family A, Family B (migration context)
+    last_reviewed: "2026-05-23"
+    notes: >
+      Four-year Foreign Income and Gains regime replacing non-dom
+      remittance basis from 6 April 2025. Affects migration elasticity
+      calibration for wealth-tax scenarios.
+
+  - assumption_id: policy.enforcement.wealthy_tax_gap.v1
+    domain: enforcement
+    legal_status: current_law
+    value_or_distribution:
+      type: schedule
+      overall_tax_gap_pct: 5.3
+      overall_tax_gap_gbp: 46.8e9
+      wealthy_tax_gap_gbp: 1.9e9
+      compliance_yield_gbp: 5.2e9
+    source: HMRC Measuring tax gaps 2025 edition
+    transferability_score: high
+    valid_range: n/a
+    applies_to: Family F baseline
+    last_reviewed: "2026-05-23"
+    notes: >
+      HMRC enforcement baseline parameters. Wealthy tax gap and
+      compliance yield are anchor parameters for Family F reform
+      scenarios.
