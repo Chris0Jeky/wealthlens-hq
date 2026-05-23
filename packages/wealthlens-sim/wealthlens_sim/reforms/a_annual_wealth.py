@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from enum import StrEnum
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from wealthlens_sim.schema.household import Asset, AssetType, Household
 
@@ -34,8 +34,8 @@ class WealthTaxConfig(BaseModel):
     """Configuration for an annual net wealth tax.
 
     Use `rate` for a flat tax above `threshold`, or `rate_bands` for
-    progressive schedules. If `rate_bands` is set, `rate` and `threshold`
-    are ignored.
+    progressive schedules. Wealth below the first band's threshold is
+    untaxed (implicit 0% band).
     """
 
     model_config = ConfigDict(extra="forbid", frozen=True)
@@ -44,6 +44,7 @@ class WealthTaxConfig(BaseModel):
     rate: float = Field(gt=0, le=1, default=0.01, description="Annual tax rate (e.g. 0.01 = 1%)")
     rate_bands: tuple[RateBand, ...] | None = Field(
         default=None,
+        min_length=1,
         description="Progressive rate bands (overrides rate/threshold when set)",
     )
     tax_unit: TaxUnit = TaxUnit.INDIVIDUAL
@@ -51,6 +52,21 @@ class WealthTaxConfig(BaseModel):
         default=frozenset(),
         description="Asset types excluded from the tax base",
     )
+
+    @model_validator(mode="after")
+    def _validate_rate_bands(self) -> WealthTaxConfig:
+        if self.rate_bands is not None:
+            thresholds = [b.threshold for b in self.rate_bands]
+            if len(thresholds) != len(set(thresholds)):
+                msg = "rate_bands must have unique thresholds"
+                raise ValueError(msg)
+            if self.threshold != 0 or self.rate != 0.01:
+                msg = (
+                    "When rate_bands is set, threshold and rate are ignored; "
+                    "leave them at defaults or omit them"
+                )
+                raise ValueError(msg)
+        return self
 
 
 class WealthTaxResult(BaseModel):
@@ -83,6 +99,8 @@ class AggregateRevenue(BaseModel):
 
 def _compute_liability(wealth: float, config: WealthTaxConfig) -> float:
     """Compute tax liability for a given wealth amount using flat or progressive rates."""
+    if wealth <= 0:
+        return 0.0
     if config.rate_bands is not None:
         bands = sorted(config.rate_bands, key=lambda b: b.threshold)
         liability = 0.0

@@ -416,6 +416,100 @@ class TestAggregateRevenueExtended:
         assert result.mean_liability == pytest.approx(expected_mean)
 
 
+class TestConfigValidation:
+    def test_empty_rate_bands_rejected(self):
+        with pytest.raises(ValidationError):
+            WealthTaxConfig(rate_bands=())
+
+    def test_duplicate_thresholds_rejected(self):
+        with pytest.raises(ValidationError, match="unique thresholds"):
+            WealthTaxConfig(
+                rate_bands=(
+                    RateBand(threshold=5_000_000, rate=0.005),
+                    RateBand(threshold=5_000_000, rate=0.01),
+                ),
+            )
+
+    def test_conflicting_flat_and_progressive_rejected(self):
+        with pytest.raises(ValidationError, match="rate_bands is set"):
+            WealthTaxConfig(
+                threshold=10_000_000,
+                rate=0.05,
+                rate_bands=(RateBand(threshold=5_000_000, rate=0.01),),
+            )
+
+    def test_rate_bands_with_defaults_accepted(self):
+        config = WealthTaxConfig(
+            rate_bands=(RateBand(threshold=5_000_000, rate=0.01),),
+        )
+        assert config.rate_bands is not None
+
+    def test_unsorted_bands_same_result(self):
+        bands_sorted = (
+            RateBand(threshold=5_000_000, rate=0.005),
+            RateBand(threshold=10_000_000, rate=0.01),
+        )
+        bands_reversed = (bands_sorted[1], bands_sorted[0])
+        config_sorted = WealthTaxConfig(rate_bands=bands_sorted)
+        config_reversed = WealthTaxConfig(rate_bands=bands_reversed)
+        assert _compute_liability(15_000_000, config_sorted) == _compute_liability(
+            15_000_000, config_reversed
+        )
+
+    def test_zero_wealth_progressive(self):
+        config = WealthTaxConfig(
+            rate_bands=(RateBand(threshold=0, rate=0.01),),
+        )
+        assert _compute_liability(0, config) == 0.0
+
+    def test_negative_wealth_returns_zero(self):
+        config = WealthTaxConfig(threshold=0, rate=0.01)
+        assert _compute_liability(-1_000_000, config) == 0.0
+
+    def test_negative_wealth_progressive_returns_zero(self):
+        config = WealthTaxConfig(
+            rate_bands=(RateBand(threshold=0, rate=0.01),),
+        )
+        assert _compute_liability(-500_000, config) == 0.0
+
+
+class TestEffectiveRateEdgeCases:
+    def test_negative_total_wealth_positive_taxable(self):
+        p = _make_person(assets=[
+            (AssetType.FINANCIAL, 15_000_000, 0),
+            (AssetType.MAIN_RESIDENCE, 1_000_000, 20_000_000),
+        ])
+        hh = _make_household([p])
+        config = WealthTaxConfig(
+            threshold=10_000_000,
+            rate=0.01,
+            exempt_asset_types=frozenset({AssetType.MAIN_RESIDENCE}),
+        )
+        result = compute_wealth_tax(hh, config)
+        assert result.taxable_wealth == 15_000_000
+        assert result.tax_liability == pytest.approx(50_000)
+        assert result.effective_rate == 0.0
+
+    def test_mean_liability_excludes_non_liable(self):
+        wealthy = _make_household(
+            [_make_person("p1", [(AssetType.FINANCIAL, 50_000_000, 0)])],
+            nation=Nation.ENGLAND,
+            weight=1000,
+            household_id="hh_wealthy",
+        )
+        middle = _make_household(
+            [_make_person("p2", [(AssetType.FINANCIAL, 500_000, 0)])],
+            nation=Nation.SCOTLAND,
+            weight=10_000,
+            household_id="hh_middle",
+        )
+        config = WealthTaxConfig(threshold=10_000_000, rate=0.01)
+        result = compute_aggregate_revenue([wealthy, middle], config)
+        expected_liability = (50_000_000 - 10_000_000) * 0.01
+        expected_mean = (expected_liability * 1000) / 1000
+        assert result.mean_liability == pytest.approx(expected_mean)
+
+
 class TestWealthTaxResult:
     def test_round_trip(self):
         result = WealthTaxResult(
