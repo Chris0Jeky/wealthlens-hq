@@ -59,15 +59,29 @@ class ProvenanceCollector:
             raise KeyError(msg)
 
         vd = assumption.value_or_distribution
-        resolved: float | int | bool | dict[str, float | int]
+        resolved: (
+            float
+            | int
+            | bool
+            | dict[str, float | int]
+            | list[dict[str, float | int | None]]
+        )
         if isinstance(vd, PointValue):
             resolved = vd.value
         elif isinstance(vd, RangeValue):
             resolved = vd.central
         elif isinstance(vd, ScheduleValue):
-            resolved = dict(vd.model_extra)
+            extra = vd.model_extra or {}
+            # Check if this is a band-style schedule (values are lists of dicts)
+            band_values = [v for v in extra.values() if isinstance(v, list)]
+            if band_values:
+                # Band schedule — preserve as list of dicts
+                resolved = band_values[0]  # type: ignore[assignment]
+            else:
+                # Simple key-value schedule — keep only numeric entries
+                resolved = {k: v for k, v in extra.items() if isinstance(v, (int, float))}
         elif isinstance(vd, FlagValue):
-            resolved = bool(vd.value)
+            resolved = bool(vd.value)  # explicit bool to prevent int leakage
         else:
             msg = f"Unknown value_or_distribution type: {type(vd)}"
             raise TypeError(msg)

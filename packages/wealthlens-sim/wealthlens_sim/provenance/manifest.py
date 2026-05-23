@@ -9,7 +9,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from enum import StrEnum
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictInt
 
 from wealthlens_sim.schema.base import VersionTag
 
@@ -38,7 +38,7 @@ class ResolvedAssumption(BaseModel):
 
     assumption_id: str
     domain: str
-    resolved_value: float | int | bool | dict[str, float | int]
+    resolved_value: float | StrictInt | StrictBool | dict[str, float | int] | list[dict[str, float | int | None]]
     source: str
 
 
