@@ -1,0 +1,92 @@
+Honest answer: this is not a research question. This is you asking me, as a thinking partner who has now read the blueprint and the repo and put together the synthesis, what I actually think. So I'm going to skip the research tool and just talk to you straight. If you want me to deep-research something specific that comes out of this (the competitive landscape, the funding realism, the team-of-one problem), I'll do that separately.
+
+Here's what I think.
+
+**The blueprint is unusually good. The repo is doing something different.**
+
+The v5 blueprint is one of the more sophisticated planning documents I've read in this space. The discipline is real: explicit theory of change with falsification conditions, symmetric optimism/pessimism rules, devolution as first-class, the £0.4bn↔£80bn anchor as the public credibility hook, pre-mortem as standing methodology, the Bayesian second-pass spec, the assumption registry schema. Most projects don't think this hard about how they'll fail. The fact that you wrote (or co-wrote, with heavy LLM assistance) §27 about post-HVCTS identity decay — that's the kind of thing that distinguishes a person who's thought seriously about institutional drift from one who hasn't.
+
+But the repo is a public-facing chart dashboard with 10 data pipelines and 874 tests. It's a *publishing platform*. It's polished, it's accessible, it cites sources. It's not a microsimulator and it's not on a trajectory to become one without a hard pivot. The gap between "WealthLens UK publishes broadsheet-aesthetic charts" and "WealthLens-Sim v0.1 is a reproducible top-tail-corrected UK wealth-policy microsimulation platform" is enormous — different skill mix, different audience, different success metrics, different funding base, different code.
+
+So the first honest take is: **the blueprint and the repo are describing two different projects, and you have to choose**. They can converge, but the convergence isn't free.
+
+**The scope is too big for one person. By a lot.**
+
+The blueprint costs out at £250k–£500k over 24 months for "one lead researcher, one engineer, limited advisory time." That's already lean. Looking at the repo, you appear to be working alone (zero stars, zero forks, one contributor on the languages chart). The blueprint asks for:
+
+- Rules-as-code wealth tax engine integrated with PolicyEngine-UK
+- Synthetic FRS+WAS dataset
+- Three different top-tail correction methods (Vermeulen, GPD-POT, Wildauer-Kapeller)
+- Bayesian hierarchical top-tail model in v0.2
+- Seven policy families A-G
+- Behavioural wrapper system with transferability scoring
+- Devolution as first-class across England/Scotland/Wales/NI
+- Public dashboard with provenance manifests and Gate 9 safety features
+- HVCTS rapid-response brief in eight weeks
+- Independent reproduction by an external team
+- Peer-reviewed publication
+- 50+ assumption registry entries
+- Three independent funders
+- Active advisory group with devolved-tax specialists
+
+For one person, even one very capable person with LLM assistance, this is genuinely impossible on a 24-month horizon. It's not "ambitious." It's not "stretch." It's "Arun Advani, Andy Summers, and Helen Hughson combined have a research group of multiple people, HMRC Datalab access, and CenTax institutional support, and they still haven't built this." Wealth Tax Commission was 50+ commissioned papers over two years.
+
+The honest version of this plan, if it stays solo, is to pick one of those bullet points and do it really well. The HVCTS rapid-response brief, for instance, is genuinely achievable for one person in eight weeks. A top-tail reconstruction methods note is achievable solo. A clean PolicyEngine-UK contribution adding wealth-tax modules is achievable solo. "All of the above plus dashboard plus funding plus advisory board plus papers" is not.
+
+**The biggest risk isn't in the risk register.**
+
+The 30-item risk register is thorough but it's missing the most likely failure mode for this specific project, which is: **the founder-bus risk plus the scope-mismatch risk compounding into burnout around month 8-10**. The blueprint mentions founder-bus (risk 12) and underpowered funding (risk 14), but treats them as independent. They aren't. A single founder trying to deliver a 24-month plan designed for a small team will hit a wall when the HVCTS brief consumes June, the synthetic data work consumes July, the WTC replication doesn't quite hit ±5% in August, and a funder asks for revisions in September. The risk isn't dramatic — it's just that the publishing rhythm collapses and the repo starts going quiet for months, which makes the next funding application harder, which makes the project quieter still.
+
+You won't see this from the inside because each individual decision feels reasonable. It only becomes visible when you zoom out and notice that you're now six weeks behind on three workstreams simultaneously.
+
+**The neutrality framing is the right strategy but it's harder to maintain than it sounds.**
+
+The blueprint repeatedly says WealthLens is not a wealth-tax advocate — it's an "open, uncertainty-aware UK wealth-policy lab." This is correct positioning. IFS will not cite an advocate. OBR will not engage with an advocate. CenTax won't co-author with an advocate. But here's the thing: you're a person, with views, working alone, on a topic that is politically charged, and you're going to be asked by journalists and funders what you actually think about a wealth tax. You'll be asked at conferences. The Tax Justice UK people will assume you're an ally. The IFS people will assume you're not.
+
+Maintaining the "lab not campaign" framing as a solo founder is structurally harder than maintaining it as an institution. CenTax has a constitution and a board. PolicyEngine has Max and Nikhil and a community. You have you. Every time you publish, every time you tweet, every time you choose what to model first, you're either reinforcing the neutrality or eroding it. The blueprint knows this — that's why §21 lists "advocacy capture" as risk 2. But the mitigation listed ("diversified funding; advisory group; publish counterarguments") is institutional, not solo-founder-shaped.
+
+**The HVCTS deadline is doing useful work but it's also a trap.**
+
+Phase 1.5 is the smartest single section in the blueprint. Having a hard external deadline (14 July 2026) eight weeks out forces real shipping, and a credible consultation submission is genuinely valuable for credibility-building. Good move.
+
+But: if you make HVCTS your launch story, you become the HVCTS person. When the consultation closes in mid-July and the policy either ships or doesn't in April 2028, your project's identity is hostage to a single property-tax surcharge that, candidly, almost nobody outside the policy bubble cares about. The blueprint sees this — that's what §27 is about. But §27 reads like an afterthought, and the 90-day plan barely addresses it.
+
+If I were planning this, I'd treat the HVCTS brief as a *proof of capability*, not as a *launch story*. The launch story is the £0.4bn↔£80bn explainer — that's the one that actually carries the project past HVCTS into the broader wealth-policy debate.
+
+**The competitive landscape is harder than the blueprint admits.**
+
+§16 lists comparators well but the conclusion ("the niche is the intersection") is the kind of thing every founder tells themselves. The honest reading of that table is: **PolicyEngine-UK could add a wealth-tax module in three months if they decided to, and they probably will**. They have the team, the data infrastructure, the funder relationships, the HMT contacts (Nikhil's a former No.10 Innovation Fellow), and they're actively expanding their scope. CenTax could publish an open dashboard if they decided to — they have the analytical credibility and they're well-funded.
+
+WealthLens's "moat" is genuinely the *combination* of all the elements, but combinations aren't moats when better-resourced organisations can add the missing pieces faster than you can. The right strategic move is probably to make yourself *complementary* rather than competitive — get inside the PolicyEngine-UK contribution graph, co-author with CenTax, become the person who builds the things they don't have time to build. Solo founders don't win head-to-head against well-funded organisations; they win by being so useful to those organisations that being absorbed or partnered is the path of least resistance.
+
+**The repo's current direction is actually useful, just not for the blueprint's stated goal.**
+
+What you've built — the broadsheet-aesthetic chart publisher, the 10 data pipelines, the WCAG-AA accessibility, the citation discipline — is genuinely good *as a public-communications layer*. It's not what the blueprint asks for, but it's not wasted. If WealthLens-Sim ever ships, the existing repo is its public face. The mistake would be either (a) treating the dashboard as the goal, in which case you've built a chart site that competes with Our World in Data and the Resolution Foundation's live dashboards without their data depth, or (b) deprecating the dashboard to focus on the simulator, in which case you've thrown away the only part of the project that currently exists.
+
+The integration path is correct: the dashboard becomes the simulator's UI, the pipelines become the source registry. But that integration requires the simulator to actually exist, which is the hard part.
+
+**The LLM-assistance angle is more important than it looks.**
+
+You wrote a 1999-line blueprint, with explicit AI/LLM disclosure protocol, that mostly reads like institutional research planning. The repo includes `.claude/`, `.codex/`, `AGENTS.md`, `CLAUDE.md`, `.agents/skills/`. You're working with AI assistance as a core operating mode, and the blueprint is explicit about this being normal in 2026.
+
+Honest take: this is what makes the plan plausible at all for a solo founder. Without heavy LLM assistance, the 24-month plan is impossible; with it, it's merely very hard. But it also means your bottleneck isn't *generating* documents and code — it's *judgement, relationships, and review*. The things LLMs can't do for you are: build trust with Advani, get a Nuffield grants officer to take your call, decide which scenarios are actually worth modelling, notice when your code is wrong in ways the tests don't catch, defend the methodology under hostile review, be at conferences, and absorb criticism without falling apart.
+
+If I were advising you, I'd be a lot less worried about whether you can ship the code (you probably can, with LLM help) and a lot more worried about whether you can ship the *institutional* layer (relationships, advisory board, funding, peer review) at the pace required. That's not an LLM-tractable problem.
+
+**What I'd actually do if I were you.**
+
+Three options, in order of how much I'd recommend them:
+
+1. **Pick HVCTS-or-top-tail as a 90-day proof, then re-decide.** Don't commit to the 24-month plan yet. Ship the HVCTS consultation response by 14 July and a credible top-tail reconstruction methods note by mid-August. Use those two artefacts to (a) get a real conversation with CenTax or PolicyEngine and (b) test whether you actually enjoy this work at this depth. If both work, then commit to the longer plan with eyes open. If either struggles, you've still produced two genuinely useful public artefacts and you can adjust.
+
+2. **Re-pitch the whole thing as a PolicyEngine-UK contribution stream.** Don't try to be a separate project. Spend the 24 months becoming the wealth-tax person inside PolicyEngine-UK's ecosystem — contribute Family A-G modules, contribute top-tail correction methods, co-author with their team. You lose "founder of WealthLens" but you gain leverage, distribution, credibility, and a path to either being hired or having your contributions in front of HMT through their existing channels. This is the move a senior advisor would tell you to make and the one your founder-instinct will resist.
+
+3. **Commit to the full 24-month plan but only after securing a co-founder or institutional host first.** Don't write code for week 1 — spend the first 90 days exclusively on getting CenTax (or another host) to sign on. If that fails, return to option 1. Solo open-source policy infrastructure projects with this scope and this set of credibility demands do not work without an institutional anchor.
+
+What I would not do: start executing the 24-month plan as-written, solo, without a host, while telling yourself the funding will materialise once you have a working prototype. That's how good projects with smart founders end up as quiet repos.
+
+---
+
+That's the honest version. None of it is meant unkindly — the planning is real and the work is real and the topic genuinely matters. I just think the gap between the planning and the executing capacity is currently the project's biggest risk, and it's the one the blueprint can't see from the inside because it's the kind of thing only visible from outside.
+
+Happy to dig into any specific piece of this — the PolicyEngine partnership path, the CenTax pitch, the realistic funder conversations, the 90-day proof artefacts, or where the v5 blueprint is genuinely wrong rather than just ambitious — if useful.
