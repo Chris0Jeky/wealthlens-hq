@@ -78,7 +78,7 @@ class DevolutionConfig(BaseModel):
     )
     included_nations: frozenset[Nation] | None = Field(
         default=None,
-        description="Explicit nation set (required for CUSTOM scope, ignored otherwise)",
+        description="Explicit nation set (required for CUSTOM scope, rejected for preset scopes)",
     )
 
     @model_validator(mode="after")
