@@ -633,3 +633,34 @@ class TestPersonIHTFlagsType:
         result = compute_household_iht(hh, IHTConfig(), person_flags={"p1": flags})
         pr = result.person_results[0]
         assert pr.rnrb_used == 175_000
+
+
+class TestCombinedAPRBPRAndRNRBTaper:
+    """Integration test for APR/BPR relief combined with RNRB taper."""
+
+    def test_large_estate_with_business_and_residence(self):
+        config = IHTConfig()
+        estate = 5_000_000
+        qualifying = 3_000_000
+        result = _compute_person_iht(
+            estate, True, True, qualifying, False, 0.0, config,
+        )
+        expected_relief = 2_500_000 + (500_000 * 0.50)
+        assert result.apr_bpr_relief == pytest.approx(expected_relief)
+        assert result.rnrb_used == 0.0
+        estate_after = estate - expected_relief
+        expected_taxable = estate_after - 325_000
+        assert result.taxable_estate == pytest.approx(expected_taxable)
+
+    def test_moderate_estate_with_business_and_rnrb(self):
+        config = IHTConfig()
+        estate = 1_500_000
+        qualifying = 500_000
+        result = _compute_person_iht(
+            estate, True, True, qualifying, False, 0.0, config,
+        )
+        assert result.apr_bpr_relief == 500_000
+        assert result.rnrb_used == 175_000
+        estate_after = estate - 500_000
+        expected_taxable = estate_after - (325_000 + 175_000)
+        assert result.taxable_estate == pytest.approx(expected_taxable)

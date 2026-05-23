@@ -69,6 +69,11 @@ ALWAYS_EXCLUDED_TYPES: frozenset[AssetType] = frozenset({
     AssetType.STATE_PENSION,
 })
 
+PENSION_TYPES: frozenset[AssetType] = frozenset({
+    AssetType.DB_PENSION,
+    AssetType.DC_PENSION,
+})
+
 
 class PersonIHTFlags(TypedDict, total=False):
     """Per-person metadata for IHT computation.
@@ -319,7 +324,6 @@ def compute_household_iht(
     if person_flags is None:
         person_flags = {}
 
-    pension_types = frozenset({AssetType.DB_PENSION, AssetType.DC_PENSION})
     person_results: list[IHTResult] = []
 
     for person in household.persons:
@@ -335,7 +339,7 @@ def compute_household_iht(
         for asset in person.assets:
             if asset.asset_type in ALWAYS_EXCLUDED_TYPES:
                 continue
-            if asset.asset_type in pension_types and not config.include_pensions:
+            if asset.asset_type in PENSION_TYPES and not config.include_pensions:
                 continue
             estate_value += asset.net_value
             if asset.asset_type in RESIDENCE_TYPES:
