@@ -6,7 +6,7 @@ Blueprint v5 §7.1-7.2: FRS as tax-benefit spine, WAS wealth imputed.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import StrEnum
 from typing import Annotated
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -14,7 +14,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from wealthlens_sim.schema.base import Nation
 
 
-class AssetType(str, Enum):
+class AssetType(StrEnum):
     MAIN_RESIDENCE = "main_residence"
     OTHER_PROPERTY = "other_property"
     FINANCIAL = "financial"

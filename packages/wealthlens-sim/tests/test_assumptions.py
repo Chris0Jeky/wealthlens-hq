@@ -20,7 +20,6 @@ from wealthlens_sim.assumptions import (
 )
 from wealthlens_sim.schema import LegalStatus
 
-
 POINT_ENTRY = {
     "assumption_id": "toptail.data_quality.was_response_rate.v1",
     "domain": "top-tail",
@@ -107,6 +106,11 @@ class TestValueDistribution:
     def test_schedule_value(self):
         a = Assumption.model_validate(SCHEDULE_ENTRY)
         assert isinstance(a.value_or_distribution, ScheduleValue)
+
+    def test_empty_schedule_rejected(self):
+        bad = {**SCHEDULE_ENTRY, "value_or_distribution": {"type": "schedule"}}
+        with pytest.raises(ValidationError, match="rate/band field"):
+            Assumption.model_validate(bad)
 
     def test_flag_value(self):
         a = Assumption.model_validate(FLAG_ENTRY)

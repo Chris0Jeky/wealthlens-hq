@@ -8,15 +8,15 @@ applies_to, last_reviewed, notes.
 from __future__ import annotations
 
 from datetime import date
-from enum import Enum
-from typing import Annotated, Literal, Union
+from enum import StrEnum
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from wealthlens_sim.schema.policy import LegalStatus
 
 
-class TransferabilityScore(str, Enum):
+class TransferabilityScore(StrEnum):
     HIGH = "high"
     MEDIUM = "medium"
     LOW = "low"
@@ -55,6 +55,13 @@ class ScheduleValue(BaseModel):
 
     type: Literal["schedule"]
 
+    @model_validator(mode="after")
+    def _not_empty(self) -> ScheduleValue:
+        if not self.model_extra:
+            msg = "Schedule must contain at least one rate/band field"
+            raise ValueError(msg)
+        return self
+
 
 class FlagValue(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -64,7 +71,7 @@ class FlagValue(BaseModel):
 
 
 ValueDistribution = Annotated[
-    Union[PointValue, RangeValue, ScheduleValue, FlagValue],
+    PointValue | RangeValue | ScheduleValue | FlagValue,
     Field(discriminator="type"),
 ]
 

@@ -24,5 +24,6 @@ def load_baselines(path: Path | str | None = None) -> BaselinesRegistry:
     p = Path(path) if path is not None else _DEFAULT_PATH
     raw = yaml.safe_load(p.read_text(encoding="utf-8"))
     if raw is None:
-        raw = {"modelling_date": "2026-01-01", "baselines": []}
+        msg = f"Baselines file is empty or contains only comments: {p}"
+        raise ValueError(msg)
     return BaselinesRegistry.model_validate(raw)

@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict, Field
 
 
-class Nation(str, Enum):
+class Nation(StrEnum):
     ENGLAND = "england"
     SCOTLAND = "scotland"
     WALES = "wales"
