@@ -43,12 +43,24 @@ SCHEDULE_ASSUMPTION = {
     "legal_status": "current_law",
     "value_or_distribution": {
         "type": "schedule",
-        "rates": {"basic_rate": 18, "higher_rate": 24},
+        "basic_rate": 18,
+        "higher_rate": 24,
     },
     "source": "GOV.UK CGT rates page",
     "transferability_score": "high",
     "valid_range": "n/a",
     "applies_to": "Family C baseline",
+    "last_reviewed": "2026-05-23",
+}
+
+FLAG_ASSUMPTION = {
+    "assumption_id": "model.behavioural.use_savings_response.v1",
+    "domain": "behavioural",
+    "value_or_distribution": {"type": "flag", "value": 1},
+    "source": "internal default",
+    "transferability_score": "high",
+    "valid_range": "0 or 1",
+    "applies_to": "all families",
     "last_reviewed": "2026-05-23",
 }
 
@@ -64,7 +76,7 @@ def _make_version_tag() -> VersionTag:
 
 def _make_registry() -> AssumptionRegistry:
     return AssumptionRegistry.model_validate({
-        "assumptions": [POINT_ASSUMPTION, RANGE_ASSUMPTION, SCHEDULE_ASSUMPTION]
+        "assumptions": [POINT_ASSUMPTION, RANGE_ASSUMPTION, SCHEDULE_ASSUMPTION, FLAG_ASSUMPTION]
     })
 
 
@@ -220,3 +232,37 @@ class TestProvenanceCollector:
         assert len(manifest.assumptions_consumed) == 2
         assert len(manifest.entries) == 2
         assert "toptail.pareto_alpha.overall.v1" in manifest.assumption_ids()
+
+    def test_consume_schedule_resolves_rate_bands(self):
+        collector = ProvenanceCollector(_make_version_tag(), _make_registry())
+        resolved = collector.consume("policy.cgt.rates_2026.v1")
+        assert isinstance(resolved.resolved_value, dict)
+        assert resolved.resolved_value["basic_rate"] == 18
+        assert resolved.resolved_value["higher_rate"] == 24
+        assert "type" not in resolved.resolved_value
+
+    def test_consume_flag_resolves_bool(self):
+        collector = ProvenanceCollector(_make_version_tag(), _make_registry())
+        resolved = collector.consume("model.behavioural.use_savings_response.v1")
+        assert resolved.resolved_value is True
+
+    def test_record_unconsumed_raises(self):
+        collector = ProvenanceCollector(_make_version_tag(), _make_registry())
+        with pytest.raises(ValueError, match="not yet consumed"):
+            collector.record("Bad output", PipelineLayer.TOP_TAIL, ["nonexistent.v1"])
+
+    def test_build_twice_raises(self):
+        collector = ProvenanceCollector(_make_version_tag(), _make_registry())
+        collector.build()
+        with pytest.raises(RuntimeError, match="already called"):
+            collector.build()
+
+    def test_resolved_assumption_frozen(self):
+        collector = ProvenanceCollector(_make_version_tag(), _make_registry())
+        resolved = collector.consume("toptail.data_quality.was_response_rate.v1")
+        with pytest.raises(ValidationError, match="frozen"):
+            resolved.resolved_value = 999.0
+
+    def test_manifest_timestamp_has_timezone(self):
+        manifest = ProvenanceManifest(version_tag=_make_version_tag())
+        assert manifest.run_timestamp.tzinfo is not None
