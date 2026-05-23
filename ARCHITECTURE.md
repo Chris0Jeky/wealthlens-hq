@@ -98,7 +98,7 @@ wealthlens-hq/
 ## Development Setup
 
 ```bash
-# Prerequisites: Python 3.11+, Node 20+, Git
+# Prerequisites: Python 3.11+, Node 22+, Git
 
 # Clone
 git clone https://github.com/Chris0Jeky/wealthlens-hq.git
