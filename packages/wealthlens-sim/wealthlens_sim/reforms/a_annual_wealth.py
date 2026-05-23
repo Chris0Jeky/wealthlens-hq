@@ -13,7 +13,7 @@ from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from wealthlens_sim.schema.household import AssetType, Household
+from wealthlens_sim.schema.household import Asset, AssetType, Household
 
 
 class TaxUnit(StrEnum):
@@ -21,13 +21,31 @@ class TaxUnit(StrEnum):
     HOUSEHOLD = "household"
 
 
-class WealthTaxConfig(BaseModel):
-    """Configuration for an annual net wealth tax."""
+class RateBand(BaseModel):
+    """A single band in a progressive wealth tax schedule."""
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
-    threshold: float = Field(ge=0, description="Minimum taxable wealth (GBP)")
-    rate: float = Field(gt=0, le=1, description="Annual tax rate (e.g. 0.01 = 1%)")
+    threshold: float = Field(ge=0, description="Band starts at this wealth level (GBP)")
+    rate: float = Field(gt=0, le=1, description="Marginal rate for this band")
+
+
+class WealthTaxConfig(BaseModel):
+    """Configuration for an annual net wealth tax.
+
+    Use `rate` for a flat tax above `threshold`, or `rate_bands` for
+    progressive schedules. If `rate_bands` is set, `rate` and `threshold`
+    are ignored.
+    """
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    threshold: float = Field(ge=0, default=0, description="Minimum taxable wealth (GBP)")
+    rate: float = Field(gt=0, le=1, default=0.01, description="Annual tax rate (e.g. 0.01 = 1%)")
+    rate_bands: tuple[RateBand, ...] | None = Field(
+        default=None,
+        description="Progressive rate bands (overrides rate/threshold when set)",
+    )
     tax_unit: TaxUnit = TaxUnit.INDIVIDUAL
     exempt_asset_types: frozenset[AssetType] = Field(
         default=frozenset(),
@@ -41,9 +59,9 @@ class WealthTaxResult(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     household_id: str
-    taxable_wealth: float = Field(description="Net wealth in the tax base (GBP)")
+    taxable_wealth: float = Field(ge=0, description="Non-negative net wealth in the tax base (GBP)")
     tax_liability: float = Field(ge=0, description="Annual tax due (GBP)")
-    effective_rate: float = Field(ge=0, description="Tax / total net wealth")
+    effective_rate: float = Field(ge=0, description="Tax / total net wealth (0 if total net wealth <= 0)")
     is_liable: bool
 
 
@@ -55,23 +73,39 @@ class AggregateRevenue(BaseModel):
     total_revenue_bn: float = Field(description="Total revenue (GBP billions)")
     taxpayer_count: float = Field(ge=0, description="Weighted count of liable households")
     population_count: float = Field(ge=0, description="Weighted count of all households")
-    mean_liability: float = Field(ge=0, description="Mean tax among liable households (GBP)")
+    liable_sample_count: int = Field(ge=0, description="Unweighted count of liable survey households")
+    mean_liability: float = Field(ge=0, description="Population-weighted mean tax among liable households (GBP)")
     revenue_by_nation: dict[str, float] = Field(
         default_factory=dict,
         description="Revenue in GBP billions, keyed by Nation value",
     )
 
 
+def _compute_liability(wealth: float, config: WealthTaxConfig) -> float:
+    """Compute tax liability for a given wealth amount using flat or progressive rates."""
+    if config.rate_bands is not None:
+        bands = sorted(config.rate_bands, key=lambda b: b.threshold)
+        liability = 0.0
+        for i, band in enumerate(bands):
+            if wealth <= band.threshold:
+                break
+            ceiling = bands[i + 1].threshold if i + 1 < len(bands) else wealth
+            taxable_in_band = min(wealth, ceiling) - band.threshold
+            liability += max(0.0, taxable_in_band) * band.rate
+        return liability
+    return max(0.0, wealth - config.threshold) * config.rate
+
+
 def taxable_wealth_for_person(
-    assets: list,
+    assets: list[Asset],
     exempt_types: frozenset[AssetType],
 ) -> float:
-    """Compute net wealth in the tax base for a single person."""
-    return sum(
+    """Compute non-negative net wealth in the tax base for a single person."""
+    return max(0.0, sum(
         a.net_value
         for a in assets
         if a.asset_type not in exempt_types
-    )
+    ))
 
 
 def compute_wealth_tax(
@@ -87,15 +121,13 @@ def compute_wealth_tax(
                 person.assets, config.exempt_asset_types
             )
             total_taxable += person_wealth
-            excess = max(0.0, person_wealth - config.threshold)
-            total_liability += excess * config.rate
+            total_liability += _compute_liability(person_wealth, config)
     else:
         total_taxable = sum(
             taxable_wealth_for_person(p.assets, config.exempt_asset_types)
             for p in household.persons
         )
-        excess = max(0.0, total_taxable - config.threshold)
-        total_liability = excess * config.rate
+        total_liability = _compute_liability(total_taxable, config)
 
     total_net = household.total_net_wealth
     effective = total_liability / total_net if total_net > 0 else 0.0
@@ -145,6 +177,7 @@ def compute_aggregate_revenue(
         total_revenue_bn=total_revenue / 1e9,
         taxpayer_count=taxpayer_weight,
         population_count=population_weight,
+        liable_sample_count=liable_count_unweighted,
         mean_liability=mean_liability,
         revenue_by_nation=nation_bn,
     )
