@@ -30,6 +30,11 @@ Policy-lever status matrix tagging every modelled policy by its legal status as
 of the modelling date: current-law, enacted-future, announced,
 consultation-stage, or hypothetical. Schema follows Blueprint v5 section 3.1.
 
+## Licence
+
+Registry YAML files are licensed under CC-BY-4.0, consistent with the
+project's documentation tier (see root `LICENSE`).
+
 ## Principles
 
 - Every derived variable traces to an entry in `sources.yml`.
