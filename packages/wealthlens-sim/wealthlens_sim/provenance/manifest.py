@@ -45,7 +45,7 @@ class ResolvedAssumption(BaseModel):
 class ProvenanceEntry(BaseModel):
     """Provenance trace for a single published output value."""
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", frozen=True)
 
     output_label: str = Field(description="Human-readable label for this output")
     layer: PipelineLayer
@@ -62,7 +62,7 @@ class ProvenanceManifest(BaseModel):
     provenance_manifest() to source.
     """
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", frozen=True)
 
     version_tag: VersionTag
     run_timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))

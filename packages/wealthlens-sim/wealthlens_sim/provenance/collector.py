@@ -39,11 +39,17 @@ class ProvenanceCollector:
         self._entries: list[ProvenanceEntry] = []
         self._built = False
 
+    def _check_not_built(self) -> None:
+        if self._built:
+            msg = "Collector is sealed after build(); create a new ProvenanceCollector"
+            raise RuntimeError(msg)
+
     def consume(self, assumption_id: str) -> ResolvedAssumption:
         """Look up and record an assumption as consumed.
 
         Raises KeyError if the assumption_id is not in the registry.
         """
+        self._check_not_built()
         if assumption_id in self._consumed:
             return self._consumed[assumption_id]
 
@@ -59,7 +65,7 @@ class ProvenanceCollector:
         elif isinstance(vd, RangeValue):
             resolved = vd.central
         elif isinstance(vd, ScheduleValue):
-            resolved = dict(vd.model_extra) if vd.model_extra else {}
+            resolved = dict(vd.model_extra)
         elif isinstance(vd, FlagValue):
             resolved = bool(vd.value)
         else:
@@ -82,6 +88,7 @@ class ProvenanceCollector:
         assumption_ids: list[str] | None = None,
     ) -> None:
         """Record a provenance entry for a published output."""
+        self._check_not_built()
         ids = assumption_ids or []
         missing = [aid for aid in ids if aid not in self._consumed]
         if missing:

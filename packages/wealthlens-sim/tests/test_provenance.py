@@ -263,6 +263,28 @@ class TestProvenanceCollector:
         with pytest.raises(ValidationError, match="frozen"):
             resolved.resolved_value = 999.0
 
-    def test_manifest_timestamp_has_timezone(self):
+    def test_manifest_timestamp_is_utc(self):
+        from datetime import UTC
+
         manifest = ProvenanceManifest(version_tag=_make_version_tag())
-        assert manifest.run_timestamp.tzinfo is not None
+        assert manifest.run_timestamp.tzinfo is UTC
+
+    def test_consume_after_build_raises(self):
+        collector = ProvenanceCollector(_make_version_tag(), _make_registry())
+        collector.build()
+        with pytest.raises(RuntimeError, match="sealed"):
+            collector.consume("toptail.data_quality.was_response_rate.v1")
+
+    def test_record_after_build_raises(self):
+        collector = ProvenanceCollector(_make_version_tag(), _make_registry())
+        collector.build()
+        with pytest.raises(RuntimeError, match="sealed"):
+            collector.record("test", PipelineLayer.TOP_TAIL)
+
+    def test_provenance_entry_frozen(self):
+        entry = ProvenanceEntry(
+            output_label="test",
+            layer=PipelineLayer.TOP_TAIL,
+        )
+        with pytest.raises(ValidationError, match="frozen"):
+            entry.output_label = "mutated"
