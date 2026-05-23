@@ -1,0 +1,10 @@
+# WealthLens Assumption Registry
+# Every modelling assumption with source, range, and transferability score
+# Schema per Blueprint v5 section 7.6:
+#   assumption_id, domain, value_or_distribution, source,
+#   transferability_score (high/medium/low/stress-test-only),
+#   valid_range, applies_to, last_reviewed, notes
+#
+# Target: 50+ entries by v0.1 release.
+
+assumptions: []  # see Stream 48 for initial population
