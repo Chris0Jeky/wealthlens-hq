@@ -64,6 +64,25 @@ FLAG_ASSUMPTION = {
     "last_reviewed": "2026-05-23",
 }
 
+BAND_SCHEDULE_ASSUMPTION = {
+    "assumption_id": "policy.sdlt.bands_2026.v1",
+    "domain": "stamp-duty",
+    "legal_status": "current_law",
+    "value_or_distribution": {
+        "type": "schedule",
+        "bands": [
+            {"low": 0, "high": 250000, "charge": 0},
+            {"low": 250000, "high": 925000, "charge": 5},
+            {"low": 925000, "high": None, "charge": 10},
+        ],
+    },
+    "source": "GOV.UK SDLT rates page",
+    "transferability_score": "high",
+    "valid_range": "n/a",
+    "applies_to": "residential property",
+    "last_reviewed": "2026-05-23",
+}
+
 
 def _make_version_tag() -> VersionTag:
     return VersionTag(
@@ -76,7 +95,13 @@ def _make_version_tag() -> VersionTag:
 
 def _make_registry() -> AssumptionRegistry:
     return AssumptionRegistry.model_validate({
-        "assumptions": [POINT_ASSUMPTION, RANGE_ASSUMPTION, SCHEDULE_ASSUMPTION, FLAG_ASSUMPTION]
+        "assumptions": [
+            POINT_ASSUMPTION,
+            RANGE_ASSUMPTION,
+            SCHEDULE_ASSUMPTION,
+            FLAG_ASSUMPTION,
+            BAND_SCHEDULE_ASSUMPTION,
+        ]
     })
 
 
@@ -288,3 +313,49 @@ class TestProvenanceCollector:
         )
         with pytest.raises(ValidationError, match="frozen"):
             entry.output_label = "mutated"
+
+
+class TestTypeSafety:
+    """Tests for strict bool/int typing and ScheduleValue robustness."""
+
+    def test_round_trip_bool_stays_bool(self):
+        """resolved_value=True must survive JSON round-trip as bool, not int."""
+        ra = ResolvedAssumption(
+            assumption_id="flag.v1",
+            domain="test",
+            resolved_value=True,
+            source="test",
+        )
+        data = ra.model_dump(mode="json")
+        restored = ResolvedAssumption.model_validate(data)
+        assert restored.resolved_value is True
+        assert type(restored.resolved_value) is bool
+
+    def test_round_trip_int_stays_int(self):
+        """resolved_value=1 must survive JSON round-trip as int, not bool."""
+        ra = ResolvedAssumption(
+            assumption_id="int.v1",
+            domain="test",
+            resolved_value=1,
+            source="test",
+        )
+        data = ra.model_dump(mode="json")
+        restored = ResolvedAssumption.model_validate(data)
+        assert restored.resolved_value == 1
+        assert type(restored.resolved_value) is int
+
+    def test_consume_band_schedule(self):
+        """Band-style ScheduleValue should resolve to list[dict]."""
+        collector = ProvenanceCollector(_make_version_tag(), _make_registry())
+        resolved = collector.consume("policy.sdlt.bands_2026.v1")
+        assert isinstance(resolved.resolved_value, list)
+        assert len(resolved.resolved_value) == 3
+        assert resolved.resolved_value[0]["charge"] == 0
+        assert resolved.resolved_value[2]["high"] is None
+
+    def test_consume_flag_preserves_bool_type(self):
+        """FlagValue must resolve to bool, not int."""
+        collector = ProvenanceCollector(_make_version_tag(), _make_registry())
+        resolved = collector.consume("model.behavioural.use_savings_response.v1")
+        assert resolved.resolved_value is True
+        assert type(resolved.resolved_value) is bool
