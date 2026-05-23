@@ -1,6 +1,6 @@
 # WealthLens Source Registry
 # Machine-readable catalogue of all data sources
-# Schema: id, name, url, access_date, format, licence, update_pattern, notes
+# Schema: id, name, url, access_date, format, licence, update_pattern, pipeline, notes
 #
 # Every dataset cited in a WealthLens output must have a corresponding entry.
 # Populated from existing data pipelines in automation/data-pipelines/.
@@ -85,7 +85,7 @@ sources:
   - id: ons-was-wealth
     name: ONS Wealth and Assets Survey (WAS)
     url: https://www.ons.gov.uk/file?uri=/peoplepopulationandcommunity/personalandhouseholdfinances/incomeandwealth/datasets/totalwealthwealthingreatbritain/july2006tojune2016andapril2014tomarch2022/totalwealthtables.xlsx
-    access_date: "2026-05-15"
+    access_date: "2026-05-16"
     format: xlsx
     licence: OGL-3.0
     update_pattern: multi-year-wave
