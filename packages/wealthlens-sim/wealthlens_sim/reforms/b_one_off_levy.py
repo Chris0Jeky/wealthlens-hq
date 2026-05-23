@@ -11,6 +11,8 @@ and credibly one-off.
 
 from __future__ import annotations
 
+from typing import TypeAlias
+
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from wealthlens_sim.reforms._banding import RateBand, compute_banded_liability
@@ -20,7 +22,7 @@ from wealthlens_sim.reforms.a_annual_wealth import (
 )
 from wealthlens_sim.schema.household import AssetType, Household
 
-LevyRateBand = RateBand
+LevyRateBand: TypeAlias = RateBand
 
 
 class OneOffLevyConfig(BaseModel):
@@ -60,10 +62,10 @@ class OneOffLevyConfig(BaseModel):
             if len(thresholds) != len(set(thresholds)):
                 msg = "rate_bands must have unique thresholds"
                 raise ValueError(msg)
-            if self.threshold != 0 or self.rate != 0.05:
+            if "threshold" in self.model_fields_set or "rate" in self.model_fields_set:
                 msg = (
                     "When rate_bands is set, threshold and rate are ignored; "
-                    "leave them at defaults or omit them"
+                    "omit them to use defaults"
                 )
                 raise ValueError(msg)
         return self

@@ -52,10 +52,10 @@ class WealthTaxConfig(BaseModel):
             if len(thresholds) != len(set(thresholds)):
                 msg = "rate_bands must have unique thresholds"
                 raise ValueError(msg)
-            if self.threshold != 0 or self.rate != 0.01:
+            if "threshold" in self.model_fields_set or "rate" in self.model_fields_set:
                 msg = (
                     "When rate_bands is set, threshold and rate are ignored; "
-                    "leave them at defaults or omit them"
+                    "omit them to use defaults"
                 )
                 raise ValueError(msg)
         return self

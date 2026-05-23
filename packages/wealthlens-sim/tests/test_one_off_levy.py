@@ -360,6 +360,23 @@ class TestProgressiveRateBands:
         assert result.levy_liability == pytest.approx(expected)
         assert result.is_liable
 
+    def test_progressive_with_instalments(self):
+        person = make_person(assets=[
+            (AssetType.FINANCIAL, 15_000_000, 0),
+        ])
+        hh = make_household([person])
+        config = OneOffLevyConfig(
+            rate_bands=(
+                RateBand(threshold=5_000_000, rate=0.03),
+                RateBand(threshold=10_000_000, rate=0.05),
+            ),
+            instalment_years=5,
+        )
+        result = compute_one_off_levy(hh, config)
+        expected = (10_000_000 - 5_000_000) * 0.03 + (15_000_000 - 10_000_000) * 0.05
+        assert result.levy_liability == pytest.approx(expected)
+        assert result.annual_instalment == pytest.approx(expected / 5)
+
     def test_rate_band_frozen(self):
         band = RateBand(threshold=10_000_000, rate=0.05)
         with pytest.raises(ValidationError, match="frozen"):
