@@ -3,5 +3,5 @@
 Orchestrates the methods implemented in top_tail/ and reconciles results
 against ONS National Balance Sheet aggregates via reconcile/.
 
-Reference: Blueprint v5 sections 5 and 6.
+Reference: Blueprint v5 sections 2.3, 7.2, 7.3.
 """
