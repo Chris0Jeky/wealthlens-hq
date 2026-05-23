@@ -5,13 +5,11 @@
 >
 > **CRITICAL**: Update this file BEFORE every compaction risk (long tool calls, large diffs).
 
-Last updated: 2026-05-17T15:00Z
+Last updated: 2026-05-23T14:00Z
 
-## 2026-05-17 Recovery Status
+## 2026-05-23 Status — WealthLens-Sim Microsimulator Build
 
-The autonomous cleanup/merge sweep has completed for the PR queue active during this recovery session. GitHub reports zero open PRs. PRs through `#272` are merged to `main`. Latest relevant main workflows are green: CI Backend on backend-affecting merge `09c4ea5`, and CI Frontend, CodeQL, E2E Tests, Lighthouse CI, and Deploy to GitHub Pages on latest merge `1f5318e`.
-
-The historical wave tables below are retained for provenance only and are no longer the live phase state. Use `.codex/memories/session_notes/CODEX_PR_CLEANUP_2026-05-16.md` for the detailed recovery log.
+Phase has shifted from dashboard frontend (Waves 1-8, PRs #232-#272, all merged) to the WealthLens-Sim microsimulation engine. Blueprint v5 drives all design. Stacked branch strategy on main.
 
 ## Recovery Checklist (READ FIRST after compaction or session restart)
 
@@ -50,53 +48,38 @@ Types: feat, fix, refactor, test, chore, docs
 
 ## Current Phase
 
-**Phase: WAVE 8 — FIXING R1 + REVIEWING REMAINING**
+**Phase: SIMULATOR BUILD — Gate 1 (Blueprint v5)**
 
-### Waves 1-6: ALL R2 APPROVED ✓ (PRs #232-#260)
+Branch stack: `main` → `feat/sim-skeleton` → `feat/sim-schema` → `feat/assumption-loader` → `feat/top-tail`
 
-### Wave 7 Streams — ALL R2 APPROVED ✓
-
-| # | Stream | Branch | Base | PR | Status | R1 | R2 |
-|---|--------|--------|------|----|--------|----|----|
-| 31 | Component test coverage (top 6 components) | `test/component-coverage` | main | #262 | R2 APPROVED ✓ | Fixed: added keyboard interaction tests | APPROVED |
-| 32 | HealthBadge accessibility fix (color-only → icon+text) | `fix/healthbadge-accessibility` | main | #261 | R2 APPROVED ✓ | Fixed: focusable, dead code | APPROVED |
-| 33 | Inheritance tax chart page | `feat/inheritance-tax-chart` | main | #263 | R2 APPROVED ✓ | Fixed: data validation, fetchWithRetry, contrast | APPROVED |
-| 34 | i18n framework (vue-i18n) | `feat/i18n-setup` | main | #264 | R2 APPROVED ✓ | Fixed: unused t, localStorage persist, label i18n | APPROVED |
-| 35 | Architecture docs + CONTRIBUTING | `docs/architecture-and-conduct` | main | #265 | R2 APPROVED ✓ | Fixed: paths, composable refs, e2e ref | APPROVED |
-| 36 | Wealth tax revenue simulator with sliders | `feat/wealth-tax-simulator` | main | #266 | R2 APPROVED ✓ | Fixed: findIndex fallback, unused import | APPROVED |
-
-### Wave 8 Streams
+### Simulator PRs (stacked)
 
 | # | Stream | Branch | Base | PR | Status | R1 | R2 |
 |---|--------|--------|------|----|--------|----|----|
-| 37 | "1 pixel = £1,000" wealth scale scroller | `feat/wealth-scale-scroller` | main | #268 | FIXING R1 | Invalid role, aria-live spam, valuemax, valuetext, tests | — |
-| 38 | Global dataset search/filter | `feat/dataset-search` | main | #269 | R1 IN PROGRESS | — | — |
-| 39 | OG-image generation (satori + resvg-js) | `feat/og-image-generation` | main | #270 | R1 IN PROGRESS | — | — |
-| 40 | Real wage stagnation chart | `feat/wage-stagnation-chart` | main | #271 | FIXING R1 | Data inconsistency (2% vs 1.5%), unused counterfactual, comments | — |
-| 41 | FAQ/glossary page | `feat/faq-glossary` | main | #267 | R2 APPROVED ✓ | Fixed: use Accordion, dark mode, headings | APPROVED |
-| 42 | Performance: loading UX polish | `feat/loading-ux-polish` | main | #272 | R1 IN PROGRESS | — | — |
+| 43 | Assumptions YAML registry (18 entries) | `feat/assumptions-registry` | main | #289 | R2 APPROVED ✓ | Clean | Clean |
+| 44 | Baselines YAML registry (13 entries) | `feat/baselines-registry` | main | #290 | R2 APPROVED ✓ | Clean | Clean |
+| 45 | Dependabot batch (Node 22, deps) | `chore/dependabot-batch-2026-05-23` | main | #291 | R2 APPROVED ✓ | Clean | Clean |
+| 46 | Pydantic schema module (households, policies, results) | `feat/sim-schema` | feat/sim-skeleton | #292 | R2 APPROVED ✓ | Fixed: ConfigDict, Nation validator, VersionTag fields | Clean |
+| 47 | Assumption + baselines loaders | `feat/assumption-loader` | feat/sim-schema | #293 | R2 FIXES PUSHED | Fixed: monotonic range, StrEnum, duplicate IDs, empty-file safety, ScheduleValue validator | R2 fixes applied |
+| 48 | Top-tail Pareto reconstruction | `feat/top-tail` | feat/assumption-loader | #295 | R1 IN PROGRESS | 2 reviewers launched | — |
 
-### Wave 8+ (future candidates)
-- Compare your effective tax rate to a billionaire
-- Ownership by age and tenure chart
-- Backend structured JSON logging for production
-- Data comparison feature (/compare route)
-- UK billionaire wealth tracker
-- FTSE 100 CEO pay ratio chart
-- Postcode-driven house-price-to-earnings lookup
+### Closed/Absorbed
+| PR | Reason |
+|----|--------|
+| #294 | Baselines loader absorbed into PR #293 |
+
+### Dashboard PRs (Waves 1-8, all merged: PRs #232-#272)
 
 ## Decisions Log
 
 | Date | Decision | Rationale |
 |------|----------|-----------|
-| 2026-05-16 | Start with static data gap fix | Quick win, unblocks offline dev |
-| 2026-05-16 | Build 6 new chart components before article pages | Components are prerequisite for pages |
-| 2026-05-16 | Leave all PRs open, stack on them | Per user request |
-| 2026-05-16 | Wave 4: fix stub pages + backend hardening first | Stub routes are visible broken links; backend validation is security debt |
-| 2026-05-16 | Fixed freshness.json static generation (pushed to PR #242) | Feature invisible on deployed site without static fallback |
-| 2026-05-16 | CODE_OF_CONDUCT blocked by content filter; replaced with enhanced CONTRIBUTING.md | Agent couldn't produce CoC template; CONTRIBUTING covers conduct section |
-| 2026-05-16 | Wave 8: focus on engagement + viral shareability | Wealth scale scroller, search, OG images — make site compelling to share |
-| 2026-05-16 | Wage chart: corrected growth rate from 2% to 1.5% (actual 2000-2008 CAGR) | Data integrity guardrail — do not fabricate statistics |
+| 2026-05-23 | Stacked branch strategy for sim | Each module depends on previous; stacking avoids merge conflicts |
+| 2026-05-23 | StrEnum migration across all schema enums | Ruff UP042 compliance; Python 3.11+ target |
+| 2026-05-23 | Empty baselines file raises ValueError not fabricates date | Data integrity: "do not fabricate statistics" |
+| 2026-05-23 | ScheduleValue requires at least one rate/band field | Prevents silent acceptance of content-free schedules |
+| 2026-05-23 | Pareto v0.1 uses bootstrap CI, v0.2+ will use Bayesian | Per Blueprint v5 section 7.3 phasing |
+| 2026-05-23 | All five baseline variants ship co-equally | Blueprint section 2.3: no silent favouring |
 
 ## Subagent Dispatch Reference
 

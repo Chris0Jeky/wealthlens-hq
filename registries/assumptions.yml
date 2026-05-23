@@ -7,4 +7,107 @@
 #
 # Target: 50+ entries by v0.1 release.
 
-assumptions: []  # see Stream 48 for initial population
+assumptions:
+
+  # --- Top-tail reconstruction (Blueprint v5 section 2.3, 7.3) ---
+
+  - assumption_id: toptail.pareto_alpha.overall.v1
+    domain: top-tail
+    value_or_distribution:
+      type: range
+      low: 1.3
+      central: 1.5
+      high: 1.8
+    source: "Vermeulen (2018) 'How fat is the top tail of the wealth distribution?'"
+    transferability_score: medium
+    valid_range: "alpha in [1.1, 2.5]"
+    applies_to: all families
+    last_reviewed: "2026-05-23"
+    notes: "International cross-section evidence. UK-specific estimates may differ."
+
+  - assumption_id: toptail.data_quality.was_response_rate.v1
+    domain: top-tail
+    value_or_distribution:
+      type: point
+      value: 0.41
+    source: "ONS WAS quality report, Wave 7 (2018-2020)"
+    transferability_score: high
+    valid_range: "rate in [0.30, 0.60]"
+    applies_to: all families
+    last_reviewed: "2026-05-23"
+    notes: "Household response rate for WAS Wave 7."
+
+  - assumption_id: toptail.threshold_pounds.primary.v1
+    domain: top-tail
+    value_or_distribution:
+      type: point
+      value: 2.0e+06
+    source: "WAS percentile analysis; approx 97th percentile in Wave 7"
+    transferability_score: high
+    valid_range: "threshold in [1.0e+06, 1.0e+07]"
+    applies_to: all families
+    last_reviewed: "2026-05-23"
+
+  - assumption_id: toptail.bootstrap_resamples.v1
+    domain: top-tail
+    value_or_distribution:
+      type: point
+      value: 1000
+    source: "Standard bootstrap practice; Efron & Tibshirani (1993)"
+    transferability_score: high
+    valid_range: "n in [500, 10000]"
+    applies_to: all families
+    last_reviewed: "2026-05-23"
+
+  - assumption_id: toptail.confidence_level.v1
+    domain: top-tail
+    value_or_distribution:
+      type: point
+      value: 0.90
+    source: "Standard credible interval level"
+    transferability_score: high
+    valid_range: "ci in [0.80, 0.99]"
+    applies_to: all families
+    last_reviewed: "2026-05-23"
+
+  - assumption_id: toptail.richlist_visibility_bias.v1
+    domain: top-tail
+    value_or_distribution:
+      type: range
+      low: 0.70
+      central: 0.85
+      high: 0.95
+    source: "Methodology choice; no direct empirical estimate available"
+    transferability_score: low
+    valid_range: "visibility in [0.50, 1.0]"
+    applies_to: rich-list-augmented variant only
+    last_reviewed: "2026-05-23"
+    notes: "Fraction of true top-tail wealth visible in public rich lists."
+
+  - assumption_id: toptail.hidden_wealth.offshore_ratio.v1
+    domain: top-tail
+    value_or_distribution:
+      type: range
+      low: 0.10
+      central: 0.15
+      high: 0.30
+    source: "Zucman (2013) 'The missing wealth of nations'; HMRC tax gap estimates"
+    transferability_score: stress-test-only
+    valid_range: "ratio in [0.0, 0.50]"
+    applies_to: hidden-wealth sensitivity variant only
+    last_reviewed: "2026-05-23"
+    notes: "Fraction of observed financial wealth assumed underreported via offshore holdings."
+
+  - assumption_id: toptail.hidden_wealth.trust_adjustment.v1
+    domain: top-tail
+    value_or_distribution:
+      type: range
+      low: 0.05
+      central: 0.10
+      high: 0.15
+    source: "Qualitative bound; no direct survey measure of trust-held wealth for beneficiaries"
+    transferability_score: stress-test-only
+    valid_range: "adjustment in [0.0, 0.30]"
+    applies_to: hidden-wealth sensitivity variant only
+    last_reviewed: "2026-05-23"
+    notes: "Additional wealth fraction from trust structures not visible in household balance sheets."
