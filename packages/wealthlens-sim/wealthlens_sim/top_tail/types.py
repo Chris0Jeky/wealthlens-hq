@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from enum import StrEnum
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class BaselineVariant(StrEnum):
@@ -27,6 +27,13 @@ class Interval(BaseModel):
     low: float
     central: float
     high: float
+
+    @model_validator(mode="after")
+    def _check_ordering(self) -> Interval:
+        if not (self.low <= self.central <= self.high):
+            msg = f"Interval must satisfy low <= central <= high, got ({self.low}, {self.central}, {self.high})"
+            raise ValueError(msg)
+        return self
 
 
 class ParetoFit(BaseModel):

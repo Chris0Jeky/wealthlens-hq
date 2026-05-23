@@ -11,7 +11,12 @@ from dataclasses import dataclass
 import numpy as np
 from numpy.typing import NDArray
 
-from wealthlens_sim.top_tail.pareto import compute_wealth_shares, fit_pareto
+from wealthlens_sim.top_tail.pareto import (
+    compute_wealth_shares,
+    empirical_wealth_shares,
+    fit_pareto,
+    pareto_tail_mean,
+)
 from wealthlens_sim.top_tail.types import (
     BaselineVariant,
     Interval,
@@ -31,13 +36,13 @@ class VariantConfig:
     offshore_ratio: float = 0.0
     trust_adjustment: float = 0.0
     richlist_visibility: float = 1.0
+    macro_scale_factor: float = 1.0
 
 
 DEFAULT_CONFIGS = {
     BaselineVariant.SURVEY_ONLY: VariantConfig(
         variant=BaselineVariant.SURVEY_ONLY,
         threshold=2_000_000,
-        n_bootstrap=500,
     ),
     BaselineVariant.PARETO_CORRECTED: VariantConfig(
         variant=BaselineVariant.PARETO_CORRECTED,
@@ -51,6 +56,7 @@ DEFAULT_CONFIGS = {
     BaselineVariant.MACRO_RECONCILED: VariantConfig(
         variant=BaselineVariant.MACRO_RECONCILED,
         threshold=2_000_000,
+        macro_scale_factor=1.08,
     ),
     BaselineVariant.HIDDEN_WEALTH_SENSITIVITY: VariantConfig(
         variant=BaselineVariant.HIDDEN_WEALTH_SENSITIVITY,
@@ -63,12 +69,16 @@ DEFAULT_CONFIGS = {
 
 def _apply_hidden_wealth(
     wealth: NDArray[np.floating],
+    threshold: float,
     offshore_ratio: float,
     trust_adjustment: float,
 ) -> NDArray[np.floating]:
-    """Add hidden-wealth stress-test adjustments."""
+    """Add hidden-wealth stress-test adjustments to tail observations only."""
+    result = wealth.copy()
+    tail_mask = result >= threshold
     adjustment = 1.0 + offshore_ratio + trust_adjustment
-    return (wealth * adjustment).astype(wealth.dtype)
+    result[tail_mask] = result[tail_mask] * adjustment
+    return result
 
 
 def _apply_richlist_visibility(
@@ -83,6 +93,39 @@ def _apply_richlist_visibility(
     return result
 
 
+def _apply_macro_scale(
+    wealth: NDArray[np.floating],
+    scale_factor: float,
+) -> NDArray[np.floating]:
+    """Scale all wealth to reconcile with national accounts totals."""
+    return (wealth * scale_factor).astype(wealth.dtype)
+
+
+def _compute_total_wealth_interval(
+    wealth: NDArray[np.floating],
+    alpha: Interval,
+    threshold: float,
+    n_tail: int,
+) -> Interval:
+    """Compute total wealth interval using Pareto tail mean formula.
+
+    For each alpha value, estimated tail wealth =
+    n_tail * threshold * alpha / (alpha - 1).
+    """
+    below_threshold = wealth[wealth < threshold]
+    observed_below = float(np.sum(below_threshold))
+
+    tail_central = n_tail * pareto_tail_mean(alpha.central, threshold)
+    tail_low = n_tail * pareto_tail_mean(alpha.high, threshold)
+    tail_high = n_tail * pareto_tail_mean(alpha.low, threshold)
+
+    return Interval(
+        low=(observed_below + tail_low) / 1e9,
+        central=(observed_below + tail_central) / 1e9,
+        high=(observed_below + tail_high) / 1e9,
+    )
+
+
 def run_variant(
     wealth: NDArray[np.floating],
     config: VariantConfig,
@@ -94,12 +137,14 @@ def run_variant(
 
     if config.variant == BaselineVariant.HIDDEN_WEALTH_SENSITIVITY:
         adjusted = _apply_hidden_wealth(
-            adjusted, config.offshore_ratio, config.trust_adjustment
+            adjusted, config.threshold, config.offshore_ratio, config.trust_adjustment
         )
     elif config.variant == BaselineVariant.RICH_LIST_AUGMENTED:
         adjusted = _apply_richlist_visibility(
             adjusted, config.threshold, config.richlist_visibility
         )
+    elif config.variant == BaselineVariant.MACRO_RECONCILED:
+        adjusted = _apply_macro_scale(adjusted, config.macro_scale_factor)
 
     pareto_fit = fit_pareto(
         adjusted,
@@ -109,22 +154,25 @@ def run_variant(
         rng=rng,
     )
 
-    share_intervals = compute_wealth_shares(pareto_fit.alpha)
-    wealth_shares = WealthShares(
-        top_10_pct=share_intervals["top_10_pct"],
-        top_1_pct=share_intervals["top_1_pct"],
-        top_01_pct=share_intervals["top_01_pct"],
-    )
-
-    total = float(np.sum(adjusted))
-    total_bn = total / 1e9
-    alpha = pareto_fit.alpha
-    spread = (alpha.high - alpha.low) / alpha.central if alpha.central > 0 else 0
-    total_wealth = Interval(
-        low=total_bn * (1 - spread / 2),
-        central=total_bn,
-        high=total_bn * (1 + spread / 2),
-    )
+    if config.variant == BaselineVariant.SURVEY_ONLY:
+        emp = empirical_wealth_shares(adjusted)
+        wealth_shares = WealthShares(
+            top_10_pct=Interval(low=emp["top_10_pct"], central=emp["top_10_pct"], high=emp["top_10_pct"]),
+            top_1_pct=Interval(low=emp["top_1_pct"], central=emp["top_1_pct"], high=emp["top_1_pct"]),
+            top_01_pct=Interval(low=emp["top_01_pct"], central=emp["top_01_pct"], high=emp["top_01_pct"]),
+        )
+        total = float(np.sum(adjusted)) / 1e9
+        total_wealth = Interval(low=total, central=total, high=total)
+    else:
+        share_intervals = compute_wealth_shares(pareto_fit.alpha)
+        wealth_shares = WealthShares(
+            top_10_pct=share_intervals["top_10_pct"],
+            top_1_pct=share_intervals["top_1_pct"],
+            top_01_pct=share_intervals["top_01_pct"],
+        )
+        total_wealth = _compute_total_wealth_interval(
+            adjusted, pareto_fit.alpha, config.threshold, pareto_fit.n_tail
+        )
 
     return TailEstimate(
         variant=config.variant,
