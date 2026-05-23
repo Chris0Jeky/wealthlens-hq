@@ -5,6 +5,9 @@
 #   transferability_score (high/medium/low/stress-test-only),
 #   valid_range, applies_to, last_reviewed, notes
 #
+# value_or_distribution types: point (numeric), range (low/central/high),
+#   schedule (named fields or bands), flag (0/1 boolean-like)
+#
 # Target: 50+ entries by v0.1 release.
 # This initial population covers foundational assumptions referenced in
 # the Blueprint and existing data pipelines. Entries will expand as
@@ -38,7 +41,7 @@ assumptions:
       for total net wealth. Sensitivity analysis should vary across full
       valid range.
 
-  - assumption_id: toptail.was_response_rate.v1
+  - assumption_id: toptail.data_quality.was_response_rate.v1
     domain: top-tail
     value_or_distribution:
       type: point
@@ -53,7 +56,7 @@ assumptions:
       official statistics status June 2025. Declining response rates
       disproportionately affect top-wealth capture.
 
-  - assumption_id: toptail.db_pension_adjustment.v1
+  - assumption_id: toptail.methodology.db_pension_adjustment.v1
     domain: top-tail
     value_or_distribution:
       type: point
@@ -218,8 +221,8 @@ assumptions:
     applies_to: Family C baseline
     last_reviewed: "2026-05-23"
     notes: >
-      CGT rates from 6 April 2026. BADR rose to 18% from 14% in 2025-26.
-      These are current law.
+      CGT rates from 6 April 2026. BADR was 14% in 2025-26;
+      rose to 18% from 6 April 2026. These are current law.
 
   - assumption_id: policy.iht.nil_rate_bands_2026.v1
     domain: transfer-tax
@@ -243,6 +246,7 @@ assumptions:
     legal_status: consultation_stage
     value_or_distribution:
       type: schedule
+      boundary_convention: "[low, high)"
       bands:
         - low: 2000000
           high: 2500000
@@ -305,8 +309,8 @@ assumptions:
     domain: transfer-tax
     legal_status: enacted_future
     value_or_distribution:
-      type: point
-      value: true
+      type: flag
+      value: 1
     source: Finance Act 2026; GOV.UK technical note
     transferability_score: high
     valid_range: "n/a"
