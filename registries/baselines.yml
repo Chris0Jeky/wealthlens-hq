@@ -2,14 +2,18 @@
 # Policy levers tagged by legal status as of the modelling date
 # Schema per Blueprint v5 section 3.1:
 #   id, area, status (current_law | enacted_future | announced |
-#   consultation_stage | hypothetical), effective_date, description,
-#   wealthlens_treatment, source_url, notes
+#   consultation_stage | hypothetical), effective_date (nullable for
+#   hypothetical), description, wealthlens_treatment, source_url
+#   (nullable for hypothetical), notes
 #
 # modelling_date is a file-level field (not per-entry) giving the
 # snapshot date for all status assessments.
 #
-# 12 entries: 7 current_law (incl. enforcement), 2 enacted_future,
+# 13 entries: 8 current_law (incl. enforcement + devolution), 2 enacted_future,
 # 1 consultation_stage, 2 hypothetical.
+#
+# Status lifecycle: announced → consultation_stage → enacted_future → current_law.
+# A policy in consultation_stage supersedes its earlier announced status.
 #
 # Every policy scenario carries a baseline version tag.
 
@@ -71,7 +75,10 @@ baselines:
       50% relief above that level.
     wealthlens_treatment: Current-law baseline
     source_url: https://www.gov.uk/government/publications/agricultural-property-relief-and-business-property-relief-reforms
-    notes: Family D baseline parameter.
+    notes: >
+      Family D baseline parameter. Enacted via Finance Act 2025.
+      Politically contentious (farming sector opposition); verify
+      commencement if modelling date is before 6 April 2026.
 
   - id: fig-regime-non-dom-replacement
     area: Residence and mobility
@@ -95,7 +102,9 @@ baselines:
       Death-in-service benefits treated separately.
     wealthlens_treatment: Future-law baseline scenario
     source_url: https://www.gov.uk/government/publications/inheritance-tax-on-pensions
-    notes: Family D baseline parameter.
+    notes: >
+      Family D baseline parameter. Enabling provisions in Finance Act
+      2025; secondary legislation (scheme administrator regs) pending.
 
   - id: death-in-service-exclusion
     area: Inheritance Tax
@@ -106,7 +115,9 @@ baselines:
       in technical note.
     wealthlens_treatment: Future-law baseline scenario
     source_url: https://www.gov.uk/government/publications/inheritance-tax-on-pensions
-    notes: Family D baseline parameter.
+    notes: >
+      Family D baseline parameter. Confirmed in HMRC technical note
+      accompanying Finance Act 2025 provisions.
 
   # --- Announced / consultation-stage ---
 
@@ -135,31 +146,56 @@ baselines:
     description: >
       Current HMRC enforcement practice for wealth-related taxes.
       Includes existing information powers, CRS reporting, and
-      compliance resources.
+      compliance resources. Overall tax gap 5.3% (£46.8bn); wealthy
+      taxpayer gap £1.9bn; compliance yield £5.2bn.
     wealthlens_treatment: Separate policy family (Family F)
-    source_url: https://www.gov.uk/government/organisations/hm-revenue-customs
-    notes: Family F baseline parameter.
+    source_url: https://www.gov.uk/government/statistics/measuring-tax-gaps
+    notes: >
+      Family F baseline parameter. Quantitative calibration via
+      assumptions registry (policy.enforcement.wealthy_tax_gap.v1).
+      Source: HMRC Measuring tax gaps 2025 edition.
+
+  # --- Devolution (current baselines for Family G) ---
+
+  - id: devolution-property-tax-baseline
+    area: Devolved property taxation
+    status: current_law
+    effective_date: "2026-05-21"
+    description: >
+      Devolved property-tax baselines across UK nations. England: council
+      tax (1991 bands) + SDLT. Scotland: council tax (revaluation 2017) +
+      LBTT. Wales: council tax (2003 bands) + LTT. Northern Ireland:
+      domestic rates (capital values). Family G reforms modify these
+      devolved baselines.
+    wealthlens_treatment: Devolution-asymmetric baseline (Family G)
+    source_url: https://www.gov.uk/council-tax
+    notes: >
+      Family G baseline parameter. Covers the devolved property-tax
+      landscape that Family G reform scenarios would modify. HVCTS
+      (Family E) is England-only and interacts with this baseline.
 
   # --- Hypothetical ---
 
   - id: annual-net-wealth-tax
     area: Annual net wealth tax
     status: hypothetical
-    effective_date: "n/a"
+    effective_date: null
     description: >
       Hypothetical annual net wealth tax on personal net wealth above
       specified thresholds. Design variables include threshold, rate
       schedule, asset coverage, valuation methodology, and exemptions.
     wealthlens_treatment: Counterfactual scenario family (Family A)
+    source_url: null
     notes: Not announced, enacted, or in force. Modelled as counterfactual.
 
   - id: one-off-wealth-levy
     area: One-off wealth levy
     status: hypothetical
-    effective_date: "n/a"
+    effective_date: null
     description: >
       Hypothetical one-off levy on personal net wealth. Design variables
       include threshold, rate, base date, payment schedule, and
       anti-forestalling provisions.
     wealthlens_treatment: Counterfactual scenario family (Family B)
+    source_url: null
     notes: Not announced, enacted, or in force. Modelled as counterfactual.
