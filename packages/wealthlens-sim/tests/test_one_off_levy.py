@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import pytest
+from _helpers import make_household, make_person
 from pydantic import ValidationError
 
+from wealthlens_sim.reforms._banding import RateBand
 from wealthlens_sim.reforms.a_annual_wealth import TaxUnit
 from wealthlens_sim.reforms.b_one_off_levy import (
     LevyRateBand,
@@ -15,38 +17,7 @@ from wealthlens_sim.reforms.b_one_off_levy import (
     compute_one_off_levy,
 )
 from wealthlens_sim.schema.base import Nation
-from wealthlens_sim.schema.household import Asset, AssetType, Household, Person
-
-
-def _make_person(
-    person_id: str = "p1",
-    assets: list[tuple[AssetType, float, float]] | None = None,
-) -> Person:
-    """Helper: create a person with specified assets as (type, gross, debt)."""
-    if assets is None:
-        assets = []
-    return Person(
-        person_id=person_id,
-        age=45,
-        assets=[
-            Asset(asset_type=t, gross_value=g, debt=d)
-            for t, g, d in assets
-        ],
-    )
-
-
-def _make_household(
-    persons: list[Person],
-    nation: Nation = Nation.ENGLAND,
-    weight: float = 1.0,
-    household_id: str = "hh1",
-) -> Household:
-    return Household(
-        household_id=household_id,
-        nation=nation,
-        weight=weight,
-        persons=persons,
-    )
+from wealthlens_sim.schema.household import AssetType, Household
 
 
 class TestOneOffLevyConfig:
@@ -108,8 +79,8 @@ class TestConfigValidation:
         with pytest.raises(ValidationError, match="unique thresholds"):
             OneOffLevyConfig(
                 rate_bands=(
-                    LevyRateBand(threshold=5_000_000, rate=0.03),
-                    LevyRateBand(threshold=5_000_000, rate=0.05),
+                    RateBand(threshold=5_000_000, rate=0.03),
+                    RateBand(threshold=5_000_000, rate=0.05),
                 ),
             )
 
@@ -118,12 +89,12 @@ class TestConfigValidation:
             OneOffLevyConfig(
                 threshold=10_000_000,
                 rate=0.10,
-                rate_bands=(LevyRateBand(threshold=5_000_000, rate=0.05),),
+                rate_bands=(RateBand(threshold=5_000_000, rate=0.05),),
             )
 
     def test_rate_bands_with_defaults_accepted(self):
         config = OneOffLevyConfig(
-            rate_bands=(LevyRateBand(threshold=5_000_000, rate=0.05),),
+            rate_bands=(RateBand(threshold=5_000_000, rate=0.05),),
         )
         assert config.rate_bands is not None
 
@@ -133,17 +104,17 @@ class TestConfigValidation:
 
     def test_negative_wealth_progressive_returns_zero(self):
         config = OneOffLevyConfig(
-            rate_bands=(LevyRateBand(threshold=0, rate=0.05),),
+            rate_bands=(RateBand(threshold=0, rate=0.05),),
         )
         assert _compute_liability(-500_000, config) == 0.0
 
 
 class TestComputeOneOffLevy:
     def test_below_threshold_no_liability(self):
-        person = _make_person(assets=[
+        person = make_person(assets=[
             (AssetType.FINANCIAL, 1_000_000, 0),
         ])
-        hh = _make_household([person])
+        hh = make_household([person])
         config = OneOffLevyConfig(threshold=10_000_000, rate=0.05)
         result = compute_one_off_levy(hh, config)
         assert result.levy_liability == 0.0
@@ -151,10 +122,10 @@ class TestComputeOneOffLevy:
         assert not result.is_liable
 
     def test_above_threshold_individual(self):
-        person = _make_person(assets=[
+        person = make_person(assets=[
             (AssetType.FINANCIAL, 15_000_000, 0),
         ])
-        hh = _make_household([person])
+        hh = make_household([person])
         config = OneOffLevyConfig(threshold=10_000_000, rate=0.05)
         result = compute_one_off_levy(hh, config)
         assert result.levy_liability == pytest.approx(250_000)
@@ -163,9 +134,9 @@ class TestComputeOneOffLevy:
         assert result.taxable_wealth == 15_000_000
 
     def test_household_unit_two_persons(self):
-        p1 = _make_person("p1", [(AssetType.FINANCIAL, 8_000_000, 0)])
-        p2 = _make_person("p2", [(AssetType.FINANCIAL, 7_000_000, 0)])
-        hh = _make_household([p1, p2])
+        p1 = make_person("p1", [(AssetType.FINANCIAL, 8_000_000, 0)])
+        p2 = make_person("p2", [(AssetType.FINANCIAL, 7_000_000, 0)])
+        hh = make_household([p1, p2])
         config = OneOffLevyConfig(
             threshold=10_000_000, rate=0.05, tax_unit=TaxUnit.HOUSEHOLD
         )
@@ -174,9 +145,9 @@ class TestComputeOneOffLevy:
         assert result.levy_liability == pytest.approx(250_000)
 
     def test_individual_unit_two_persons_below_each(self):
-        p1 = _make_person("p1", [(AssetType.FINANCIAL, 8_000_000, 0)])
-        p2 = _make_person("p2", [(AssetType.FINANCIAL, 7_000_000, 0)])
-        hh = _make_household([p1, p2])
+        p1 = make_person("p1", [(AssetType.FINANCIAL, 8_000_000, 0)])
+        p2 = make_person("p2", [(AssetType.FINANCIAL, 7_000_000, 0)])
+        hh = make_household([p1, p2])
         config = OneOffLevyConfig(
             threshold=10_000_000, rate=0.05, tax_unit=TaxUnit.INDIVIDUAL
         )
@@ -184,11 +155,11 @@ class TestComputeOneOffLevy:
         assert result.levy_liability == 0.0
 
     def test_exemptions_reduce_base(self):
-        person = _make_person(assets=[
+        person = make_person(assets=[
             (AssetType.FINANCIAL, 12_000_000, 0),
             (AssetType.MAIN_RESIDENCE, 5_000_000, 0),
         ])
-        hh = _make_household([person])
+        hh = make_household([person])
         config_comprehensive = OneOffLevyConfig(threshold=10_000_000, rate=0.05)
         config_exempt_home = OneOffLevyConfig(
             threshold=10_000_000,
@@ -201,36 +172,36 @@ class TestComputeOneOffLevy:
         assert result_exempt.levy_liability == pytest.approx(100_000)
 
     def test_effective_rate(self):
-        person = _make_person(assets=[
+        person = make_person(assets=[
             (AssetType.FINANCIAL, 20_000_000, 0),
         ])
-        hh = _make_household([person])
+        hh = make_household([person])
         config = OneOffLevyConfig(threshold=10_000_000, rate=0.05)
         result = compute_one_off_levy(hh, config)
         assert result.effective_rate == pytest.approx(500_000 / 20_000_000)
 
     def test_effective_rate_zero_wealth(self):
-        person = _make_person(assets=[])
-        hh = _make_household([person])
+        person = make_person(assets=[])
+        hh = make_household([person])
         config = OneOffLevyConfig(threshold=0, rate=0.05)
         result = compute_one_off_levy(hh, config)
         assert result.effective_rate == 0.0
 
     def test_instalment_splits_liability(self):
-        person = _make_person(assets=[
+        person = make_person(assets=[
             (AssetType.FINANCIAL, 20_000_000, 0),
         ])
-        hh = _make_household([person])
+        hh = make_household([person])
         config = OneOffLevyConfig(threshold=10_000_000, rate=0.05, instalment_years=5)
         result = compute_one_off_levy(hh, config)
         assert result.levy_liability == pytest.approx(500_000)
         assert result.annual_instalment == pytest.approx(100_000)
 
     def test_instalment_one_year_matches_total(self):
-        person = _make_person(assets=[
+        person = make_person(assets=[
             (AssetType.FINANCIAL, 20_000_000, 0),
         ])
-        hh = _make_household([person])
+        hh = make_household([person])
         config = OneOffLevyConfig(threshold=10_000_000, rate=0.05, instalment_years=1)
         result = compute_one_off_levy(hh, config)
         assert result.levy_liability == result.annual_instalment
@@ -238,20 +209,20 @@ class TestComputeOneOffLevy:
 
 class TestAggregateOneOffRevenue:
     def _make_population(self) -> list[Household]:
-        wealthy = _make_household(
-            [_make_person("p1", [(AssetType.FINANCIAL, 50_000_000, 0)])],
+        wealthy = make_household(
+            [make_person("p1", [(AssetType.FINANCIAL, 50_000_000, 0)])],
             nation=Nation.ENGLAND,
             weight=1000,
             household_id="hh_wealthy",
         )
-        middle = _make_household(
-            [_make_person("p2", [(AssetType.FINANCIAL, 500_000, 0)])],
+        middle = make_household(
+            [make_person("p2", [(AssetType.FINANCIAL, 500_000, 0)])],
             nation=Nation.SCOTLAND,
             weight=10_000,
             household_id="hh_middle",
         )
-        poor = _make_household(
-            [_make_person("p3", [(AssetType.FINANCIAL, 10_000, 0)])],
+        poor = make_household(
+            [make_person("p3", [(AssetType.FINANCIAL, 10_000, 0)])],
             nation=Nation.WALES,
             weight=5_000,
             household_id="hh_poor",
@@ -324,7 +295,7 @@ class TestAggregateOneOffRevenue:
 class TestProgressiveRateBands:
     def test_single_band_matches_flat(self):
         config = OneOffLevyConfig(
-            rate_bands=(LevyRateBand(threshold=10_000_000, rate=0.05),),
+            rate_bands=(RateBand(threshold=10_000_000, rate=0.05),),
         )
         liability = _compute_liability(15_000_000, config)
         assert liability == pytest.approx(250_000)
@@ -332,8 +303,8 @@ class TestProgressiveRateBands:
     def test_two_bands(self):
         config = OneOffLevyConfig(
             rate_bands=(
-                LevyRateBand(threshold=5_000_000, rate=0.03),
-                LevyRateBand(threshold=10_000_000, rate=0.05),
+                RateBand(threshold=5_000_000, rate=0.03),
+                RateBand(threshold=10_000_000, rate=0.05),
             ),
         )
         liability = _compute_liability(15_000_000, config)
@@ -343,9 +314,9 @@ class TestProgressiveRateBands:
     def test_three_bands(self):
         config = OneOffLevyConfig(
             rate_bands=(
-                LevyRateBand(threshold=1_000_000, rate=0.01),
-                LevyRateBand(threshold=5_000_000, rate=0.03),
-                LevyRateBand(threshold=20_000_000, rate=0.05),
+                RateBand(threshold=1_000_000, rate=0.01),
+                RateBand(threshold=5_000_000, rate=0.03),
+                RateBand(threshold=20_000_000, rate=0.05),
             ),
         )
         liability = _compute_liability(30_000_000, config)
@@ -359,8 +330,8 @@ class TestProgressiveRateBands:
     def test_below_first_band(self):
         config = OneOffLevyConfig(
             rate_bands=(
-                LevyRateBand(threshold=10_000_000, rate=0.05),
-                LevyRateBand(threshold=20_000_000, rate=0.10),
+                RateBand(threshold=10_000_000, rate=0.05),
+                RateBand(threshold=20_000_000, rate=0.10),
             ),
         )
         liability = _compute_liability(5_000_000, config)
@@ -368,20 +339,20 @@ class TestProgressiveRateBands:
 
     def test_exactly_at_threshold(self):
         config = OneOffLevyConfig(
-            rate_bands=(LevyRateBand(threshold=10_000_000, rate=0.05),),
+            rate_bands=(RateBand(threshold=10_000_000, rate=0.05),),
         )
         liability = _compute_liability(10_000_000, config)
         assert liability == 0.0
 
     def test_progressive_via_compute_one_off_levy(self):
-        person = _make_person(assets=[
+        person = make_person(assets=[
             (AssetType.FINANCIAL, 15_000_000, 0),
         ])
-        hh = _make_household([person])
+        hh = make_household([person])
         config = OneOffLevyConfig(
             rate_bands=(
-                LevyRateBand(threshold=5_000_000, rate=0.03),
-                LevyRateBand(threshold=10_000_000, rate=0.05),
+                RateBand(threshold=5_000_000, rate=0.03),
+                RateBand(threshold=10_000_000, rate=0.05),
             ),
         )
         result = compute_one_off_levy(hh, config)
@@ -390,41 +361,41 @@ class TestProgressiveRateBands:
         assert result.is_liable
 
     def test_rate_band_frozen(self):
-        band = LevyRateBand(threshold=10_000_000, rate=0.05)
+        band = RateBand(threshold=10_000_000, rate=0.05)
         with pytest.raises(ValidationError, match="frozen"):
             band.rate = 0.10
 
     def test_rate_band_extra_rejected(self):
         with pytest.raises(ValidationError, match="Extra inputs"):
-            LevyRateBand(threshold=0, rate=0.05, surprise="bad")
+            RateBand(threshold=0, rate=0.05, surprise="bad")
 
 
 class TestNegativeWealth:
     def test_negative_net_value_no_liability(self):
-        person = _make_person(assets=[
+        person = make_person(assets=[
             (AssetType.FINANCIAL, 100_000, 500_000),
         ])
-        hh = _make_household([person])
+        hh = make_household([person])
         config = OneOffLevyConfig(threshold=0, rate=0.05)
         result = compute_one_off_levy(hh, config)
         assert result.levy_liability == 0.0
         assert result.taxable_wealth == 0.0
 
     def test_mixed_positive_negative_individual_unit(self):
-        p1 = _make_person("p1", [(AssetType.FINANCIAL, 15_000_000, 0)])
-        p2 = _make_person("p2", [(AssetType.FINANCIAL, 100_000, 500_000)])
-        hh = _make_household([p1, p2])
+        p1 = make_person("p1", [(AssetType.FINANCIAL, 15_000_000, 0)])
+        p2 = make_person("p2", [(AssetType.FINANCIAL, 100_000, 500_000)])
+        hh = make_household([p1, p2])
         config = OneOffLevyConfig(threshold=10_000_000, rate=0.05)
         result = compute_one_off_levy(hh, config)
         assert result.levy_liability == pytest.approx(250_000)
         assert result.taxable_wealth == 15_000_000
 
     def test_all_exempt_assets_zero_liability(self):
-        person = _make_person(assets=[
+        person = make_person(assets=[
             (AssetType.MAIN_RESIDENCE, 2_000_000, 0),
             (AssetType.DB_PENSION, 1_000_000, 0),
         ])
-        hh = _make_household([person])
+        hh = make_household([person])
         config = OneOffLevyConfig(
             threshold=0,
             rate=0.05,
@@ -438,12 +409,12 @@ class TestNegativeWealth:
 
 class TestAggregateOneOffRevenueExtended:
     def test_liable_sample_count(self):
-        wealthy = _make_household(
-            [_make_person("p1", [(AssetType.FINANCIAL, 50_000_000, 0)])],
+        wealthy = make_household(
+            [make_person("p1", [(AssetType.FINANCIAL, 50_000_000, 0)])],
             weight=1000, household_id="hh1",
         )
-        poor = _make_household(
-            [_make_person("p2", [(AssetType.FINANCIAL, 10_000, 0)])],
+        poor = make_household(
+            [make_person("p2", [(AssetType.FINANCIAL, 10_000, 0)])],
             weight=5000, household_id="hh2",
         )
         config = OneOffLevyConfig(threshold=10_000_000, rate=0.05)
@@ -451,8 +422,8 @@ class TestAggregateOneOffRevenueExtended:
         assert result.liable_sample_count == 1
 
     def test_liable_sample_count_zero(self):
-        poor = _make_household(
-            [_make_person("p1", [(AssetType.FINANCIAL, 10_000, 0)])],
+        poor = make_household(
+            [make_person("p1", [(AssetType.FINANCIAL, 10_000, 0)])],
             weight=5000, household_id="hh1",
         )
         config = OneOffLevyConfig(threshold=10_000_000, rate=0.05)
@@ -460,12 +431,12 @@ class TestAggregateOneOffRevenueExtended:
         assert result.liable_sample_count == 0
 
     def test_mean_liability_weighted(self):
-        hh1 = _make_household(
-            [_make_person("p1", [(AssetType.FINANCIAL, 20_000_000, 0)])],
+        hh1 = make_household(
+            [make_person("p1", [(AssetType.FINANCIAL, 20_000_000, 0)])],
             weight=100, household_id="hh1",
         )
-        hh2 = _make_household(
-            [_make_person("p2", [(AssetType.FINANCIAL, 30_000_000, 0)])],
+        hh2 = make_household(
+            [make_person("p2", [(AssetType.FINANCIAL, 30_000_000, 0)])],
             weight=200, household_id="hh2",
         )
         config = OneOffLevyConfig(threshold=10_000_000, rate=0.05)
@@ -502,3 +473,64 @@ class TestOneOffLevyResult:
         )
         with pytest.raises(ValidationError, match="frozen"):
             result.levy_liability = 0.0
+
+
+class TestLevyRateBandAlias:
+    def test_alias_is_rate_band(self):
+        assert LevyRateBand is RateBand
+
+    def test_alias_works_in_config(self):
+        config = OneOffLevyConfig(
+            rate_bands=(LevyRateBand(threshold=5_000_000, rate=0.05),),
+        )
+        assert config.rate_bands is not None
+
+
+class TestUnsortedBands:
+    def test_unsorted_bands_produce_correct_result(self):
+        config = OneOffLevyConfig(
+            rate_bands=(
+                RateBand(threshold=10_000_000, rate=0.05),
+                RateBand(threshold=5_000_000, rate=0.03),
+            ),
+        )
+        liability = _compute_liability(15_000_000, config)
+        expected = (10_000_000 - 5_000_000) * 0.03 + (15_000_000 - 10_000_000) * 0.05
+        assert liability == pytest.approx(expected)
+
+
+class TestZeroWealthProgressive:
+    def test_zero_wealth_progressive_returns_zero(self):
+        config = OneOffLevyConfig(
+            rate_bands=(RateBand(threshold=0, rate=0.05),),
+        )
+        assert _compute_liability(0, config) == 0.0
+
+    def test_zero_wealth_flat_returns_zero(self):
+        config = OneOffLevyConfig(threshold=0, rate=0.05)
+        assert _compute_liability(0, config) == 0.0
+
+
+class TestHouseholdUnitNegativeWealth:
+    def test_household_unit_negative_member_floored_before_sum(self):
+        p1 = make_person("p1", [(AssetType.FINANCIAL, 15_000_000, 0)])
+        p2 = make_person("p2", [(AssetType.FINANCIAL, 100_000, 20_000_000)])
+        hh = make_household([p1, p2])
+        config = OneOffLevyConfig(
+            threshold=10_000_000, rate=0.05, tax_unit=TaxUnit.HOUSEHOLD
+        )
+        result = compute_one_off_levy(hh, config)
+        assert result.taxable_wealth == 15_000_000
+        assert result.levy_liability == pytest.approx(250_000)
+        assert result.is_liable
+
+    def test_household_unit_all_negative(self):
+        p1 = make_person("p1", [(AssetType.FINANCIAL, 100_000, 500_000)])
+        p2 = make_person("p2", [(AssetType.FINANCIAL, 50_000, 200_000)])
+        hh = make_household([p1, p2])
+        config = OneOffLevyConfig(
+            threshold=0, rate=0.05, tax_unit=TaxUnit.HOUSEHOLD
+        )
+        result = compute_one_off_levy(hh, config)
+        assert result.taxable_wealth == 0.0
+        assert result.levy_liability == 0.0

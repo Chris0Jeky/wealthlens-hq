@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import pytest
+from _helpers import make_household, make_person
 from pydantic import ValidationError
 
+from wealthlens_sim.reforms._banding import RateBand
 from wealthlens_sim.reforms.a_annual_wealth import (
-    RateBand,
     TaxUnit,
     WealthTaxConfig,
     WealthTaxResult,
@@ -16,38 +17,7 @@ from wealthlens_sim.reforms.a_annual_wealth import (
     taxable_wealth_for_person,
 )
 from wealthlens_sim.schema.base import Nation
-from wealthlens_sim.schema.household import Asset, AssetType, Household, Person
-
-
-def _make_person(
-    person_id: str = "p1",
-    assets: list[tuple[AssetType, float, float]] | None = None,
-) -> Person:
-    """Helper: create a person with specified assets as (type, gross, debt)."""
-    if assets is None:
-        assets = []
-    return Person(
-        person_id=person_id,
-        age=45,
-        assets=[
-            Asset(asset_type=t, gross_value=g, debt=d)
-            for t, g, d in assets
-        ],
-    )
-
-
-def _make_household(
-    persons: list[Person],
-    nation: Nation = Nation.ENGLAND,
-    weight: float = 1.0,
-    household_id: str = "hh1",
-) -> Household:
-    return Household(
-        household_id=household_id,
-        nation=nation,
-        weight=weight,
-        persons=persons,
-    )
+from wealthlens_sim.schema.household import AssetType, Household
 
 
 class TestWealthTaxConfig:
@@ -84,7 +54,7 @@ class TestWealthTaxConfig:
 
 class TestTaxableWealth:
     def test_no_exemptions(self):
-        p = _make_person(assets=[
+        p = make_person(assets=[
             (AssetType.FINANCIAL, 5_000_000, 0),
             (AssetType.MAIN_RESIDENCE, 2_000_000, 500_000),
         ])
@@ -92,7 +62,7 @@ class TestTaxableWealth:
         assert result == 6_500_000
 
     def test_exempt_main_residence(self):
-        p = _make_person(assets=[
+        p = make_person(assets=[
             (AssetType.FINANCIAL, 5_000_000, 0),
             (AssetType.MAIN_RESIDENCE, 2_000_000, 500_000),
         ])
@@ -102,7 +72,7 @@ class TestTaxableWealth:
         assert result == 5_000_000
 
     def test_exempt_pensions(self):
-        p = _make_person(assets=[
+        p = make_person(assets=[
             (AssetType.FINANCIAL, 3_000_000, 0),
             (AssetType.DB_PENSION, 1_000_000, 0),
             (AssetType.DC_PENSION, 500_000, 0),
@@ -113,27 +83,27 @@ class TestTaxableWealth:
         assert result == 3_000_000
 
     def test_no_assets(self):
-        p = _make_person(assets=[])
+        p = make_person(assets=[])
         result = taxable_wealth_for_person(p.assets, frozenset())
         assert result == 0.0
 
 
 class TestComputeWealthTax:
     def test_below_threshold_no_liability(self):
-        person = _make_person(assets=[
+        person = make_person(assets=[
             (AssetType.FINANCIAL, 1_000_000, 0),
         ])
-        hh = _make_household([person])
+        hh = make_household([person])
         config = WealthTaxConfig(threshold=10_000_000, rate=0.01)
         result = compute_wealth_tax(hh, config)
         assert result.tax_liability == 0.0
         assert not result.is_liable
 
     def test_above_threshold_individual(self):
-        person = _make_person(assets=[
+        person = make_person(assets=[
             (AssetType.FINANCIAL, 15_000_000, 0),
         ])
-        hh = _make_household([person])
+        hh = make_household([person])
         config = WealthTaxConfig(threshold=10_000_000, rate=0.01)
         result = compute_wealth_tax(hh, config)
         assert result.tax_liability == pytest.approx(50_000)
@@ -141,9 +111,9 @@ class TestComputeWealthTax:
         assert result.taxable_wealth == 15_000_000
 
     def test_household_unit_two_persons(self):
-        p1 = _make_person("p1", [(AssetType.FINANCIAL, 8_000_000, 0)])
-        p2 = _make_person("p2", [(AssetType.FINANCIAL, 7_000_000, 0)])
-        hh = _make_household([p1, p2])
+        p1 = make_person("p1", [(AssetType.FINANCIAL, 8_000_000, 0)])
+        p2 = make_person("p2", [(AssetType.FINANCIAL, 7_000_000, 0)])
+        hh = make_household([p1, p2])
         config = WealthTaxConfig(
             threshold=10_000_000, rate=0.01, tax_unit=TaxUnit.HOUSEHOLD
         )
@@ -152,9 +122,9 @@ class TestComputeWealthTax:
         assert result.tax_liability == pytest.approx(50_000)
 
     def test_individual_unit_two_persons_below_each(self):
-        p1 = _make_person("p1", [(AssetType.FINANCIAL, 8_000_000, 0)])
-        p2 = _make_person("p2", [(AssetType.FINANCIAL, 7_000_000, 0)])
-        hh = _make_household([p1, p2])
+        p1 = make_person("p1", [(AssetType.FINANCIAL, 8_000_000, 0)])
+        p2 = make_person("p2", [(AssetType.FINANCIAL, 7_000_000, 0)])
+        hh = make_household([p1, p2])
         config = WealthTaxConfig(
             threshold=10_000_000, rate=0.01, tax_unit=TaxUnit.INDIVIDUAL
         )
@@ -162,11 +132,11 @@ class TestComputeWealthTax:
         assert result.tax_liability == 0.0
 
     def test_exemptions_reduce_base(self):
-        person = _make_person(assets=[
+        person = make_person(assets=[
             (AssetType.FINANCIAL, 12_000_000, 0),
             (AssetType.MAIN_RESIDENCE, 5_000_000, 0),
         ])
-        hh = _make_household([person])
+        hh = make_household([person])
         config_comprehensive = WealthTaxConfig(threshold=10_000_000, rate=0.01)
         config_exempt_home = WealthTaxConfig(
             threshold=10_000_000,
@@ -179,17 +149,17 @@ class TestComputeWealthTax:
         assert result_exempt.tax_liability == pytest.approx(20_000)
 
     def test_effective_rate(self):
-        person = _make_person(assets=[
+        person = make_person(assets=[
             (AssetType.FINANCIAL, 20_000_000, 0),
         ])
-        hh = _make_household([person])
+        hh = make_household([person])
         config = WealthTaxConfig(threshold=10_000_000, rate=0.01)
         result = compute_wealth_tax(hh, config)
         assert result.effective_rate == pytest.approx(100_000 / 20_000_000)
 
     def test_effective_rate_zero_wealth(self):
-        person = _make_person(assets=[])
-        hh = _make_household([person])
+        person = make_person(assets=[])
+        hh = make_household([person])
         config = WealthTaxConfig(threshold=0, rate=0.01)
         result = compute_wealth_tax(hh, config)
         assert result.effective_rate == 0.0
@@ -197,20 +167,20 @@ class TestComputeWealthTax:
 
 class TestAggregateRevenue:
     def _make_population(self) -> list[Household]:
-        wealthy = _make_household(
-            [_make_person("p1", [(AssetType.FINANCIAL, 50_000_000, 0)])],
+        wealthy = make_household(
+            [make_person("p1", [(AssetType.FINANCIAL, 50_000_000, 0)])],
             nation=Nation.ENGLAND,
             weight=1000,
             household_id="hh_wealthy",
         )
-        middle = _make_household(
-            [_make_person("p2", [(AssetType.FINANCIAL, 500_000, 0)])],
+        middle = make_household(
+            [make_person("p2", [(AssetType.FINANCIAL, 500_000, 0)])],
             nation=Nation.SCOTLAND,
             weight=10_000,
             household_id="hh_middle",
         )
-        poor = _make_household(
-            [_make_person("p3", [(AssetType.FINANCIAL, 10_000, 0)])],
+        poor = make_household(
+            [make_person("p3", [(AssetType.FINANCIAL, 10_000, 0)])],
             nation=Nation.WALES,
             weight=5_000,
             household_id="hh_poor",
@@ -318,10 +288,10 @@ class TestProgressiveRateBands:
         assert liability == 0.0
 
     def test_progressive_via_compute_wealth_tax(self):
-        person = _make_person(assets=[
+        person = make_person(assets=[
             (AssetType.FINANCIAL, 15_000_000, 0),
         ])
-        hh = _make_household([person])
+        hh = make_household([person])
         config = WealthTaxConfig(
             rate_bands=(
                 RateBand(threshold=5_000_000, rate=0.005),
@@ -345,27 +315,27 @@ class TestProgressiveRateBands:
 
 class TestNegativeWealth:
     def test_negative_net_value_floored_at_zero(self):
-        person = _make_person(assets=[
+        person = make_person(assets=[
             (AssetType.FINANCIAL, 100_000, 500_000),
         ])
         result = taxable_wealth_for_person(person.assets, frozenset())
         assert result == 0.0
 
     def test_mixed_positive_negative_individual_unit(self):
-        p1 = _make_person("p1", [(AssetType.FINANCIAL, 15_000_000, 0)])
-        p2 = _make_person("p2", [(AssetType.FINANCIAL, 100_000, 500_000)])
-        hh = _make_household([p1, p2])
+        p1 = make_person("p1", [(AssetType.FINANCIAL, 15_000_000, 0)])
+        p2 = make_person("p2", [(AssetType.FINANCIAL, 100_000, 500_000)])
+        hh = make_household([p1, p2])
         config = WealthTaxConfig(threshold=10_000_000, rate=0.01)
         result = compute_wealth_tax(hh, config)
         assert result.tax_liability == pytest.approx(50_000)
         assert result.taxable_wealth == 15_000_000
 
     def test_all_exempt_assets_zero_liability(self):
-        person = _make_person(assets=[
+        person = make_person(assets=[
             (AssetType.MAIN_RESIDENCE, 2_000_000, 0),
             (AssetType.DB_PENSION, 1_000_000, 0),
         ])
-        hh = _make_household([person])
+        hh = make_household([person])
         config = WealthTaxConfig(
             threshold=0,
             rate=0.01,
@@ -379,12 +349,12 @@ class TestNegativeWealth:
 
 class TestAggregateRevenueExtended:
     def test_liable_sample_count(self):
-        wealthy = _make_household(
-            [_make_person("p1", [(AssetType.FINANCIAL, 50_000_000, 0)])],
+        wealthy = make_household(
+            [make_person("p1", [(AssetType.FINANCIAL, 50_000_000, 0)])],
             weight=1000, household_id="hh1",
         )
-        poor = _make_household(
-            [_make_person("p2", [(AssetType.FINANCIAL, 10_000, 0)])],
+        poor = make_household(
+            [make_person("p2", [(AssetType.FINANCIAL, 10_000, 0)])],
             weight=5000, household_id="hh2",
         )
         config = WealthTaxConfig(threshold=10_000_000, rate=0.01)
@@ -392,8 +362,8 @@ class TestAggregateRevenueExtended:
         assert result.liable_sample_count == 1
 
     def test_liable_sample_count_zero(self):
-        poor = _make_household(
-            [_make_person("p1", [(AssetType.FINANCIAL, 10_000, 0)])],
+        poor = make_household(
+            [make_person("p1", [(AssetType.FINANCIAL, 10_000, 0)])],
             weight=5000, household_id="hh1",
         )
         config = WealthTaxConfig(threshold=10_000_000, rate=0.01)
@@ -401,12 +371,12 @@ class TestAggregateRevenueExtended:
         assert result.liable_sample_count == 0
 
     def test_mean_liability_weighted(self):
-        hh1 = _make_household(
-            [_make_person("p1", [(AssetType.FINANCIAL, 20_000_000, 0)])],
+        hh1 = make_household(
+            [make_person("p1", [(AssetType.FINANCIAL, 20_000_000, 0)])],
             weight=100, household_id="hh1",
         )
-        hh2 = _make_household(
-            [_make_person("p2", [(AssetType.FINANCIAL, 30_000_000, 0)])],
+        hh2 = make_household(
+            [make_person("p2", [(AssetType.FINANCIAL, 30_000_000, 0)])],
             weight=200, household_id="hh2",
         )
         config = WealthTaxConfig(threshold=10_000_000, rate=0.01)
@@ -475,11 +445,11 @@ class TestConfigValidation:
 
 class TestEffectiveRateEdgeCases:
     def test_negative_total_wealth_positive_taxable(self):
-        p = _make_person(assets=[
+        p = make_person(assets=[
             (AssetType.FINANCIAL, 15_000_000, 0),
             (AssetType.MAIN_RESIDENCE, 1_000_000, 20_000_000),
         ])
-        hh = _make_household([p])
+        hh = make_household([p])
         config = WealthTaxConfig(
             threshold=10_000_000,
             rate=0.01,
@@ -491,14 +461,14 @@ class TestEffectiveRateEdgeCases:
         assert result.effective_rate == 0.0
 
     def test_mean_liability_excludes_non_liable(self):
-        wealthy = _make_household(
-            [_make_person("p1", [(AssetType.FINANCIAL, 50_000_000, 0)])],
+        wealthy = make_household(
+            [make_person("p1", [(AssetType.FINANCIAL, 50_000_000, 0)])],
             nation=Nation.ENGLAND,
             weight=1000,
             household_id="hh_wealthy",
         )
-        middle = _make_household(
-            [_make_person("p2", [(AssetType.FINANCIAL, 500_000, 0)])],
+        middle = make_household(
+            [make_person("p2", [(AssetType.FINANCIAL, 500_000, 0)])],
             nation=Nation.SCOTLAND,
             weight=10_000,
             household_id="hh_middle",

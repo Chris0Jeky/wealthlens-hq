@@ -9,6 +9,7 @@ code from the broader scenario/package/revenue-equivalent-set layer that
 will live in the ``rules/`` module.
 """
 
+from wealthlens_sim.reforms._banding import RateBand
 from wealthlens_sim.reforms.a_annual_wealth import (
     AggregateRevenue,
     TaxUnit,
@@ -33,6 +34,7 @@ __all__ = [
     "LevyRateBand",
     "OneOffLevyConfig",
     "OneOffLevyResult",
+    "RateBand",
     "TaxUnit",
     "WealthTaxConfig",
     "WealthTaxResult",

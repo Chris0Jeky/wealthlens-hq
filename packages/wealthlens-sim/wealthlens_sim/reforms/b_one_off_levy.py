@@ -13,20 +13,14 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from wealthlens_sim.reforms._banding import RateBand, compute_banded_liability
 from wealthlens_sim.reforms.a_annual_wealth import (
     TaxUnit,
     taxable_wealth_for_person,
 )
 from wealthlens_sim.schema.household import AssetType, Household
 
-
-class LevyRateBand(BaseModel):
-    """A single band in a progressive one-off levy schedule."""
-
-    model_config = ConfigDict(extra="forbid", frozen=True)
-
-    threshold: float = Field(ge=0, description="Band starts at this wealth level (GBP)")
-    rate: float = Field(gt=0, le=1, description="Marginal rate for this band")
+LevyRateBand = RateBand
 
 
 class OneOffLevyConfig(BaseModel):
@@ -45,7 +39,7 @@ class OneOffLevyConfig(BaseModel):
 
     threshold: float = Field(ge=0, default=0, description="Minimum taxable wealth (GBP)")
     rate: float = Field(gt=0, le=1, default=0.05, description="One-off levy rate (e.g. 0.05 = 5%)")
-    rate_bands: tuple[LevyRateBand, ...] | None = Field(
+    rate_bands: tuple[RateBand, ...] | None = Field(
         default=None,
         min_length=1,
         description="Progressive rate bands (overrides rate/threshold when set)",
@@ -112,15 +106,7 @@ def _compute_liability(wealth: float, config: OneOffLevyConfig) -> float:
     if wealth <= 0:
         return 0.0
     if config.rate_bands is not None:
-        bands = sorted(config.rate_bands, key=lambda b: b.threshold)
-        liability = 0.0
-        for i, band in enumerate(bands):
-            if wealth <= band.threshold:
-                break
-            ceiling = bands[i + 1].threshold if i + 1 < len(bands) else wealth
-            taxable_in_band = min(wealth, ceiling) - band.threshold
-            liability += max(0.0, taxable_in_band) * band.rate
-        return liability
+        return compute_banded_liability(wealth, config.rate_bands)
     return max(0.0, wealth - config.threshold) * config.rate
 
 
@@ -133,16 +119,16 @@ def compute_one_off_levy(
         total_liability = 0.0
         total_taxable = 0.0
         for person in household.persons:
-            person_wealth = max(0.0, taxable_wealth_for_person(
+            person_wealth = taxable_wealth_for_person(
                 person.assets, config.exempt_asset_types
-            ))
+            )
             total_taxable += person_wealth
             total_liability += _compute_liability(person_wealth, config)
     else:
-        total_taxable = max(0.0, sum(
+        total_taxable = sum(
             taxable_wealth_for_person(p.assets, config.exempt_asset_types)
             for p in household.persons
-        ))
+        )
         total_liability = _compute_liability(total_taxable, config)
 
     total_net = household.total_net_wealth
