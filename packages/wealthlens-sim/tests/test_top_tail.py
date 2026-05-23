@@ -98,6 +98,11 @@ class TestBootstrapAlpha:
         with pytest.raises(ValueError, match="at least 2"):
             bootstrap_alpha(data, threshold=1_000_000)
 
+    def test_all_degenerate_raises(self):
+        data = np.array([1_000_000.0, 1_000_000.0, 1_000_000.0])
+        with pytest.raises(ValueError, match="degenerate"):
+            bootstrap_alpha(data, threshold=1_000_000, n_bootstrap=100)
+
 
 class TestKSTest:
     def test_good_fit_low_statistic(self):
@@ -291,6 +296,7 @@ class TestRunVariant:
         )
         result = run_variant(data, config, rng=np.random.default_rng(0))
         assert result.variant == BaselineVariant.SURVEY_ONLY
+        assert result.pareto_fit is None
         assert result.wealth_shares.top_10_pct.low == result.wealth_shares.top_10_pct.high
 
     def test_survey_only_differs_from_pareto(self):
@@ -305,7 +311,7 @@ class TestRunVariant:
             VariantConfig(variant=BaselineVariant.PARETO_CORRECTED, threshold=1_000_000, n_bootstrap=100),
             rng=np.random.default_rng(0),
         )
-        assert survey.wealth_shares.top_1_pct.central != pareto.wealth_shares.top_1_pct.central
+        assert abs(survey.wealth_shares.top_1_pct.central - pareto.wealth_shares.top_1_pct.central) > 0.001
 
     def test_macro_reconciled_differs_from_pareto(self):
         data = _make_pareto_sample(alpha=1.5, n=2000)
@@ -395,4 +401,7 @@ class TestRunAllVariants:
         r1 = run_all_variants(data, configs, seed=99)
         r2 = run_all_variants(data, configs, seed=99)
         for v in BaselineVariant:
-            assert r1[v].pareto_fit.alpha.central == r2[v].pareto_fit.alpha.central
+            if r1[v].pareto_fit is not None:
+                assert r1[v].pareto_fit.alpha.central == r2[v].pareto_fit.alpha.central
+            else:
+                assert r1[v].wealth_shares.top_1_pct.central == r2[v].wealth_shares.top_1_pct.central

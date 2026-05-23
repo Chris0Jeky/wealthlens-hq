@@ -97,7 +97,11 @@ def _apply_macro_scale(
     wealth: NDArray[np.floating],
     scale_factor: float,
 ) -> NDArray[np.floating]:
-    """Scale all wealth to reconcile with national accounts totals."""
+    """Scale all wealth to reconcile with national accounts totals.
+
+    Threshold is intentionally held fixed so scaled observations cross it,
+    changing n_tail and producing a distinct alpha estimate.
+    """
     return (wealth * scale_factor).astype(wealth.dtype)
 
 
@@ -112,6 +116,7 @@ def _compute_total_wealth_interval(
     For each alpha value, estimated tail wealth =
     n_tail * threshold * alpha / (alpha - 1).
     """
+    # Observations exactly at threshold are in n_tail and reconstructed via tail mean, not observed value
     below_threshold = wealth[wealth < threshold]
     observed_below = float(np.sum(below_threshold))
 
@@ -146,14 +151,6 @@ def run_variant(
     elif config.variant == BaselineVariant.MACRO_RECONCILED:
         adjusted = _apply_macro_scale(adjusted, config.macro_scale_factor)
 
-    pareto_fit = fit_pareto(
-        adjusted,
-        config.threshold,
-        n_bootstrap=config.n_bootstrap,
-        ci=config.ci,
-        rng=rng,
-    )
-
     if config.variant == BaselineVariant.SURVEY_ONLY:
         emp = empirical_wealth_shares(adjusted)
         wealth_shares = WealthShares(
@@ -163,16 +160,29 @@ def run_variant(
         )
         total = float(np.sum(adjusted)) / 1e9
         total_wealth = Interval(low=total, central=total, high=total)
-    else:
-        share_intervals = compute_wealth_shares(pareto_fit.alpha)
-        wealth_shares = WealthShares(
-            top_10_pct=share_intervals["top_10_pct"],
-            top_1_pct=share_intervals["top_1_pct"],
-            top_01_pct=share_intervals["top_01_pct"],
+        return TailEstimate(
+            variant=config.variant,
+            pareto_fit=None,
+            wealth_shares=wealth_shares,
+            total_wealth_imputed=total_wealth,
         )
-        total_wealth = _compute_total_wealth_interval(
-            adjusted, pareto_fit.alpha, config.threshold, pareto_fit.n_tail
-        )
+
+    pareto_fit = fit_pareto(
+        adjusted,
+        config.threshold,
+        n_bootstrap=config.n_bootstrap,
+        ci=config.ci,
+        rng=rng,
+    )
+    share_intervals = compute_wealth_shares(pareto_fit.alpha)
+    wealth_shares = WealthShares(
+        top_10_pct=share_intervals["top_10_pct"],
+        top_1_pct=share_intervals["top_1_pct"],
+        top_01_pct=share_intervals["top_01_pct"],
+    )
+    total_wealth = _compute_total_wealth_interval(
+        adjusted, pareto_fit.alpha, config.threshold, pareto_fit.n_tail
+    )
 
     return TailEstimate(
         variant=config.variant,

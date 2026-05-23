@@ -68,8 +68,8 @@ def bootstrap_alpha(
         else:
             alphas[i] = np.inf
 
-    finite_mask = np.isfinite(alphas)
-    alphas = alphas[finite_mask]
+    valid_mask = np.isfinite(alphas) & (alphas > 1)
+    alphas = alphas[valid_mask]
     if len(alphas) == 0:
         msg = "All bootstrap replicates produced degenerate alpha estimates"
         raise ValueError(msg)
