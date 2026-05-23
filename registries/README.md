@@ -2,6 +2,12 @@
 
 Machine-readable metadata for the WealthLens-Sim microsimulation platform.
 
+Blueprint v5 §13.6 places these under `wealthlens/data_registry/` inside the
+package. This repo keeps registries at the monorepo root so they are shared
+across the simulator, dashboard, and data pipelines without requiring a package
+install. Python loaders in `wealthlens_sim.assumptions` reference these files
+via repo-relative paths.
+
 ## Files
 
 ### `sources.yml`
