@@ -22,12 +22,18 @@ from wealthlens_sim.top_tail.types import (
     TailEstimate,
     WealthShares,
 )
+from wealthlens_sim.top_tail.variants import (
+    VariantConfig,
+    run_all_variants,
+    run_variant,
+)
 
 __all__ = [
     "BaselineVariant",
     "Interval",
     "ParetoFit",
     "TailEstimate",
+    "VariantConfig",
     "WealthShares",
     "bootstrap_alpha",
     "compute_wealth_shares",
@@ -35,4 +41,6 @@ __all__ = [
     "fit_pareto_mle",
     "ks_test_pareto",
     "pareto_wealth_share",
+    "run_all_variants",
+    "run_variant",
 ]
