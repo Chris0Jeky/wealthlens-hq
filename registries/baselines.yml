@@ -2,8 +2,8 @@
 # Policy levers tagged by legal status as of the modelling date
 # Schema per Blueprint v5 section 3.1:
 #   id, area, status (current_law | enacted_future | announced |
-#   consultation_stage | hypothetical), effective_date (nullable for
-#   hypothetical), description, wealthlens_treatment, source_url
+#   consultation_stage | hypothetical), effective_date (date or null;
+#   see semantics below), description, wealthlens_treatment, source_url
 #   (nullable for hypothetical), notes
 #
 # modelling_date is a file-level field (not per-entry) giving the
@@ -16,6 +16,14 @@
 # A policy in consultation_stage supersedes its earlier announced status.
 #
 # Every policy scenario carries a baseline version tag.
+#
+# effective_date semantics:
+#   - For current_law / enacted_future / consultation_stage: the date the policy
+#     takes or will take legal effect.
+#   - For entries describing ongoing practice (e.g. enforcement-current-practice,
+#     devolution-property-tax-baseline): the snapshot/assessment date, matching
+#     modelling_date.
+#   - For hypothetical: null (no real-world effective date).
 
 modelling_date: "2026-05-21"
 
