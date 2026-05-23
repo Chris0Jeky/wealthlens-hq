@@ -9,9 +9,11 @@ from __future__ import annotations
 
 from datetime import date
 from enum import Enum
-from typing import Annotated, Any, Literal, Union
+from typing import Annotated, Literal, Union
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+from wealthlens_sim.schema.policy import LegalStatus
 
 
 class TransferabilityScore(str, Enum):
@@ -29,6 +31,8 @@ class PointValue(BaseModel):
 
 
 class RangeValue(BaseModel):
+    """Supports both positive ranges (low <= high) and negative elasticities (low >= high)."""
+
     model_config = ConfigDict(extra="forbid")
 
     type: Literal["range"]
@@ -37,9 +41,11 @@ class RangeValue(BaseModel):
     high: float | int
 
     @model_validator(mode="after")
-    def _low_le_central_le_high(self) -> RangeValue:
-        if not (self.low <= self.central <= self.high):
-            msg = f"Must satisfy low <= central <= high, got {self.low}, {self.central}, {self.high}"
+    def _monotonic_ordering(self) -> RangeValue:
+        ascending = self.low <= self.central <= self.high
+        descending = self.low >= self.central >= self.high
+        if not (ascending or descending):
+            msg = f"Must be monotonically ordered, got {self.low}, {self.central}, {self.high}"
             raise ValueError(msg)
         return self
 
@@ -68,9 +74,9 @@ class Assumption(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    assumption_id: str = Field(pattern=r"^[a-z][a-z0-9_.]+\.v\d+$")
+    assumption_id: str = Field(pattern=r"^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+\.v[1-9]\d*$")
     domain: str
-    legal_status: str | None = None
+    legal_status: LegalStatus | None = None
     value_or_distribution: ValueDistribution
     source: str
     transferability_score: TransferabilityScore
@@ -86,6 +92,16 @@ class AssumptionRegistry(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     assumptions: list[Assumption] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def _unique_ids(self) -> AssumptionRegistry:
+        seen: set[str] = set()
+        for a in self.assumptions:
+            if a.assumption_id in seen:
+                msg = f"Duplicate assumption_id: {a.assumption_id}"
+                raise ValueError(msg)
+            seen.add(a.assumption_id)
+        return self
 
     def get(self, assumption_id: str) -> Assumption | None:
         for a in self.assumptions:
