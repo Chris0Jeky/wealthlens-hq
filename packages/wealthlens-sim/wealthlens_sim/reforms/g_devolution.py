@@ -91,12 +91,21 @@ class DevolutionConfig(BaseModel):
             if non_constituent:
                 msg = f"included_nations must be constituent nations, got: {non_constituent}"
                 raise ValueError(msg)
+        else:
+            if self.included_nations is not None:
+                msg = (
+                    f"included_nations must not be provided for preset scope "
+                    f"{self.scope!r}; use CUSTOM scope for explicit nation lists"
+                )
+                raise ValueError(msg)
         return self
 
     def get_included_nations(self) -> frozenset[Nation]:
         """Return the set of nations included in this scope."""
         if self.scope == NationScope.CUSTOM:
-            assert self.included_nations is not None
+            if self.included_nations is None or len(self.included_nations) == 0:
+                msg = "included_nations must be provided for CUSTOM scope"
+                raise ValueError(msg)
             return self.included_nations
         return _SCOPE_TO_NATIONS[self.scope]
 

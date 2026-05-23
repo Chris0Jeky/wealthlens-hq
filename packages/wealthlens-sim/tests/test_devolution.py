@@ -76,12 +76,26 @@ class TestDevolutionConfig:
         with pytest.raises(ValidationError, match="Extra inputs"):
             DevolutionConfig(scope=NationScope.ENGLAND_ONLY, surprise="bad")
 
-    def test_preset_ignores_included_nations(self):
-        config = DevolutionConfig(
-            scope=NationScope.ENGLAND_ONLY,
-            included_nations=frozenset({Nation.SCOTLAND}),
-        )
-        assert config.get_included_nations() == frozenset({Nation.ENGLAND})
+    def test_preset_rejects_included_nations(self):
+        with pytest.raises(ValidationError, match="must not be provided"):
+            DevolutionConfig(
+                scope=NationScope.ENGLAND_ONLY,
+                included_nations=frozenset({Nation.SCOTLAND}),
+            )
+
+    def test_preset_rejects_included_nations_gb(self):
+        with pytest.raises(ValidationError, match="must not be provided"):
+            DevolutionConfig(
+                scope=NationScope.GREAT_BRITAIN,
+                included_nations=frozenset({Nation.ENGLAND}),
+            )
+
+    def test_preset_rejects_included_nations_uk_wide(self):
+        with pytest.raises(ValidationError, match="must not be provided"):
+            DevolutionConfig(
+                scope=NationScope.UK_WIDE,
+                included_nations=frozenset({Nation.ENGLAND, Nation.SCOTLAND}),
+            )
 
     def test_custom_single_nation(self):
         config = DevolutionConfig(
