@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import pytest
+from _helpers import make_household, make_person
 from pydantic import ValidationError
 
 from wealthlens_sim.reforms.e_property_tax import (
@@ -15,37 +16,7 @@ from wealthlens_sim.reforms.e_property_tax import (
     compute_hvcts,
 )
 from wealthlens_sim.schema.base import Nation
-from wealthlens_sim.schema.household import Asset, AssetType, Household, Person
-
-
-def _make_person(
-    person_id: str = "p1",
-    assets: list[tuple[AssetType, float, float]] | None = None,
-) -> Person:
-    if assets is None:
-        assets = []
-    return Person(
-        person_id=person_id,
-        age=45,
-        assets=[
-            Asset(asset_type=t, gross_value=g, debt=d)
-            for t, g, d in assets
-        ],
-    )
-
-
-def _make_household(
-    persons: list[Person],
-    nation: Nation = Nation.ENGLAND,
-    weight: float = 1.0,
-    household_id: str = "hh1",
-) -> Household:
-    return Household(
-        household_id=household_id,
-        nation=nation,
-        weight=weight,
-        persons=persons,
-    )
+from wealthlens_sim.schema.household import AssetType, Household
 
 
 class TestHVCTSBand:
@@ -165,86 +136,86 @@ class TestSurchargeForProperty:
 
 class TestComputeHVCTS:
     def test_england_liable_property(self):
-        person = _make_person(assets=[
+        person = make_person(assets=[
             (AssetType.MAIN_RESIDENCE, 3_000_000, 500_000),
         ])
-        hh = _make_household([person], nation=Nation.ENGLAND)
+        hh = make_household([person], nation=Nation.ENGLAND)
         result = compute_hvcts(hh, HVCTSConfig())
         assert result.properties_in_scope == 1
         assert result.total_surcharge == 3_500
         assert result.is_liable
 
     def test_scotland_excluded(self):
-        person = _make_person(assets=[
+        person = make_person(assets=[
             (AssetType.MAIN_RESIDENCE, 5_000_000, 0),
         ])
-        hh = _make_household([person], nation=Nation.SCOTLAND)
+        hh = make_household([person], nation=Nation.SCOTLAND)
         result = compute_hvcts(hh, HVCTSConfig())
         assert result.properties_in_scope == 0
         assert result.total_surcharge == 0.0
         assert not result.is_liable
 
     def test_below_threshold_not_liable(self):
-        person = _make_person(assets=[
+        person = make_person(assets=[
             (AssetType.MAIN_RESIDENCE, 1_500_000, 0),
         ])
-        hh = _make_household([person], nation=Nation.ENGLAND)
+        hh = make_household([person], nation=Nation.ENGLAND)
         result = compute_hvcts(hh, HVCTSConfig())
         assert result.properties_in_scope == 0
         assert result.total_surcharge == 0.0
         assert not result.is_liable
 
     def test_multiple_properties(self):
-        person = _make_person(assets=[
+        person = make_person(assets=[
             (AssetType.MAIN_RESIDENCE, 3_000_000, 0),
             (AssetType.OTHER_PROPERTY, 6_000_000, 0),
         ])
-        hh = _make_household([person], nation=Nation.ENGLAND)
+        hh = make_household([person], nation=Nation.ENGLAND)
         result = compute_hvcts(hh, HVCTSConfig())
         assert result.properties_in_scope == 2
         assert result.total_surcharge == 3_500 + 7_500
 
     def test_non_property_assets_excluded(self):
-        person = _make_person(assets=[
+        person = make_person(assets=[
             (AssetType.FINANCIAL, 10_000_000, 0),
             (AssetType.MAIN_RESIDENCE, 3_000_000, 0),
         ])
-        hh = _make_household([person], nation=Nation.ENGLAND)
+        hh = make_household([person], nation=Nation.ENGLAND)
         result = compute_hvcts(hh, HVCTSConfig())
         assert result.properties_in_scope == 1
         assert result.total_surcharge == 3_500
 
     def test_uses_gross_value_not_net(self):
-        person = _make_person(assets=[
+        person = make_person(assets=[
             (AssetType.MAIN_RESIDENCE, 3_000_000, 2_500_000),
         ])
-        hh = _make_household([person], nation=Nation.ENGLAND)
+        hh = make_household([person], nation=Nation.ENGLAND)
         result = compute_hvcts(hh, HVCTSConfig())
         assert result.total_surcharge == 3_500
 
     def test_multiple_persons_properties(self):
-        p1 = _make_person("p1", [(AssetType.MAIN_RESIDENCE, 2_200_000, 0)])
-        p2 = _make_person("p2", [(AssetType.OTHER_PROPERTY, 4_000_000, 0)])
-        hh = _make_household([p1, p2], nation=Nation.ENGLAND)
+        p1 = make_person("p1", [(AssetType.MAIN_RESIDENCE, 2_200_000, 0)])
+        p2 = make_person("p2", [(AssetType.OTHER_PROPERTY, 4_000_000, 0)])
+        hh = make_household([p1, p2], nation=Nation.ENGLAND)
         result = compute_hvcts(hh, HVCTSConfig())
         assert result.properties_in_scope == 2
         assert result.total_surcharge == 2_500 + 5_000
 
     def test_custom_bands(self):
         bands = (HVCTSBand(lower=1_000_000, upper=None, annual_surcharge=1_000),)
-        person = _make_person(assets=[
+        person = make_person(assets=[
             (AssetType.MAIN_RESIDENCE, 1_500_000, 0),
         ])
-        hh = _make_household([person], nation=Nation.ENGLAND)
+        hh = make_household([person], nation=Nation.ENGLAND)
         config = HVCTSConfig(bands=bands)
         result = compute_hvcts(hh, config)
         assert result.total_surcharge == 1_000
 
     def test_scotland_config_scotland_household(self):
-        person = _make_person(assets=[
+        person = make_person(assets=[
             (AssetType.MAIN_RESIDENCE, 3_000_000, 0),
         ])
-        hh = _make_household([person], nation=Nation.SCOTLAND)
+        hh = make_household([person], nation=Nation.SCOTLAND)
         config = HVCTSConfig(nation=Nation.SCOTLAND)
         result = compute_hvcts(hh, config)
         assert result.is_liable
@@ -252,8 +223,8 @@ class TestComputeHVCTS:
 
 class TestAggregateHVCTSRevenue:
     def _make_population(self) -> list[Household]:
-        wealthy = _make_household(
-            [_make_person("p1", [
+        wealthy = make_household(
+            [make_person("p1", [
                 (AssetType.MAIN_RESIDENCE, 6_000_000, 0),
                 (AssetType.OTHER_PROPERTY, 3_000_000, 0),
             ])],
@@ -261,20 +232,20 @@ class TestAggregateHVCTSRevenue:
             weight=500,
             household_id="hh_wealthy",
         )
-        mid = _make_household(
-            [_make_person("p2", [(AssetType.MAIN_RESIDENCE, 2_200_000, 0)])],
+        mid = make_household(
+            [make_person("p2", [(AssetType.MAIN_RESIDENCE, 2_200_000, 0)])],
             nation=Nation.ENGLAND,
             weight=2_000,
             household_id="hh_mid",
         )
-        below = _make_household(
-            [_make_person("p3", [(AssetType.MAIN_RESIDENCE, 800_000, 0)])],
+        below = make_household(
+            [make_person("p3", [(AssetType.MAIN_RESIDENCE, 800_000, 0)])],
             nation=Nation.ENGLAND,
             weight=10_000,
             household_id="hh_below",
         )
-        scotland = _make_household(
-            [_make_person("p4", [(AssetType.MAIN_RESIDENCE, 5_000_000, 0)])],
+        scotland = make_household(
+            [make_person("p4", [(AssetType.MAIN_RESIDENCE, 5_000_000, 0)])],
             nation=Nation.SCOTLAND,
             weight=1_000,
             household_id="hh_scot",
@@ -306,8 +277,8 @@ class TestAggregateHVCTSRevenue:
         assert result.properties_in_scope == (2 * 500) + (1 * 2_000)
 
     def test_no_liable(self):
-        below = _make_household(
-            [_make_person("p1", [(AssetType.MAIN_RESIDENCE, 500_000, 0)])],
+        below = make_household(
+            [make_person("p1", [(AssetType.MAIN_RESIDENCE, 500_000, 0)])],
             nation=Nation.ENGLAND,
             weight=10_000,
             household_id="hh1",

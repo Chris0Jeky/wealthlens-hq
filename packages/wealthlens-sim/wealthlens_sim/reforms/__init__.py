@@ -27,10 +27,22 @@ from wealthlens_sim.reforms.b_one_off_levy import (
     compute_aggregate_one_off_revenue,
     compute_one_off_levy,
 )
+from wealthlens_sim.reforms.e_property_tax import (
+    AggregateHVCTSRevenue,
+    HVCTSBand,
+    HVCTSConfig,
+    HVCTSResult,
+    compute_aggregate_hvcts_revenue,
+    compute_hvcts,
+)
 
 __all__ = [
+    "AggregateHVCTSRevenue",
     "AggregateOneOffRevenue",
     "AggregateRevenue",
+    "HVCTSBand",
+    "HVCTSConfig",
+    "HVCTSResult",
     "LevyRateBand",
     "OneOffLevyConfig",
     "OneOffLevyResult",
@@ -38,8 +50,10 @@ __all__ = [
     "TaxUnit",
     "WealthTaxConfig",
     "WealthTaxResult",
+    "compute_aggregate_hvcts_revenue",
     "compute_aggregate_one_off_revenue",
     "compute_aggregate_revenue",
+    "compute_hvcts",
     "compute_one_off_levy",
     "compute_wealth_tax",
     "taxable_wealth_for_person",
