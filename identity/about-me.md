@@ -23,7 +23,7 @@ Strongest areas: backend engineering, APIs, developer tooling, CI/CD automation,
 
 ## Current roles
 
-- **Middlesex University** -- Grade 5, Marketing department, Outreach & Recruitment Team. Delivers talks and workshops for schools and prospective students. Explains technical ideas to non-technical audiences.
+- **Middlesex University** -- Grade 5, Marketing department, Outreach & Recruitment Team. Delivers talks and workshops for schools and prospective students as part of widening participation work. Also involved in "From the Boys", a podcast project that gives male young students a platform to speak openly about their futures — recurring themes include anxiety about "providing" for their families, which connects directly to falling living standards and structural wealth inequality. Explains technical ideas to non-technical audiences.
 - **Metric Algo / Metrix / Options** -- Co-developing a fintech platform. FastAPI + React SaaS for options backtesting and strategy operationalisation. Pre-revenue startup; not yet paid. (Long backstory -- to be documented separately.)
 - **WealthLens UK** -- Founder. Open-source public-interest data project making UK wealth inequality visible.
 

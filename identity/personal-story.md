@@ -32,6 +32,7 @@ Write about any or all of these — whatever is true and feels right:
 - What was your route into university? Were you the first in your family?
 - What did you see as a Student Ambassador and Student Voice Leader?
 - What do you see now in Widening Participation work — what do the kids you talk to face?
+- **"From the Boys" podcast insight:** Male students consistently bring up anxiety about "providing" for their families. They frame it as personal responsibility, but the data shows it's structural — wages have stagnated, housing costs have exploded, and wealth has concentrated at the top. These boys are feeling the weight of a system they can't see. This is the direct link between WP work and WealthLens.
 
 ### The Contradiction
 - You build trading systems AND you work with underprivileged kids. You understand financial markets from the inside AND you see their effects on the outside. What's that like?

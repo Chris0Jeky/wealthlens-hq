@@ -53,8 +53,12 @@ The Metric Algo / Metrix / Options platform is a collaborative fintech product C
 
 Do not frame as: a paying job, a launched product, or Chris's primary identity.
 
+## WealthLens + Widening Participation pitch
+
+Through school visits and the "From the Boys" podcast, Chris hears young men talk about the pressure of "providing" — they frame it as a personal burden, but the data shows it's structural: stagnating wages, soaring housing costs, concentrated wealth. WealthLens makes that structural reality visible with real data, open-source tools, and charts designed for non-experts. The WP work surfaces the human impact; WealthLens surfaces the cause. Together they empower young people to understand the system they're living in, not just endure it.
+
 ## Missing / To Add
 
 - [ ] Personal story angle -- how background connects to WealthLens mission
-- [ ] 60-second pitch tailored to WealthLens collaborators
+- [x] 60-second pitch tailored to WealthLens collaborators (see above)
 - [ ] Pitch for potential WealthLens partner organisations

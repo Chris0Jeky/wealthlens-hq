@@ -9,7 +9,7 @@ Concise timeline of roles and experience. For framing guidance, see `cv-notes.md
 ### Middlesex University -- Grade 5, Marketing (Outreach & Recruitment)
 **Jun 2025 -- present** | London, UK
 
-Delivers talks and workshops for schools and prospective students. Communicates technical ideas to non-technical audiences. Previously held Student Ambassador and Student Voice Leader roles at the same university.
+Delivers talks and workshops in schools for prospective students as part of widening participation. Involved in "From the Boys", a podcast project where male young students share their concerns about the future — a recurring theme is anxiety about being able to "provide" for their families, reflecting the real-world pressure of falling living standards and wealth concentration. Communicates technical ideas to non-technical audiences. Previously held Student Ambassador and Student Voice Leader roles at the same university.
 
 ### Metric Algo / Metrix / Options -- Co-developer
 **~2025 -- present** | Remote
