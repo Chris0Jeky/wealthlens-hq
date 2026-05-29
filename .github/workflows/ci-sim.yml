@@ -1,0 +1,59 @@
+name: CI Simulator
+
+# Runs lint, type-check, and the full test suite for the wealthlens-sim package.
+# Previously the simulator (~500 tests) was NOT covered by any workflow: the
+# ci-backend path filters only match projects/wealthlens-dashboard/backend, so
+# packages/wealthlens-sim changes ran only CodeQL. This workflow closes that gap.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "packages/wealthlens-sim/**"
+      - "registries/**"
+      - ".github/workflows/ci-sim.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "packages/wealthlens-sim/**"
+      - "registries/**"
+      - ".github/workflows/ci-sim.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-sim-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-type-test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: packages/wealthlens-sim/pyproject.toml
+
+      - name: Install package with dev extras
+        run: pip install -e ".[dev]"
+        working-directory: packages/wealthlens-sim
+
+      - name: Ruff check
+        run: ruff check .
+        working-directory: packages/wealthlens-sim
+
+      - name: Mypy
+        run: mypy wealthlens_sim
+        working-directory: packages/wealthlens-sim
+
+      - name: Run tests
+        run: python -m pytest -q
+        working-directory: packages/wealthlens-sim
