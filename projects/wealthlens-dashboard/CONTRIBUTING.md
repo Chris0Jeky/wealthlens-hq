@@ -15,7 +15,7 @@ This project is early-stage and welcomes contributors. The most useful contribut
 ### Prerequisites
 
 - Python 3.11+ ([python.org](https://www.python.org/downloads/))
-- Node.js 20+ ([nodejs.org](https://nodejs.org/)) — for frontend work
+- Node.js 22+ ([nodejs.org](https://nodejs.org/)) — for frontend work
 - Git
 
 ### Clone and install

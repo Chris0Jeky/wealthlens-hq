@@ -20,7 +20,7 @@ What you expected to happen.
 - OS: [e.g., Windows 10, macOS 14]
 - Browser: [e.g., Chrome 125]
 - Python version (if backend/pipeline): [e.g., 3.11]
-- Node version (if frontend): [e.g., 20]
+- Node version (if frontend): [e.g., 22]
 
 **Screenshots or logs**
 If applicable, add screenshots or paste error output.

@@ -29,7 +29,7 @@ jobs:
   lint-and-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: actions/setup-python@v6
         with:
@@ -48,7 +48,7 @@ jobs:
       - name: Install dev tools
         run: |
           pip install ".[dev]"
-          pip install "pytest-cov>=6.0"
+          pip install "pytest-cov>=7.1.0"
 
       - name: Ruff check
         run: |
