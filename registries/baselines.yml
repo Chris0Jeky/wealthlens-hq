@@ -1,0 +1,10 @@
+# WealthLens Baseline Status Matrix
+# Policy levers tagged by legal status as of the modelling date
+# Schema per Blueprint v5 section 3.1:
+#   id, area, status (current_law | enacted_future | announced |
+#   consultation_stage | hypothetical), effective_date, description,
+#   wealthlens_treatment, source_url
+#
+# Every policy scenario carries a baseline version tag.
+
+baselines: []  # see Stream 49 for population with UK policy baseline

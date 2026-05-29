@@ -1,0 +1,8 @@
+# WealthLens Source Registry
+# Machine-readable catalogue of all data sources
+# Schema: id, name, url, access_date, format, licence, update_pattern, notes
+#
+# Every dataset cited in a WealthLens output must have a corresponding entry.
+# Populated from existing data pipelines in automation/data-pipelines/.
+
+sources: []  # see Stream 47 for population from existing 10 pipelines
