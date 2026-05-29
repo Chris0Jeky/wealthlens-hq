@@ -6,6 +6,8 @@ and central to the public API.
 
 from __future__ import annotations
 
+from typing import Any
+
 from wealthlens_sim.assumptions import AssumptionRegistry
 from wealthlens_sim.assumptions.schema import FlagValue, PointValue, RangeValue, ScheduleValue
 from wealthlens_sim.provenance.manifest import (
@@ -59,27 +61,17 @@ class ProvenanceCollector:
             raise KeyError(msg)
 
         vd = assumption.value_or_distribution
-        resolved: (
-            float
-            | int
-            | bool
-            | dict[str, float | int]
-            | list[dict[str, float | int | None]]
-        )
+        resolved: float | int | bool | dict[str, Any] | list[Any]
         if isinstance(vd, PointValue):
             resolved = vd.value
         elif isinstance(vd, RangeValue):
             resolved = vd.central
         elif isinstance(vd, ScheduleValue):
-            extra = vd.model_extra or {}
-            # Check if this is a band-style schedule (values are lists of dicts)
-            band_values = [v for v in extra.values() if isinstance(v, list)]
-            if band_values:
-                # Band schedule — preserve as list of dicts
-                resolved = band_values[0]  # type: ignore[assignment]
-            else:
-                # Simple key-value schedule — keep only numeric entries
-                resolved = {k: v for k, v in extra.items() if isinstance(v, (int, float))}
+            # Preserve the full schedule payload faithfully — whether it is a
+            # nested rate map (e.g. {"rates": {...}}), a band list, or flat
+            # numeric keys. Never silently drop entries: a provenance manifest
+            # must record exactly what was consumed.
+            resolved = dict(vd.model_extra or {})
         elif isinstance(vd, FlagValue):
             resolved = bool(vd.value)  # explicit bool to prevent int leakage
         else:

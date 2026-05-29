@@ -84,6 +84,22 @@ BAND_SCHEDULE_ASSUMPTION = {
 }
 
 
+NESTED_SCHEDULE_ASSUMPTION = {
+    "assumption_id": "policy.it.rate_map_2026.v1",
+    "domain": "income-tax",
+    "legal_status": "current_law",
+    "value_or_distribution": {
+        "type": "schedule",
+        "rates": {"basic_rate": 20, "higher_rate": 40, "additional_rate": 45},
+    },
+    "source": "GOV.UK Income Tax rates page",
+    "transferability_score": "high",
+    "valid_range": "n/a",
+    "applies_to": "Family A baseline",
+    "last_reviewed": "2026-05-23",
+}
+
+
 def _make_version_tag() -> VersionTag:
     return VersionTag(
         macro_baseline_version="NBS-2025",
@@ -101,6 +117,7 @@ def _make_registry() -> AssumptionRegistry:
             SCHEDULE_ASSUMPTION,
             FLAG_ASSUMPTION,
             BAND_SCHEDULE_ASSUMPTION,
+            NESTED_SCHEDULE_ASSUMPTION,
         ]
     })
 
@@ -266,6 +283,26 @@ class TestProvenanceCollector:
         assert resolved.resolved_value["higher_rate"] == 24
         assert "type" not in resolved.resolved_value
 
+    def test_consume_nested_schedule_preserved_not_dropped(self):
+        """A nested rate-map schedule must be recorded faithfully, not silently emptied."""
+        collector = ProvenanceCollector(_make_version_tag(), _make_registry())
+        resolved = collector.consume("policy.it.rate_map_2026.v1")
+        assert isinstance(resolved.resolved_value, dict)
+        assert resolved.resolved_value["rates"] == {
+            "basic_rate": 20,
+            "higher_rate": 40,
+            "additional_rate": 45,
+        }
+        assert "type" not in resolved.resolved_value
+
+    def test_consume_band_schedule_preserves_bands(self):
+        """A band-list schedule must keep its bands list under its key."""
+        collector = ProvenanceCollector(_make_version_tag(), _make_registry())
+        resolved = collector.consume("policy.sdlt.bands_2026.v1")
+        assert isinstance(resolved.resolved_value, dict)
+        assert resolved.resolved_value["bands"][0] == {"low": 0, "high": 250000, "charge": 0}
+        assert resolved.resolved_value["bands"][-1]["high"] is None
+
     def test_consume_flag_resolves_bool(self):
         collector = ProvenanceCollector(_make_version_tag(), _make_registry())
         resolved = collector.consume("model.behavioural.use_savings_response.v1")
@@ -345,13 +382,14 @@ class TestTypeSafety:
         assert type(restored.resolved_value) is int
 
     def test_consume_band_schedule(self):
-        """Band-style ScheduleValue should resolve to list[dict]."""
+        """Band-style ScheduleValue is preserved faithfully under its key (no data loss)."""
         collector = ProvenanceCollector(_make_version_tag(), _make_registry())
         resolved = collector.consume("policy.sdlt.bands_2026.v1")
-        assert isinstance(resolved.resolved_value, list)
-        assert len(resolved.resolved_value) == 3
-        assert resolved.resolved_value[0]["charge"] == 0
-        assert resolved.resolved_value[2]["high"] is None
+        assert isinstance(resolved.resolved_value, dict)
+        bands = resolved.resolved_value["bands"]
+        assert len(bands) == 3
+        assert bands[0]["charge"] == 0
+        assert bands[2]["high"] is None
 
     def test_consume_flag_preserves_bool_type(self):
         """FlagValue must resolve to bool, not int."""
