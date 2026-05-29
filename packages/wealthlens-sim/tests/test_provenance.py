@@ -295,13 +295,7 @@ class TestProvenanceCollector:
         }
         assert "type" not in resolved.resolved_value
 
-    def test_consume_band_schedule_preserves_bands(self):
-        """A band-list schedule must keep its bands list under its key."""
-        collector = ProvenanceCollector(_make_version_tag(), _make_registry())
-        resolved = collector.consume("policy.sdlt.bands_2026.v1")
-        assert isinstance(resolved.resolved_value, dict)
-        assert resolved.resolved_value["bands"][0] == {"low": 0, "high": 250000, "charge": 0}
-        assert resolved.resolved_value["bands"][-1]["high"] is None
+    # Band-schedule preservation is covered by TestTypeSafety.test_consume_band_schedule.
 
     def test_consume_flag_resolves_bool(self):
         collector = ProvenanceCollector(_make_version_tag(), _make_registry())
@@ -353,7 +347,13 @@ class TestProvenanceCollector:
 
 
 class TestTypeSafety:
-    """Tests for strict bool/int typing and ScheduleValue robustness."""
+    """Tests for strict bool/int typing and ScheduleValue robustness.
+
+    Note: Pydantic v2 smart-union already preserves bool vs int on its own, so
+    the round-trip tests below pass even without the StrictInt/StrictBool
+    annotations. Those annotations are deliberate defense-in-depth: they make the
+    no-bool/int-coercion guarantee explicit and robust to future union reordering.
+    """
 
     def test_round_trip_bool_stays_bool(self):
         """resolved_value=True must survive JSON round-trip as bool, not int."""
