@@ -32,9 +32,10 @@ dependencies = [
 dev = [
     "pytest>=8.0",
     "pytest-cov>=6.0",
-    "mypy>=1.8",
+    "mypy>=1.14",
     "ruff>=0.4",
     "hypothesis>=6.90",
+    "types-PyYAML>=6.0",
 ]
 
 [tool.ruff]
@@ -50,6 +51,16 @@ python_version = "3.11"
 strict = true
 warn_return_any = true
 warn_unused_configs = true
+
+# scipy ships no usable type stubs, so mypy flags its (installed-but-untyped)
+# imports as `import-untyped`. follow_untyped_imports makes mypy treat scipy as
+# `Any` instead of erroring. It is scoped to scipy only, so the package's own
+# code keeps full strict checking; the one scipy call site (top_tail/pareto.py)
+# wraps the result in float(). Requires mypy >= 1.14 for this per-module key
+# (see the dev-dependency floor). PyYAML stubs come from the types-PyYAML dep.
+[[tool.mypy.overrides]]
+module = ["scipy", "scipy.*"]
+follow_untyped_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

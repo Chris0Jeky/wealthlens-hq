@@ -1,0 +1,68 @@
+name: CI Simulator
+
+# Runs lint, type-check, and the full test suite for the wealthlens-sim package.
+# Previously the simulator (~500 tests) was NOT covered by any workflow: the
+# ci-backend path filters only match projects/wealthlens-dashboard/backend, so
+# packages/wealthlens-sim changes ran only CodeQL. This workflow closes that gap.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "packages/wealthlens-sim/**"
+      - "registries/**"
+      - ".github/workflows/ci-sim.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "packages/wealthlens-sim/**"
+      - "registries/**"
+      - ".github/workflows/ci-sim.yml"
+  # Weekly run catches breakage from unpinned dependency drift (numpy/scipy/etc.)
+  # that a path-filtered trigger would miss between sim-package changes.
+  schedule:
+    - cron: "0 6 * * 1"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-sim-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-type-test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: packages/wealthlens-sim/pyproject.toml
+
+      # Editable install is load-bearing: the loaders resolve registries/*.yml by
+      # walking up from the package source to the repo root, which only works when
+      # the source stays in the checked-out tree (not copied into site-packages).
+      - name: Install package with dev extras
+        run: pip install -e ".[dev]"
+        working-directory: packages/wealthlens-sim
+
+      - name: Ruff check
+        run: ruff check .
+        working-directory: packages/wealthlens-sim
+
+      - name: Mypy
+        run: mypy wealthlens_sim
+        working-directory: packages/wealthlens-sim
+
+      # Coverage gate (parity with ci-backend). Current coverage is ~99%; the 90%
+      # floor guards against large untested additions without being flaky.
+      - name: Run tests
+        run: python -m pytest -q --cov=wealthlens_sim --cov-report=term-missing --cov-fail-under=90
+        working-directory: packages/wealthlens-sim
