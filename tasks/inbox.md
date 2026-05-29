@@ -1,6 +1,6 @@
 # Inbox
 
-Last updated: 2026-05-16
+Last updated: 2026-05-29
 
 Every concrete action item extracted from research. Triage into active-sprint, backlog, or done.
 
@@ -8,41 +8,40 @@ Every concrete action item extracted from research. Triage into active-sprint, b
 
 ## Build: WealthLens-Sim Microsimulator (Blueprint v5)
 
-### Gate 1: Schema + Registry Layer
-- [x] Pydantic schema module — households, policies, results (PR #292) [completed: 2026-05-23]
-- [x] Assumption registry loader with validation (PR #293) [completed: 2026-05-23]
-- [ ] Baselines registry loader (registries/baselines.yml → typed PolicyBaseline models)
-- [ ] Sources registry loader (registries/sources.yml → typed DataSource models)
+> **Status (2026-05-29):** Gate 1 (schema + registries + loaders), the top-tail
+> Pareto reconstruction, provenance, and ALL seven policy families (A–G) are
+> MERGED to `main` (PRs #284–#326). Wave 12 (the engine that drives them) is in
+> progress: `synth/` (#327) and `rules/run_scenario` (#328) merged. 564 tests,
+> ci-sim green. See `docs/WAVE12_SIMULATION_ENGINE_DESIGN.md`.
 
-### Gate 2: Data Foundation
-- [ ] Top-tail Pareto reconstruction module (Blueprint §5.1-5.3) — Pareto tail fitting, calibration to Rich List
-- [ ] FRS-WAS data linker (Blueprint §7.1-7.2) — survey spine construction
-- [ ] Synthetic household generator for testing (Blueprint §13.5)
-- [ ] ONS WAS wave importer — parse SPSS/CSV into Household schema
+### Gate 1: Schema + Registry Layer — DONE
+- [x] Pydantic schema module — households, policies, results (PR #292/#318) [completed: 2026-05-23]
+- [x] Assumption + baselines registry loaders with validation (PR #293/#319) [completed: 2026-05-29]
+- [x] Sources registry populated; registries packaged into wheel+sdist (#326) [completed: 2026-05-29]
 
-### Gate 3: Policy Family Calculators
-- [ ] Family A: Annual wealth tax calculator (Blueprint §9.1) — threshold, rate, exemptions
-- [ ] Family B: One-off wealth levy calculator (Blueprint §9.2) — emergency levy scenario
-- [ ] Family C: CGT reform module (Blueprint §9.3) — rate alignment, death charge, lock-in elasticity
-- [ ] Family D: IHT/transfer tax module (Blueprint §9.4) — nil-rate bands, APR/BPR cap, pension inclusion
-- [ ] Family E: Property tax / HVCTS module (Blueprint §9.5) — consultation bands, England-only scope
-- [ ] Family F: Enforcement module (Blueprint §9.6) — compliance yield, tax gap reduction
-- [ ] Family G: Devolution module (Blueprint §9.7) — nation-specific policy overrides
+### Gate 2: Data Foundation — partial
+- [x] Top-tail Pareto reconstruction module (Blueprint §5.1-5.3) — 5 baseline variants (PR #295) [completed: 2026-05-29]
+- [x] Synthetic household generator (Wave 12 PR1 #327) — lognormal+Pareto, deterministic [completed: 2026-05-29]
+- [ ] Calibrate synth generator to cited public WAS/ONS marginals (grossed total currently overshoots ~£26tn vs ~£15-16tn real; cite sources in registries/sources.yml before any published figure)
+- [ ] FRS-WAS real-microdata linker (Blueprint §7.1-7.2) — needs UKDS licence; behind the population-source Protocol seam
+- [ ] ONS NBS macro reconciliation (`reconcile/`, Gate 2) + reconstruction orchestration (`reconstruction/`)
+
+### Gate 3: Policy Family Calculators — DONE (all 7 merged)
+- [x] Family A annual wealth tax / B one-off levy / C CGT / D IHT / E HVCTS / F enforcement / G devolution (PRs #297–#303) [completed: 2026-05-29]
+- [ ] IHT v0.1 modelling refinement: 10% reduced-rate test uses gross estate not the post-relief "baseline amount" (documented simplification)
 
 ### Gate 4: Behavioural + Uncertainty
-- [ ] Migration elasticity model (Blueprint §6.1) — non-dom stock, domiciled emigration
-- [ ] Avoidance/lock-in model (Blueprint §6.2) — CGT lock-in elasticity, wealth concealment
-- [ ] Liquidity constraint analyser (Blueprint §6.3) — income-to-wealth ratio, forced liquidation
-- [ ] Monte Carlo uncertainty engine (Blueprint §10) — parameter sweep, confidence intervals
-- [ ] Sensitivity analysis runner — tornado charts, one-at-a-time variation
+- [ ] Interval propagation in the engine (top-tail alpha interval + assumption RangeValues) — Wave 12 engine PR
+- [ ] Monte Carlo / Sobol uncertainty engine (`uncertainty/`, Blueprint §10) — Wave 13
+- [ ] Migration elasticity, avoidance/lock-in, liquidity-constraint behavioural models (Blueprint §6)
 
 ### Gate 5: Output + Integration
-- [ ] Provenance manifest system (Blueprint §13.4) — every published number carries full lineage
-- [ ] Revenue distribution calculator — aggregate + percentile-level revenue estimates
-- [ ] Nation-level disaggregation reporter — England/Scotland/Wales/NI breakdowns
-- [ ] PolicyEngine-UK integration skeleton (Blueprint §12) — validate against PE-UK baseline
-- [ ] Dashboard API bridge — JSON endpoints for revenue estimates, distributional charts
-- [ ] Assumptions sensitivity dashboard component — interactive slider → revenue impact
+- [x] Provenance manifest system (Blueprint §13.4) — collector + manifest (PR #296) [completed: 2026-05-29]
+- [x] Nation-level disaggregation — `revenue_by_nation` from every family + merged in `run_scenario` (#328) [completed: 2026-05-29]
+- [ ] **Wave 12 engine PR (task #17, NEXT):** `engine.run_scenario(population, scenario, registries) -> EngineResult` wiring synth→rules→provenance; interval propagation; per-decile attribution (call per-household reforms funcs); population-source `Protocol` seam; families F (enforcement uplift) + G (devolution scope) composition
+- [ ] `outputs.to_dashboard_json` (Gate 9 dashboard contract) + golden-file test
+- [ ] PolicyEngine-UK integration / validation (`engine/` bridge, Blueprint §12)
+- [ ] Dashboard API bridge + assumptions sensitivity dashboard component
 
 ## Build: Charts and Visualisations
 

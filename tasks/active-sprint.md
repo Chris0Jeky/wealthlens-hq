@@ -7,21 +7,23 @@ This week's focus. Keep this list to 5-7 tasks.
 ## Sprint: 2026-05-29 to 2026-06-05
 
 **Context:** The entire Gate-1 simulator (skeleton, schema, loaders, top-tail
-reconstruction, provenance, all 7 policy families A–G) is now MERGED to `main`
-via the 2026-05-29 merge train (PRs #284–#322). 515 sim tests pass locally.
+reconstruction, provenance, all 7 policy families A–G) is MERGED to `main` (PRs
+#284–#326). Wave 12 (the engine driving them) is underway: `synth/` (#327) and
+`rules/run_scenario` (#328) merged. 564 sim tests pass; ci-sim green; 0 open PRs.
 
-1. - [x] CI gap: add `packages/wealthlens-sim` to CI — ci-sim.yml (ruff+mypy+pytest, py3.11/3.12, weekly) + types-PyYAML + scipy mypy override (PR #323) (@Chris) [completed: 2026-05-29]
-2. - [x] IHT v0.1 limitations: deduct charitable bequest from estate; cap RNRB at residence value (PR #324) (@Chris) [completed: 2026-05-29]
-3. - [ ] Package registries as data files (importlib.resources) so `pip install wealthlens-sim` can load sources/assumptions/baselines (@Chris) [due: 2026-06-03]
-4. - [ ] Wave 12: static microsimulation engine module (`engine/`) — apply policy families to synthetic households (Blueprint §8) (@Chris) [due: 2026-06-05]
-5. - [ ] Wave 12: synthetic FRS+WAS household generator (`synth/`) so the engine has inputs (Blueprint §6) (@Chris) [due: 2026-06-05]
+1. - [x] CI gap: add `packages/wealthlens-sim` to CI — ci-sim.yml + types-PyYAML + scipy mypy override (PR #323) (@Chris) [completed: 2026-05-29]
+2. - [x] IHT v0.1: deduct charitable bequest from estate; cap RNRB at residence value (PR #324) (@Chris) [completed: 2026-05-29]
+3. - [x] Security: patch tmp/uuid Dependabot alerts via npm overrides (PR #325) (@Chris) [completed: 2026-05-29]
+4. - [x] Package registries into wheel+sdist via hatch build hook + resolver fallback (PR #326) (@Chris) [completed: 2026-05-29]
+5. - [x] Wave 12 PR1 `synth/`: deterministic synthetic-population generator (PR #327) (@Chris) [completed: 2026-05-29]
+6. - [x] Wave 12 PR2 `rules/`: Scenario + run_scenario over the population (PR #328) (@Chris) [completed: 2026-05-29]
+7. - [ ] **Wave 12 PR3 (NEXT) `engine/`**: `run_scenario(population, scenario, registries) -> EngineResult` — wire synth→rules→provenance, interval propagation, per-decile attribution, F/G composition, `outputs.to_dashboard_json` (@Chris) [due: 2026-06-05]
 
-## Why These Five
+## Why These
 
-- **CI gap (1):** Highest priority — the simulator is currently untested in CI; a regression could land on `main` undetected. Discovered during the merge-train audit.
-- **IHT limitations (2):** Adversarial review flagged charitable-bequest and RNRB-cap simplifications that bias revenue; must fix or fence off before any published figure.
-- **Packaging (3):** Registries live outside the package; distribution is broken until resolved via importlib.resources.
-- **Engine + synth (4,5):** Wave 12 — the policy families exist but nothing drives them yet. A static engine over synthetic households turns the library into a working simulator (the next visible milestone).
+- **Merge cycle (1–4):** cleared all 38 open PRs with rigour; closed the CI gap (simulator was untested in CI), the IHT data-integrity simplifications, the security alerts, and the pip-install packaging gap — each its own reviewed PR.
+- **Wave 12 (5–7):** the policy families existed but nothing drove them. `synth/` supplies a population, `rules/` runs a scenario over it; the **engine PR (7)** ties synth→rules→provenance into a single `EngineResult` — the first end-to-end headline-revenue number. Then `outputs/` formats it for the dashboard.
+- **Follow-ups (backlog, not this sprint):** calibrate the synth generator to cited WAS marginals (currently overshoots); Monte-Carlo uncertainty (Wave 13); real WAS/FRS microdata behind the Protocol seam.
 
 ## Completed This Sprint
 

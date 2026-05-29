@@ -37,6 +37,13 @@ In production, the frontend is a static SPA deployed to GitHub Pages. It reads
 pre-generated JSON files from `/data/`. In development, Vite proxies `/api/*`
 requests to the local FastAPI server which reads CSVs on-the-fly.
 
+**WealthLens-Sim** (`packages/wealthlens-sim/`) is a separate, AGPL-3.0 Python
+library — the UK wealth-policy microsimulation engine. It is independent of the
+dashboard (its own `pyproject.toml`, CI `ci-sim.yml`, and test suite) and will
+feed the dashboard via a JSON output contract (`outputs/`, Wave 12+). It reads
+the shared `registries/` (sources, assumptions, baselines) and is design-tracked
+in `docs/WAVE12_SIMULATION_ENGINE_DESIGN.md`.
+
 ## Directory Structure
 
 ```
@@ -62,6 +69,21 @@ wealthlens-hq/
 │       │   └── utils/             # Pure helpers (fetchWithRetry, wealthPosition, format)
 │       ├── public/data/           # Static JSON fallbacks for production
 │       └── vite.config.ts         # Build config (base: /wealthlens-hq/)
+├── packages/
+│   └── wealthlens-sim/            # WealthLens-Sim microsimulation library (AGPL-3.0)
+│       ├── wealthlens_sim/
+│       │   ├── schema/            # Pydantic Household/Person/Asset/Nation/results
+│       │   ├── assumptions/       # registries/assumptions.yml loader
+│       │   ├── top_tail/          # Pareto top-tail reconstruction (5 variants)
+│       │   ├── reforms/           # Policy families A–G calculators
+│       │   ├── provenance/        # provenance manifest + collector
+│       │   ├── synth/             # synthetic-population generator (Wave 12)
+│       │   ├── rules/             # Scenario + run_scenario (Wave 12)
+│       │   └── engine/, outputs/, uncertainty/, reconcile/, reconstruction/  # Wave 12+ (stubs)
+│       ├── tests/                 # pytest suite (~560 tests)
+│       ├── hatch_build.py         # bundles repo-root registries/ into wheel+sdist
+│       └── pyproject.toml         # hatchling build, ruff, mypy (strict), pytest
+├── registries/                    # Shared YAML registries: sources, assumptions, baselines
 ├── automation/
 │   └── data-pipelines/            # Python scripts to fetch & process datasets
 │       ├── fetch_*.py             # One script per data source

@@ -33,6 +33,9 @@ All dashboard code is on main. Site live. Codebase includes:
 
 | Area | Status | Next step |
 | --- | --- | --- |
+| **WealthLens-Sim** | Gate 1 complete + all 7 policy families (A–G) + top-tail + provenance MERGED to main; Wave 12 `synth/` + `rules/` merged | **Wave 12 engine PR** (`engine.run_scenario` → EngineResult + outputs JSON) |
+| Sim CI | `ci-sim.yml` runs ruff+mypy+pytest (py3.11/3.12) + weekly; 564 tests | Maintain; add coverage of new modules |
+| Sim packaging | registries bundled into wheel+sdist (hatch hook); pip-installable | — |
 | Data pipelines | 8+ pipelines on main | Maintain; add new pipelines as needed |
 | Charts (v0.1) | Live (4 charts + broadsheet redesign) | Build more chart components in Vue |
 | Backend API | Full-featured (health, data, metadata, columns, CSV, summary stats) | Deploy to staging |
@@ -49,6 +52,7 @@ All dashboard code is on main. Site live. Codebase includes:
 
 ### Recent activity
 
+- 2026-05-29: **MERGE CYCLE + GATE-1 SIM + WAVE 12 START.** Cleared all 38 open PRs (0 remain). Merged the entire Gate-1 simulator to main (skeleton, schema, loaders, top-tail Pareto reconstruction, provenance, Families A–G; PRs #284–#326). Fixed all adversarial-review findings as their own reviewed PRs: top-tail int-truncation/ci-validation (#321), provenance faithful-schedule (#322), **CI gap** — added `ci-sim.yml`, the simulator was never run in CI (#323), IHT charitable/RNRB data-integrity (#324), **security** — patched tmp/uuid → 0 Dependabot alerts (#325), registry wheel+sdist packaging (#326). Wrote Wave 12 design doc + merged PR1 `synth/` (#327) and PR2 `rules/run_scenario` (#328). Every PR had 2 independent adversarial reviews; the gate caught a real sdist-uninstallable bug and a dispatch/contract drift. 564 sim tests; 0 alerts. Next: Wave 12 engine PR (task #17).
 - 2026-05-17: **PR CLEANUP RESUME COMPLETE** - reviewed, repaired, and merged PRs through `#272`; latest relevant main workflows are green (`#271` CI Backend after backend changes; `#272` Frontend, CodeQL, E2E, Lighthouse, and Deploy); zero open PRs remain.
 - 2026-05-17: Fixed final merge train issues: OG coverage for wage-stagnation, Bandit-safe version metadata without subprocess, chart registry merge conflicts, Playwright assertions, i18n test plugins, and package metadata conflicts.
 

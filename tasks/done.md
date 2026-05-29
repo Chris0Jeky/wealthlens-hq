@@ -2,6 +2,34 @@
 
 Completed tasks go here with completion date.
 
+## 2026-05-29 — Merge cycle + Gate-1 simulator + Wave 12 start
+
+Autonomous end-to-end cycle. Started with 38 open PRs; ended with 0 open PRs, main
+CI green, 564 simulator tests passing, 0 Dependabot alerts. Every PR got 2
+independent adversarial reviews; all findings of every severity addressed.
+
+**Merge train (the entire Gate-1 simulator → `main`):**
+- [x] Merge docs PRs: Model Charter #284, AI/LLM Disclosure #285 (@Chris)
+- [x] Merge `packages/wealthlens-sim` skeleton + registries (#286); recreate auto-closed children as #314–#319 and merge (license split, sources/assumptions/baselines registries, Pydantic schema) (@Chris)
+- [x] Fix broken inverted PR #293; merge assumption+baselines loaders (#319) (@Chris)
+- [x] Merge the policy-family chain #295–#303 (top-tail Pareto reconstruction, provenance, Families A–G) rebased onto main (@Chris)
+- [x] Merge prior-round review fix PRs #305–#308; redo #309→#320 (effective_date docs) (@Chris)
+- [x] Resolve all Dependabot: batch #291 merged + #273–#283 closed; #311/#312/#313 merged (@Chris)
+- [x] Delete 21 merged branches from origin; clean up stale locked worktrees (@Chris)
+
+**Adversarial-review findings fixed (each its own reviewed PR):**
+- [x] #321 top-tail: coerce int wealth to float (no silent truncation) + validate ci∈(0,1) (@Chris)
+- [x] #322 provenance: faithful schedule preservation (replaced a silent-drop) + strict bool/int typing (@Chris)
+- [x] #323 CI gap: add `ci-sim.yml` (ruff+mypy+pytest on py3.11/3.12 + weekly) — the simulator was never run in CI; + types-PyYAML + scipy mypy override (@Chris)
+- [x] #324 IHT: deduct charitable gifts from estate + cap RNRB at residence value (data-integrity) (@Chris)
+- [x] #325 security: npm overrides patch tmp (HIGH) + uuid (MED) → 0 Dependabot alerts (@Chris)
+- [x] #326 packaging: bundle registries into wheel **and sdist** via conditional hatch build hook (review caught a sdist-uninstallable bug) (@Chris)
+
+**Wave 12 (microsimulation engine) — design + first two PRs:**
+- [x] Wave 12 design doc `docs/WAVE12_SIMULATION_ENGINE_DESIGN.md` (@Chris)
+- [x] Wave 12 PR1 #327: `synth/` deterministic synthetic-population generator (lognormal body + Pareto tail; clearly-labelled synthetic) (@Chris)
+- [x] Wave 12 PR2 #328: `rules/` Scenario + `run_scenario` dispatching revenue families A–E → total + revenue_by_nation (@Chris)
+
 ## 2026-05-16
 
 - [x] Deploy Vue frontend to GitHub Pages as master site — live at https://chris0jeky.github.io/wealthlens-hq/ (@Chris)

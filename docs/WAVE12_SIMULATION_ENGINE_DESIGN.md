@@ -1,7 +1,25 @@
 # Wave 12 Design — Static Microsimulation Engine + Synthetic Population
 
 Last updated: 2026-05-29
-Status: DESIGN (pre-implementation). Author: autonomous dev cycle.
+Status: IN PROGRESS. Author: autonomous dev cycle.
+
+## Build progress
+
+- ✅ **PR1 `synth/`** (#327) — deterministic synthetic-population generator
+  (`generate_population(SynthConfig) -> SyntheticPopulation`; lognormal body +
+  Pareto tail; weights on `Household.weight`; `provenance_ids` seam).
+- ✅ **PR2 `rules/`** (#328) — `Scenario` / `FamilySelection` / `PolicyFamily` +
+  `run_scenario(households, scenario) -> ScenarioResult` dispatching revenue
+  families A–E (`match` + `assert_never` exhaustive) → total + `revenue_by_nation`.
+- ⏭️ **PR3 `engine/` + `outputs/` (next, task #17)** — `engine.run_scenario(
+  population, scenario, registries) -> EngineResult` wiring synth→rules→provenance;
+  interval propagation (top-tail α + assumption ranges); per-decile attribution
+  (needs per-household revenue, not the aggregate API); population-source
+  `Protocol` seam; families F (enforcement uplift) + G (devolution scope)
+  composition; `outputs.to_dashboard_json` with a golden-file test. Likely 2–3 PRs.
+- Backlog: calibrate `synth/` to cited public WAS/ONS marginals (grossed total
+  currently overshoots ~£26tn vs ~£15–16tn real — illustrative only until cited);
+  Monte-Carlo/Sobol uncertainty (`uncertainty/`, Wave 13).
 
 ## 1. Why this wave
 
