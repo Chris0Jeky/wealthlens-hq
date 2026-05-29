@@ -18,6 +18,10 @@ on:
       - "packages/wealthlens-sim/**"
       - "registries/**"
       - ".github/workflows/ci-sim.yml"
+  # Weekly run catches breakage from unpinned dependency drift (numpy/scipy/etc.)
+  # that a path-filtered trigger would miss between sim-package changes.
+  schedule:
+    - cron: "0 6 * * 1"
 
 permissions:
   contents: read
@@ -42,6 +46,9 @@ jobs:
           cache: pip
           cache-dependency-path: packages/wealthlens-sim/pyproject.toml
 
+      # Editable install is load-bearing: the loaders resolve registries/*.yml by
+      # walking up from the package source to the repo root, which only works when
+      # the source stays in the checked-out tree (not copied into site-packages).
       - name: Install package with dev extras
         run: pip install -e ".[dev]"
         working-directory: packages/wealthlens-sim
@@ -54,6 +61,8 @@ jobs:
         run: mypy wealthlens_sim
         working-directory: packages/wealthlens-sim
 
+      # Coverage gate (parity with ci-backend). Current coverage is ~99%; the 90%
+      # floor guards against large untested additions without being flaky.
       - name: Run tests
-        run: python -m pytest -q
+        run: python -m pytest -q --cov=wealthlens_sim --cov-report=term-missing --cov-fail-under=90
         working-directory: packages/wealthlens-sim
