@@ -13,21 +13,13 @@ from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from wealthlens_sim.reforms._banding import RateBand, compute_banded_liability
 from wealthlens_sim.schema.household import Asset, AssetType, Household
 
 
 class TaxUnit(StrEnum):
     INDIVIDUAL = "individual"
     HOUSEHOLD = "household"
-
-
-class RateBand(BaseModel):
-    """A single band in a progressive wealth tax schedule."""
-
-    model_config = ConfigDict(extra="forbid", frozen=True)
-
-    threshold: float = Field(ge=0, description="Band starts at this wealth level (GBP)")
-    rate: float = Field(gt=0, le=1, description="Marginal rate for this band")
 
 
 class WealthTaxConfig(BaseModel):
@@ -60,10 +52,10 @@ class WealthTaxConfig(BaseModel):
             if len(thresholds) != len(set(thresholds)):
                 msg = "rate_bands must have unique thresholds"
                 raise ValueError(msg)
-            if self.threshold != 0 or self.rate != 0.01:
+            if "threshold" in self.model_fields_set or "rate" in self.model_fields_set:
                 msg = (
                     "When rate_bands is set, threshold and rate are ignored; "
-                    "leave them at defaults or omit them"
+                    "omit them to use defaults"
                 )
                 raise ValueError(msg)
         return self
@@ -102,15 +94,7 @@ def _compute_liability(wealth: float, config: WealthTaxConfig) -> float:
     if wealth <= 0:
         return 0.0
     if config.rate_bands is not None:
-        bands = sorted(config.rate_bands, key=lambda b: b.threshold)
-        liability = 0.0
-        for i, band in enumerate(bands):
-            if wealth <= band.threshold:
-                break
-            ceiling = bands[i + 1].threshold if i + 1 < len(bands) else wealth
-            taxable_in_band = min(wealth, ceiling) - band.threshold
-            liability += max(0.0, taxable_in_band) * band.rate
-        return liability
+        return compute_banded_liability(wealth, config.rate_bands)
     return max(0.0, wealth - config.threshold) * config.rate
 
 
