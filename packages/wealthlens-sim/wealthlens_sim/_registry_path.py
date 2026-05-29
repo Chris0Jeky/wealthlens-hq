@@ -8,14 +8,14 @@ Two resolution strategies, tried in order:
 1. **In-repo / editable install** — walk up from this file until a directory
    named ``registries/`` is found (the canonical repo-root location). This is
    the source of truth during development.
-2. **Installed wheel** — the build packages the canonical registries into the
-   wheel as ``wealthlens_sim/_registries/`` (see the ``force-include`` entry in
-   ``pyproject.toml``), so they ship alongside the code and resolve even when
-   there is no repo checkout (a plain ``pip install`` of the built wheel).
+2. **Installed package** — a custom build hook (``hatch_build.py``) bundles the
+   canonical registries into the wheel *and* sdist as ``wealthlens_sim/_registries/``,
+   so they ship alongside the code and resolve even with no repo checkout (a plain
+   ``pip install`` of either the wheel or the sdist).
 
-If neither is found (e.g. a PyPI *sdist* install, which cannot carry files from
-above the project root), a clear ``FileNotFoundError`` tells the caller to pass
-an explicit path to ``load_assumptions()`` / ``load_baselines()``.
+If neither is found (a corrupt/partial install), a clear ``FileNotFoundError``
+tells the caller to pass an explicit path to
+``load_assumptions()`` / ``load_baselines()``.
 """
 
 from __future__ import annotations
