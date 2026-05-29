@@ -465,7 +465,12 @@ class TestSafetyGuards:
         np.testing.assert_allclose(scaled, [1_080_000.0, 2_160_000.0, 3_240_000.0])
 
     def test_run_variant_accepts_int_wealth(self):
-        """run_variant must coerce integer input to float and run without truncation."""
+        """Integer input must yield the SAME result as the equivalent float input.
+
+        Asserting equality (not just > 0) is what actually guards the truncation
+        bug: on the unfixed code the macro-scale int run loses fractional pounds
+        and diverges from the float run.
+        """
         int_data = _make_pareto_sample(alpha=1.5, n=500, threshold=1_000_000).astype(np.int64)
         cfg = VariantConfig(
             variant=BaselineVariant.MACRO_RECONCILED,
@@ -473,8 +478,16 @@ class TestSafetyGuards:
             n_bootstrap=50,
             macro_scale_factor=1.08,
         )
-        est = run_variant(int_data, cfg, rng=np.random.default_rng(1))
-        assert est.total_wealth_imputed.central > 0
+        int_est = run_variant(int_data, cfg, rng=np.random.default_rng(1))
+        # Same values, but already float on input: any divergence is truncation
+        # happening inside the transform, which is exactly what the fix prevents.
+        float_ref = run_variant(int_data.astype(np.float64), cfg, rng=np.random.default_rng(1))
+        assert int_est.total_wealth_imputed.central == pytest.approx(
+            float_ref.total_wealth_imputed.central
+        )
+        assert int_est.wealth_shares.top_1_pct.central == pytest.approx(
+            float_ref.wealth_shares.top_1_pct.central
+        )
 
     def test_variant_config_rejects_ci_out_of_range(self):
         for bad_ci in (1.5, 0.0, 1.0, -0.1):
