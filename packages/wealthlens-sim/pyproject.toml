@@ -62,6 +62,17 @@ warn_unused_configs = true
 module = ["scipy", "scipy.*"]
 follow_untyped_imports = true
 
+# Bundle the shared repo-root registries/ into the dist via a custom build hook
+# (hatch_build.py). The hook conditionally force-includes them only when present,
+# so building a wheel from an unpacked sdist (where ../../registries is absent)
+# no-ops instead of hard-failing. Registered for both wheel and sdist so the
+# sdist is self-contained too.
+[tool.hatch.build.targets.wheel.hooks.custom]
+path = "hatch_build.py"
+
+[tool.hatch.build.targets.sdist.hooks.custom]
+path = "hatch_build.py"
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = [".", "tests"]
