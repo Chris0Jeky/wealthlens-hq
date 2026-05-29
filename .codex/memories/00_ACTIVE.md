@@ -5,11 +5,23 @@
 > **POST-MERGE CLEANUP COMPLETE** (2026-05-16): All 192 PRs handled, 874 tests passing, CI green, 496 stale branches deleted.
 > Merge history: [MERGE_ORCHESTRATION.md](.codex/memories/session_notes/MERGE_ORCHESTRATION.md) | PR creation history: [ORCHESTRATION.md](.codex/memories/session_notes/ORCHESTRATION.md) (archived)
 
-Last updated: 2026-05-17
+Last updated: 2026-05-29
 
-## Current phase: Ready to Ship — Feature Complete v0.1
+## Current phase: Gate-1 Simulator merged → Wave 12 (engine/synth)
 
-All code is on main. Site live. No open PRs. No stale branches. Codebase includes:
+**2026-05-29 MERGE+ADVANCE cycle:** All 38 open PRs resolved. The entire Gate-1
+`packages/wealthlens-sim` simulator (skeleton, schema, registry loaders, top-tail
+Pareto reconstruction, provenance, all 7 policy families A–G) is now MERGED to
+`main` via PRs #284–#323. 523 sim tests pass locally. All adversarial-review
+findings addressed (int-truncation, ci-validation, faithful schedule preservation);
+CI gap (sim untested) closed by ci-sim.yml (#323). Dependabot cleared.
+Backlog seeded: IHT v0.1 limitations + registry packaging (LOW). See
+[ORCHESTRATION.md](session_notes/ORCHESTRATION.md) for the full merge-train log.
+Next: Wave 12 — static engine + synthetic household generator.
+
+## Prior phase: Ready to Ship — Feature Complete v0.1 (dashboard)
+
+All dashboard code is on main. Site live. Codebase includes:
 - 10 data pipelines (WID, ONS housing, CGT, wealth-by-decile, productivity-pay, GDHI, tax composition, BoE rates, child poverty, generational wealth)
 - Vue 3 frontend: 40+ components/composables, dark mode, broadsheet chart redesign, WCAG AA, analytics
 - FastAPI backend: health, data, metadata, columns, summary stats, CSV download, security headers, GZip, rate limiting
