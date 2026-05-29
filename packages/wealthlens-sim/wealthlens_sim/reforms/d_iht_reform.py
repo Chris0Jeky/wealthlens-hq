@@ -12,12 +12,17 @@ Simplifying assumptions (explicit per Blueprint v5 §3.3):
 - No trust taxation
 - No transferable NRB from a predeceased spouse
 - RNRB eligibility is inferred from main-residence ownership and a
-  has_direct_descendants flag, not from detailed estate planning
+  has_direct_descendants flag, not from detailed estate planning. The
+  band is capped at the net value of the residence assets (UK RNRB
+  cannot exceed the value of the residence passed to descendants).
 - APR/BPR qualifying value is taken from PRIVATE_BUSINESS asset type
   only (agricultural land not separately modelled in v0.1)
 - Pension inclusion flag defaults to False (pre-April 2027 baseline)
+- Charitable gifts (charitable_fraction x estate) are exempt and
+  deducted from the chargeable estate before NRB/RNRB; the 36% reduced
+  rate additionally applies when the gift meets the 10% threshold.
 - Estate value equals Person.total_net_wealth (no deductions beyond
-  NRB/RNRB/reliefs modelled here)
+  charitable gifts, NRB/RNRB, and reliefs modelled here)
 
 Current-law parameters (2026-27):
 - Nil-rate band (NRB): £325,000 (frozen since 2009-10)
@@ -195,8 +200,15 @@ def _compute_rnrb(
     owns_residence: bool,
     has_direct_descendants: bool,
     config: IHTConfig,
+    *,
+    residence_value: float | None = None,
 ) -> float:
-    """Compute the available Residence Nil-Rate Band."""
+    """Compute the available Residence Nil-Rate Band.
+
+    When ``residence_value`` is supplied, the band is capped at that value:
+    UK RNRB cannot exceed the net value of the residence passed to descendants.
+    When it is ``None`` (e.g. direct unit-test calls), no cap is applied.
+    """
     if not owns_residence or not has_direct_descendants:
         return 0.0
 
@@ -204,6 +216,8 @@ def _compute_rnrb(
     if estate_value > config.rnrb_taper_threshold:
         taper = (estate_value - config.rnrb_taper_threshold) / 2.0
         rnrb = max(0.0, rnrb - taper)
+    if residence_value is not None:
+        rnrb = min(rnrb, max(0.0, residence_value))
     return rnrb
 
 
@@ -234,6 +248,7 @@ def _compute_person_iht(
     config: IHTConfig,
     *,
     person_id: str = "",
+    residence_value: float | None = None,
 ) -> IHTResult:
     """Compute IHT liability for a single person's estate."""
 
@@ -268,9 +283,19 @@ def _compute_person_iht(
         )
 
     apr_bpr_relief = _compute_apr_bpr_relief(apr_bpr_qualifying, config)
-    estate_after_relief = max(0.0, estate_value - apr_bpr_relief)
+    # Charitable gifts are IHT-exempt: the donated amount leaves the chargeable
+    # estate before nil-rate bands are applied (separate from the 36% reduced
+    # rate, which additionally requires the 10% threshold below).
+    charitable_donation = max(0.0, charitable_fraction) * estate_value
+    estate_after_relief = max(0.0, estate_value - apr_bpr_relief - charitable_donation)
 
-    rnrb = _compute_rnrb(estate_value, owns_residence, has_direct_descendants, config)
+    rnrb = _compute_rnrb(
+        estate_value,
+        owns_residence,
+        has_direct_descendants,
+        config,
+        residence_value=residence_value,
+    )
     total_nil_rate = config.nil_rate_band + rnrb
 
     taxable = max(0.0, estate_after_relief - total_nil_rate)
@@ -334,6 +359,7 @@ def compute_household_iht(
 
         estate_value = 0.0
         owns_residence = False
+        residence_value = 0.0
         apr_bpr_qualifying = 0.0
 
         for asset in person.assets:
@@ -344,6 +370,7 @@ def compute_household_iht(
             estate_value += asset.net_value
             if asset.asset_type in RESIDENCE_TYPES:
                 owns_residence = True
+                residence_value += asset.net_value
             if asset.asset_type in APR_BPR_TYPES:
                 apr_bpr_qualifying += asset.gross_value
 
@@ -358,6 +385,7 @@ def compute_household_iht(
             charitable_fraction=charitable_fraction,
             config=config,
             person_id=person.person_id,
+            residence_value=max(0.0, residence_value),
         ))
 
     total = sum(r.iht_liability for r in person_results)
