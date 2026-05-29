@@ -10,8 +10,8 @@ This week's focus. Keep this list to 5-7 tasks.
 reconstruction, provenance, all 7 policy families A–G) is now MERGED to `main`
 via the 2026-05-29 merge train (PRs #284–#322). 515 sim tests pass locally.
 
-1. - [ ] CI gap: add `packages/wealthlens-sim` to CI — sim tests never run (ci-backend path filters exclude it); add ci-sim.yml + types-PyYAML + mypy yaml/scipy overrides (@Chris) [due: 2026-05-30]
-2. - [ ] IHT v0.1 limitations: deduct charitable bequest from taxable estate; cap RNRB at residence value — OR gate charitable/RNRB scenarios out of published output (@Chris) [due: 2026-06-02]
+1. - [x] CI gap: add `packages/wealthlens-sim` to CI — ci-sim.yml (ruff+mypy+pytest, py3.11/3.12, weekly) + types-PyYAML + scipy mypy override (PR #323) (@Chris) [completed: 2026-05-29]
+2. - [x] IHT v0.1 limitations: deduct charitable bequest from estate; cap RNRB at residence value (PR #324) (@Chris) [completed: 2026-05-29]
 3. - [ ] Package registries as data files (importlib.resources) so `pip install wealthlens-sim` can load sources/assumptions/baselines (@Chris) [due: 2026-06-03]
 4. - [ ] Wave 12: static microsimulation engine module (`engine/`) — apply policy families to synthetic households (Blueprint §8) (@Chris) [due: 2026-06-05]
 5. - [ ] Wave 12: synthetic FRS+WAS household generator (`synth/`) so the engine has inputs (Blueprint §6) (@Chris) [due: 2026-06-05]
