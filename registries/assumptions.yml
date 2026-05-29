@@ -5,6 +5,353 @@
 #   transferability_score (high/medium/low/stress-test-only),
 #   valid_range, applies_to, last_reviewed, notes
 #
+# value_or_distribution types: point (numeric), range (low/central/high),
+#   schedule (named fields or bands), flag (0/1 boolean-like)
+#
 # Target: 50+ entries by v0.1 release.
+# This initial population covers foundational assumptions referenced in
+# the Blueprint and existing data pipelines. Entries will expand as
+# policy family modules are implemented.
+#
+# Domain vocabulary (analytical, not legal status):
+#   top-tail, migration, avoidance, compliance, valuation, liquidity,
+#   capital-gains, transfer-tax, property-tax, enforcement, residence
+#
+# Policy-parameter entries also carry a legal_status field:
+#   current_law, enacted_future, announced, consultation_stage, hypothetical
 
-assumptions: []  # see Stream 48 for initial population
+assumptions:
+  # --- Top-tail reconstruction ---
+
+  - assumption_id: toptail.pareto_alpha.overall.v1
+    domain: top-tail
+    value_or_distribution:
+      type: range
+      low: 1.3
+      central: 1.5
+      high: 1.8
+    source: Vermeulen (2018); calibrated to UK WAS + Sunday Times Rich List
+    transferability_score: medium
+    valid_range: "alpha in [1.1, 2.5]"
+    applies_to: all families; top-tail correction layer
+    last_reviewed: "2026-05-23"
+    notes: >
+      Pareto tail exponent for overall net wealth. Lower alpha implies
+      heavier tail (more concentration). UK evidence suggests alpha ~1.5
+      for total net wealth. Sensitivity analysis should vary across full
+      valid range.
+
+  - assumption_id: toptail.data_quality.was_response_rate.v1
+    domain: top-tail
+    value_or_distribution:
+      type: point
+      value: 0.41
+    source: ONS WAS quality report (June 2025)
+    transferability_score: high
+    valid_range: "rate in [0.30, 0.60]"
+    applies_to: all families; data quality layer
+    last_reviewed: "2026-05-23"
+    notes: >
+      WAS response rate declined to 41% by latest wave. Lost accredited
+      official statistics status June 2025. Declining response rates
+      disproportionately affect top-wealth capture.
+
+  - assumption_id: toptail.methodology.db_pension_adjustment.v1
+    domain: top-tail
+    value_or_distribution:
+      type: point
+      value: -2.3e+12
+    source: ONS methodology change (December 2024)
+    transferability_score: high
+    valid_range: "adjustment in [-3.0e12, -1.5e12]"
+    applies_to: all families; wealth aggregation
+    last_reviewed: "2026-05-23"
+    notes: >
+      December 2024 DB pension methodology change reduced measured total
+      wealth by approximately £2.3 trillion. Must be applied consistently
+      across all baseline comparisons.
+
+  # --- Behavioural: migration ---
+
+  - assumption_id: behaviour.migration.non_dom_stock_elasticity.v1
+    domain: migration
+    value_or_distribution:
+      type: range
+      low: -0.01
+      central: -0.04
+      high: -0.10
+    source: Advani & Summers (2020); Kleven et al. (2014)
+    transferability_score: low
+    valid_range: "elasticity in [-0.20, 0.0]"
+    applies_to: Family A, Family B
+    last_reviewed: "2026-05-23"
+    notes: >
+      Semi-elasticity of non-dom stock to wealth-tax rate. International
+      evidence varies widely. UK-specific evidence limited to income tax
+      migration studies. Transferability from Scandinavian/Swiss context
+      to UK is contested.
+
+  - assumption_id: behaviour.migration.dom_emigration_elasticity.v1
+    domain: migration
+    value_or_distribution:
+      type: range
+      low: -0.005
+      central: -0.02
+      high: -0.05
+    source: Brulhart et al. (2022); Agrawal et al. (2023)
+    transferability_score: low
+    valid_range: "elasticity in [-0.10, 0.0]"
+    applies_to: Family A, Family B
+    last_reviewed: "2026-05-23"
+    notes: >
+      Semi-elasticity of domestic high-wealth emigration to annual wealth
+      tax rate. Swiss cantonal evidence suggests low elasticities; Norway
+      post-2022 suggests higher. UK context differs (language, cultural
+      ties, exit tax regime).
+
+  # --- Behavioural: avoidance ---
+
+  - assumption_id: behaviour.avoidance.cgt_lock_in.v1
+    domain: avoidance
+    value_or_distribution:
+      type: range
+      low: -0.3
+      central: -0.5
+      high: -0.8
+    source: Agersnap & Zidar (2021); HMRC internal estimates
+    transferability_score: medium
+    valid_range: "elasticity in [-1.0, 0.0]"
+    applies_to: Family C
+    last_reviewed: "2026-05-23"
+    notes: >
+      Lock-in elasticity for capital gains realisations with respect to
+      CGT rate. Higher absolute value implies stronger lock-in (fewer
+      realisations at higher rates). Relevant to revenue estimation for
+      rate alignment scenarios.
+
+  - assumption_id: behaviour.compliance.wealth_concealment.v1
+    domain: compliance
+    value_or_distribution:
+      type: range
+      low: 0.02
+      central: 0.05
+      high: 0.15
+    source: Alstadsæter, Johannesen & Zucman (2019)
+    transferability_score: medium
+    valid_range: "fraction in [0.0, 0.30]"
+    applies_to: Family A, Family B, Family F
+    last_reviewed: "2026-05-23"
+    notes: >
+      Fraction of taxable wealth concealed from authorities. Scandinavian
+      leaks-based estimates suggest 5% for top wealth; may differ for UK
+      given different enforcement environment. Family F reforms would
+      reduce this.
+
+  # --- Valuation ---
+
+  - assumption_id: valuation.private_business.discount.v1
+    domain: valuation
+    value_or_distribution:
+      type: range
+      low: 0.10
+      central: 0.25
+      high: 0.40
+    source: Saez & Zucman (2019); Wealth Tax Commission (2020)
+    transferability_score: medium
+    valid_range: "discount in [0.0, 0.60]"
+    applies_to: Family A, Family B, Family D
+    last_reviewed: "2026-05-23"
+    notes: >
+      Discount applied to private-business wealth for illiquidity and
+      valuation uncertainty. Wealth Tax Commission used 25% central
+      estimate. Critical for revenue and liquidity analysis.
+
+  - assumption_id: valuation.property.council_tax_band_accuracy.v1
+    domain: valuation
+    value_or_distribution:
+      type: point
+      value: 0.75
+    source: IFS (2020); MHCLG consultation (2026)
+    transferability_score: high
+    valid_range: "accuracy in [0.50, 0.95]"
+    applies_to: Family E
+    last_reviewed: "2026-05-23"
+    notes: >
+      Proportion of properties correctly banded relative to current
+      market value. Council tax bands based on 1991 valuations. HVCTS
+      uses Zoopla/VOA data for £2m+ properties, which may be more
+      accurate for high-value homes.
+
+  # --- Liquidity ---
+
+  - assumption_id: liquidity.income_to_wealth_ratio.top_decile.v1
+    domain: liquidity
+    value_or_distribution:
+      type: range
+      low: 0.02
+      central: 0.04
+      high: 0.08
+    source: ONS WAS; Advani & Tarrant (2021)
+    transferability_score: high
+    valid_range: "ratio in [0.01, 0.15]"
+    applies_to: Family A, Family B
+    last_reviewed: "2026-05-23"
+    notes: >
+      Ratio of annual income to net wealth for top-decile wealth holders.
+      Low ratios indicate potential liquidity constraints under annual
+      wealth taxes. Critical for assessing whether households can pay
+      from income.
+
+  # --- Policy parameters (current law) ---
+
+  - assumption_id: policy.cgt.rates_2026.v1
+    domain: capital-gains
+    legal_status: current_law
+    value_or_distribution:
+      type: schedule
+      rates:
+        basic_rate: 18
+        higher_rate: 24
+        badr: 18
+        investors_relief: 18
+        trustees: 24
+    source: GOV.UK CGT rates page (accessed 2026-05-16)
+    transferability_score: high
+    valid_range: "n/a"
+    applies_to: Family C baseline
+    last_reviewed: "2026-05-23"
+    notes: >
+      CGT rates from 6 April 2026. BADR was 14% in 2025-26;
+      rose to 18% from 6 April 2026. These are current law.
+
+  - assumption_id: policy.iht.nil_rate_bands_2026.v1
+    domain: transfer-tax
+    legal_status: current_law
+    value_or_distribution:
+      type: schedule
+      nil_rate_band: 325000
+      residence_nil_rate_band: 175000
+    source: GOV.UK IHT thresholds (accessed 2026-05-16)
+    transferability_score: high
+    valid_range: "n/a"
+    applies_to: Family D baseline
+    last_reviewed: "2026-05-23"
+    notes: >
+      IHT nil-rate band £325,000 and residence nil-rate band £175,000.
+      Both frozen. APR/BPR 100% allowance up to £2.5m combined from
+      6 April 2026, 50% relief above.
+
+  - assumption_id: policy.hvcts.rates_consultation.v1
+    domain: property-tax
+    legal_status: consultation_stage
+    value_or_distribution:
+      type: schedule
+      boundary_convention: "[low, high)"
+      bands:
+        - low: 2000000
+          high: 2500000
+          charge: 2500
+        - low: 2500000
+          high: 3500000
+          charge: 3500
+        - low: 3500000
+          high: 5000000
+          charge: 5000
+        - low: 5000000
+          high: null
+          charge: 7500
+    source: MHCLG consultation document (19 May 2026)
+    transferability_score: high
+    valid_range: "n/a"
+    applies_to: Family E (England only)
+    last_reviewed: "2026-05-23"
+    notes: >
+      Proposed HVCTS charging structure. Consultation closes 14 July 2026.
+      Estimated to raise £0.4bn in 2029-30 (OBR EFO November 2025).
+      Parameters may change before enactment in April 2028.
+
+  - assumption_id: policy.hvcts.affected_properties.v1
+    domain: property-tax
+    legal_status: consultation_stage
+    value_or_distribution:
+      type: range
+      low: 70000
+      central: 85000
+      high: 100000
+    source: OBR EFO November 2025; Zoopla/VOA estimates
+    transferability_score: high
+    valid_range: "count in [50000, 150000]"
+    applies_to: Family E (England only)
+    last_reviewed: "2026-05-23"
+    notes: >
+      Estimated number of residential properties valued at £2m+ in
+      England. Uncertainty driven by valuation methodology and market
+      movements since last VOA exercise.
+
+  # --- Missing Blueprint-required entries (added per R1 review) ---
+
+  - assumption_id: policy.iht.apr_bpr_cap_2026.v1
+    domain: transfer-tax
+    legal_status: current_law
+    value_or_distribution:
+      type: point
+      value: 2500000
+    source: GOV.UK APR/BPR reform (accessed 2026-05-16)
+    transferability_score: high
+    valid_range: "n/a"
+    applies_to: Family D baseline
+    last_reviewed: "2026-05-23"
+    notes: >
+      Combined APR/BPR cap for 100% relief. 50% relief on qualifying
+      value above £2.5m. From 6 April 2026.
+
+  - assumption_id: policy.iht.pension_inclusion_2027.v1
+    domain: transfer-tax
+    legal_status: enacted_future
+    value_or_distribution:
+      type: flag
+      value: 1
+    source: Finance Act 2026; GOV.UK technical note
+    transferability_score: high
+    valid_range: "n/a"
+    applies_to: Family D baseline
+    last_reviewed: "2026-05-23"
+    notes: >
+      IHT on unused pension funds for deaths on or after 6 April 2027.
+      Death-in-service benefits excluded per technical note. Major
+      structural change to wealth-transfer taxation.
+
+  - assumption_id: policy.fig_regime.residence_baseline.v1
+    domain: residence
+    legal_status: current_law
+    value_or_distribution:
+      type: point
+      value: 4
+    source: GOV.UK non-dom replacement (accessed 2026-05-16)
+    transferability_score: high
+    valid_range: "n/a"
+    applies_to: Family A, Family B (migration context)
+    last_reviewed: "2026-05-23"
+    notes: >
+      Four-year Foreign Income and Gains regime replacing non-dom
+      remittance basis from 6 April 2025. Affects migration elasticity
+      calibration for wealth-tax scenarios.
+
+  - assumption_id: policy.enforcement.wealthy_tax_gap.v1
+    domain: enforcement
+    legal_status: current_law
+    value_or_distribution:
+      type: schedule
+      overall_tax_gap_pct: 5.3
+      overall_tax_gap_gbp: 46.8e+9
+      wealthy_tax_gap_gbp: 1.9e+9
+      compliance_yield_gbp: 5.2e+9
+    source: HMRC Measuring tax gaps 2025 edition
+    transferability_score: high
+    valid_range: "n/a"
+    applies_to: Family F baseline
+    last_reviewed: "2026-05-23"
+    notes: >
+      HMRC enforcement baseline parameters. Wealthy tax gap and
+      compliance yield are anchor parameters for Family F reform
+      scenarios.
