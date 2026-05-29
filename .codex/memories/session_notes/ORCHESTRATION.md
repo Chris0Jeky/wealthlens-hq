@@ -90,12 +90,20 @@ Used for #320 (was #309), #321 (was #304), #322 (was #310).
   → `SyntheticPopulation` (lognormal body + Pareto tail; weights on Household.weight;
   `provenance_ids` seam; clearly-labelled synthetic, sourced, verify-before-publish).
   2 reviews + a confirmation round; 549 sim tests; ci-sim green. Task #15 done.
-- NEXT (Wave 12 stack, seeded): task #16 = `rules/ScenarioRunner` (Scenario +
-  FamilySelection models; dispatch to reforms/ across the population; aggregate
-  total + revenue_by_nation + by-decile). Then task #17 = `engine.run_scenario`
-  (wire synth→rules→aggregate→provenance→EngineResult) + interval propagation +
-  `outputs.to_dashboard_json` (golden-file test). Build the population-source
-  `Protocol` seam in the engine PR (per design §5). Each PR: 2 reviews + ci-sim.
+- Wave 12 PR2 DONE: `rules/` MERGED (#328) — `Scenario`/`FamilySelection`/
+  `PolicyFamily` + `run_scenario(households, scenario)` dispatching the 5 revenue
+  families A-E (match+assert_never exhaustive; dict-config coerced to family type)
+  → `ScenarioResult{total_revenue_bn, revenue_by_nation, family_revenues}`.
+  564 sim tests; 2 reviews + confirmation; ci-sim green. Task #16 done.
+- NEXT (Wave 12 final): task #17 = `engine.run_scenario(population, scenario,
+  registries) -> EngineResult` wiring synth→rules→aggregate→**provenance**, plus
+  interval propagation (top-tail alpha + assumption RangeValues), per-decile
+  attribution (needs per-household revenue — NOT in the aggregate API, so call the
+  per-household reforms/ funcs), the population-source `Protocol` seam (design §5),
+  and `outputs.to_dashboard_json` (golden-file test). Families F (enforcement
+  uplift) + G (devolution scope) compose here too. Likely split into 2-3 PRs.
+  Each PR: 2 reviews + ci-sim. KNOWN: synth IHT estimate is implausibly high
+  (synth overshoots real wealth + IHT-as-if-death) — calibration follow-up.
 
 ## 2026-05-23 New Cycle: Blueprint Foundation
 
