@@ -270,3 +270,23 @@ class TestSimulationResult:
         assert hr.tax_liability == 0
         assert hr.can_pay_from_income is True
         assert hr.liquidity_constrained is False
+
+    def test_household_result_uk_nation_rejected(self):
+        with pytest.raises(ValidationError, match="constituent nation"):
+            HouseholdResult(
+                household_id="h1",
+                nation=Nation.UK,
+                weight=100.0,
+                net_wealth_pre=1_000_000,
+                net_wealth_post=990_000,
+            )
+
+    def test_household_result_constituent_nation_accepted(self):
+        hr = HouseholdResult(
+            household_id="h1",
+            nation=Nation.ENGLAND,
+            weight=100.0,
+            net_wealth_pre=1_000_000,
+            net_wealth_post=990_000,
+        )
+        assert hr.nation == Nation.ENGLAND
