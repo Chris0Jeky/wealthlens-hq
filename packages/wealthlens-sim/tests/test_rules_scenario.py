@@ -6,8 +6,10 @@ import pytest
 from pydantic import ValidationError
 
 from wealthlens_sim.reforms.a_annual_wealth import WealthTaxConfig, compute_aggregate_revenue
-from wealthlens_sim.reforms.d_iht_reform import IHTConfig
-from wealthlens_sim.reforms.e_property_tax import HVCTSConfig
+from wealthlens_sim.reforms.b_one_off_levy import OneOffLevyConfig, compute_aggregate_one_off_revenue
+from wealthlens_sim.reforms.c_cgt_reform import CGTConfig, compute_aggregate_cgt_revenue
+from wealthlens_sim.reforms.d_iht_reform import IHTConfig, compute_aggregate_iht_revenue
+from wealthlens_sim.reforms.e_property_tax import HVCTSConfig, compute_aggregate_hvcts_revenue
 from wealthlens_sim.rules import (
     FamilySelection,
     PolicyFamily,
@@ -51,6 +53,18 @@ class TestFamilySelection:
     def test_iht_selection_accepts_iht_config(self):
         sel = FamilySelection(family=PolicyFamily.IHT, config=IHTConfig())
         assert sel.family == PolicyFamily.IHT
+
+    def test_dict_config_coerced_to_family_type(self):
+        # A sparse/empty dict must coerce to the FAMILY's config type, not the
+        # first overlapping union member (WealthTaxConfig).
+        iht = FamilySelection(family=PolicyFamily.IHT, config={})
+        assert isinstance(iht.config, IHTConfig)
+        levy = FamilySelection(
+            family=PolicyFamily.ONE_OFF_LEVY, config={"threshold": 1_000_000, "rate": 0.05}
+        )
+        assert isinstance(levy.config, OneOffLevyConfig)
+        cgt = FamilySelection(family=PolicyFamily.CGT, config={})
+        assert isinstance(cgt.config, CGTConfig)
 
 
 class TestScenario:
@@ -122,3 +136,24 @@ class TestRunScenario:
         r2 = run_scenario(households, scenario)
         assert r1.total_revenue_bn == r2.total_revenue_bn
         assert r1.revenue_by_nation == r2.revenue_by_nation
+
+    @pytest.mark.parametrize(
+        ("family", "config", "agg_fn"),
+        [
+            (PolicyFamily.ANNUAL_WEALTH_TAX, WealthTaxConfig(threshold=1_000_000, rate=0.01), compute_aggregate_revenue),
+            (PolicyFamily.ONE_OFF_LEVY, OneOffLevyConfig(threshold=1_000_000, rate=0.05), compute_aggregate_one_off_revenue),
+            (PolicyFamily.CGT, CGTConfig(), compute_aggregate_cgt_revenue),
+            (PolicyFamily.IHT, IHTConfig(), compute_aggregate_iht_revenue),
+            (PolicyFamily.HVCTS, HVCTSConfig(), compute_aggregate_hvcts_revenue),
+        ],
+    )
+    def test_each_family_matches_direct_aggregate(self, family, config, agg_fn):
+        # Pins dispatch correctness for ALL five families (not just A).
+        households = _population()
+        scenario = Scenario(
+            name="single", version_tag=_version(), families=[FamilySelection(family=family, config=config)]
+        )
+        result = run_scenario(households, scenario)
+        direct = agg_fn(households, config)
+        assert result.total_revenue_bn == pytest.approx(direct.total_revenue_bn)
+        assert result.family_revenues[0].revenue_by_nation == direct.revenue_by_nation

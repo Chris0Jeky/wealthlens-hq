@@ -20,6 +20,7 @@ Scope (see docs/WAVE12_SIMULATION_ENGINE_DESIGN.md):
 from __future__ import annotations
 
 from enum import StrEnum
+from typing import Any, assert_never
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -61,6 +62,24 @@ class FamilySelection(BaseModel):
 
     family: PolicyFamily
     config: FamilyConfig
+
+    @model_validator(mode="before")
+    @classmethod
+    def _coerce_dict_config(cls, data: Any) -> Any:
+        """Coerce a *dict* config to the family-correct type before union validation.
+
+        The five config models have overlapping fields, so pydantic's smart union
+        would otherwise coerce a bare/sparse dict to whichever member appears first
+        (WealthTaxConfig) regardless of ``family``. Constructing the expected type
+        explicitly fixes that. Config objects are left untouched.
+        """
+        if isinstance(data, dict):
+            family = data.get("family")
+            config = data.get("config")
+            if isinstance(config, dict) and family is not None:
+                config_type = _FAMILY_CONFIG_TYPE[PolicyFamily(family)]
+                data = {**data, "config": config_type(**config)}
+        return data
 
     @model_validator(mode="after")
     def _config_matches_family(self) -> FamilySelection:
@@ -111,28 +130,41 @@ class ScenarioResult(BaseModel):
 
 
 def _run_family(households: list[Household], selection: FamilySelection) -> FamilyRevenue:
-    """Dispatch one family to its aggregate calculator (isinstance narrows the config)."""
+    """Dispatch one family to its aggregate calculator.
+
+    The config type is guaranteed to match ``family`` by ``FamilySelection``'s
+    validators; the ``isinstance`` checks narrow the union for the type-checker.
+    The ``match`` with ``assert_never`` makes the dispatch exhaustive — adding a
+    ``PolicyFamily`` member without a branch is a compile-time mypy error rather
+    than a silent mis-dispatch.
+    """
     config = selection.config
-    if selection.family == PolicyFamily.ANNUAL_WEALTH_TAX:
-        assert isinstance(config, WealthTaxConfig)
-        agg = compute_aggregate_revenue(households, config)
-        return FamilyRevenue(family=selection.family, total_revenue_bn=agg.total_revenue_bn, revenue_by_nation=agg.revenue_by_nation)
-    if selection.family == PolicyFamily.ONE_OFF_LEVY:
-        assert isinstance(config, OneOffLevyConfig)
-        levy = compute_aggregate_one_off_revenue(households, config)
-        return FamilyRevenue(family=selection.family, total_revenue_bn=levy.total_revenue_bn, revenue_by_nation=levy.revenue_by_nation)
-    if selection.family == PolicyFamily.CGT:
-        assert isinstance(config, CGTConfig)
-        cgt = compute_aggregate_cgt_revenue(households, config)
-        return FamilyRevenue(family=selection.family, total_revenue_bn=cgt.total_revenue_bn, revenue_by_nation=cgt.revenue_by_nation)
-    if selection.family == PolicyFamily.IHT:
-        assert isinstance(config, IHTConfig)
-        iht = compute_aggregate_iht_revenue(households, config)
-        return FamilyRevenue(family=selection.family, total_revenue_bn=iht.total_revenue_bn, revenue_by_nation=iht.revenue_by_nation)
-    # PolicyFamily.HVCTS — the StrEnum is exhaustive, so this is the only remaining case.
-    assert isinstance(config, HVCTSConfig)
-    hvcts = compute_aggregate_hvcts_revenue(households, config)
-    return FamilyRevenue(family=selection.family, total_revenue_bn=hvcts.total_revenue_bn, revenue_by_nation=hvcts.revenue_by_nation)
+    total: float
+    by_nation: dict[str, float]
+    match selection.family:
+        case PolicyFamily.ANNUAL_WEALTH_TAX:
+            assert isinstance(config, WealthTaxConfig)
+            agg = compute_aggregate_revenue(households, config)
+            total, by_nation = agg.total_revenue_bn, agg.revenue_by_nation
+        case PolicyFamily.ONE_OFF_LEVY:
+            assert isinstance(config, OneOffLevyConfig)
+            levy = compute_aggregate_one_off_revenue(households, config)
+            total, by_nation = levy.total_revenue_bn, levy.revenue_by_nation
+        case PolicyFamily.CGT:
+            assert isinstance(config, CGTConfig)
+            cgt = compute_aggregate_cgt_revenue(households, config)
+            total, by_nation = cgt.total_revenue_bn, cgt.revenue_by_nation
+        case PolicyFamily.IHT:
+            assert isinstance(config, IHTConfig)
+            iht = compute_aggregate_iht_revenue(households, config)
+            total, by_nation = iht.total_revenue_bn, iht.revenue_by_nation
+        case PolicyFamily.HVCTS:
+            assert isinstance(config, HVCTSConfig)
+            hvcts = compute_aggregate_hvcts_revenue(households, config)
+            total, by_nation = hvcts.total_revenue_bn, hvcts.revenue_by_nation
+        case _:  # pragma: no cover - exhaustiveness guard
+            assert_never(selection.family)
+    return FamilyRevenue(family=selection.family, total_revenue_bn=total, revenue_by_nation=by_nation)
 
 
 def run_scenario(households: list[Household], scenario: Scenario) -> ScenarioResult:
