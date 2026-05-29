@@ -77,9 +77,19 @@ Used for #320 (was #309), #321 (was #304), #322 (was #310).
 - CI gap closed: ci-sim.yml runs ruff+mypy+pytest on py3.11/3.12 + weekly (#323).
 - 21 merged feature/fix branches deleted from origin. `feat/baselines-loader` left
   (unmerged orphan — investigate/delete later).
-- NEW backlog: #12 (registry packaging, LOW), #13 (IHT charitable/RNRB v0.1, MED),
-  #14 (3 Dependabot npm alerts via @lhci/cli, dev-only, low real-risk).
-- NEXT: Wave 12 (engine/ + synth/) per active-sprint, or IHT data-integrity fix (#13).
+- Backlog follow-ups ALL DONE this cycle (each 2 reviews + merged):
+  - #324 (was task #13): IHT charitable-gift exemption + RNRB cap-at-residence.
+  - #325 (was task #14): npm overrides patch tmp/uuid → Dependabot alerts now 0.
+  - #326 (was task #12): registries packaged into wheel+sdist via conditional
+    hatch build hook (hatch_build.py); sdist install verified end-to-end. The
+    R1 review caught a real sdist-uninstallable bug; R2 confirmed the fix.
+- STATE: 0 open PRs; main green; 534 sim tests; Dependabot 0; all branches clean.
+- NEXT: Wave 12 — design written at `docs/WAVE12_SIMULATION_ENGINE_DESIGN.md`.
+  Build PR-stack seeded as tasks #15 (synth/), #16 (rules/ScenarioRunner), #17
+  (engine.run_scenario + intervals + provenance + outputs JSON). **Needs a user
+  steer on design §7 open decisions BEFORE building**: (1) synthetic-only vs real
+  WAS/FRS microdata for v0.1, (2) interval-arithmetic vs Monte-Carlo uncertainty,
+  (3) which public WAS/ONS tables anchor synthetic calibration (must be cited).
 
 ## 2026-05-23 New Cycle: Blueprint Foundation
 
