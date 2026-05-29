@@ -1,26 +1,27 @@
 # Active Sprint
 
-Last updated: 2026-05-23
+Last updated: 2026-05-29
 
 This week's focus. Keep this list to 5-7 tasks.
 
-## Sprint: 2026-05-21 to 2026-05-28
+## Sprint: 2026-05-29 to 2026-06-05
 
-1. - [x] Sim skeleton: package structure, pyproject.toml, AGPL licence (@Chris) [completed: 2026-05-22]
-2. - [x] Pydantic schema module: households, policies, results (PR #292) (@Chris) [completed: 2026-05-23]
-3. - [x] Assumption registry loader with validation (PR #293) (@Chris) [completed: 2026-05-23]
-4. - [ ] Baselines registry loader with validation (@Chris) [due: 2026-05-25]
-5. - [ ] Top-tail Pareto reconstruction module (Blueprint §5.1-5.3) (@Chris) [due: 2026-05-27]
-6. - [ ] Family A: annual wealth tax calculator (Blueprint §9.1) (@Chris) [due: 2026-05-28]
-7. - [ ] Provenance manifest system (Blueprint §13.4) (@Chris) [due: 2026-05-28]
+**Context:** The entire Gate-1 simulator (skeleton, schema, loaders, top-tail
+reconstruction, provenance, all 7 policy families A–G) is now MERGED to `main`
+via the 2026-05-29 merge train (PRs #284–#322). 515 sim tests pass locally.
 
-## Why These Seven
+1. - [ ] CI gap: add `packages/wealthlens-sim` to CI — sim tests never run (ci-backend path filters exclude it); add ci-sim.yml + types-PyYAML + mypy yaml/scipy overrides (@Chris) [due: 2026-05-30]
+2. - [ ] IHT v0.1 limitations: deduct charitable bequest from taxable estate; cap RNRB at residence value — OR gate charitable/RNRB scenarios out of published output (@Chris) [due: 2026-06-02]
+3. - [ ] Package registries as data files (importlib.resources) so `pip install wealthlens-sim` can load sources/assumptions/baselines (@Chris) [due: 2026-06-03]
+4. - [ ] Wave 12: static microsimulation engine module (`engine/`) — apply policy families to synthetic households (Blueprint §8) (@Chris) [due: 2026-06-05]
+5. - [ ] Wave 12: synthetic FRS+WAS household generator (`synth/`) so the engine has inputs (Blueprint §6) (@Chris) [due: 2026-06-05]
 
-- **Sim skeleton (1-3):** Gate 1 deliverables complete. Schema layer and assumption loader provide the type foundation for all policy modules.
-- **Baselines loader (4):** Parallel to assumption loader; loads registries/baselines.yml with policy status matrix.
-- **Top-tail (5):** Blueprint §5 is the critical data-quality layer — without Pareto reconstruction, wealth totals undercount the top by ~£600bn.
-- **Family A (6):** The headline policy module — annual wealth tax. Most requested, most visible, drives the revenue simulator.
-- **Provenance (7):** Blueprint §13.4 requires every published number to carry a provenance manifest. Wire this early before outputs proliferate.
+## Why These Five
+
+- **CI gap (1):** Highest priority — the simulator is currently untested in CI; a regression could land on `main` undetected. Discovered during the merge-train audit.
+- **IHT limitations (2):** Adversarial review flagged charitable-bequest and RNRB-cap simplifications that bias revenue; must fix or fence off before any published figure.
+- **Packaging (3):** Registries live outside the package; distribution is broken until resolved via importlib.resources.
+- **Engine + synth (4,5):** Wave 12 — the policy families exist but nothing drives them yet. A static engine over synthetic households turns the library into a working simulator (the next visible milestone).
 
 ## Completed This Sprint
 
