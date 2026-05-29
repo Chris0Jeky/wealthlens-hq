@@ -84,12 +84,18 @@ Used for #320 (was #309), #321 (was #304), #322 (was #310).
     hatch build hook (hatch_build.py); sdist install verified end-to-end. The
     R1 review caught a real sdist-uninstallable bug; R2 confirmed the fix.
 - STATE: 0 open PRs; main green; 534 sim tests; Dependabot 0; all branches clean.
-- NEXT: Wave 12 — design written at `docs/WAVE12_SIMULATION_ENGINE_DESIGN.md`.
-  Build PR-stack seeded as tasks #15 (synth/), #16 (rules/ScenarioRunner), #17
-  (engine.run_scenario + intervals + provenance + outputs JSON). **Needs a user
-  steer on design §7 open decisions BEFORE building**: (1) synthetic-only vs real
-  WAS/FRS microdata for v0.1, (2) interval-arithmetic vs Monte-Carlo uncertainty,
-  (3) which public WAS/ONS tables anchor synthetic calibration (must be cited).
+- Wave 12 design: `docs/WAVE12_SIMULATION_ENGINE_DESIGN.md`. User decided (2026-05-29):
+  **synthetic-only** population for v0.1; interval-arithmetic uncertainty; cite WAS/ONS.
+- Wave 12 PR1 DONE: `synth/` generator MERGED (#327) — `generate_population(SynthConfig)`
+  → `SyntheticPopulation` (lognormal body + Pareto tail; weights on Household.weight;
+  `provenance_ids` seam; clearly-labelled synthetic, sourced, verify-before-publish).
+  2 reviews + a confirmation round; 549 sim tests; ci-sim green. Task #15 done.
+- NEXT (Wave 12 stack, seeded): task #16 = `rules/ScenarioRunner` (Scenario +
+  FamilySelection models; dispatch to reforms/ across the population; aggregate
+  total + revenue_by_nation + by-decile). Then task #17 = `engine.run_scenario`
+  (wire synth→rules→aggregate→provenance→EngineResult) + interval propagation +
+  `outputs.to_dashboard_json` (golden-file test). Build the population-source
+  `Protocol` seam in the engine PR (per design §5). Each PR: 2 reviews + ci-sim.
 
 ## 2026-05-23 New Cycle: Blueprint Foundation
 
