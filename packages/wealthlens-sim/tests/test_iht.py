@@ -196,8 +196,11 @@ class TestComputePersonIHT:
         config = IHTConfig()
         estate = 1_000_000
         result = _compute_person_iht(estate, False, False, 0, False, 0.15, config)
-        expected_taxable = estate - 325_000
+        # The 15% charitable gift (£150k) is IHT-exempt and leaves the estate,
+        # then the £325k NRB applies; the remainder is taxed at the reduced 36%.
+        expected_taxable = estate - 0.15 * estate - 325_000  # 525,000
         assert result.iht_rate_applied == 0.36
+        assert result.taxable_estate == pytest.approx(expected_taxable)
         assert result.iht_liability == pytest.approx(expected_taxable * 0.36)
 
     def test_charitable_below_threshold(self):
@@ -664,3 +667,50 @@ class TestCombinedAPRBPRAndRNRBTaper:
         estate_after = estate - 500_000
         expected_taxable = estate_after - (325_000 + 175_000)
         assert result.taxable_estate == pytest.approx(expected_taxable)
+
+
+class TestCharitableAndRNRBFixes:
+    """Regression tests for the v0.1 IHT limitation fixes (adversarial review)."""
+
+    def test_charitable_donation_deducted_from_estate(self):
+        # A 15% gift on a £1m estate is IHT-exempt and leaves the estate:
+        # taxable = 1,000,000 - 150,000 (gift) - 325,000 (NRB) = 525,000.
+        config = IHTConfig()
+        result = _compute_person_iht(1_000_000, False, False, 0, False, 0.15, config)
+        assert result.taxable_estate == pytest.approx(525_000)
+        assert result.iht_liability == pytest.approx(525_000 * 0.36)
+
+    def test_charitable_donation_deducted_even_below_threshold(self):
+        # A 5% gift is below the 10% reduced-rate threshold (rate stays 40%) but
+        # the donation is still exempt and removed from the chargeable estate.
+        config = IHTConfig()
+        result = _compute_person_iht(1_000_000, False, False, 0, False, 0.05, config)
+        assert result.iht_rate_applied == 0.40
+        assert result.taxable_estate == pytest.approx(1_000_000 - 50_000 - 325_000)
+
+    def test_rnrb_capped_at_residence_value(self):
+        config = IHTConfig()
+        assert _compute_rnrb(500_000, True, True, config, residence_value=100_000) == 100_000
+
+    def test_rnrb_not_capped_when_residence_exceeds_band(self):
+        config = IHTConfig()
+        assert _compute_rnrb(500_000, True, True, config, residence_value=300_000) == 175_000
+
+    def test_rnrb_no_cap_when_residence_value_none(self):
+        # Default (None) preserves the prior uncapped behaviour for direct callers.
+        config = IHTConfig()
+        assert _compute_rnrb(500_000, True, True, config) == 175_000
+
+    def test_household_rnrb_capped_by_small_residence(self):
+        # £100k residence + £900k financial: RNRB is capped at the £100k residence
+        # value (not the full £175k band), so £75k more estate is taxable.
+        person = make_person(assets=[
+            (AssetType.MAIN_RESIDENCE, 100_000, 0),
+            (AssetType.FINANCIAL, 900_000, 0),
+        ])
+        hh = make_household([person])
+        flags: dict[str, PersonIHTFlags] = {"p1": {"has_direct_descendants": True}}
+        result = compute_household_iht(hh, IHTConfig(), person_flags=flags)
+        pr = result.person_results[0]
+        assert pr.rnrb_used == pytest.approx(100_000)
+        assert pr.taxable_estate == pytest.approx(1_000_000 - 325_000 - 100_000)
