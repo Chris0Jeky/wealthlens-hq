@@ -64,6 +64,41 @@ FLAG_ASSUMPTION = {
     "last_reviewed": "2026-05-23",
 }
 
+BAND_SCHEDULE_ASSUMPTION = {
+    "assumption_id": "policy.sdlt.bands_2026.v1",
+    "domain": "stamp-duty",
+    "legal_status": "current_law",
+    "value_or_distribution": {
+        "type": "schedule",
+        "bands": [
+            {"low": 0, "high": 250000, "charge": 0},
+            {"low": 250000, "high": 925000, "charge": 5},
+            {"low": 925000, "high": None, "charge": 10},
+        ],
+    },
+    "source": "GOV.UK SDLT rates page",
+    "transferability_score": "high",
+    "valid_range": "n/a",
+    "applies_to": "residential property",
+    "last_reviewed": "2026-05-23",
+}
+
+
+NESTED_SCHEDULE_ASSUMPTION = {
+    "assumption_id": "policy.it.rate_map_2026.v1",
+    "domain": "income-tax",
+    "legal_status": "current_law",
+    "value_or_distribution": {
+        "type": "schedule",
+        "rates": {"basic_rate": 20, "higher_rate": 40, "additional_rate": 45},
+    },
+    "source": "GOV.UK Income Tax rates page",
+    "transferability_score": "high",
+    "valid_range": "n/a",
+    "applies_to": "Family A baseline",
+    "last_reviewed": "2026-05-23",
+}
+
 
 def _make_version_tag() -> VersionTag:
     return VersionTag(
@@ -76,7 +111,14 @@ def _make_version_tag() -> VersionTag:
 
 def _make_registry() -> AssumptionRegistry:
     return AssumptionRegistry.model_validate({
-        "assumptions": [POINT_ASSUMPTION, RANGE_ASSUMPTION, SCHEDULE_ASSUMPTION, FLAG_ASSUMPTION]
+        "assumptions": [
+            POINT_ASSUMPTION,
+            RANGE_ASSUMPTION,
+            SCHEDULE_ASSUMPTION,
+            FLAG_ASSUMPTION,
+            BAND_SCHEDULE_ASSUMPTION,
+            NESTED_SCHEDULE_ASSUMPTION,
+        ]
     })
 
 
@@ -241,6 +283,20 @@ class TestProvenanceCollector:
         assert resolved.resolved_value["higher_rate"] == 24
         assert "type" not in resolved.resolved_value
 
+    def test_consume_nested_schedule_preserved_not_dropped(self):
+        """A nested rate-map schedule must be recorded faithfully, not silently emptied."""
+        collector = ProvenanceCollector(_make_version_tag(), _make_registry())
+        resolved = collector.consume("policy.it.rate_map_2026.v1")
+        assert isinstance(resolved.resolved_value, dict)
+        assert resolved.resolved_value["rates"] == {
+            "basic_rate": 20,
+            "higher_rate": 40,
+            "additional_rate": 45,
+        }
+        assert "type" not in resolved.resolved_value
+
+    # Band-schedule preservation is covered by TestTypeSafety.test_consume_band_schedule.
+
     def test_consume_flag_resolves_bool(self):
         collector = ProvenanceCollector(_make_version_tag(), _make_registry())
         resolved = collector.consume("model.behavioural.use_savings_response.v1")
@@ -288,3 +344,56 @@ class TestProvenanceCollector:
         )
         with pytest.raises(ValidationError, match="frozen"):
             entry.output_label = "mutated"
+
+
+class TestTypeSafety:
+    """Tests for strict bool/int typing and ScheduleValue robustness.
+
+    Note: Pydantic v2 smart-union already preserves bool vs int on its own, so
+    the round-trip tests below pass even without the StrictInt/StrictBool
+    annotations. Those annotations are deliberate defense-in-depth: they make the
+    no-bool/int-coercion guarantee explicit and robust to future union reordering.
+    """
+
+    def test_round_trip_bool_stays_bool(self):
+        """resolved_value=True must survive JSON round-trip as bool, not int."""
+        ra = ResolvedAssumption(
+            assumption_id="flag.v1",
+            domain="test",
+            resolved_value=True,
+            source="test",
+        )
+        data = ra.model_dump(mode="json")
+        restored = ResolvedAssumption.model_validate(data)
+        assert restored.resolved_value is True
+        assert type(restored.resolved_value) is bool
+
+    def test_round_trip_int_stays_int(self):
+        """resolved_value=1 must survive JSON round-trip as int, not bool."""
+        ra = ResolvedAssumption(
+            assumption_id="int.v1",
+            domain="test",
+            resolved_value=1,
+            source="test",
+        )
+        data = ra.model_dump(mode="json")
+        restored = ResolvedAssumption.model_validate(data)
+        assert restored.resolved_value == 1
+        assert type(restored.resolved_value) is int
+
+    def test_consume_band_schedule(self):
+        """Band-style ScheduleValue is preserved faithfully under its key (no data loss)."""
+        collector = ProvenanceCollector(_make_version_tag(), _make_registry())
+        resolved = collector.consume("policy.sdlt.bands_2026.v1")
+        assert isinstance(resolved.resolved_value, dict)
+        bands = resolved.resolved_value["bands"]
+        assert len(bands) == 3
+        assert bands[0]["charge"] == 0
+        assert bands[2]["high"] is None
+
+    def test_consume_flag_preserves_bool_type(self):
+        """FlagValue must resolve to bool, not int."""
+        collector = ProvenanceCollector(_make_version_tag(), _make_registry())
+        resolved = collector.consume("model.behavioural.use_savings_response.v1")
+        assert resolved.resolved_value is True
+        assert type(resolved.resolved_value) is bool

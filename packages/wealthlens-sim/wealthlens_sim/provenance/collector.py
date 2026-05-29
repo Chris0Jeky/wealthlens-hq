@@ -6,6 +6,8 @@ and central to the public API.
 
 from __future__ import annotations
 
+from typing import Any
+
 from wealthlens_sim.assumptions import AssumptionRegistry
 from wealthlens_sim.assumptions.schema import FlagValue, PointValue, RangeValue, ScheduleValue
 from wealthlens_sim.provenance.manifest import (
@@ -59,15 +61,19 @@ class ProvenanceCollector:
             raise KeyError(msg)
 
         vd = assumption.value_or_distribution
-        resolved: float | int | bool | dict[str, float | int]
+        resolved: float | int | bool | dict[str, Any] | list[Any]
         if isinstance(vd, PointValue):
             resolved = vd.value
         elif isinstance(vd, RangeValue):
             resolved = vd.central
         elif isinstance(vd, ScheduleValue):
-            resolved = dict(vd.model_extra)
+            # Preserve the full schedule payload faithfully — whether it is a
+            # nested rate map (e.g. {"rates": {...}}), a band list, or flat
+            # numeric keys. Never silently drop entries: a provenance manifest
+            # must record exactly what was consumed.
+            resolved = dict(vd.model_extra or {})
         elif isinstance(vd, FlagValue):
-            resolved = bool(vd.value)
+            resolved = bool(vd.value)  # explicit bool to prevent int leakage
         else:
             msg = f"Unknown value_or_distribution type: {type(vd)}"
             raise TypeError(msg)

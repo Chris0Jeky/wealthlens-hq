@@ -8,8 +8,9 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from enum import StrEnum
+from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictInt
 
 from wealthlens_sim.schema.base import VersionTag
 
@@ -38,7 +39,9 @@ class ResolvedAssumption(BaseModel):
 
     assumption_id: str
     domain: str
-    resolved_value: float | int | bool | dict[str, float | int]
+    # Scalars keep strict typing (no bool<->int leakage); schedules are
+    # recorded faithfully as their full nested/band/flat payload.
+    resolved_value: float | StrictInt | StrictBool | dict[str, Any] | list[Any]
     source: str
 
 
