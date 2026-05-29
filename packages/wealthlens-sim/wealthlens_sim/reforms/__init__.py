@@ -53,15 +53,27 @@ from wealthlens_sim.reforms.e_property_tax import (
     compute_aggregate_hvcts_revenue,
     compute_hvcts,
 )
+from wealthlens_sim.reforms.f_enforcement import (
+    AggregateEnforcementRevenue,
+    ComplianceRate,
+    EnforcementConfig,
+    EnforcementResult,
+    TaxFamily,
+    compute_enforcement_uplift,
+)
 
 __all__ = [
     "AggregateCGTRevenue",
+    "AggregateEnforcementRevenue",
     "AggregateHVCTSRevenue",
     "AggregateIHTRevenue",
     "AggregateOneOffRevenue",
     "AggregateRevenue",
     "CGTConfig",
     "CGTResult",
+    "ComplianceRate",
+    "EnforcementConfig",
+    "EnforcementResult",
     "HVCTSBand",
     "HVCTSConfig",
     "HVCTSResult",
@@ -74,6 +86,7 @@ __all__ = [
     "OneOffLevyResult",
     "PersonIHTFlags",
     "RateBand",
+    "TaxFamily",
     "TaxUnit",
     "TaxpayerType",
     "WealthTaxConfig",
@@ -83,6 +96,7 @@ __all__ = [
     "compute_aggregate_iht_revenue",
     "compute_aggregate_one_off_revenue",
     "compute_aggregate_revenue",
+    "compute_enforcement_uplift",
     "compute_household_cgt",
     "compute_household_iht",
     "compute_hvcts",
