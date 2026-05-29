@@ -70,6 +70,17 @@ Worktrees + subagents where efficient. 2 independent adversarial reviews per *ne
 workaround = push to a fresh `-v2` branch (plain push), open new PR, close old.
 Used for #320 (was #309), #321 (was #304), #322 (was #310).
 
+### 2026-05-29 cycle COMPLETE — all 38 PRs resolved
+- All sim + fix PRs merged to main (#284–#323). 0 open PRs. 523 sim tests pass.
+- Fix PRs landed as v2 branches: #320 (was #309), #321 (was #304), #322 (was #310);
+  each got 2 fresh adversarial reviews; all findings (incl. nits) addressed.
+- CI gap closed: ci-sim.yml runs ruff+mypy+pytest on py3.11/3.12 + weekly (#323).
+- 21 merged feature/fix branches deleted from origin. `feat/baselines-loader` left
+  (unmerged orphan — investigate/delete later).
+- NEW backlog: #12 (registry packaging, LOW), #13 (IHT charitable/RNRB v0.1, MED),
+  #14 (3 Dependabot npm alerts via @lhci/cli, dev-only, low real-risk).
+- NEXT: Wave 12 (engine/ + synth/) per active-sprint, or IHT data-integrity fix (#13).
+
 ## 2026-05-23 New Cycle: Blueprint Foundation
 
 Starting a new autonomous development cycle. The `resources/` directory contains a comprehensive Blueprint v5 and strategic plan that haven't been actioned. This cycle implements foundational infrastructure for the WealthLens-Sim microsimulation platform.
