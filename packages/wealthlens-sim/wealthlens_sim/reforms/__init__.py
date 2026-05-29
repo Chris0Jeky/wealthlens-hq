@@ -61,6 +61,12 @@ from wealthlens_sim.reforms.f_enforcement import (
     TaxFamily,
     compute_enforcement_uplift,
 )
+from wealthlens_sim.reforms.g_devolution import (
+    DevolutionConfig,
+    DevolutionSplit,
+    NationScope,
+    split_households_by_scope,
+)
 
 __all__ = [
     "AggregateCGTRevenue",
@@ -72,6 +78,8 @@ __all__ = [
     "CGTConfig",
     "CGTResult",
     "ComplianceRate",
+    "DevolutionConfig",
+    "DevolutionSplit",
     "EnforcementConfig",
     "EnforcementResult",
     "HVCTSBand",
@@ -82,6 +90,7 @@ __all__ = [
     "IHTConfig",
     "IHTResult",
     "LevyRateBand",
+    "NationScope",
     "OneOffLevyConfig",
     "OneOffLevyResult",
     "PersonIHTFlags",
@@ -102,5 +111,6 @@ __all__ = [
     "compute_hvcts",
     "compute_one_off_levy",
     "compute_wealth_tax",
+    "split_households_by_scope",
     "taxable_wealth_for_person",
 ]
