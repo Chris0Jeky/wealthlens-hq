@@ -107,6 +107,16 @@ class SyntheticPopulation(BaseModel):
     households: list[Household]
     seed: int
     is_synthetic: bool = Field(default=True, description="Always True — never real microdata")
+    provenance_ids: list[str] = Field(
+        default_factory=list,
+        description="Assumption/source IDs consumed to build this population; the engine "
+        "feeds these into its provenance manifest (empty until calibration is wired).",
+    )
+
+    @property
+    def weights(self) -> list[float]:
+        """Per-household grossing weights (weights live on each Household.weight)."""
+        return [h.weight for h in self.households]
 
     @property
     def total_net_wealth(self) -> float:
@@ -120,6 +130,10 @@ def _draw_net_wealth(rng: np.random.Generator, config: SynthConfig) -> np.ndarra
     wealth = rng.lognormal(mean=mu, sigma=config.lognormal_sigma, size=config.n_households)
     # Reshape the upper tail to follow Pareto(alpha) so it matches the top-tail model
     # rather than the (too-thin) lognormal tail.
+    # Only the draws that already landed above the threshold are reshaped, so the
+    # tail *count* (mass) is the lognormal-implied P(X>=threshold) — it is NOT an
+    # independent mixing weight. Tuning the tail share to a target (e.g. top-1%)
+    # means jointly solving median/sigma/threshold. Documented for calibrators.
     tail_mask = wealth >= config.pareto_threshold
     n_tail = int(tail_mask.sum())
     if n_tail:
@@ -138,10 +152,15 @@ def _assign_by_share(rng: np.random.Generator, shares: dict[str, float], size: i
 
 
 def _make_assets(person_wealth: float, asset_shares: dict[str, float]) -> list[Asset]:
-    """Split a person's net wealth across asset types (gross=net, no debt in v0.1)."""
+    """Split a person's net wealth across asset types (gross=net, no debt in v0.1).
+
+    Shares are normalised so the assets sum to exactly ``person_wealth`` even if
+    the configured shares sum to slightly off 1.0 (within the validator tolerance).
+    """
+    total_share = sum(asset_shares.values()) or 1.0
     assets: list[Asset] = []
     for asset_type, share in asset_shares.items():
-        value = person_wealth * share
+        value = person_wealth * (share / total_share)
         if value <= 0:
             continue
         assets.append(
@@ -181,7 +200,7 @@ def generate_population(config: SynthConfig | None = None) -> SyntheticPopulatio
     wealth = _draw_net_wealth(rng, config)
     nations = _assign_by_share(rng, config.nation_shares, n)
     is_couple = rng.random(n) < config.couple_share
-    # Couples split wealth ~60/40; ages drawn from a plausible adult range.
+    # Couples split wealth 60/40 (fixed); ages drawn from a plausible adult range.
     ages = rng.integers(18, 90, size=n)
     partner_ages = rng.integers(18, 90, size=n)
     grossing_weight = config.population_households / n

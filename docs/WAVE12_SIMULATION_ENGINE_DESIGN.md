@@ -96,15 +96,20 @@ class EngineResult(BaseModel):
 # engine/__init__.py
 def run_scenario(population, scenario, *, registries=None) -> EngineResult: ...
 
-# synth/population.py
+# synth/population.py  (as implemented in PR1)
 class SyntheticPopulation(BaseModel):
-    households: list[Household]
-    weights: list[float]
+    households: list[Household]   # grossing weight lives on each Household.weight
     seed: int
+    is_synthetic: bool = True
+    provenance_ids: list[str] = []   # seam for the engine's provenance manifest
+    # .weights property returns [h.weight for h in households]
 ```
 
-Population source is a `Protocol` so a future real-microdata provider can drop in
-without changing the engine.
+**Weights** live on `Household.weight` (a first-class schema field), not a parallel
+list — more flexible and co-located with the data the engine consumes; a
+`weights` convenience property is provided. The **population-source `Protocol`**
+(so a future real-microdata provider can drop in) is introduced in the engine PR
+that consumes it, not in `synth/`.
 
 ## 6. Build sequence (stacked PRs, each with 2 adversarial reviews + ci-sim)
 

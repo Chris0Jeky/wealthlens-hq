@@ -91,6 +91,23 @@ class TestGeneratePopulation:
         pop = generate_population(_small())
         assert pop.total_net_wealth > 0
 
+    def test_weights_property_matches_household_weights(self):
+        pop = generate_population(_small())
+        assert pop.weights == [h.weight for h in pop.households]
+        assert all(w > 0 for w in pop.weights)
+
+    def test_provenance_ids_seam_present(self):
+        pop = generate_population(_small())
+        assert pop.provenance_ids == []  # empty until calibration sources are wired
+
+    def test_asset_shares_are_normalised(self):
+        # Same seed ⇒ identical drawn wealth (asset_shares don't affect the draw).
+        # With normalisation, proportional shares that sum to 1.00 vs 0.99 must
+        # yield identical household wealth; without it they'd differ by ~1%.
+        a = generate_population(_small(asset_shares={"financial": 0.5, "main_residence": 0.5}))
+        b = generate_population(_small(asset_shares={"financial": 0.495, "main_residence": 0.495}))
+        assert a.households[0].total_net_wealth == pytest.approx(b.households[0].total_net_wealth)
+
     def test_households_are_valid_engine_inputs(self):
         """Smoke test: synthetic households are consumable by a policy-family calculator."""
         from wealthlens_sim.reforms.d_iht_reform import IHTConfig, compute_household_iht
