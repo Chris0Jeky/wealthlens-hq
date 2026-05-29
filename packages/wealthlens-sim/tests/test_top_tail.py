@@ -450,3 +450,40 @@ class TestRunAllVariants:
                 assert r1[v].pareto_fit.alpha.central == r2[v].pareto_fit.alpha.central
             else:
                 assert r1[v].wealth_shares.top_1_pct.central == r2[v].wealth_shares.top_1_pct.central
+
+
+class TestSafetyGuards:
+    """Regression tests for top-tail robustness fixes (adversarial review findings)."""
+
+    def test_macro_scale_returns_float_for_int_input(self):
+        """Integer wealth (whole pounds) must not silently truncate when scaled."""
+        from wealthlens_sim.top_tail.variants import _apply_macro_scale
+
+        wealth = np.array([1_000_000, 2_000_000, 3_000_000], dtype=np.int64)
+        scaled = _apply_macro_scale(wealth, 1.08)
+        assert np.issubdtype(scaled.dtype, np.floating)
+        np.testing.assert_allclose(scaled, [1_080_000.0, 2_160_000.0, 3_240_000.0])
+
+    def test_run_variant_accepts_int_wealth(self):
+        """run_variant must coerce integer input to float and run without truncation."""
+        int_data = _make_pareto_sample(alpha=1.5, n=500, threshold=1_000_000).astype(np.int64)
+        cfg = VariantConfig(
+            variant=BaselineVariant.MACRO_RECONCILED,
+            threshold=1_000_000,
+            n_bootstrap=50,
+            macro_scale_factor=1.08,
+        )
+        est = run_variant(int_data, cfg, rng=np.random.default_rng(1))
+        assert est.total_wealth_imputed.central > 0
+
+    def test_variant_config_rejects_ci_out_of_range(self):
+        for bad_ci in (1.5, 0.0, 1.0, -0.1):
+            with pytest.raises(ValueError, match="ci confidence"):
+                VariantConfig(
+                    variant=BaselineVariant.PARETO_CORRECTED, threshold=1_000_000, ci=bad_ci
+                )
+
+    def test_bootstrap_alpha_rejects_ci_out_of_range(self):
+        data = _make_pareto_sample(alpha=1.5, n=500, threshold=1_000_000)
+        with pytest.raises(ValueError, match="ci confidence"):
+            bootstrap_alpha(data, 1_000_000, ci=1.5, rng=np.random.default_rng(1))

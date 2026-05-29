@@ -53,6 +53,10 @@ def bootstrap_alpha(
     if rng is None:
         rng = np.random.default_rng()
 
+    if not 0 < ci < 1:
+        msg = f"ci confidence level must be in (0, 1), got {ci}"
+        raise ValueError(msg)
+
     tail = wealth[wealth >= threshold]
     n = len(tail)
     if n < 2:

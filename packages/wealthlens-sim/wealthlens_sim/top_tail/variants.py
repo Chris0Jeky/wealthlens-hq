@@ -42,6 +42,9 @@ class VariantConfig:
         if self.richlist_visibility <= 0:
             msg = f"richlist_visibility must be > 0, got {self.richlist_visibility}"
             raise ValueError(msg)
+        if not 0 < self.ci < 1:
+            msg = f"ci confidence level must be in (0, 1), got {self.ci}"
+            raise ValueError(msg)
 
 
 DEFAULT_CONFIGS = {
@@ -106,8 +109,11 @@ def _apply_macro_scale(
 
     Threshold is intentionally held fixed so scaled observations cross it,
     changing n_tail and producing a distinct alpha estimate.
+
+    Returns a float array: scaling is intentionally NOT cast back to the input
+    dtype, since an integer input would silently truncate fractional pounds.
     """
-    return (wealth * scale_factor).astype(wealth.dtype)
+    return wealth * scale_factor
 
 
 def _compute_total_wealth_interval(
@@ -143,6 +149,9 @@ def run_variant(
     rng: np.random.Generator | None = None,
 ) -> TailEstimate:
     """Run a single top-tail variant and return its estimate."""
+    # Coerce to float64 so integer wealth inputs (whole pounds) are not silently
+    # truncated by the in-place scaling/division in the variant transforms.
+    wealth = np.asarray(wealth, dtype=np.float64)
     adjusted = wealth.copy()
 
     if config.variant == BaselineVariant.HIDDEN_WEALTH_SENSITIVITY:
@@ -204,6 +213,7 @@ def run_all_variants(
     seed: int = 42,
 ) -> dict[BaselineVariant, TailEstimate]:
     """Run all five baseline variants and return results keyed by variant."""
+    wealth = np.asarray(wealth, dtype=np.float64)
     if configs is None:
         configs = DEFAULT_CONFIGS
 
