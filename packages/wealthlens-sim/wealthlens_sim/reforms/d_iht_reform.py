@@ -83,9 +83,12 @@ PENSION_TYPES: frozenset[AssetType] = frozenset({
 class PersonIHTFlags(TypedDict, total=False):
     """Per-person metadata for IHT computation.
 
-    Charitable fraction is the fraction of the *baseline* estate (before
-    NRB/RNRB/reliefs) left to charity. The caller must compute this
-    externally — the IHT module has no gift/bequest model in v0.1.
+    charitable_fraction is the fraction of the *gross* estate left to charity
+    (clamped to [0, 1]). The donation is deducted from the chargeable estate;
+    the 36% reduced rate additionally applies at/above the 10% threshold. v0.1
+    simplification: the donation base is the gross estate and the threshold test
+    uses the gross estate, not the post-relief/NRB "baseline amount" of UK law.
+    The caller computes the fraction externally — no gift/bequest model in v0.1.
     """
 
     is_married: bool
@@ -285,8 +288,9 @@ def _compute_person_iht(
     apr_bpr_relief = _compute_apr_bpr_relief(apr_bpr_qualifying, config)
     # Charitable gifts are IHT-exempt: the donated amount leaves the chargeable
     # estate before nil-rate bands are applied (separate from the 36% reduced
-    # rate, which additionally requires the 10% threshold below).
-    charitable_donation = max(0.0, charitable_fraction) * estate_value
+    # rate, which additionally requires the 10% threshold below). The fraction is
+    # clamped to [0, 1] so a malformed >1 input cannot over-deduct the estate.
+    charitable_donation = min(1.0, max(0.0, charitable_fraction)) * estate_value
     estate_after_relief = max(0.0, estate_value - apr_bpr_relief - charitable_donation)
 
     rnrb = _compute_rnrb(
