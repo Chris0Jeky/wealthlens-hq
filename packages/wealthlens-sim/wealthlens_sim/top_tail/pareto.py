@@ -53,6 +53,10 @@ def bootstrap_alpha(
     if rng is None:
         rng = np.random.default_rng()
 
+    if not 0 < ci < 1:
+        msg = f"ci confidence level must be in (0, 1), got {ci}"
+        raise ValueError(msg)
+
     tail = wealth[wealth >= threshold]
     n = len(tail)
     if n < 2:
@@ -154,7 +158,7 @@ def empirical_wealth_shares(
     result: dict[str, float] = {}
     for label, frac in [("top_10_pct", 0.10), ("top_1_pct", 0.01), ("top_01_pct", 0.001)]:
         k = max(1, int(np.ceil(n * frac)))
-        result[label] = float(np.sum(sorted_w[:k]) / total)
+        result[label] = min(1.0, max(0.0, float(np.sum(sorted_w[:k]) / total)))
     return result
 
 
@@ -166,7 +170,7 @@ def compute_wealth_shares(alpha: Interval) -> dict[str, Interval]:
     fractions = {"top_10_pct": 0.10, "top_1_pct": 0.01, "top_01_pct": 0.001}
     result: dict[str, Interval] = {}
     for label, p in fractions.items():
-        shares = [pareto_wealth_share(a, p) for a in (alpha.low, alpha.central, alpha.high)]
+        shares = [min(1.0, max(0.0, pareto_wealth_share(a, p))) for a in (alpha.low, alpha.central, alpha.high)]
         shares.sort()
         result[label] = Interval(
             low=shares[0],

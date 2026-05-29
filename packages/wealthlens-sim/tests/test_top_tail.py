@@ -274,6 +274,51 @@ class TestTypes:
             })
 
 
+class TestVariantConfigValidation:
+    def test_zero_visibility_raises(self):
+        """richlist_visibility=0.0 would cause division-by-zero; must reject."""
+        with pytest.raises(ValueError, match="richlist_visibility must be > 0"):
+            VariantConfig(
+                variant=BaselineVariant.RICH_LIST_AUGMENTED,
+                threshold=2_000_000,
+                richlist_visibility=0.0,
+            )
+
+    def test_negative_visibility_raises(self):
+        """Negative visibility is also nonsensical; must reject."""
+        with pytest.raises(ValueError, match="richlist_visibility must be > 0"):
+            VariantConfig(
+                variant=BaselineVariant.RICH_LIST_AUGMENTED,
+                threshold=2_000_000,
+                richlist_visibility=-0.5,
+            )
+
+    def test_valid_visibility_accepted(self):
+        """richlist_visibility=0.85 is a normal value and must work."""
+        config = VariantConfig(
+            variant=BaselineVariant.RICH_LIST_AUGMENTED,
+            threshold=2_000_000,
+            richlist_visibility=0.85,
+        )
+        assert config.richlist_visibility == 0.85
+
+
+class TestNegativeWealthShares:
+    def test_empirical_shares_clamped_with_negative_wealth(self):
+        """Negative net-wealth values must not produce shares > 1.0."""
+        wealth = np.array([100.0, -10.0])
+        shares = empirical_wealth_shares(wealth)
+        for label in ("top_10_pct", "top_1_pct", "top_01_pct"):
+            assert 0.0 <= shares[label] <= 1.0, f"{label} out of [0, 1]: {shares[label]}"
+
+    def test_empirical_shares_dominated_by_negative(self):
+        """When total is tiny due to negatives, shares stay in [0, 1]."""
+        wealth = np.array([1000.0, -999.0])
+        shares = empirical_wealth_shares(wealth)
+        for label in ("top_10_pct", "top_1_pct", "top_01_pct"):
+            assert 0.0 <= shares[label] <= 1.0, f"{label} out of [0, 1]: {shares[label]}"
+
+
 class TestRunVariant:
     def test_pareto_corrected_variant(self):
         data = _make_pareto_sample(alpha=1.5, n=2000)
@@ -405,3 +450,53 @@ class TestRunAllVariants:
                 assert r1[v].pareto_fit.alpha.central == r2[v].pareto_fit.alpha.central
             else:
                 assert r1[v].wealth_shares.top_1_pct.central == r2[v].wealth_shares.top_1_pct.central
+
+
+class TestSafetyGuards:
+    """Regression tests for top-tail robustness fixes (adversarial review findings)."""
+
+    def test_macro_scale_returns_float_for_int_input(self):
+        """Integer wealth (whole pounds) must not silently truncate when scaled."""
+        from wealthlens_sim.top_tail.variants import _apply_macro_scale
+
+        wealth = np.array([1_000_000, 2_000_000, 3_000_000], dtype=np.int64)
+        scaled = _apply_macro_scale(wealth, 1.08)
+        assert np.issubdtype(scaled.dtype, np.floating)
+        np.testing.assert_allclose(scaled, [1_080_000.0, 2_160_000.0, 3_240_000.0])
+
+    def test_run_variant_accepts_int_wealth(self):
+        """Integer input must yield the SAME result as the equivalent float input.
+
+        Asserting equality (not just > 0) is what actually guards the truncation
+        bug: on the unfixed code the macro-scale int run loses fractional pounds
+        and diverges from the float run.
+        """
+        int_data = _make_pareto_sample(alpha=1.5, n=500, threshold=1_000_000).astype(np.int64)
+        cfg = VariantConfig(
+            variant=BaselineVariant.MACRO_RECONCILED,
+            threshold=1_000_000,
+            n_bootstrap=50,
+            macro_scale_factor=1.08,
+        )
+        int_est = run_variant(int_data, cfg, rng=np.random.default_rng(1))
+        # Same values, but already float on input: any divergence is truncation
+        # happening inside the transform, which is exactly what the fix prevents.
+        float_ref = run_variant(int_data.astype(np.float64), cfg, rng=np.random.default_rng(1))
+        assert int_est.total_wealth_imputed.central == pytest.approx(
+            float_ref.total_wealth_imputed.central
+        )
+        assert int_est.wealth_shares.top_1_pct.central == pytest.approx(
+            float_ref.wealth_shares.top_1_pct.central
+        )
+
+    def test_variant_config_rejects_ci_out_of_range(self):
+        for bad_ci in (1.5, 0.0, 1.0, -0.1):
+            with pytest.raises(ValueError, match="ci confidence"):
+                VariantConfig(
+                    variant=BaselineVariant.PARETO_CORRECTED, threshold=1_000_000, ci=bad_ci
+                )
+
+    def test_bootstrap_alpha_rejects_ci_out_of_range(self):
+        data = _make_pareto_sample(alpha=1.5, n=500, threshold=1_000_000)
+        with pytest.raises(ValueError, match="ci confidence"):
+            bootstrap_alpha(data, 1_000_000, ci=1.5, rng=np.random.default_rng(1))
