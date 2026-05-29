@@ -239,11 +239,11 @@ class TestLoader:
         with pytest.raises(FileNotFoundError):
             load_assumptions(tmp_path / "nonexistent.yml")
 
-    def test_load_empty_file(self, tmp_path: Path):
+    def test_load_empty_file_raises(self, tmp_path: Path):
         p = tmp_path / "empty.yml"
         p.write_text("", encoding="utf-8")
-        reg = load_assumptions(p)
-        assert len(reg.assumptions) == 0
+        with pytest.raises(ValueError, match="empty or contains only comments"):
+            load_assumptions(p)
 
     def test_load_invalid_schema_raises(self, tmp_path: Path):
         data = {"assumptions": [{"assumption_id": "bad", "domain": "test"}]}
@@ -251,3 +251,81 @@ class TestLoader:
         p.write_text(yaml.dump(data), encoding="utf-8")
         with pytest.raises(ValidationError):
             load_assumptions(p)
+
+    def test_load_comment_only_file_raises(self, tmp_path: Path):
+        p = tmp_path / "comments.yml"
+        p.write_text("# just a comment\n", encoding="utf-8")
+        with pytest.raises(ValueError, match="empty or contains only comments"):
+            load_assumptions(p)
+
+    def test_load_with_explicit_path(self, tmp_path: Path):
+        """Explicit path bypasses registry discovery -- no parents[4] dependency."""
+        data = {"assumptions": [POINT_ENTRY]}
+        p = tmp_path / "custom" / "assumptions.yml"
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(yaml.dump(data, default_flow_style=False), encoding="utf-8")
+        reg = load_assumptions(p)
+        assert len(reg.assumptions) == 1
+        assert reg.assumptions[0].assumption_id == POINT_ENTRY["assumption_id"]
+
+
+class TestScheduleValueValidation:
+    """Tests for ScheduleValue extra-field type validation."""
+
+    def test_schedule_accepts_numeric_extra(self):
+        entry = {**SCHEDULE_ENTRY, "value_or_distribution": {"type": "schedule", "rate": 0.18}}
+        a = Assumption.model_validate(entry)
+        assert isinstance(a.value_or_distribution, ScheduleValue)
+
+    def test_schedule_accepts_string_extra(self):
+        entry = {
+            **SCHEDULE_ENTRY,
+            "value_or_distribution": {"type": "schedule", "boundary_convention": "lower", "rate": 0.18},
+        }
+        a = Assumption.model_validate(entry)
+        assert isinstance(a.value_or_distribution, ScheduleValue)
+
+    def test_schedule_accepts_dict_extra(self):
+        entry = {
+            **SCHEDULE_ENTRY,
+            "value_or_distribution": {"type": "schedule", "rates": {"basic_rate": 18, "higher_rate": 24}},
+        }
+        a = Assumption.model_validate(entry)
+        assert isinstance(a.value_or_distribution, ScheduleValue)
+
+    def test_schedule_accepts_band_list(self):
+        entry = {
+            **SCHEDULE_ENTRY,
+            "value_or_distribution": {
+                "type": "schedule",
+                "bands": [
+                    {"threshold": 0, "rate": 0.0},
+                    {"threshold": 12570, "rate": 0.20},
+                    {"threshold": 50270, "rate": 0.40},
+                ],
+            },
+        }
+        a = Assumption.model_validate(entry)
+        assert isinstance(a.value_or_distribution, ScheduleValue)
+
+    def test_schedule_rejects_non_dict_band_list(self):
+        entry = {
+            **SCHEDULE_ENTRY,
+            "value_or_distribution": {
+                "type": "schedule",
+                "bands": [42, 99],
+            },
+        }
+        with pytest.raises(ValidationError, match="band entries must be dicts"):
+            Assumption.model_validate(entry)
+
+    def test_schedule_rejects_unsupported_type(self):
+        entry = {
+            **SCHEDULE_ENTRY,
+            "value_or_distribution": {
+                "type": "schedule",
+                "bad_field": (1, 2, 3),
+            },
+        }
+        with pytest.raises(ValidationError, match="unsupported type"):
+            Assumption.model_validate(entry)

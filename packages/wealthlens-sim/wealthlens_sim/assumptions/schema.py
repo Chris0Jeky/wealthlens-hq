@@ -56,9 +56,25 @@ class ScheduleValue(BaseModel):
     type: Literal["schedule"]
 
     @model_validator(mode="after")
-    def _not_empty(self) -> ScheduleValue:
+    def _validate_extra_values(self) -> ScheduleValue:
         if not self.model_extra:
             msg = "Schedule must contain at least one rate/band field"
+            raise ValueError(msg)
+        for key, val in self.model_extra.items():
+            if isinstance(val, (int, float)):
+                continue
+            if isinstance(val, str):
+                continue  # boundary_convention etc.
+            if isinstance(val, list):
+                # Band schedules: list of dicts with numeric values
+                for item in val:
+                    if not isinstance(item, dict):
+                        msg = f"Schedule band entries must be dicts, got {type(item).__name__} in '{key}'"
+                        raise ValueError(msg)
+                continue
+            if isinstance(val, dict):
+                continue  # nested rate maps like {"basic_rate": 18, "higher_rate": 24}
+            msg = f"Schedule field '{key}' has unsupported type {type(val).__name__}"
             raise ValueError(msg)
         return self
 
