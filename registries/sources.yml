@@ -1,8 +1,150 @@
 # WealthLens Source Registry
 # Machine-readable catalogue of all data sources
-# Schema: id, name, url, access_date, format, licence, update_pattern, notes
+# Schema: id, name, url, access_date, format, licence, update_pattern, pipeline, notes
 #
 # Every dataset cited in a WealthLens output must have a corresponding entry.
 # Populated from existing data pipelines in automation/data-pipelines/.
 
-sources: []  # see Stream 47 for population from existing 10 pipelines
+sources:
+  - id: boe-bank-rate-cpi
+    name: Bank of England Bank Rate and CPI
+    url: https://www.bankofengland.co.uk/boeapps/database/_iadb-fromshowcolumns.asp
+    access_date: "2026-05-16"
+    format: csv
+    licence: OGL-3.0
+    update_pattern: monthly
+    pipeline: fetch_boe_rates.py
+    notes: >
+      Series IUDBEDR (Bank Rate) and D7BT (CPI annual rate via ONS).
+      Pipeline includes hardcoded fallback if IADB endpoint is unavailable.
+
+  - id: dwp-child-poverty
+    name: DWP/HMRC Children in Low Income Families
+    url: https://www.gov.uk/government/statistics/children-in-low-income-families-local-area-statistics-2014-to-2023
+    access_date: "2026-05-16"
+    format: xlsx
+    licence: OGL-3.0
+    update_pattern: annual
+    pipeline: fetch_child_poverty.py
+    notes: >
+      Percentage of children in relative low income after housing costs by
+      UK region. Currently uses hardcoded 2022/23 figures; spreadsheet URL
+      changes with each annual release.
+
+  - id: resolution-generational-wealth
+    name: Resolution Foundation Intergenerational Audit
+    url: https://www.resolutionfoundation.org/publications/
+    access_date: "2026-05-16"
+    format: report
+    licence: open-publication
+    update_pattern: annual
+    pipeline: fetch_generational_wealth.py
+    notes: >
+      Median total household wealth by generation (Baby Boomers, Gen X,
+      Millennials) at ages 30, 40, 50, 60 in 2022 real-term GBP. Supplemented
+      by ONS Wealth and Assets Survey wave data.
+
+  - id: hmrc-cgt-statistics
+    name: HMRC Capital Gains Tax Statistics
+    url: https://assets.publishing.service.gov.uk/media/6878ac562bad77c3dae4dcef/Table_2_2025_Size_of_gain.ods
+    access_date: "2026-05-16"
+    format: ods
+    licence: OGL-3.0
+    update_pattern: annual
+    pipeline: fetch_hmrc_stats.py
+    notes: >
+      Distribution of capital gains by size of gain band. Shows concentration
+      among top taxpayers. Also fetches Table 1 (taxpayer counts, total gains,
+      tax liabilities). 2025 edition.
+
+  - id: ons-gdhi
+    name: ONS Regional Gross Disposable Household Income
+    url: https://www.ons.gov.uk/file?uri=/economy/regionalaccounts/grossdisposablehouseholdincome/datasets/regionalgrossdisposablehouseholdincomegdhi/1997to2023/regionalgrossdisposablehouseholdincomeallitlregions2023.xlsx
+    access_date: "2026-05-16"
+    format: xlsx
+    licence: OGL-3.0
+    update_pattern: annual
+    pipeline: fetch_ons_gdhi.py
+    notes: >
+      GDHI per head at current prices by ITL3 region. Most recent edition
+      covers 1997-2023. Ranges from Westminster (£79,500) to Blackpool
+      (£14,200). Fallback URL available for 1997-2022 edition.
+
+  - id: ons-housing-affordability
+    name: ONS Housing Affordability in England and Wales
+    url: https://www.ons.gov.uk/file?uri=/peoplepopulationandcommunity/housing/datasets/ratioofhousepricetoworkplacebasedearningslowerquartileandmedian/current/aff1ratioofhousepricetoworkplacebasedearnings.xlsx
+    access_date: "2026-05-16"
+    format: xlsx
+    licence: OGL-3.0
+    update_pattern: annual
+    pipeline: fetch_ons_housing.py
+    notes: >
+      Median house price to workplace-based earnings ratio by region.
+      Covers 1997 onwards. Sheet 1c contains median affordability ratios.
+
+  - id: ons-was-wealth
+    name: ONS Wealth and Assets Survey (WAS)
+    url: https://www.ons.gov.uk/file?uri=/peoplepopulationandcommunity/personalandhouseholdfinances/incomeandwealth/datasets/totalwealthwealthingreatbritain/july2006tojune2016andapril2014tomarch2022/totalwealthtables.xlsx
+    access_date: "2026-05-16"
+    format: xlsx
+    licence: OGL-3.0
+    update_pattern: multi-year-wave
+    pipeline: fetch_ons_wealth.py
+    notes: >
+      Total net wealth by decile (Table 2.2). January 2025 edition.
+      CAVEAT: WAS lost accredited official statistics status June 2025;
+      response rate declined to 41%; December 2024 DB pension methodology
+      change reduced measured wealth by ~£2.3tn.
+
+  - id: ons-productivity-pay
+    name: ONS Labour Productivity and Average Weekly Earnings
+    url: https://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/labourproductivity/timeseries/lzvd/prdy/data
+    access_date: "2026-05-16"
+    format: json
+    licence: OGL-3.0
+    update_pattern: annual
+    pipeline: fetch_productivity_pay.py
+    notes: >
+      Productivity (LZVD output per hour) vs real pay (KAB9 AWE deflated
+      by L55O CPIH). Both indices normalised to 100 in base year 1997.
+      Three ONS time-series endpoints.
+
+  - id: hmrc-tax-receipts
+    name: HMRC Tax and NIC Receipts
+    url: https://assets.publishing.service.gov.uk/media/67eaee6093e0a7b9eb1e7ae2/HMRC_Tax_and_NIC_Receipts_Monthly_and_Annual_Apr25.xlsx
+    access_date: "2026-05-16"
+    format: xlsx
+    licence: OGL-3.0
+    update_pattern: annual
+    pipeline: fetch_tax_composition.py
+    notes: >
+      Annual tax receipts by type. Used to compare work taxes (Income Tax +
+      NICs) vs wealth taxes (CGT + IHT + SDLT). April 2025 edition.
+      Multi-year data from 2018-19 to 2023-24.
+
+  - id: ons-ashe-wages
+    name: ONS Annual Survey of Hours and Earnings (ASHE)
+    url: https://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/earningsandworkinghours/datasets/ashe1702
+    access_date: "2026-05-16"
+    format: xlsx
+    licence: OGL-3.0
+    update_pattern: annual
+    pipeline: fetch_wage_stagnation.py
+    notes: >
+      UK median real weekly earnings (2000-2024) in 2024 CPI-adjusted prices.
+      Shows wage stagnation post-2008: 2008 peak £520/week, 2024 £504/week.
+      Currently uses hardcoded figures from ASHE Table 1.
+
+  - id: wid-wealth-shares
+    name: World Inequality Database (WID.world)
+    url: https://wid.world/
+    api_url: https://rfap9nitz6.execute-api.eu-west-1.amazonaws.com/prod
+    access_date: "2026-05-16"
+    format: json
+    licence: CC-BY
+    update_pattern: periodic
+    pipeline: fetch_wid_data.py
+    notes: >
+      Top 1% and top 10% share of net personal wealth in Great Britain.
+      Variables: shweal_p99p100_992_j (top 1%), shweal_p90p100_992_j
+      (top 10%). Equal-split adults basis. Historical data from 1820+.
