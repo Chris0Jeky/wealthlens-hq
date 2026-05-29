@@ -5,7 +5,43 @@
 >
 > **CRITICAL**: Update this file BEFORE every compaction risk (long tool calls, large diffs).
 
-Last updated: 2026-05-24T03:15Z
+Last updated: 2026-05-29
+
+## 2026-05-29 New Cycle: MERGE + ADVANCE (policy shift)
+
+**DIRECTIVE CHANGE (user, 2026-05-29):** The prior "Never merge — leave all PRs
+open" rule is **superseded**. New standing directive: re-check open PRs (comments
++ reviews, address findings of all importances), then **merge them systematically**
+so work can continue. Endless end-to-end cycle: address findings → merge → seed
+new tasks → repeat. Stacked branches for dependencies. Small incremental commits.
+Worktrees + subagents where efficient. 2 independent adversarial reviews per *new* PR.
+
+### State snapshot (2026-05-29)
+- 38 open PRs. All `MERGEABLE`, 0 failing checks. `main` has **no branch protection**.
+- Deep linear simulator stack (Wave 9 + Wave 11) + 7 `fix/*` PRs (#304–#310, results
+  of prior review rounds, not yet folded in) + Dependabot (#273–#283, #311, #312) +
+  batch #291 + docs (#284, #285).
+- **PR #293 is BROKEN**: head=`main`, base=`feat/sim-schema` (inverted). Real code is
+  on branch `feat/assumption-loader` which has NO open PR. Must close #293 + recreate.
+
+### Merge mechanics (decided)
+- Allowed methods: squash, merge, rebase. Use **merge commits** (`--merge`) to
+  preserve commit SHAs so stacked children stay clean.
+- Use `gh pr merge <n> --merge --delete-branch`: deleting the base branch **auto-retargets
+  child PRs to `main`** — the clean mechanism for the deep stack.
+- Fold each `fix/*` PR INTO its feature branch first (fix → feature), then feature → main.
+- Verify CI green (`gh pr checks`) before each merge even though not enforced.
+
+### Merge train order (bottom-up)
+- M1 docs (base main): #284, #285
+- M2 skeleton: #286 (→ auto-retargets #287,#288,#289,#290,#292 to main)
+- M3 skeleton children: #287; #288(+fix #305); #289(+fix #306); #290(+fix #309); #292(+fix #307)
+- M4 deep chain: assumption-loader(fix #293 + fix #308) → #295(+#304) → #296(+#310) →
+  #297 → #298 → #299 → #300 → #301 → #302 → #303
+- M5 Dependabot: merge batch #291, close superseded #273–#283; then #311, #312
+
+### Progress log (M-train)
+- (none yet — starting)
 
 ## 2026-05-23 New Cycle: Blueprint Foundation
 
