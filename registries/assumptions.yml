@@ -1,5 +1,8 @@
 # WealthLens Assumption Registry
 # Every modelling assumption with source, range, and transferability score
+#
+# NOTE: Use explicit e+ or e- in scientific notation (e.g. 2.3e+12, not 2.3e12).
+# PyYAML (YAML 1.1) may misparse bare-exponent forms as strings.
 # Schema per Blueprint v5 section 7.6:
 #   assumption_id, domain, value_or_distribution, source,
 #   transferability_score (high/medium/low/stress-test-only),
