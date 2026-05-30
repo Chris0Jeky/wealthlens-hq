@@ -66,13 +66,20 @@ def scaled_interval(central: float, scale_low: float, scale_high: float) -> Inte
 def alpha_interval_from_registry(registry: AssumptionRegistry) -> Interval | None:
     """Read the top-tail alpha credible interval from the assumption registry.
 
-    Returns ``None`` if the assumption is absent or not a ``RangeValue`` — in which
-    case the engine falls back to degenerate intervals (uncertainty unquantified).
+    Returns ``None`` only when the assumption is *absent* — the engine then falls
+    back to degenerate intervals (uncertainty unquantified). A present-but-wrong-
+    type assumption (e.g. someone changed the canonical alpha to a ``PointValue``)
+    is a registry *defect*, so it is raised rather than silently downgraded — the
+    caller asked for sourced intervals by naming the registry.
     """
     assumption = registry.get(PARETO_ALPHA_ASSUMPTION_ID)
     if assumption is None:
         return None
     distribution = assumption.value_or_distribution
     if not isinstance(distribution, RangeValue):
-        return None
+        msg = (
+            f"{PARETO_ALPHA_ASSUMPTION_ID} must be a range to drive revenue intervals, "
+            f"got {type(distribution).__name__}"
+        )
+        raise TypeError(msg)
     return Interval(low=distribution.low, central=distribution.central, high=distribution.high)
