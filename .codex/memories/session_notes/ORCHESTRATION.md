@@ -7,6 +7,124 @@
 
 Last updated: 2026-05-30
 
+---
+
+# 🟢 HANDOFF — read this first (2026-05-30, end of engine-stack session)
+
+**You are continuing an endless end-to-end autonomous cycle on the WealthLens-Sim
+microsimulator.** This session built the entire Wave 12 **engine** (synth → rules →
+engine → outputs) as a reviewed PR stack and merged most of it. Below is exactly
+where things stand, where to start, and where to go. (Sections further down are the
+historical per-cycle logs — skim only if you need detail.)
+
+## What the user wants (standing directive)
+Endless cycle: pick the next task → implement in **small incremental commits** →
+**2 independent adversarial reviews per PR** (use `Agent` with
+`pr-review-toolkit:code-reviewer` + `pr-review-toolkit:silent-failure-hunter`, or
+similar, with *different lenses*) → **address ALL findings of every severity** →
+**address ALL bot comments** (gemini-code-assist, chatgpt-codex-connector, copilot)
+→ stacked branches for dependencies → seed new tasks when the queue empties →
+**don't stop**. Pre-existing bugs get fixed too. Use worktrees/subagents when efficient.
+
+**Merge discipline (important):** never merge the *newest* open PR; a PR that is
+~3 PRs back and has 2 reviews + all bot comments addressed + CI green + some elapsed
+time may be merged. Keep a healthy backlog of aging PRs. Merge oldest-first with
+plain `gh pr merge <n> --merge` (preserves SHAs); then `gh pr edit <child> --base main`.
+**Never `--delete-branch` a stacked base** — it closed child PRs in a past cycle
+([[feedback_stacked_merge_delete_branch]]).
+
+## Current state (main)
+- **Full engine is on main** via merged PRs **#329** (engine-core), **#330**
+  (devolution), **#331** (enforcement), **#332** (intervals). **614 sim tests pass.**
+- `engine.simulate(population, scenario, *, registries=None, devolution=None,
+  enforcement=None) -> EngineResult` is the single entry point (named `simulate`,
+  NOT `run_scenario`, to avoid colliding with `rules.run_scenario`).
+- **2 OPEN PRs, both fully reviewed (2 rounds) + all bot comments addressed + CI green:**
+  - **#333** `feat/outputs-dashboard-json` → main — `outputs.to_dashboard_json` +
+    golden files. **This is the oldest open PR → the next merge candidate.** It also
+    carries a 1-line engine fix (adds `enforcement_uplift_bn` to `_OUTPUT_LABELS`).
+  - **#334** `feat/sim-headline-example` → main — `examples.headline_revenue` demo.
+    Newest → hold from merging until something lands above it.
+
+## ▶️ WHERE TO START (next session, in order)
+1. **Recover:** read this file, `00_ACTIVE.md`, `tasks/active-sprint.md`,
+   `tasks/inbox.md`; run `gh pr list --state open` and `gh pr checks 333` / `334`.
+2. **Drain #333** if still green + aged: `gh pr merge 333 --merge`; then nothing to
+   retarget (#334 is independent off main). Pull main, run the sim suite. This puts
+   `outputs.to_dashboard_json` + the `enforcement_uplift_bn` provenance fix on main.
+3. **Then #334** becomes mergeable only once it is no longer the newest — so **open a
+   new Wave 13 PR first**, let #334 age behind it, then drain #334.
+4. **Pick the next Wave 13 task** (see backlog below) and run the full PR cycle on it.
+
+## Wave 13 backlog (also in tasks/inbox.md "Wave 13 candidates")
+Ordered by value/data-integrity:
+- **Calibrate the synth generator to CITED public WAS/ONS marginals.** v0.1 grosses
+  to ~£26–33tn vs real ~£15–16tn, so headline figures are **biased HIGH** (the
+  dashboard `caveats[]` + the example banner already flag this). Cite sources in
+  `registries/sources.yml` (URL + access date) — **do not fabricate stats**. Highest
+  integrity-value item.
+- **Proper enforcement compliance model** (task #7): the Family-F uplift is added on
+  top of *full statutory liability*, so it overstates above the 100%-compliance
+  ceiling. Give families a baseline-vs-theoretical compliance split anchored to
+  HMRC's published tax-gap stats (already cited in `reforms/f_enforcement.py`).
+- **Record synth generative params in provenance** — `population.provenance_ids` is
+  always `[]`; the engine surfaces it (`EngineResult.population_provenance_ids`) and
+  the dashboard emits it, but the synth `pareto_alpha`/seed aren't recorded.
+  NOTE: changing this will require regenerating #333's golden files (`REGEN_GOLDEN=1`).
+- **Monte-Carlo / Sobol uncertainty** (`uncertainty/` stub) — replace the single
+  multiplicative top-tail-α band with per-parameter sampling (SALib/NumPyro).
+- **Wire the dashboard JSON into a Vue scenario page** (mission: make it visible) —
+  ConfidenceFanChart + ProvenanceTooltip + a banner that renders `caveats[]`.
+- Other stubs awaiting work: `reconcile/` (NBS macro reconciliation, Gate 2),
+  `reconstruction/`, real-microdata provider behind the `PopulationSource` Protocol.
+
+## Engine architecture (so you can revise/extend confidently)
+Package: `packages/wealthlens-sim/wealthlens_sim/`. Engine modules:
+- `engine/__init__.py` — `simulate()` orchestrator; `_OUTPUT_LABELS`;
+  `_build_complete_provenance` / `_build_incomplete_provenance`.
+- `engine/result.py` — `EngineResult` (all revenue as `Interval`; fields:
+  total/by_nation/by_decile, `enforcement_uplift_bn`, `households_scored`,
+  `provenance`, `devolution_split`, `population_provenance_ids`,
+  `provenance_complete`); `PopulationSource` Protocol seam; `Registries` bundle.
+  Two validators: 0-or-10 deciles; `households_scored == devolution_split.included_count`.
+- `engine/_attribution.py` — per-household liability dispatch + **equal-weight
+  boundary-split deciles** (conserves revenue for ANY positive weight; raises on
+  n_deciles<=0 / negative / non-positive-total weight).
+- `engine/_enforcement.py` — `tax_family_for` (A/B/E→OTHER, C→CGT, D→IHT) +
+  `compute_engine_enforcement`.
+- `engine/_intervals.py` — top-tail-α → multiplicative revenue band
+  (`α/(α-1)` tail-mean ratio; α from `toptail.pareto_alpha.overall.v1`); raises on
+  malformed alpha; returns None only when absent.
+- `outputs/__init__.py` — `to_dashboard_json` → root `provenance_complete` +
+  `caveats[]` + intervals + flattened provenance. `DASHBOARD_SCHEMA_VERSION="1.1"`.
+- `examples/headline_revenue.py` — runnable demo (`python -m
+  wealthlens_sim.examples.headline_revenue`).
+
+**Key invariants / caveats (don't regress):** `sum(revenue_by_decile) ≈ total -
+enforcement_uplift` at EVERY bound; degenerate intervals + `provenance_complete=False`
+when no registry; enforcement overstatement + unsourced state surfaced via `caveats[]`;
+synthetic data clearly labelled everywhere it's published.
+
+## Ops cheat-sheet (environment gotchas that bit this session)
+- Run from the package dir: `cd C:/Users/jekyt/source/wealthlens-hq/packages/wealthlens-sim`
+  then `python -m pytest -q` · `python -m ruff check wealthlens_sim` ·
+  `python -m ruff format ...` · `python -m mypy wealthlens_sim`. Regenerate goldens:
+  `REGEN_GOLDEN=1 python -m pytest tests/test_outputs.py -q`.
+- **Bash tool cwd resets between calls** — always `cd <abs> && ...`. Backslash paths
+  get mangled; use forward slashes.
+- **`git push --force-with-lease` must be its OWN command** (chained pushes were
+  permission-denied). After editing a stacked base, rebase children up
+  (`git rebase <base>`) and force-push each branch standalone.
+- **CI workflows trigger on PR→main** (`pull_request` to main). A stacked PR whose
+  base is another feature branch shows **"no checks reported"** until you
+  `gh pr edit <n> --base main` AND a push/synchronize fires. ci-sim runs ruff+mypy+
+  pytest on py3.11/3.12. main has **no branch protection** (CI is informational; the
+  post-merge main CI is the real safety net — watch it after each merge).
+- Commit subjects: `<area>: <imperative>`. Status-doc syncs commit directly to main
+  (established repo practice). Feature work goes on branches → PRs.
+
+---
+
 ## 2026-05-30 New Cycle: WAVE 12 PR3 — ENGINE STACK (endless end-to-end)
 
 **DIRECTIVE (user, 2026-05-30):** Resume the endless end-to-end cycle. Per PR: 2

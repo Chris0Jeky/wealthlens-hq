@@ -1,10 +1,32 @@
 # Active Sprint
 
-Last updated: 2026-05-29
+Last updated: 2026-05-30
 
 This week's focus. Keep this list to 5-7 tasks.
 
-## Sprint: 2026-05-29 to 2026-06-05
+> **NEXT SESSION START HERE:** the Wave 12 engine is built + mostly merged. Read
+> `.codex/memories/session_notes/ORCHESTRATION.md` (top "🟢 HANDOFF" section) first —
+> it has the full state, where to start (drain PR #333, then Wave 13), the engine
+> architecture, the backlog, and the ops gotchas. Quick status below.
+
+## Sprint: 2026-05-30 to 2026-06-06 (Wave 13 — calibrate, surface, extend)
+
+**Status:** Full Wave 12 engine on `main` (PRs #329–#332 merged; 614 sim tests).
+2 open PRs, both fully reviewed + bot-clean + CI green: **#333** `outputs/`
+(oldest → next to merge), **#334** `examples/` (newest → hold). Continue the endless
+cycle: drain #333 → add a new Wave 13 PR → let #334 age → drain #334 → repeat.
+
+1. - [ ] **Drain PR #333** (`outputs.to_dashboard_json` + golden files + the
+   `enforcement_uplift_bn` provenance fix) → main once aged/green (@Chris) [due: 2026-06-06]
+2. - [ ] **Calibrate the synth generator to CITED public WAS/ONS marginals** — v0.1
+   overshoots (~£26–33tn vs real ~£15–16tn), so headlines are biased HIGH; cite
+   sources in `registries/sources.yml`. Highest data-integrity value. (@Chris) [due: 2026-06-06]
+3. - [ ] **Drain PR #334** (headline-revenue example) after a new PR lands above it (@Chris) [due: 2026-06-06]
+4. - [ ] Wave 13 stretch: proper enforcement compliance model (task #7 in convo);
+   record synth generative params in provenance; Monte-Carlo uncertainty; wire the
+   dashboard JSON into a Vue scenario page. See `tasks/inbox.md` "Wave 13 candidates". (@Chris)
+
+## Completed sprint: 2026-05-29 to 2026-06-05 (Wave 12 engine)
 
 **Context:** The entire Gate-1 simulator (skeleton, schema, loaders, top-tail
 reconstruction, provenance, all 7 policy families A–G) is MERGED to `main` (PRs
@@ -17,9 +39,8 @@ reconstruction, provenance, all 7 policy families A–G) is MERGED to `main` (PR
 4. - [x] Package registries into wheel+sdist via hatch build hook + resolver fallback (PR #326) (@Chris) [completed: 2026-05-29]
 5. - [x] Wave 12 PR1 `synth/`: deterministic synthetic-population generator (PR #327) (@Chris) [completed: 2026-05-29]
 6. - [x] Wave 12 PR2 `rules/`: Scenario + run_scenario over the population (PR #328) (@Chris) [completed: 2026-05-29]
-7. - [ ] **Wave 12 PR3 `engine/`** (split into a 4-PR stack): `engine.simulate(population, scenario, registries) -> EngineResult` — wire synth→rules→provenance, interval propagation, per-decile attribution, F/G composition, `outputs.to_dashboard_json` (@Chris) [due: 2026-06-05]
-   - 3a `feat/engine-core` (PR #329, in review): Protocol seam + EngineResult + A–E end-to-end + equal-weight deciles + provenance.
-   - 3b enforcement+devolution (F/G); 3c real interval propagation; 3d outputs+golden file.
+7. - [x] **Wave 12 PR3 `engine/`** (built as a 5-PR stack): `engine.simulate(population, scenario, *, registries, devolution, enforcement) -> EngineResult` — synth→rules→provenance, real interval propagation, equal-weight per-decile attribution, F/G composition, `outputs.to_dashboard_json` + golden + a runnable example (@Chris) [engine merged: 2026-05-30; #333/#334 in flight]
+   - 3a `feat/engine-core` **#329 merged** · 3b devolution **#330 merged** · 3c enforcement **#331 merged** · 3d intervals **#332 merged** · 3e outputs **#333 open** · Wave-13 example **#334 open**. Each: 2 adversarial reviews + all bot comments addressed.
 
 ## Why These
 
