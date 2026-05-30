@@ -416,6 +416,32 @@ class TestEnforcement:
             base.revenue_by_nation["england"].central * 0.8
         )
 
+    def test_nation_invariant_excludes_enforcement(self):
+        # Like deciles, nation revenue covers baseline-compliance family revenue;
+        # the aggregate enforcement uplift stays separate.
+        pop = _population()
+        result = simulate(pop, _scenario(_wealth_tax()), enforcement=self._enforcement(baseline=0.7, scenario=0.95))
+        nation_sum = sum(iv.central for iv in result.revenue_by_nation.values())
+        assert nation_sum == pytest.approx(result.total_revenue_gbp_bn.central - result.enforcement_uplift_bn.central)
+
+    def test_unconfigured_family_stays_at_full_revenue_with_enforcement(self):
+        # An OTHER compliance rate changes wealth-tax revenue only; IHT maps to
+        # its own tax family and has no configured rate here, so it remains at
+        # its full theoretical revenue.
+        pop = _population()
+        wealth = _wealth_tax()
+        iht = FamilySelection(family=PolicyFamily.IHT, config=IHTConfig())
+        wealth_only = simulate(pop, _scenario(wealth))
+        iht_only = simulate(pop, _scenario(iht))
+        result = simulate(
+            pop,
+            _scenario(wealth, iht),
+            enforcement=self._enforcement(family=TaxFamily.OTHER, baseline=0.8, scenario=0.9),
+        )
+        assert result.total_revenue_gbp_bn.central == pytest.approx(
+            wealth_only.total_revenue_gbp_bn.central * 0.9 + iht_only.total_revenue_gbp_bn.central
+        )
+
     def test_enforcement_cost_reduces_net_uplift(self):
         pop = _population()
         scenario = _scenario(_wealth_tax())
@@ -554,6 +580,20 @@ class TestIntervals:
             total = getattr(result.total_revenue_gbp_bn, bound)
             uplift = getattr(result.enforcement_uplift_bn, bound)
             assert decile_sum == pytest.approx(total - uplift)
+
+    def test_nation_invariant_at_every_bound_with_enforcement(self):
+        # Nation splits follow the same contract as deciles under enforcement:
+        # they carry baseline-compliance family revenue, not the aggregate uplift.
+        pop = _population()
+        enforcement = EnforcementConfig(
+            compliance_rates=(ComplianceRate(tax_family=TaxFamily.OTHER, baseline_rate=0.7, scenario_rate=0.95),),
+        )
+        result = simulate(pop, _scenario(_wealth_tax()), registries=self._registries(), enforcement=enforcement)
+        for bound in ("low", "central", "high"):
+            nation_sum = sum(getattr(iv, bound) for iv in result.revenue_by_nation.values())
+            total = getattr(result.total_revenue_gbp_bn, bound)
+            uplift = getattr(result.enforcement_uplift_bn, bound)
+            assert nation_sum == pytest.approx(total - uplift)
 
     def test_tail_mean_factor_requires_alpha_above_one(self):
         # alpha <= 1 has an infinite tail mean; revenue_scale_from_alpha must raise

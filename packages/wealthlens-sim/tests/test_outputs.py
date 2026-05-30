@@ -58,7 +58,7 @@ def _golden_result():
 
 def _devolution_enforcement_result():
     # England-only scope + an OTHER enforcement uplift: exercises the devolution
-    # scope serialisation AND the enforcement-overstatement caveat end-to-end.
+    # scope serialisation and enforcement-uplift fields end-to-end.
     pop = generate_population(SynthConfig(n_households=500, seed=7))
     enforcement = EnforcementConfig(
         compliance_rates=(ComplianceRate(tax_family=TaxFamily.OTHER, baseline_rate=0.8, scenario_rate=0.9),),
