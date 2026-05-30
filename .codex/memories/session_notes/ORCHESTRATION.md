@@ -5,7 +5,48 @@
 >
 > **CRITICAL**: Update this file BEFORE every compaction risk (long tool calls, large diffs).
 
-Last updated: 2026-05-29
+Last updated: 2026-05-30
+
+## 2026-05-30 New Cycle: WAVE 12 PR3 — ENGINE STACK (endless end-to-end)
+
+**DIRECTIVE (user, 2026-05-30):** Resume the endless end-to-end cycle. Per PR: 2
+independent adversarial reviews; address ALL findings (every importance) + all bot
+comments; small incremental commits; worktrees/subagents where efficient; stacked
+branches for dependencies. Address pre-existing bugs too. Seed new tasks when the
+queue empties. **Merge discipline:** do NOT merge the newest PR; a PR that was
+opened ~3 PRs ago may be merged once it has 2 reviews + all bot comments addressed
++ some elapsed time. Keep a healthy backlog of open PRs aging in the stack.
+
+### Plan: Wave 12 PR3 = a 4-PR stack (task #17 split for reviewability)
+Each stacked on the prior; each = 2 adversarial reviews + ci-sim green + small commits.
+
+| PR | Branch | Base | Scope |
+|----|--------|------|-------|
+| 3a | `feat/engine-core` | main | **PR #329 (open, 2 review rounds done).** `PopulationSource` Protocol seam; `EngineResult` model (total/by-nation/by-decile as `Interval`, households_scored, provenance, `provenance_complete`, `population_provenance_ids`); `engine.simulate(population, scenario, *, registries=None)` (named `simulate`, NOT `run_scenario`, to avoid colliding with `rules.run_scenario`) — A–E via `rules.run_scenario` → equal-weight per-decile attribution → provenance manifest. Degenerate intervals (low=central=high) placeholder. **G-scope deferred to 3b** (Scenario can't hold G). |
+| 3b | `feat/engine-enforcement` | feat/engine-core | Family F enforcement-uplift composition (map A–E revenues → `TaxFamily`, `compute_enforcement_uplift`, add `net_uplift_bn`). Document the TaxFamily-mapping decision. |
+| 3c | `feat/engine-intervals` | feat/engine-enforcement | Real interval propagation: top-tail α `Interval` sweep + assumption `RangeValue` low/central/high → revenue `Interval`s. |
+| 3d | `feat/outputs-dashboard-json` | feat/engine-intervals | `outputs.to_dashboard_json(EngineResult)` + golden-file test. |
+
+### Per-household liability fields (for decile attribution, PR3a)
+A `compute_wealth_tax(hh,cfg).tax_liability` · B `compute_one_off_levy(hh,cfg).levy_liability`
+· C `compute_household_cgt(hh,cfg).total_cgt_liability` · D `compute_household_iht(hh,cfg).total_iht_liability`
+· E `compute_hvcts(hh,cfg).total_surcharge`. Weight by `hh.weight`; bin by `total_net_wealth`.
+
+### Known seams / decisions for the stack
+- `rules.run_scenario(list[Household], Scenario) -> ScenarioResult` (A–E only). The
+  engine entry point is `engine.simulate(...)`; it imports the rules function aliased
+  (`_run_families`) so `rules.run_scenario` cannot shadow the engine's own symbol.
+- F (`compute_enforcement_uplift(theoretical: dict[TaxFamily,float], cfg)`) and G
+  (`split_households_by_scope(households, cfg) -> (included, excluded, split)`) compose in engine.
+- Synth sets income/CGT=0 → CGT family yields 0 on synth data (documented, not a bug).
+- `population.provenance_ids` is always `[]` today; engine builds manifest from registries it reads.
+- Open decision (PR3b): TaxFamily has no wealth-tax member → map A/B/E→OTHER, C→CGT, D→IHT; document.
+
+### Branch hygiene backlog (task #5)
+Stale local `feat/*`,`fix/*` + leftover `worktree-agent-*` branches (prior merged cycle).
+`feat/baselines-loader` is an unmerged orphan on origin — investigate/delete.
+
+---
 
 ## 2026-05-29 New Cycle: MERGE + ADVANCE (policy shift)
 
@@ -95,7 +136,7 @@ Used for #320 (was #309), #321 (was #304), #322 (was #310).
   families A-E (match+assert_never exhaustive; dict-config coerced to family type)
   → `ScenarioResult{total_revenue_bn, revenue_by_nation, family_revenues}`.
   564 sim tests; 2 reviews + confirmation; ci-sim green. Task #16 done.
-- NEXT (Wave 12 final): task #17 = `engine.run_scenario(population, scenario,
+- NEXT (Wave 12 final): task #17 = `engine.simulate(population, scenario,
   registries) -> EngineResult` wiring synth→rules→aggregate→**provenance**, plus
   interval propagation (top-tail alpha + assumption RangeValues), per-decile
   attribution (needs per-household revenue — NOT in the aggregate API, so call the

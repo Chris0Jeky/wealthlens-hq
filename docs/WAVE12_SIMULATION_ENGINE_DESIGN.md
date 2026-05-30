@@ -11,8 +11,10 @@ Status: IN PROGRESS. Author: autonomous dev cycle.
 - ✅ **PR2 `rules/`** (#328) — `Scenario` / `FamilySelection` / `PolicyFamily` +
   `run_scenario(households, scenario) -> ScenarioResult` dispatching revenue
   families A–E (`match` + `assert_never` exhaustive) → total + `revenue_by_nation`.
-- ⏭️ **PR3 `engine/` + `outputs/` (next, task #17)** — `engine.run_scenario(
+- ⏭️ **PR3 `engine/` + `outputs/` (next, task #17)** — `engine.simulate(
   population, scenario, registries) -> EngineResult` wiring synth→rules→provenance;
+  (entry point named `simulate`, not `run_scenario`, to avoid colliding with
+  `rules.run_scenario`)
   interval propagation (top-tail α + assumption ranges); per-decile attribution
   (needs per-household revenue, not the aggregate API); population-source
   `Protocol` seam; families F (enforcement uplift) + G (devolution scope)
@@ -60,7 +62,7 @@ statistical layers to Wave 13+:
    enabled + each family's config) and a population, dispatches to the existing
    `reforms/` calculators, and returns per-household + aggregate results. This is
    the "execution framework" the `rules/` docstring already promises.
-3. **`engine/`** — a thin `run_scenario(population, scenario, registries)`
+3. **`engine/`** — a thin `simulate(population, scenario, registries)`
    orchestrator that wires synth → rules → aggregation → provenance and returns
    an `EngineResult`.
 4. **`outputs/`** — `to_dashboard_json(EngineResult)` producing the JSON contract
@@ -79,7 +81,7 @@ synth.generate(seed) ──► SyntheticPopulation(households, weights)
                                       │
         (optional) top_tail augmentation of the top of the distribution
                                       │
-engine.run_scenario(population, scenario, registries)
+engine.simulate(population, scenario, registries)
         │   for each enabled family in scenario:
         │       rules.ScenarioRunner → reforms.compute_<family>(household, cfg)
         │   aggregate: total, revenue_by_nation, by wealth decile
@@ -112,7 +114,8 @@ class EngineResult(BaseModel):
     provenance: ProvenanceManifest
 
 # engine/__init__.py
-def run_scenario(population, scenario, *, registries=None) -> EngineResult: ...
+# Named `simulate` (not `run_scenario`) to avoid colliding with rules.run_scenario.
+def simulate(population, scenario, *, registries=None) -> EngineResult: ...
 
 # synth/population.py  (as implemented in PR1)
 class SyntheticPopulation(BaseModel):
