@@ -10,10 +10,18 @@ non-positive weight).
 
 from __future__ import annotations
 
+from datetime import date
+
 import pytest
 from pydantic import ValidationError
 
 from wealthlens_sim.assumptions import load_assumptions
+from wealthlens_sim.assumptions.schema import (
+    Assumption,
+    AssumptionRegistry,
+    PointValue,
+    TransferabilityScore,
+)
 from wealthlens_sim.engine import (
     N_DECILES,
     DevolutionConfig,
@@ -24,6 +32,7 @@ from wealthlens_sim.engine import (
     simulate,
     tax_family_for,
 )
+from wealthlens_sim.engine._intervals import revenue_scale_from_alpha
 from wealthlens_sim.provenance.manifest import PipelineLayer, ProvenanceManifest
 from wealthlens_sim.reforms.a_annual_wealth import WealthTaxConfig
 from wealthlens_sim.reforms.d_iht_reform import IHTConfig
@@ -453,6 +462,24 @@ class TestEnforcement:
         assert result.enforcement_uplift_bn.central == pytest.approx(0.0)
 
 
+def _registry_with_alpha(distribution) -> AssumptionRegistry:
+    """Build a single-assumption registry whose alpha is the given distribution."""
+    return AssumptionRegistry(
+        assumptions=[
+            Assumption(
+                assumption_id="toptail.pareto_alpha.overall.v1",
+                domain="top-tail",
+                value_or_distribution=distribution,
+                source="test",
+                transferability_score=TransferabilityScore.MEDIUM,
+                valid_range="alpha in [1.1, 2.5]",
+                applies_to="test",
+                last_reviewed=date(2026, 5, 30),
+            )
+        ]
+    )
+
+
 class TestIntervals:
     def _registries(self):
         return Registries(assumptions=load_assumptions())
@@ -464,7 +491,8 @@ class TestIntervals:
 
     def test_interval_scale_matches_tail_mean_ratio(self):
         # The low/high factors come from the Pareto tail-mean ratio at the alpha
-        # bounds (1.3, 1.5, 1.8): factor = [a/(a-1)] / [1.5/0.5].
+        # bounds. These mirror registries/assumptions.yml (toptail.pareto_alpha
+        # .overall.v1 = 1.3/1.5/1.8) and must be updated together if it changes.
         result = simulate(_population(), _scenario(_wealth_tax()), registries=self._registries())
         iv = result.total_revenue_gbp_bn
         central_factor = 1.5 / 0.5
@@ -472,6 +500,58 @@ class TestIntervals:
         expected_high = iv.central * ((1.3 / 0.3) / central_factor)  # lower alpha -> more revenue
         assert iv.low == pytest.approx(expected_low)
         assert iv.high == pytest.approx(expected_high)
+
+    def test_missing_alpha_falls_back_to_degenerate(self):
+        # A registry WITHOUT the alpha assumption is a legitimate fallback:
+        # degenerate intervals + incomplete provenance, no error.
+        registries = Registries(assumptions=AssumptionRegistry(assumptions=[]))
+        result = simulate(_population(), _scenario(_wealth_tax()), registries=registries)
+        iv = result.total_revenue_gbp_bn
+        assert iv.low == iv.central == iv.high
+        assert result.provenance_complete is False
+
+    def test_malformed_alpha_raises(self):
+        # A present-but-wrong-type alpha (PointValue, not a range) is a registry
+        # defect and must fail loudly, not silently downgrade to degenerate.
+        registries = Registries(assumptions=_registry_with_alpha(PointValue(type="point", value=1.5)))
+        with pytest.raises(TypeError, match="must be a range"):
+            simulate(_population(), _scenario(_wealth_tax()), registries=registries)
+
+    def test_negative_central_interval_ordering_with_registry(self):
+        # With a non-degenerate scale AND a negative central (enforcement cost >
+        # uplift), scaled_interval must still satisfy low <= central <= high.
+        pop = _population()
+        scenario = _scenario(_wealth_tax())
+        base = simulate(pop, scenario)
+        gross = base.total_revenue_gbp_bn.central * 0.1
+        enforcement = EnforcementConfig(
+            compliance_rates=(ComplianceRate(tax_family=TaxFamily.OTHER, baseline_rate=0.8, scenario_rate=0.9),),
+            enforcement_cost_bn=gross + 5.0,
+        )
+        result = simulate(pop, scenario, registries=self._registries(), enforcement=enforcement)
+        iv = result.enforcement_uplift_bn
+        assert iv.central < 0
+        assert iv.low <= iv.central <= iv.high
+
+    def test_decile_invariant_at_every_bound_with_enforcement(self):
+        # The subtraction path: deciles cover family revenue only, so at EVERY
+        # bound sum(decile.bound) == total.bound - enforcement.bound.
+        pop = _population()
+        enforcement = EnforcementConfig(
+            compliance_rates=(ComplianceRate(tax_family=TaxFamily.OTHER, baseline_rate=0.7, scenario_rate=0.95),),
+        )
+        result = simulate(pop, _scenario(_wealth_tax()), registries=self._registries(), enforcement=enforcement)
+        for bound in ("low", "central", "high"):
+            decile_sum = sum(getattr(iv, bound) for iv in result.revenue_by_decile)
+            total = getattr(result.total_revenue_gbp_bn, bound)
+            uplift = getattr(result.enforcement_uplift_bn, bound)
+            assert decile_sum == pytest.approx(total - uplift)
+
+    def test_tail_mean_factor_requires_alpha_above_one(self):
+        # alpha <= 1 has an infinite tail mean; revenue_scale_from_alpha must raise
+        # rather than fabricate a factor.
+        with pytest.raises(ValueError, match="must exceed 1"):
+            revenue_scale_from_alpha(Interval(low=0.5, central=0.8, high=0.95))
 
     def test_decile_invariant_holds_at_every_bound(self):
         # The same factor scales every figure, so the decile sum equals the total
