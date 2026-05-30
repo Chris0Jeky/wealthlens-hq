@@ -56,12 +56,12 @@ def _caveats(result: EngineResult) -> list[str]:
 
     Surfaces, loudly and at the contract root, the two states a chart must not
     publish silently: unsourced (incomplete-provenance) figures, and a headline
-    inflated by the v0.1 enforcement overstatement.
+    inflated by a positive v0.1 enforcement uplift.
     """
     caveats: list[str] = []
     if not result.provenance_complete:
         caveats.append(_INCOMPLETE_PROVENANCE_CAVEAT)
-    if result.enforcement_uplift_bn.central != 0.0:
+    if result.enforcement_uplift_bn.central > 0.0:
         caveats.append(_ENFORCEMENT_OVERSTATEMENT_CAVEAT)
     return caveats
 

@@ -21,6 +21,7 @@ any generated figure informs a published number. See Blueprint v5 §7.1-7.4.
 from __future__ import annotations
 
 import numpy as np
+from numpy.typing import NDArray
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from wealthlens_sim.schema.base import Nation
@@ -124,7 +125,7 @@ class SyntheticPopulation(BaseModel):
         return sum(h.total_net_wealth * h.weight for h in self.households)
 
 
-def _draw_net_wealth(rng: np.random.Generator, config: SynthConfig) -> np.ndarray:
+def _draw_net_wealth(rng: np.random.Generator, config: SynthConfig) -> NDArray[np.float64]:
     """Draw household net wealth: lognormal body, Pareto Type-I tail above threshold."""
     mu = float(np.log(config.median_net_wealth))  # median of lognormal is exp(mu)
     wealth = rng.lognormal(mean=mu, sigma=config.lognormal_sigma, size=config.n_households)
@@ -143,7 +144,7 @@ def _draw_net_wealth(rng: np.random.Generator, config: SynthConfig) -> np.ndarra
     return wealth
 
 
-def _assign_by_share(rng: np.random.Generator, shares: dict[str, float], size: int) -> np.ndarray:
+def _assign_by_share(rng: np.random.Generator, shares: dict[str, float], size: int) -> NDArray[np.str_]:
     """Vectorised categorical draw over the keys of ``shares`` (normalised)."""
     keys = list(shares.keys())
     probs = np.array([shares[k] for k in keys], dtype=np.float64)

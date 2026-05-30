@@ -203,8 +203,25 @@ class TestDataIntegritySurfacing:
 
     def test_enforcement_headline_carries_overstatement_caveat(self):
         dash = to_dashboard_json(_devolution_enforcement_result())
-        assert dash["enforcement_uplift_gbp_bn"]["central"] != 0.0
+        assert dash["enforcement_uplift_gbp_bn"]["central"] > 0.0
         assert any("overstates collectible revenue" in c for c in dash["caveats"])
+
+    def test_negative_net_enforcement_uplift_does_not_carry_overstatement_caveat(self):
+        pop = generate_population(SynthConfig(n_households=500, seed=7))
+        enforcement = EnforcementConfig(
+            compliance_rates=(ComplianceRate(tax_family=TaxFamily.OTHER, baseline_rate=0.8, scenario_rate=0.9),),
+            enforcement_cost_bn=10.0,
+        )
+        dash = to_dashboard_json(
+            simulate(
+                pop,
+                _golden_scenario(),
+                registries=Registries(assumptions=load_assumptions()),
+                enforcement=enforcement,
+            )
+        )
+        assert dash["enforcement_uplift_gbp_bn"]["central"] < 0.0
+        assert not any("overstates collectible revenue" in c for c in dash["caveats"])
 
     def test_root_flag_mirrors_nested_provenance_complete(self):
         dash = to_dashboard_json(_golden_result())

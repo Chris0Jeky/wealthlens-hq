@@ -76,7 +76,7 @@ _OUTPUT_LABELS = (
     "total_revenue_gbp_bn",
     "revenue_by_nation",
     "revenue_by_decile",
-    "enforcement_uplift_bn",
+    "enforcement_uplift_gbp_bn",
 )
 
 

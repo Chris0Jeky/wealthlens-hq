@@ -45,7 +45,7 @@
           "toptail.pareto_alpha.overall.v1"
         ],
         "layer": "revenue",
-        "output_label": "enforcement_uplift_bn"
+        "output_label": "enforcement_uplift_gbp_bn"
       }
     ],
     "version_tag": {
