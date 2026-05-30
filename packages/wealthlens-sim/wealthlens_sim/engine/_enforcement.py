@@ -26,10 +26,11 @@ def tax_family_for(policy: PolicyFamily) -> TaxFamily:
     CGT and IHT map directly to their HMRC tax-gap categories. The wealth-tax
     families (annual, one-off) and the HVCTS property surcharge have no dedicated
     HMRC tax-gap category, so they map to ``OTHER`` — meaning a single ``OTHER``
-    compliance rate governs their combined uplift. This is the documented v0.1
-    mapping decision (design §7 open decision); a finer mapping can replace it
-    once HMRC publishes wealth-tax-specific gap estimates. The
-    ``match``/``assert_never`` keeps the mapping exhaustive at type-check time.
+    compliance rate governs their combined uplift (a caller cannot set distinct
+    compliance for annual-wealth vs HVCTS in v0.1). This is the documented v0.1
+    mapping decision; a finer mapping can replace it once HMRC publishes
+    wealth-tax-specific gap estimates. The ``match``/``assert_never`` keeps the
+    mapping exhaustive at type-check time.
     """
     match policy:
         case PolicyFamily.CGT:
@@ -60,10 +61,19 @@ def compute_engine_enforcement(
     """Apply the enforcement compliance-gap model to the scenario's family revenues.
 
     The modeled A-E family revenues are treated as the *theoretical* base for the
-    per-tax-family compliance-gap calculation — a v0.1 simplification, since these
-    are modeled scenario revenues rather than HMRC's published theoretical
-    liabilities. Returns the aggregate uplift; the engine adds ``net_uplift_bn``
-    (uplift minus enforcement cost) to the headline total.
+    per-tax-family compliance-gap calculation, and the engine then **adds** the
+    resulting ``net_uplift_bn`` to the headline total.
+
+    **v0.1 simplification — known to overstate.** The A-E calculators report full
+    statutory liability (no compliance/avoidance haircut), i.e. the base already
+    *is* the 100%-compliance ceiling. Adding a compliance-gap uplift on top of it
+    therefore pushes the headline ABOVE that ceiling, overstating total
+    collectible revenue (a coherent model would report ``theoretical *
+    scenario_rate`` instead, which is <= theoretical). This additive form is a
+    deliberate placeholder until the families gain an explicit baseline-vs-
+    theoretical compliance split; enforcement is opt-in (default off) and the
+    uplift is reported separately on ``EngineResult.enforcement_uplift_bn`` so it
+    can be inspected or removed. See the Wave 12 backlog follow-up.
     """
     theoretical = theoretical_revenues_by_tax_family(family_revenues)
     return compute_enforcement_uplift(theoretical, config)
