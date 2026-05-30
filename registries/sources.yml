@@ -105,19 +105,20 @@ sources:
       change reduced measured wealth by ~£2.3tn.
 
   - id: ons-families-households-2022
-    name: ONS Families and households in the UK, 2022
-    url: https://www.ons.gov.uk/peoplepopulationandcommunity/birthsdeathsandmarriages/families/bulletins/familiesandhouseholds/2022
+    name: ONS Families and households in Great Britain, 2022
+    url: https://www.ons.gov.uk/peoplepopulationandcommunity/birthsdeathsandmarriages/families/datasets/householdsbytypeofhouseholdandfamilyregionsofenglandandgbconstituentcountries/2022
     access_date: "2026-05-30"
-    format: statistical-bulletin
+    format: xlsx
     licence: OGL-3.0
     update_pattern: annual
     pipeline: null
     notes: >
-      Used as the synthetic-population grossing anchor: ONS reports an
-      estimated 28.2 million UK households in 2022. Wealth marginals are
-      still from WAS Great Britain; v0.1 applies those wealth marginals to
-      the UK-wide synthetic population until Northern Ireland-specific
-      wealth marginals are wired.
+      Used as the synthetic-population household grossing and nation-share
+      anchor. The 2022 edition reports 23.626m households in England,
+      2.542m in Scotland, and 1.332m in Wales (27.5m Great Britain
+      households, rounded from thousands). Wealth marginals are from WAS
+      Great Britain; v0.1 defaults therefore exclude Northern Ireland until
+      NI-specific wealth marginals are wired.
 
   - id: ons-productivity-pay
     name: ONS Labour Productivity and Average Weekly Earnings

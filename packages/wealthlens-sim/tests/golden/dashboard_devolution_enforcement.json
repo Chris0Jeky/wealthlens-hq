@@ -3,27 +3,27 @@
     "The headline includes a Family-F enforcement uplift added on top of full statutory liability (the 100%-compliance ceiling), so it overstates collectible revenue \u2014 a documented v0.1 simplification."
   ],
   "devolution_scope": {
-    "excluded_count": 78,
+    "excluded_count": 73,
     "excluded_nations": [
       "northern_ireland",
       "scotland",
       "wales"
     ],
-    "excluded_weight": 4399200.0,
-    "included_count": 422,
+    "excluded_weight": 4015000.0,
+    "included_count": 427,
     "included_nations": [
       "england"
     ],
-    "included_weight": 23800800.0,
-    "included_weight_fraction": 0.844,
+    "included_weight": 23485000.0,
+    "included_weight_fraction": 0.854,
     "scope": "england_only"
   },
   "enforcement_uplift_gbp_bn": {
-    "central": 0.9339379336751197,
-    "high": 1.3490214597529506,
-    "low": 0.7004534502563398
+    "central": 0.9107550771654518,
+    "high": 1.3155351114612082,
+    "low": 0.6830663078740888
   },
-  "households_scored": 422,
+  "households_scored": 427,
   "population_provenance_ids": [
     "ons-was-wealth",
     "ons-families-households-2022"
@@ -130,23 +130,23 @@
       "low": 0.0
     },
     {
-      "central": 9.339379336751188,
-      "high": 13.490214597529494,
-      "low": 7.004534502563391
+      "central": 9.10755077165453,
+      "high": 13.155351114612099,
+      "low": 6.830663078740898
     }
   ],
   "revenue_by_nation": {
     "england": {
-      "central": 9.339379336751188,
-      "high": 13.490214597529494,
-      "low": 7.004534502563391
+      "central": 9.107550771654525,
+      "high": 13.155351114612092,
+      "low": 6.830663078740894
     }
   },
   "scenario_name": "annual-wealth-1pct",
   "schema_version": "1.1",
   "total_revenue_gbp_bn": {
-    "central": 10.273317270426308,
-    "high": 14.839236057282443,
-    "low": 7.704987952819731
+    "central": 10.018305848819978,
+    "high": 14.4708862260733,
+    "low": 7.513729386614983
   }
 }

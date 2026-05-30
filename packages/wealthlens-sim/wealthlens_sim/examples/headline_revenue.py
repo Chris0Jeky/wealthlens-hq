@@ -6,10 +6,10 @@ per-nation and per-decile breakdown and a provenance summary. The intervals are
 propagated from the cited top-tail Pareto alpha range.
 
 **Not a real estimate.** The v0.1 synthetic population is source-calibrated to
-public WAS/ONS aggregate marginals, but it is still generated data rather than
-observed microdata. The headline remains illustrative until validated against
-licensed microdata and behavioural assumptions. The printed report says so on
-every run.
+public Great Britain WAS/ONS aggregate marginals, but it is still generated data
+rather than observed microdata. The headline remains illustrative until
+validated against licensed microdata and behavioural assumptions. The printed
+report says so on every run.
 
 Run::
 
@@ -108,10 +108,11 @@ def build_report(result: EngineResult) -> str:
         f"assumptions consumed: {', '.join(consumed) or 'none'}"
     )
     lines.append(
-        "  Note: the v0.1 synthetic population is calibrated to public ONS/WAS "
-        "aggregate marginals, but it is still synthetic data rather than observed "
-        "microdata. Intervals propagate the cited top-tail Pareto alpha. Verify "
-        "behavioural assumptions and calibration before publishing."
+        "  Note: the v0.1 synthetic population is calibrated to public Great "
+        "Britain ONS/WAS aggregate marginals, but it is still synthetic data "
+        "rather than observed microdata. Intervals propagate the cited top-tail "
+        "Pareto alpha. Verify behavioural assumptions and calibration before "
+        "publishing."
     )
     return "\n".join(lines)
 

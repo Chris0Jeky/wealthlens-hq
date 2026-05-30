@@ -20,9 +20,11 @@ class TestSynthConfig:
     def test_defaults_valid(self):
         c = SynthConfig()
         assert c.n_households == 10_000
-        assert c.population_households == 28_200_000
+        assert c.population_households == 27_500_000
         assert c.median_net_wealth == 293_700
         assert c.pareto_threshold == 1_200_500
+        assert Nation.NORTHERN_IRELAND.value not in c.nation_shares
+        assert c.nation_shares[Nation.ENGLAND.value] == pytest.approx(23_626_000 / 27_500_000)
         assert abs(sum(c.nation_shares.values()) - 1.0) < 0.01
         assert abs(sum(c.asset_shares.values()) - 1.0) < 0.01
         assert "ons-was-wealth" in c.calibration_source_ids
@@ -35,8 +37,9 @@ class TestSynthConfig:
         top_decile_cutoff = np.quantile(wealths, 0.9)
         top_one_pct_cutoff = np.quantile(wealths, 0.99)
         sorted_wealth = np.sort(wealths)
-        top_decile_share = sorted_wealth[-1_000:].sum() / sorted_wealth.sum()
-        top_one_pct_share = sorted_wealth[-100:].sum() / sorted_wealth.sum()
+        n = len(sorted_wealth)
+        top_decile_share = sorted_wealth[-max(1, int(n * 0.1)) :].sum() / sorted_wealth.sum()
+        top_one_pct_share = sorted_wealth[-max(1, int(n * 0.01)) :].sum() / sorted_wealth.sum()
 
         # ONS WAS April 2020-March 2022 anchors:
         # total wealth £13.568tn, median £293,700, top-decile threshold
@@ -127,6 +130,16 @@ class TestGeneratePopulation:
         config = _small()
         pop = generate_population(config)
         assert pop.provenance_ids == list(config.calibration_source_ids)
+
+    def test_custom_calibration_clears_default_provenance_ids(self):
+        config = _small(median_net_wealth=500_000)
+        pop = generate_population(config)
+        assert pop.provenance_ids == []
+
+    def test_custom_calibration_preserves_explicit_provenance_ids(self):
+        config = _small(median_net_wealth=500_000, calibration_source_ids=("custom-calibration",))
+        pop = generate_population(config)
+        assert pop.provenance_ids == ["custom-calibration"]
 
     def test_asset_shares_are_normalised(self):
         # Same seed ⇒ identical drawn wealth (asset_shares don't affect the draw).
