@@ -3,7 +3,8 @@
 :func:`to_dashboard_json` converts an :class:`~wealthlens_sim.engine.result.EngineResult`
 into a plain, JSON-serialisable ``dict`` — the contract the dashboard consumes:
 headline total + per-nation + per-decile revenue (each as a low/central/high
-interval), the net enforcement uplift, the devolution scope (if any), and a
+interval), the gross enforcement revenue uplift, enforcement cost, net fiscal
+impact, the devolution scope (if any), and a
 flattened provenance block (the assumptions consumed with their sources, plus the
 per-output assumption trail). Every published number therefore reaches the
 dashboard alongside its uncertainty band and its provenance (Blueprint v5 §13.6,
@@ -32,7 +33,7 @@ from wealthlens_sim.top_tail.types import Interval
 __all__ = ["DASHBOARD_SCHEMA_VERSION", "to_dashboard_json"]
 
 #: Bumped when the dashboard JSON shape changes so the frontend can guard on it.
-DASHBOARD_SCHEMA_VERSION = "1.1"
+DASHBOARD_SCHEMA_VERSION = "1.2"
 
 _INCOMPLETE_PROVENANCE_CAVEAT = (
     "Provenance incomplete: no assumption registry was supplied, so the intervals "
@@ -103,6 +104,8 @@ def to_dashboard_json(result: EngineResult) -> dict[str, Any]:
         "households_scored": result.households_scored,
         "total_revenue_gbp_bn": _interval(result.total_revenue_gbp_bn),
         "enforcement_uplift_gbp_bn": _interval(result.enforcement_uplift_bn),
+        "enforcement_cost_gbp_bn": _interval(result.enforcement_cost_bn),
+        "enforcement_net_fiscal_impact_gbp_bn": _interval(result.enforcement_net_fiscal_impact_bn),
         "revenue_by_nation": {nation: _interval(interval) for nation, interval in result.revenue_by_nation.items()},
         "revenue_by_decile": [_interval(interval) for interval in result.revenue_by_decile],
         "devolution_scope": devolution,

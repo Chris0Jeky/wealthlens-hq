@@ -54,11 +54,13 @@ from wealthlens_sim.reforms.e_property_tax import (
     compute_hvcts,
 )
 from wealthlens_sim.reforms.f_enforcement import (
+    ENFORCEMENT_COMPLIANCE_ASSUMPTION_ID,
+    ENFORCEMENT_COMPLIANCE_SOURCE,
     HMRC_OVERALL_BASELINE_COMPLIANCE_RATE_2023_24,
     HMRC_OVERALL_TAX_GAP_GBP_BN_2023_24,
     HMRC_OVERALL_TAX_GAP_RATE_2023_24,
     HMRC_WEALTHY_COMPLIANCE_YIELD_GBP_BN_2023_24,
-    HMRC_WEALTHY_TAX_GAP_GBP_BN_2023_24,
+    HMRC_WEALTHY_TAX_GAP_GBP_BN_2022_23,
     AggregateEnforcementRevenue,
     ComplianceRate,
     EnforcementConfig,
@@ -74,11 +76,13 @@ from wealthlens_sim.reforms.g_devolution import (
 )
 
 __all__ = [
+    "ENFORCEMENT_COMPLIANCE_ASSUMPTION_ID",
+    "ENFORCEMENT_COMPLIANCE_SOURCE",
     "HMRC_OVERALL_BASELINE_COMPLIANCE_RATE_2023_24",
     "HMRC_OVERALL_TAX_GAP_GBP_BN_2023_24",
     "HMRC_OVERALL_TAX_GAP_RATE_2023_24",
     "HMRC_WEALTHY_COMPLIANCE_YIELD_GBP_BN_2023_24",
-    "HMRC_WEALTHY_TAX_GAP_GBP_BN_2023_24",
+    "HMRC_WEALTHY_TAX_GAP_GBP_BN_2022_23",
     "AggregateCGTRevenue",
     "AggregateEnforcementRevenue",
     "AggregateHVCTSRevenue",

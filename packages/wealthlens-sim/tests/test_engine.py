@@ -37,7 +37,12 @@ from wealthlens_sim.provenance.manifest import PipelineLayer, ProvenanceManifest
 from wealthlens_sim.reforms.a_annual_wealth import WealthTaxConfig
 from wealthlens_sim.reforms.d_iht_reform import IHTConfig
 from wealthlens_sim.reforms.e_property_tax import HVCTSConfig
-from wealthlens_sim.reforms.f_enforcement import ComplianceRate, EnforcementConfig, TaxFamily
+from wealthlens_sim.reforms.f_enforcement import (
+    ENFORCEMENT_COMPLIANCE_ASSUMPTION_ID,
+    ComplianceRate,
+    EnforcementConfig,
+    TaxFamily,
+)
 from wealthlens_sim.reforms.g_devolution import NationScope
 from wealthlens_sim.rules import FamilySelection, PolicyFamily, Scenario
 from wealthlens_sim.rules import run_scenario as run_families
@@ -273,6 +278,35 @@ class TestProvenance:
             if entry.output_label in {"total_revenue_gbp_bn", "revenue_by_nation", "revenue_by_decile"}:
                 assert "toptail.pareto_alpha.overall.v1" in entry.assumption_ids
 
+    def test_enforcement_provenance_records_compliance_model(self):
+        pop = _population(n=100)
+        scenario = _scenario(_wealth_tax())
+        result = simulate(
+            pop,
+            scenario,
+            registries=Registries(assumptions=load_assumptions()),
+            enforcement=EnforcementConfig(
+                compliance_rates=(
+                    ComplianceRate(tax_family=TaxFamily.OTHER, baseline_rate=0.8, scenario_rate=0.9),
+                ),
+                enforcement_cost_bn=0.25,
+            ),
+        )
+        assert ENFORCEMENT_COMPLIANCE_ASSUMPTION_ID in result.provenance.assumptions_consumed
+        resolved = result.provenance.assumptions_consumed[ENFORCEMENT_COMPLIANCE_ASSUMPTION_ID]
+        assert "gov.uk/government/statistics/measuring-tax-gaps" in resolved.source
+        assert "nao.org.uk/reports/collecting-the-right-tax-from-wealthy-individuals" in resolved.source
+        for entry in result.provenance.entries:
+            if entry.output_label in {
+                "total_revenue_gbp_bn",
+                "revenue_by_nation",
+                "revenue_by_decile",
+                "enforcement_uplift_gbp_bn",
+                "enforcement_cost_gbp_bn",
+                "enforcement_net_fiscal_impact_gbp_bn",
+            }:
+                assert ENFORCEMENT_COMPLIANCE_ASSUMPTION_ID in entry.assumption_ids
+
     def test_manifest_uses_scenario_version_tag(self):
         scenario = _scenario(_wealth_tax())
         result = simulate(_population(n=100), scenario)
@@ -442,12 +476,16 @@ class TestEnforcement:
             wealth_only.total_revenue_gbp_bn.central * 0.9 + iht_only.total_revenue_gbp_bn.central
         )
 
-    def test_enforcement_cost_reduces_net_uplift(self):
+    def test_enforcement_cost_is_reported_separately_from_revenue(self):
         pop = _population()
         scenario = _scenario(_wealth_tax())
         no_cost = simulate(pop, scenario, enforcement=self._enforcement(cost=0.0))
         with_cost = simulate(pop, scenario, enforcement=self._enforcement(cost=1.0))
-        assert with_cost.enforcement_uplift_bn.central == pytest.approx(no_cost.enforcement_uplift_bn.central - 1.0)
+        assert with_cost.enforcement_uplift_bn.central == pytest.approx(no_cost.enforcement_uplift_bn.central)
+        assert with_cost.enforcement_cost_bn.central == pytest.approx(1.0)
+        assert with_cost.enforcement_net_fiscal_impact_bn.central == pytest.approx(
+            no_cost.enforcement_uplift_bn.central - 1.0
+        )
 
     def test_cgt_and_iht_map_to_own_tax_family(self):
         assert tax_family_for(PolicyFamily.CGT) == TaxFamily.CGT
@@ -455,9 +493,9 @@ class TestEnforcement:
         assert tax_family_for(PolicyFamily.ANNUAL_WEALTH_TAX) == TaxFamily.OTHER
         assert tax_family_for(PolicyFamily.HVCTS) == TaxFamily.OTHER
 
-    def test_negative_net_uplift_reduces_total_below_baseline(self):
+    def test_negative_net_fiscal_impact_does_not_reduce_revenue_headline(self):
         # Documented contract: an enforcement cost exceeding the gross uplift
-        # yields a negative net uplift and a total below baseline compliance.
+        # yields a negative net fiscal impact but does not reduce revenue.
         pop = _population()
         scenario = _scenario(_wealth_tax())
         base = simulate(pop, scenario)
@@ -467,8 +505,9 @@ class TestEnforcement:
             scenario,
             enforcement=self._enforcement(baseline=0.8, scenario=0.9, cost=gross_uplift + 5.0),
         )
-        assert result.enforcement_uplift_bn.central == pytest.approx(-5.0)
-        assert result.total_revenue_gbp_bn.central == pytest.approx(base.total_revenue_gbp_bn.central * 0.8 - 5.0)
+        assert result.enforcement_uplift_bn.central == pytest.approx(gross_uplift)
+        assert result.enforcement_net_fiscal_impact_bn.central == pytest.approx(-5.0)
+        assert result.total_revenue_gbp_bn.central == pytest.approx(base.total_revenue_gbp_bn.central * 0.9)
 
     def test_other_bucket_sums_multiple_families(self):
         # Wealth tax AND HVCTS both map to OTHER, so a single OTHER compliance rate
@@ -551,9 +590,9 @@ class TestIntervals:
         with pytest.raises(TypeError, match="must be a range"):
             simulate(_population(), _scenario(_wealth_tax()), registries=registries)
 
-    def test_negative_central_interval_ordering_with_registry(self):
-        # With a non-degenerate scale AND a negative central (enforcement cost >
-        # uplift), scaled_interval must still satisfy low <= central <= high.
+    def test_negative_net_fiscal_interval_ordering_with_registry(self):
+        # With a non-degenerate revenue scale AND a negative net fiscal impact,
+        # the derived net-impact interval must still satisfy low <= central <= high.
         pop = _population()
         scenario = _scenario(_wealth_tax())
         base = simulate(pop, scenario)
@@ -563,9 +602,30 @@ class TestIntervals:
             enforcement_cost_bn=gross + 5.0,
         )
         result = simulate(pop, scenario, registries=self._registries(), enforcement=enforcement)
-        iv = result.enforcement_uplift_bn
+        iv = result.enforcement_net_fiscal_impact_bn
         assert iv.central < 0
         assert iv.low <= iv.central <= iv.high
+
+    def test_negative_net_fiscal_impact_preserves_bound_invariants(self):
+        # Regression: enforcement cost is not revenue, so even a negative net
+        # fiscal impact cannot flip interval-bound conservation.
+        pop = _population()
+        scenario = _scenario(_wealth_tax())
+        base = simulate(pop, scenario)
+        gross = base.total_revenue_gbp_bn.central * 0.1
+        enforcement = EnforcementConfig(
+            compliance_rates=(ComplianceRate(tax_family=TaxFamily.OTHER, baseline_rate=0.8, scenario_rate=0.9),),
+            enforcement_cost_bn=gross * 3,
+        )
+        result = simulate(pop, scenario, registries=self._registries(), enforcement=enforcement)
+        assert result.enforcement_net_fiscal_impact_bn.central < 0
+        for bound in ("low", "central", "high"):
+            decile_sum = sum(getattr(iv, bound) for iv in result.revenue_by_decile)
+            nation_sum = sum(getattr(iv, bound) for iv in result.revenue_by_nation.values())
+            total = getattr(result.total_revenue_gbp_bn, bound)
+            uplift = getattr(result.enforcement_uplift_bn, bound)
+            assert decile_sum == pytest.approx(total - uplift)
+            assert nation_sum == pytest.approx(total - uplift)
 
     def test_decile_invariant_at_every_bound_with_enforcement(self):
         # The subtraction path: deciles cover family revenue only, so at EVERY

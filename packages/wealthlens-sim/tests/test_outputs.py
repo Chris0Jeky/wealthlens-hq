@@ -151,6 +151,8 @@ class TestStructure:
         total = result["total_revenue_gbp_bn"]
         assert set(total) == {"low", "central", "high"}
         assert total["low"] <= total["central"] <= total["high"]
+        assert set(result["enforcement_cost_gbp_bn"]) == {"low", "central", "high"}
+        assert set(result["enforcement_net_fiscal_impact_gbp_bn"]) == {"low", "central", "high"}
         assert len(result["revenue_by_decile"]) == 10
 
     def test_provenance_block_lists_consumed_assumptions(self):
@@ -204,9 +206,11 @@ class TestDataIntegritySurfacing:
     def test_enforcement_headline_has_no_overstatement_caveat(self):
         dash = to_dashboard_json(_devolution_enforcement_result())
         assert dash["enforcement_uplift_gbp_bn"]["central"] > 0.0
+        assert dash["enforcement_cost_gbp_bn"]["central"] == 0.0
+        assert dash["enforcement_net_fiscal_impact_gbp_bn"]["central"] == dash["enforcement_uplift_gbp_bn"]["central"]
         assert not any("overstates collectible revenue" in c for c in dash["caveats"])
 
-    def test_negative_net_enforcement_uplift_has_no_overstatement_caveat(self):
+    def test_negative_net_fiscal_impact_has_no_overstatement_caveat(self):
         pop = generate_population(SynthConfig(n_households=500, seed=7))
         enforcement = EnforcementConfig(
             compliance_rates=(ComplianceRate(tax_family=TaxFamily.OTHER, baseline_rate=0.8, scenario_rate=0.9),),
@@ -220,7 +224,10 @@ class TestDataIntegritySurfacing:
                 enforcement=enforcement,
             )
         )
-        assert dash["enforcement_uplift_gbp_bn"]["central"] < 0.0
+        assert dash["enforcement_uplift_gbp_bn"]["central"] > 0.0
+        assert dash["enforcement_cost_gbp_bn"]["central"] == 10.0
+        assert dash["enforcement_net_fiscal_impact_gbp_bn"]["central"] < 0.0
+        assert dash["total_revenue_gbp_bn"]["central"] > 0.0
         assert not any("overstates collectible revenue" in c for c in dash["caveats"])
 
     def test_root_flag_mirrors_nested_provenance_complete(self):

@@ -12,20 +12,20 @@ revenue, parameterised by a compliance rate per tax family.
 The core insight: "what if HMRC had better wealth visibility?" may
 raise revenue by increasing observability rather than rates.
 
-Key statistics (2023-24, sources below):
+Key statistics (sources below):
 - UK tax gap: £46.8bn (5.3% of theoretical liabilities)
-- Wealthy individuals (>£200k income or >£2m assets): ~850,000
-- Wealthy compliance yield: ~£5.2bn
-- Wealthy tax gap: ~£1.9bn
+- Wealthy individuals (>£200k income or >£2m assets): ~850,000 in 2023-24
+- Wealthy compliance yield: ~£5.2bn in 2023-24
+- Wealthy tax gap: ~£1.9bn in 2022-23, the latest year available in the NAO report
 
 Sources:
     HMRC, Measuring tax gaps 2025 edition: tax gaps summary,
     https://www.gov.uk/government/statistics/measuring-tax-gaps/1-tax-gaps-summary,
-    accessed 2026-05-23.
+    accessed 2026-05-30.
 
-    NAO, HMRC's approach to collecting tax from wealthy individuals,
-    https://www.nao.org.uk/reports/hmrcs-approach-to-collecting-tax-from-wealthy-individuals/,
-    accessed 2026-05-23.
+    NAO, Collecting the right tax from wealthy individuals,
+    https://www.nao.org.uk/reports/collecting-the-right-tax-from-wealthy-individuals/,
+    accessed 2026-05-30.
 """
 
 from __future__ import annotations
@@ -37,8 +37,18 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 HMRC_OVERALL_TAX_GAP_RATE_2023_24 = 0.053
 HMRC_OVERALL_BASELINE_COMPLIANCE_RATE_2023_24 = 1.0 - HMRC_OVERALL_TAX_GAP_RATE_2023_24
 HMRC_OVERALL_TAX_GAP_GBP_BN_2023_24 = 46.8
-HMRC_WEALTHY_TAX_GAP_GBP_BN_2023_24 = 1.9
+HMRC_WEALTHY_TAX_GAP_GBP_BN_2022_23 = 1.9
 HMRC_WEALTHY_COMPLIANCE_YIELD_GBP_BN_2023_24 = 5.2
+HMRC_OVERALL_TAX_GAP_SOURCE = (
+    "HMRC, Measuring tax gaps 2025 edition: tax gaps summary, "
+    "https://www.gov.uk/government/statistics/measuring-tax-gaps/1-tax-gaps-summary, accessed 2026-05-30"
+)
+NAO_WEALTHY_TAX_SOURCE = (
+    "NAO, Collecting the right tax from wealthy individuals, "
+    "https://www.nao.org.uk/reports/collecting-the-right-tax-from-wealthy-individuals/, accessed 2026-05-30"
+)
+ENFORCEMENT_COMPLIANCE_ASSUMPTION_ID = "model.enforcement.compliance_rates.v0_1"
+ENFORCEMENT_COMPLIANCE_SOURCE = f"{HMRC_OVERALL_TAX_GAP_SOURCE}; {NAO_WEALTHY_TAX_SOURCE}"
 
 
 class TaxFamily(StrEnum):

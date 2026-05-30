@@ -10,7 +10,7 @@ from wealthlens_sim.reforms.f_enforcement import (
     HMRC_OVERALL_TAX_GAP_GBP_BN_2023_24,
     HMRC_OVERALL_TAX_GAP_RATE_2023_24,
     HMRC_WEALTHY_COMPLIANCE_YIELD_GBP_BN_2023_24,
-    HMRC_WEALTHY_TAX_GAP_GBP_BN_2023_24,
+    HMRC_WEALTHY_TAX_GAP_GBP_BN_2022_23,
     AggregateEnforcementRevenue,
     ComplianceRate,
     EnforcementConfig,
@@ -100,7 +100,7 @@ class TestComplianceRate:
         assert cr.baseline_rate == pytest.approx(HMRC_OVERALL_BASELINE_COMPLIANCE_RATE_2023_24)
         assert cr.scenario_rate == 1.0
         assert pytest.approx(46.8) == HMRC_OVERALL_TAX_GAP_GBP_BN_2023_24
-        assert pytest.approx(1.9) == HMRC_WEALTHY_TAX_GAP_GBP_BN_2023_24
+        assert pytest.approx(1.9) == HMRC_WEALTHY_TAX_GAP_GBP_BN_2022_23
         assert pytest.approx(5.2) == HMRC_WEALTHY_COMPLIANCE_YIELD_GBP_BN_2023_24
 
     def test_rate_above_one_rejected(self):
