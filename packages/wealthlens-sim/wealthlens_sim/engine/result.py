@@ -20,6 +20,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from wealthlens_sim.assumptions.schema import AssumptionRegistry
 from wealthlens_sim.provenance.manifest import ProvenanceManifest
+from wealthlens_sim.reforms.g_devolution import DevolutionSplit
 from wealthlens_sim.rules.scenario import Scenario
 from wealthlens_sim.schema.household import Household
 from wealthlens_sim.top_tail.types import Interval
@@ -78,8 +79,15 @@ class EngineResult(BaseModel):
     total_revenue_gbp_bn: Interval
     revenue_by_nation: dict[str, Interval]
     revenue_by_decile: list[Interval] = Field(default_factory=list)
+    #: Count of households actually scored. When a devolution scope is applied
+    #: this is the *included* subset (see ``devolution_split``), not the whole
+    #: population.
     households_scored: int = Field(ge=0)
     provenance: ProvenanceManifest
+    #: The nation-scope split when a Family G devolution scope was applied
+    #: (which nations were included/excluded and their weights); ``None`` when
+    #: the scenario ran UK-wide over the whole population.
+    devolution_split: DevolutionSplit | None = None
     #: Provenance ids carried by the scored population (e.g. synth calibration
     #: sources). Surfaced verbatim so the population's own provenance is never
     #: silently dropped; empty for the v0.1 synthetic generator.
@@ -96,5 +104,21 @@ class EngineResult(BaseModel):
         n = len(self.revenue_by_decile)
         if n not in (0, N_DECILES):
             msg = f"revenue_by_decile must have 0 or {N_DECILES} entries, got {n}"
+            raise ValueError(msg)
+        return self
+
+    @model_validator(mode="after")
+    def _check_devolution_consistency(self) -> EngineResult:
+        # When a devolution scope was applied, households_scored is the included
+        # subset, so it must equal the split's included_count — guards against an
+        # inconsistent result (e.g. hand-constructed) carrying mismatched counts.
+        if (
+            self.devolution_split is not None
+            and self.households_scored != self.devolution_split.included_count
+        ):
+            msg = (
+                f"households_scored ({self.households_scored}) must match "
+                f"devolution_split.included_count ({self.devolution_split.included_count})"
+            )
             raise ValueError(msg)
         return self

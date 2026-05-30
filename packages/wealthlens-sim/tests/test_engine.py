@@ -14,6 +14,7 @@ from pydantic import ValidationError
 from wealthlens_sim.assumptions import load_assumptions
 from wealthlens_sim.engine import (
     N_DECILES,
+    DevolutionConfig,
     EngineResult,
     PopulationSource,
     Registries,
@@ -24,6 +25,7 @@ from wealthlens_sim.provenance.manifest import PipelineLayer, ProvenanceManifest
 from wealthlens_sim.reforms.a_annual_wealth import WealthTaxConfig
 from wealthlens_sim.reforms.d_iht_reform import IHTConfig
 from wealthlens_sim.reforms.e_property_tax import HVCTSConfig
+from wealthlens_sim.reforms.g_devolution import NationScope
 from wealthlens_sim.rules import FamilySelection, PolicyFamily, Scenario
 from wealthlens_sim.rules import run_scenario as run_families
 from wealthlens_sim.schema.base import Nation, VersionTag
@@ -262,6 +264,89 @@ class TestProvenance:
         assert {e.output_label for e in with_reg.provenance.entries} == {
             e.output_label for e in without.provenance.entries
         }
+
+
+class TestDevolution:
+    def test_no_devolution_scores_whole_population(self):
+        result = simulate(_population(), _scenario(_wealth_tax()))
+        assert result.devolution_split is None
+
+    def test_england_only_scores_england_subset(self):
+        pop = _population()
+        cfg = _wealth_tax()
+        scenario = _scenario(cfg)
+        result = simulate(pop, scenario, devolution=DevolutionConfig(scope=NationScope.ENGLAND_ONLY))
+        england = [h for h in pop.households if h.nation == Nation.ENGLAND]
+        # Only England is scored; the split summary stays visible.
+        assert result.households_scored == len(england)
+        assert result.devolution_split is not None
+        assert result.devolution_split.included_nations == ("england",)
+        assert result.devolution_split.excluded_count == len(pop.households) - len(england)
+        # Revenue equals the rules aggregate over the England-only subset.
+        aggregate = run_families(england, scenario)
+        assert result.total_revenue_gbp_bn.central == pytest.approx(aggregate.total_revenue_bn)
+        # Non-England nations contribute nothing.
+        assert set(result.revenue_by_nation) <= {"england"}
+
+    def test_custom_scope_scores_only_named_nation(self):
+        pop = _population()
+        cfg = DevolutionConfig(scope=NationScope.CUSTOM, included_nations=frozenset({Nation.SCOTLAND}))
+        result = simulate(pop, _scenario(_wealth_tax()), devolution=cfg)
+        scotland = [h for h in pop.households if h.nation == Nation.SCOTLAND]
+        assert result.households_scored == len(scotland)
+        assert result.devolution_split is not None
+        assert result.devolution_split.included_nations == ("scotland",)
+
+    def test_great_britain_scope_excludes_northern_ireland(self):
+        pop = _population()
+        result = simulate(pop, _scenario(_wealth_tax()), devolution=DevolutionConfig(scope=NationScope.GREAT_BRITAIN))
+        assert result.devolution_split is not None
+        assert result.devolution_split.included_nations == ("england", "scotland", "wales")
+        assert "northern_ireland" in result.devolution_split.excluded_nations
+        assert "northern_ireland" not in result.revenue_by_nation
+
+    def test_custom_multi_nation_scope(self):
+        pop = _population()
+        cfg = DevolutionConfig(scope=NationScope.CUSTOM, included_nations=frozenset({Nation.SCOTLAND, Nation.WALES}))
+        result = simulate(pop, _scenario(_wealth_tax()), devolution=cfg)
+        included = [h for h in pop.households if h.nation in {Nation.SCOTLAND, Nation.WALES}]
+        assert result.households_scored == len(included)
+        assert result.devolution_split is not None
+        assert result.devolution_split.included_nations == ("scotland", "wales")
+        assert set(result.revenue_by_nation) <= {"scotland", "wales"}
+
+    def test_england_only_drops_exactly_the_excluded_nations_revenue(self):
+        # The revenue removed by an England-only scope must equal the revenue the
+        # excluded nations contributed UK-wide — proving the filter removes their
+        # revenue, not merely their household count.
+        pop = _population()
+        scenario = _scenario(_wealth_tax())
+        uk_wide = simulate(pop, scenario)
+        england_only = simulate(pop, scenario, devolution=DevolutionConfig(scope=NationScope.ENGLAND_ONLY))
+        excluded_revenue = sum(
+            value.central for nation, value in uk_wide.revenue_by_nation.items() if nation != "england"
+        )
+        dropped = uk_wide.total_revenue_gbp_bn.central - england_only.total_revenue_gbp_bn.central
+        assert dropped == pytest.approx(excluded_revenue)
+
+    def test_decile_invariant_holds_on_included_subset(self):
+        pop = _population()
+        scenario = _scenario(_wealth_tax())
+        result = simulate(pop, scenario, devolution=DevolutionConfig(scope=NationScope.ENGLAND_ONLY))
+        decile_sum = sum(iv.central for iv in result.revenue_by_decile)
+        assert decile_sum == pytest.approx(result.total_revenue_gbp_bn.central)
+
+    def test_scope_excluding_all_households_yields_zero(self):
+        # An all-England population scoped to Scotland-only scores nobody.
+        households = [_household(f"h{i}", net_wealth=3_000_000.0, weight=1.0) for i in range(20)]
+        pop = SyntheticPopulation(households=households, seed=0)
+        cfg = DevolutionConfig(scope=NationScope.CUSTOM, included_nations=frozenset({Nation.SCOTLAND}))
+        result = simulate(pop, _scenario(_wealth_tax()), devolution=cfg)
+        assert result.households_scored == 0
+        assert result.total_revenue_gbp_bn.central == 0.0
+        assert result.revenue_by_decile == []
+        assert result.devolution_split is not None
+        assert result.devolution_split.included_count == 0
 
 
 class TestEngineResultModel:
