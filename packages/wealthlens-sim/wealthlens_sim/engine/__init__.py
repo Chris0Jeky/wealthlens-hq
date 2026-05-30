@@ -8,14 +8,16 @@ revenue totals, a per-nation and per-wealth-decile breakdown, and a provenance
 manifest. It is named ``simulate`` (not ``run_scenario``) to avoid colliding with
 ``rules.run_scenario``, which has a different signature and return type.
 
-The engine ships the A-E end-to-end path with **degenerate intervals**
-(``low == central == high``) and a **known-incomplete** provenance manifest
-(``EngineResult.provenance_complete is False``): the published numbers depend on
-the policy configs and the top-tail Pareto alpha, but the engine does not yet
-``consume`` those assumptions. Family G (devolution) composes here as of PR3b and
-Family F (enforcement) as of PR3c (via the ``_enforcement`` helper). Real interval
-propagation + full provenance remain pending (the next stacked PR). The
-``registries`` seam is threaded now so that PR needs no signature change.
+Given a ``registries`` bundle carrying the top-tail Pareto alpha range, the engine
+propagates genuine ``low``/``central``/``high`` revenue intervals (see
+``_intervals``) and emits a **complete** provenance manifest that consumes the
+alpha and records it against each published output
+(``EngineResult.provenance_complete is True``). Without a registry it falls back to
+**degenerate intervals** (``low == central == high``) and an incomplete manifest
+(``provenance_complete is False``) — the uncertainty is unquantified. Family G
+(devolution) composes here as of PR3b and Family F (enforcement) as of PR3c (via
+the ``_enforcement`` helper). Richer per-parameter / Monte-Carlo uncertainty is the
+genuinely-deferred Wave 13 (``uncertainty/``) work.
 
 Reference: docs/WAVE12_SIMULATION_ENGINE_DESIGN.md §5.
 """
