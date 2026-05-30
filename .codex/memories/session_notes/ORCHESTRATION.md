@@ -30,8 +30,9 @@ This section supersedes the older handoff snapshot below.
   `population_provenance_ids`, regenerates dashboard goldens, is the newest open
   PR, and must **not** be merged until another PR is opened above it and the full
   non-doc gate is satisfied. Gemini and Codex bot threads were addressed and
-  resolved. Local verification on the rebased branch: 647 sim tests + ruff + mypy
-  passed; re-check GitHub checks after the latest bot-fix push.
+  resolved, including all generation inputs and canonical mapping order. Local
+  verification on the branch: 648 sim tests + ruff + mypy passed; GitHub checks
+  are green and merge state is clean.
 
 ## Where to start
 1. Run `gh pr list --state open`, `gh pr checks 337`, and inspect latest main

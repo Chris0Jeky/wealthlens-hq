@@ -5,8 +5,8 @@ Last updated: 2026-05-30
 > **LATEST:** #336 enforcement compliance model is merged to `main` at `6b0f8e5`
 > after two adversarial review rounds, green CI, and all findings/comments fixed.
 > #337 synth generation provenance is now the only open/newest PR; its Gemini
-> and Codex comments are addressed/resolved and local verification passed. Re-check
-> GitHub checks after the latest bot-fix push. It must not be merged while newest.
+> and Codex comments are addressed/resolved, local verification passed, and GitHub
+> checks are green. It must not be merged while newest.
 
 This week's focus. Keep this list to 5-7 tasks.
 

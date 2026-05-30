@@ -17,9 +17,10 @@ Last updated: 2026-05-30
   pass locally on main after #336.
 - **Open/newest:** #337 `feat/synth-generation-provenance` -> `main`, recording
   all generation-affecting `SynthConfig` inputs in population provenance. Its
-  Gemini and Codex comments were addressed and resolved; local verification on
-  the rebased branch is 647 sim tests + ruff + mypy passing. Re-check GitHub
-  checks after the latest bot-fix push. Do not merge #337 while newest.
+  Gemini and Codex comments were addressed and resolved, including all generation
+  inputs and canonical mapping order; local verification on the branch is 648
+  sim tests + ruff + mypy passing, and GitHub checks are green. Do not merge #337
+  while newest.
 
 ## Current phase: Wave 13 calibration and extension
 
