@@ -7,6 +7,55 @@
 
 Last updated: 2026-05-30
 
+# CURRENT HANDOFF - read this first (2026-05-30, post #336 merge)
+
+This section supersedes the older handoff snapshot below.
+
+## Current state
+- `main` is at merge commit `6b0f8e5` after merging **#336**
+  `feat/enforcement-compliance-model`.
+- #336 replaced the Family-F overstatement placeholder with a
+  baseline-vs-theoretical compliance model. Two independent adversarial reviews
+  found and fixed: enforcement cost subtracting from revenue, misstated NAO
+  wealthy-tax-gap year, negative net-fiscal-impact interval invariants, and
+  missing enforcement provenance. Final confirmation reviews were clean, the
+  Gemini thread was resolved/outdated, CI was green, and #336 was merged.
+- Main local sim verification after #336: `python -m pytest -q` -> 645 passed;
+  `python -m ruff check wealthlens_sim tests` -> passed; `python -m mypy
+  wealthlens_sim` -> passed.
+- Latest main GitHub runs after `6b0f8e5`: CI Simulator, CodeQL, and Deploy are
+  green.
+- **Only open PR:** **#337** `feat/synth-generation-provenance` -> `main`.
+  It records `synth.seed` and `synth.pareto_alpha` in
+  `population_provenance_ids`, regenerates dashboard goldens, is the newest open
+  PR, and must **not** be merged until another PR is opened above it and the full
+  non-doc gate is satisfied. Its Gemini thread was addressed and resolved. Local
+  verification on the rebased branch: 646 sim tests + ruff + mypy passed; GitHub
+  checks are green and merge state is clean.
+
+## Where to start
+1. Run `gh pr list --state open`, `gh pr checks 337`, and inspect latest main
+   runs for merge commit `6b0f8e5`.
+2. Run two independent adversarial reviews on #337: provenance/data-integrity and
+   dashboard JSON/golden/test regression. Fix every finding and any new bot
+   comments.
+3. Open a newer small Wave 13 PR above #337 before considering #337 for merge.
+   Good candidates: Monte-Carlo/Sobol uncertainty groundwork or dashboard JSON
+   Vue scenario-page wiring.
+
+## Current invariants
+- Enforcement revenue is now gross compliance uplift. Enforcement cost is
+  expenditure, not revenue, and is surfaced separately as
+  `enforcement_cost_bn` and `enforcement_net_fiscal_impact_bn`.
+- At every interval bound:
+  `sum(revenue_by_decile) ~= total_revenue_gbp_bn - enforcement_uplift_bn` and
+  `sum(revenue_by_nation) ~= total_revenue_gbp_bn - enforcement_uplift_bn`.
+- `DASHBOARD_SCHEMA_VERSION` is `1.2`.
+- When enforcement affects complete outputs, the dashboard provenance includes
+  the enforcement compliance model assumption with HMRC and NAO source URLs.
+- Synthetic data remains labelled as synthetic; #337 adds generator parameter
+  tags to the population provenance seam.
+
 ---
 
 # 🟢 HANDOFF — read this first (2026-05-30, post #335 merge)

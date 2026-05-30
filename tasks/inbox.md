@@ -2,6 +2,10 @@
 
 Last updated: 2026-05-30
 
+> Latest: PR #336 proper enforcement compliance model is merged. PR #337 synth
+> generation provenance is open/newest, green, and merge-clean; it must not be
+> merged until a newer PR is opened above it and the full review gate is satisfied.
+
 Every concrete action item extracted from research. Triage into active-sprint, backlog, or done.
 
 ---
@@ -9,12 +13,14 @@ Every concrete action item extracted from research. Triage into active-sprint, b
 ## Wave 13 candidates (seeded 2026-05-30, after the Wave 12 engine stack)
 
 The Wave 12 engine (synth→rules→engine→outputs) is built and merged through
-#335. Follow-ups surfaced by the build + its adversarial reviews:
+#335, and Wave 13 #336 enforcement compliance is merged. Follow-ups surfaced by
+the build + its adversarial reviews:
 
-- [ ] **Proper enforcement compliance model** — PR #336 is open, clean, and CI-green.
-  It replaces the Family-F overstatement placeholder with a baseline-vs-theoretical
-  compliance model anchored to HMRC's published tax-gap stats. It still needs the
-  full two-review gate, bot/comment cleanup, and a newer PR above it before merge.
+- [x] **Proper enforcement compliance model** — PR #336 merged after the full
+  two-review gate. It replaces the Family-F overstatement placeholder with a
+  baseline-vs-theoretical compliance model anchored to HMRC/NAO tax-gap evidence;
+  enforcement cost is separate from revenue and enforcement assumptions are in
+  dashboard provenance. [completed: 2026-05-30]
 - [ ] **Monte-Carlo / Sobol uncertainty (`uncertainty/`)** — replace the single
   multiplicative top-tail-alpha band with per-parameter sampling (SALib / NumPyro).
 - [x] **Calibrate the synth generator to cited public WAS/ONS marginals** — PR #335
@@ -25,9 +31,11 @@ The Wave 12 engine (synth→rules→engine→outputs) is built and merged throug
 - [ ] **Wire the dashboard JSON into a Vue scenario page** — `to_dashboard_json` emits the
   contract (totals/by-nation/by-decile intervals + provenance + caveats); build the
   ConfidenceFanChart + ProvenanceTooltip + a caveats banner that renders `caveats[]`.
-- [ ] **Record the synth generative `pareto_alpha` in provenance** — `provenance_complete`
-  currently covers only registry assumptions; the population's own generation params are
-  not in the manifest (documented carve-out). Surface them via `population.provenance_ids`.
+- [ ] **Record the synth generative `pareto_alpha` in provenance** — PR #337 is
+  open/newest and threads `synth.seed` + `synth.pareto_alpha` through
+  `population.provenance_ids` / dashboard JSON. GitHub checks are green and its
+  Gemini thread is resolved; it still needs the full two-review gate and a newer
+  PR above it before merge.
 
 ---
 
@@ -35,8 +43,8 @@ The Wave 12 engine (synth→rules→engine→outputs) is built and merged throug
 
 > **Status (2026-05-30):** Gate 1 (schema + registries + loaders), the top-tail
 > Pareto reconstruction, provenance, all seven policy families (A–G), and the
-> Wave 12 engine/output stack are MERGED to `main` through #335. 638 sim tests
-> pass on main; ci-sim is green. See `docs/WAVE12_SIMULATION_ENGINE_DESIGN.md`.
+> Wave 12/Wave 13 engine-output stack is MERGED to `main` through #336. 645 sim
+> tests pass locally on main after #336. See `docs/WAVE12_SIMULATION_ENGINE_DESIGN.md`.
 
 ### Gate 1: Schema + Registry Layer — DONE
 - [x] Pydantic schema module — households, policies, results (PR #292/#318) [completed: 2026-05-23]

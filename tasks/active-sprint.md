@@ -2,21 +2,26 @@
 
 Last updated: 2026-05-30
 
+> **LATEST:** #336 enforcement compliance model is merged to `main` at `6b0f8e5`
+> after two adversarial review rounds, green CI, and all findings/comments fixed.
+> #337 synth generation provenance is now the only open/newest PR; its Gemini
+> comment is addressed/resolved, local verification passed, and GitHub checks are
+> green, but it must not be merged while newest.
+
 This week's focus. Keep this list to 5-7 tasks.
 
-> **NEXT SESSION START HERE:** the Wave 12 engine is now merged. Read
+> **NEXT SESSION START HERE:** Wave 13 is active. Read
 > `.codex/memories/session_notes/ORCHESTRATION.md` (top "🟢 HANDOFF" section) first —
-> it has the full state, where to start (#336 enforcement-compliance review/aging), the engine
+> it has the full state, where to start (#337 synth generation provenance review/aging), the engine
 > architecture, the backlog, and the ops gotchas. Quick status below.
 
 ## Sprint: 2026-05-30 to 2026-06-06 (Wave 13 — calibrate, surface, extend)
 
-**Status:** Full Wave 12 engine is on `main` through **#335**. **#336**
-`feat/enforcement-compliance-model` is open as the next Wave 13 PR; it replaces
-the Family-F overstatement placeholder with a baseline-vs-theoretical compliance
-model. GitHub checks are green and merge-state is clean. Do not merge #336 while
-it is newest; run the full two-review gate, fix every finding/comment, and open
-another PR above it first.
+**Status:** Full Wave 12 engine is on `main` through **#335**, and Wave 13 #336
+`feat/enforcement-compliance-model` is merged. **#337**
+`feat/synth-generation-provenance` is open as the newest Wave 13 PR. Do not merge
+#337 while it is newest; run the full two-review gate, fix every finding/comment,
+and open another PR above it first.
 
 1. - [x] **Drain PR #333** (`outputs.to_dashboard_json` + golden files + the
    provenance-label/caveat bot fixes) → main (@Chris) [completed: 2026-05-30]
@@ -24,9 +29,13 @@ another PR above it first.
    #335 merged after two adversarial reviews, bot-thread cleanup, green CI, and
    a newer PR above it. (@Chris) [completed: 2026-05-30]
 3. - [x] **Drain PR #334** (headline-revenue example) after a new PR lands above it (@Chris) [completed: 2026-05-30]
-4. - [ ] Wave 13 stretch: review/drain #336 proper enforcement compliance model;
-   record synth generative params in provenance; Monte-Carlo uncertainty; wire the
-   dashboard JSON into a Vue scenario page. See `tasks/inbox.md` "Wave 13 candidates". (@Chris)
+4. - [x] **Review/drain #336 proper enforcement compliance model** — merged to
+   main after two independent adversarial review rounds; fixed enforcement cost
+   vs revenue, NAO year/source, interval invariants, and enforcement provenance.
+   (@Chris) [completed: 2026-05-30]
+5. - [ ] Wave 13 stretch: review/drain #337 synth generation provenance; open a
+   newer PR above it before merge; then continue with Monte-Carlo uncertainty or
+   dashboard JSON Vue wiring. See `tasks/inbox.md` "Wave 13 candidates". (@Chris)
 
 ## Completed sprint: 2026-05-29 to 2026-06-05 (Wave 12 engine)
 
@@ -48,7 +57,7 @@ reconstruction, provenance, all 7 policy families A–G) is MERGED to `main` (PR
 
 - **Merge cycle (1–4):** cleared all 38 open PRs with rigour; closed the CI gap (simulator was untested in CI), the IHT data-integrity simplifications, the security alerts, and the pip-install packaging gap — each its own reviewed PR.
 - **Wave 12 (5–7):** the policy families existed but nothing drove them. `synth/` supplies a population, `rules/` runs a scenario over it; the **engine PR (7)** ties synth→rules→provenance into a single `EngineResult` — the first end-to-end headline-revenue number. Then `outputs/` formats it for the dashboard.
-- **Follow-ups (backlog, not this sprint):** review/drain #336 enforcement compliance; Monte-Carlo uncertainty (Wave 13); real WAS/FRS microdata behind the Protocol seam.
+- **Follow-ups (backlog, not this sprint):** review/drain #337 synth generation provenance; Monte-Carlo uncertainty (Wave 13); real WAS/FRS microdata behind the Protocol seam.
 
 ## Completed This Sprint
 

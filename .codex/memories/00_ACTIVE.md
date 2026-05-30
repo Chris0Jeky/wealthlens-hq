@@ -7,6 +7,20 @@
 
 Last updated: 2026-05-30
 
+## Latest Wave 13 status (post #336 merge)
+
+- **Merged to main:** #336 `feat/enforcement-compliance-model` after two
+  independent adversarial review rounds, all findings fixed, Gemini thread
+  resolved/outdated, CI green, and a newer PR opened above it. Enforcement cost
+  is now separate from revenue (`enforcement_cost_bn`,
+  `enforcement_net_fiscal_impact_bn`); dashboard schema is `1.2`; 645 sim tests
+  pass locally on main after #336.
+- **Open/newest:** #337 `feat/synth-generation-provenance` -> `main`, recording
+  `synth.seed` and `synth.pareto_alpha` in population provenance. Its Gemini
+  comment was addressed and resolved; local verification on the rebased branch is
+  646 sim tests + ruff + mypy passing; GitHub checks are green and merge state is
+  clean. Do not merge #337 while newest.
+
 ## Current phase: Wave 13 calibration and extension
 
 **2026-05-30 cycle:** Built the full Wave 12 PR3 engine as a 5-PR stack + a Wave 13
@@ -20,18 +34,18 @@ example, each with 2 independent adversarial reviews + all bot comments addresse
   `examples.headline_revenue` runnable demo.
 - **Merged to main:** #329 (engine-core), #330 (devolution), #331 (enforcement),
   #332 (intervals), #333 (dashboard JSON outputs), #334 (headline example),
-  #335 (synth ONS/WAS calibration and provenance). **638 sim tests pass on main.**
-- **Open:** #336 `feat/enforcement-compliance-model` -> main replaces the opt-in
-  Family-F overstatement placeholder with a baseline-vs-theoretical compliance
-  model. It is rebased on #335, merge-clean, CI-green, and its Gemini bot thread
-  is resolved. It is the newest open PR and still needs the full 2-review
-  adversarial cycle before merge.
+  #335 (synth ONS/WAS calibration and provenance), and #336 (enforcement
+  compliance model). **645 sim tests pass locally on main after #336.**
+- **Open:** #337 `feat/synth-generation-provenance` -> main records synth
+  generation tags in population provenance. It is the newest open PR and still
+  needs the full 2-review adversarial cycle plus a newer PR above it before
+  merge.
 - Reviews caught real issues (decile non-conservation for tiny weights, provenance
   overclaiming, enforcement-overstatement + unsourced-state surfacing in the
   dashboard contract, headline honest-labelling). 33 stale branches pruned.
-- Backlog (tasks/inbox.md Wave 13): review/drain #336 once aged;
-  Monte-Carlo/Sobol uncertainty; record remaining synth generative params in
-  provenance; wire the dashboard JSON into a Vue scenario page.
+- Backlog (tasks/inbox.md Wave 13): review/drain #337 once aged;
+  Monte-Carlo/Sobol uncertainty; wire the dashboard JSON into a Vue scenario
+  page.
 
 ## Prior phase: Gate-1 Simulator merged → Wave 12 (engine/synth)
 
@@ -59,8 +73,8 @@ All dashboard code is on main. Site live. Codebase includes:
 
 | Area | Status | Next step |
 | --- | --- | --- |
-| **WealthLens-Sim** | Gate 1 + Wave 12 engine/output stack + #335 synth calibration MERGED to main | Review/drain #336 enforcement compliance model, then open the next Wave 13 PR above it |
-| Sim CI | `ci-sim.yml` runs ruff+mypy+pytest (py3.11/3.12) + weekly; 638 sim tests on main | Maintain; add coverage of new modules |
+| **WealthLens-Sim** | Gate 1 + Wave 12 engine/output stack + #336 enforcement compliance MERGED to main | Review/drain #337 synth generation provenance, then open the next Wave 13 PR above it |
+| Sim CI | `ci-sim.yml` runs ruff+mypy+pytest (py3.11/3.12) + weekly; 645 sim tests on main after #336 | Maintain; add coverage of new modules |
 | Sim packaging | registries bundled into wheel+sdist (hatch hook); pip-installable | — |
 | Data pipelines | 8+ pipelines on main | Maintain; add new pipelines as needed |
 | Charts (v0.1) | Live (4 charts + broadsheet redesign) | Build more chart components in Vue |
