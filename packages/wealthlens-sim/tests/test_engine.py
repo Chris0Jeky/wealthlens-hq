@@ -220,6 +220,18 @@ class TestDecileAttribution:
         with pytest.raises(ValueError, match="total household weight must be positive"):
             revenue_by_wealth_decile(households, [_wealth_tax()])
 
+    def test_negative_weight_raises(self):
+        # A negative weight would wrap to a negative decile index; reject it.
+        households = [_household("h1", net_wealth=2_000_000.0, weight=1.0)]
+        object.__setattr__(households[0], "weight", -1.0)
+        with pytest.raises(ValueError, match="household weights must be non-negative"):
+            revenue_by_wealth_decile(households, [_wealth_tax()])
+
+    def test_invalid_n_deciles_raises(self):
+        households = [_household("h1", net_wealth=2_000_000.0, weight=1.0)]
+        with pytest.raises(ValueError, match="n_deciles must be strictly positive"):
+            revenue_by_wealth_decile(households, [_wealth_tax()], n_deciles=0)
+
 
 class TestProvenance:
     def test_manifest_records_revenue_outputs(self):

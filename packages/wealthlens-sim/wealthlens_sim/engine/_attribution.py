@@ -78,14 +78,27 @@ def revenue_by_wealth_decile(
     list when ``households`` is empty.
 
     Raises:
-        ValueError: if the population is non-empty but its total weight is not
-            positive — a data defect (weights must be > 0), surfaced rather than
-            silently collapsed into an empty result.
+        ValueError: if ``n_deciles`` is not strictly positive; if any household
+            weight is negative (which would silently corrupt the attribution via
+            Python negative indexing); or if the population is non-empty but its
+            total weight is not positive — all data defects surfaced rather than
+            silently mis-attributed or collapsed into an empty result.
     """
+    if n_deciles <= 0:
+        msg = f"n_deciles must be strictly positive, got {n_deciles}"
+        raise ValueError(msg)
     if not households:
         return []
 
-    total_weight = sum(h.weight for h in households)
+    # Single pass validates weights and sums them: a negative weight would push
+    # the cumulative axis backwards and produce a negative (wrap-around) decile
+    # index, so reject it explicitly rather than corrupt the attribution.
+    total_weight = 0.0
+    for household in households:
+        if household.weight < 0:
+            msg = f"household weights must be non-negative, got {household.weight}"
+            raise ValueError(msg)
+        total_weight += household.weight
     if total_weight <= 0:
         msg = f"total household weight must be positive to attribute deciles, got {total_weight}"
         raise ValueError(msg)
