@@ -8,13 +8,14 @@ revenue totals, a per-nation and per-wealth-decile breakdown, and a provenance
 manifest. It is named ``simulate`` (not ``run_scenario``) to avoid colliding with
 ``rules.run_scenario``, which has a different signature and return type.
 
-PR3a ships the A-E end-to-end path with **degenerate intervals**
+The engine ships the A-E end-to-end path with **degenerate intervals**
 (``low == central == high``) and a **known-incomplete** provenance manifest
 (``EngineResult.provenance_complete is False``): the published numbers depend on
-the policy configs and the top-tail Pareto alpha, but PR3a does not yet
-``consume`` those assumptions. Real interval propagation + full provenance land
-in PR3c; Family F (enforcement) + Family G (devolution) composition lands in PR3b.
-The ``registries`` seam is threaded now so those PRs need no signature change.
+the policy configs and the top-tail Pareto alpha, but the engine does not yet
+``consume`` those assumptions. Family G (devolution) composes here as of PR3b and
+Family F (enforcement) as of PR3c (via the ``_enforcement`` helper). Real interval
+propagation + full provenance remain pending (the next stacked PR). The
+``registries`` seam is threaded now so that PR needs no signature change.
 
 Reference: docs/WAVE12_SIMULATION_ENGINE_DESIGN.md §5.
 """
@@ -22,6 +23,7 @@ Reference: docs/WAVE12_SIMULATION_ENGINE_DESIGN.md §5.
 from __future__ import annotations
 
 from wealthlens_sim.engine._attribution import household_liability, revenue_by_wealth_decile
+from wealthlens_sim.engine._enforcement import compute_engine_enforcement, tax_family_for
 from wealthlens_sim.engine.result import (
     N_DECILES,
     EngineResult,
@@ -34,6 +36,7 @@ from wealthlens_sim.provenance.manifest import (
     ProvenanceEntry,
     ProvenanceManifest,
 )
+from wealthlens_sim.reforms.f_enforcement import EnforcementConfig
 from wealthlens_sim.reforms.g_devolution import (
     DevolutionConfig,
     DevolutionSplit,
@@ -48,12 +51,14 @@ __all__ = [
     "N_DECILES",
     "DevolutionConfig",
     "DevolutionSplit",
+    "EnforcementConfig",
     "EngineResult",
     "PopulationSource",
     "Registries",
     "household_liability",
     "revenue_by_wealth_decile",
     "simulate",
+    "tax_family_for",
 ]
 
 #: Labels recorded in the provenance manifest, one per published output.
@@ -104,6 +109,7 @@ def simulate(
     *,
     registries: Registries | None = None,
     devolution: DevolutionConfig | None = None,
+    enforcement: EnforcementConfig | None = None,
 ) -> EngineResult:
     """Score ``scenario`` over ``population`` and return an :class:`EngineResult`.
 
@@ -121,6 +127,20 @@ def simulate(
     result so the excluded nations and their weights stay visible. Family G is a
     territorial-scope layer, so it is an engine argument rather than a member of
     the A-E ``Scenario``.
+
+    When ``enforcement`` (Family F) is supplied, the compliance-gap model is
+    applied to the scenario's family revenues and its net uplift (revenue gained
+    minus enforcement cost) is **added to** ``total_revenue_gbp_bn`` and reported
+    separately on ``enforcement_uplift_bn``. The uplift is an aggregate figure and
+    is NOT attributed to nation or decile, so the decile invariant becomes
+    ``sum(revenue_by_decile) ~= total_revenue_gbp_bn - enforcement_uplift_bn``.
+    Family F is a revenue-uplift modifier, so — like G — it is an engine argument
+    rather than an A-E ``Scenario`` member. Only the net uplift is surfaced; the
+    full per-family/gross/gap breakdown is intentionally not on ``EngineResult``
+    in v0.1 and is recomputable via ``compute_engine_enforcement``. **Caveat:** the
+    A-E calculators report full statutory liability, so adding the uplift on top
+    can push the headline above the 100%-compliance ceiling — see
+    ``_enforcement.compute_engine_enforcement`` for the v0.1 simplification.
 
     The ``PopulationSource`` protocol is structural and presence-only
     (``runtime_checkable`` checks attribute presence, not element types);
@@ -140,11 +160,16 @@ def simulate(
     aggregate = _run_families(scored, scenario)
     decile_central = revenue_by_wealth_decile(scored, scenario.families, n_deciles=N_DECILES)
 
+    enforcement_uplift = 0.0
+    if enforcement is not None:
+        enforcement_uplift = compute_engine_enforcement(aggregate.family_revenues, enforcement).net_uplift_bn
+
     return EngineResult(
         scenario=scenario,
-        total_revenue_gbp_bn=_point_interval(aggregate.total_revenue_bn),
+        total_revenue_gbp_bn=_point_interval(aggregate.total_revenue_bn + enforcement_uplift),
         revenue_by_nation={nation: _point_interval(value) for nation, value in aggregate.revenue_by_nation.items()},
         revenue_by_decile=[_point_interval(value) for value in decile_central],
+        enforcement_uplift_bn=_point_interval(enforcement_uplift),
         households_scored=len(scored),
         provenance=_build_provenance(scenario, registries),
         population_provenance_ids=list(population.provenance_ids),
