@@ -7,7 +7,10 @@
     "low": 0.0
   },
   "households_scored": 500,
-  "population_provenance_ids": [],
+  "population_provenance_ids": [
+    "ons-was-wealth",
+    "ons-families-households-2022"
+  ],
   "provenance": {
     "assumptions_consumed": [
       {
@@ -100,43 +103,43 @@
       "low": 0.0
     },
     {
-      "central": 0.7941444526157035,
-      "high": 1.1470975426671273,
-      "low": 0.5956083394617777
+      "central": 0.0,
+      "high": 0.0,
+      "low": 0.0
     },
     {
-      "central": 46.75724688792751,
-      "high": 67.53824550478417,
-      "low": 35.06793516594563
+      "central": 9.602615926076105,
+      "high": 13.870445226554374,
+      "low": 7.201961944557079
     }
   ],
   "revenue_by_nation": {
     "england": {
-      "central": 41.767837183238186,
-      "high": 60.331320375788486,
-      "low": 31.32587788742864
+      "central": 9.339379336751188,
+      "high": 13.490214597529494,
+      "low": 7.004534502563391
     },
     "northern_ireland": {
-      "central": 1.323968834337608,
-      "high": 1.9123994273765448,
-      "low": 0.992976625753206
+      "central": 0.0,
+      "high": 0.0,
+      "low": 0.0
     },
     "scotland": {
-      "central": 4.211410408841622,
-      "high": 6.083148368326787,
-      "low": 3.158557806631216
+      "central": 0.2632365893249159,
+      "high": 0.38023062902487853,
+      "low": 0.19742744199368692
     },
     "wales": {
-      "central": 0.24817491412578074,
-      "high": 0.3584748759594611,
-      "low": 0.18613118559433556
+      "central": 0.0,
+      "high": 0.0,
+      "low": 0.0
     }
   },
   "scenario_name": "annual-wealth-1pct",
   "schema_version": "1.1",
   "total_revenue_gbp_bn": {
-    "central": 47.5513913405432,
-    "high": 68.68534304745128,
-    "low": 35.6635435054074
+    "central": 9.602615926076105,
+    "high": 13.870445226554374,
+    "low": 7.201961944557079
   }
 }

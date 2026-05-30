@@ -1,6 +1,6 @@
 # Data Sources and Licences
 
-Last updated: 2026-05-16
+Last updated: 2026-05-30
 
 Every dataset used in WealthLens charts is listed here with its licence and attribution requirements. See also `research/data-sources/data-source-registry.md` for the full source catalogue.
 
@@ -17,12 +17,15 @@ Every dataset used in WealthLens charts is listed here with its licence and attr
 | Tax and NIC Receipts | HMRC | OGL v3.0 | Yes — "Contains public sector information licensed under the Open Government Licence v3.0" | https://www.gov.uk/government/statistics/hmrc-tax-and-nics-receipts-for-the-uk |
 | Bank Rate and CPI Inflation | Bank of England | OGL v3.0 | Yes — "Source: Bank of England" | https://www.bankofengland.co.uk/boeapps/database/ |
 | Real Wage Stagnation | ONS | OGL v3.0 | Yes — "Source: ONS ASHE" | https://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/earningsandworkinghours/datasets/ashe1702 |
+| Families and households in the UK: 2022 | ONS | OGL v3.0 | Yes — "Source: ONS" | https://www.ons.gov.uk/peoplepopulationandcommunity/birthsdeathsandmarriages/families/bulletins/familiesandhouseholds/2022 |
 
 ## Currently used in tools
 
 | Tool | Estimate/source | Publisher | Licence | Access date | URL |
 |---|---|---|---|---|---|
 | Wealth tax simulator | Total wealth and household wealth distribution anchors | ONS | OGL v3.0 | 2026-05-16 | https://www.ons.gov.uk/peoplepopulationandcommunity/personalandhouseholdfinances/incomeandwealth/bulletins/totalwealthingreatbritain/april2018tomarch2020 |
+| WealthLens-Sim synth generator | WAS total wealth, median, top-decile/top-1% thresholds, wealth component shares | ONS | OGL v3.0 | 2026-05-30 | https://www.ons.gov.uk/peoplepopulationandcommunity/personalandhouseholdfinances/incomeandwealth/datasets/totalwealthwealthingreatbritain |
+| WealthLens-Sim synth generator | UK household count | ONS | OGL v3.0 | 2026-05-30 | https://www.ons.gov.uk/peoplepopulationandcommunity/birthsdeathsandmarriages/families/bulletins/familiesandhouseholds/2022 |
 | Wealth tax simulator | Threshold taxpayer counts and taxable-base revenue modelling | Fiscal Studies / Wealth Tax Commission authors | CC-BY 4.0 | 2026-05-17 | https://doi.org/10.1111/1475-5890.12280 |
 | Wealth tax simulator | Wealth tax design context and behavioural caveats | Wealth Tax Commission | CC-BY 4.0 | 2026-05-17 | https://www.ukwealth.tax/ |
 | Wealth tax simulator | NHS England resource budget comparison | NHS England | OGL v3.0 | 2026-05-17 | https://www.england.nhs.uk/long-read/our-2023-24-business-plan/ |

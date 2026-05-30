@@ -6,16 +6,14 @@ microsimulation engine has inputs, *without* shipping any licensed microdata.
 
 **This data is SYNTHETIC.** It is generated from a parametric model, not drawn
 from real respondents, and must never be presented as observed statistics. Its
-distributional shape is a lognormal body with a Pareto upper tail — the standard
-empirical description of wealth (Vermeulen 2018; already encoded as the top-tail
-Pareto alpha in ``registries/assumptions.yml``).
+distributional shape is a lognormal body with a Pareto upper tail — a simple
+parametric approximation of the observed WAS wealth marginals.
 
-Calibration parameters in :class:`SynthConfig` are **illustrative v0.1 defaults**.
-They are coarsely consistent with public ONS sources (Wealth and Assets Survey
-for the wealth shape/asset mix; mid-year population estimates for the nation
-split) but are **not verified against a specific release**. Verify and cite the
-exact source release (URL + access date in ``registries/sources.yml``) before
-any generated figure informs a published number. See Blueprint v5 §7.1-7.4.
+Calibration parameters in :class:`SynthConfig` are anchored to cited public ONS releases.
+Defaults use the Wealth and Assets Survey April 2020 to March 2022 wealth
+marginals and the ONS 2022 UK household count. This remains synthetic data, not
+observed microdata; source calibration avoids the v0.1 gross-wealth overshoot but
+does not replace licensed WAS/FRS microdata. See Blueprint v5 section 7.
 """
 
 from __future__ import annotations
@@ -35,12 +33,22 @@ _NATIONS: tuple[Nation, ...] = (
     Nation.NORTHERN_IRELAND,
 )
 
+# Public calibration anchors. ONS WAS is Great Britain only; v0.1 applies those
+# wealth marginals to the UK-wide synthetic population until NI-specific wealth
+# marginals are wired.
+ONS_WAS_TOTAL_WEALTH_GBP = 13_568_000_000_000.0
+ONS_WAS_MEDIAN_HOUSEHOLD_WEALTH_GBP = 293_700.0
+ONS_WAS_TOP_DECILE_THRESHOLD_GBP = 1_200_500.0
+ONS_WAS_TOP_ONE_PERCENT_THRESHOLD_GBP = 3_121_500.0
+ONS_UK_HOUSEHOLDS_2022 = 28_200_000.0
+SYNTH_CALIBRATION_SOURCE_IDS = ("ons-was-wealth", "ons-families-households-2022")
+
 
 class SynthConfig(BaseModel):
     """Parameters for the v0.1 synthetic-population generator.
 
-    All numeric defaults are illustrative and tunable; they are not asserted as
-    published statistics. Calibrate against cited ONS releases before publishing.
+    Numeric defaults are calibrated to cited public ONS marginals. They are still
+    tunable because this is synthetic data, not respondent microdata.
     """
 
     model_config = ConfigDict(extra="forbid", frozen=True)
@@ -50,19 +58,23 @@ class SynthConfig(BaseModel):
     n_households: int = Field(gt=0, default=10_000, description="Number of synthetic households to draw")
     seed: int = Field(ge=0, default=42, description="RNG seed for reproducibility")
     population_households: float = Field(
-        gt=0, default=28_000_000, description="Total UK households the sample grosses up to (ONS, illustrative)"
+        gt=0, default=ONS_UK_HOUSEHOLDS_2022, description="Total UK households the sample grosses up to (ONS 2022)"
     )
 
     # Wealth shape: lognormal body, Pareto tail above the threshold.
     median_net_wealth: float = Field(
-        gt=0, default=300_000, description="Median household net wealth, GBP (ONS WAS, illustrative)"
+        gt=0, default=ONS_WAS_MEDIAN_HOUSEHOLD_WEALTH_GBP, description="Median household net wealth, GBP (ONS WAS)"
     )
-    lognormal_sigma: float = Field(gt=0, default=1.4, description="Lognormal dispersion of the wealth body")
+    lognormal_sigma: float = Field(gt=0, default=1.1, description="Lognormal dispersion calibrated to WAS deciles")
     pareto_threshold: float = Field(
-        gt=0, default=2_000_000, description="Net-wealth level above which the Pareto tail applies, GBP"
+        gt=0,
+        default=ONS_WAS_TOP_DECILE_THRESHOLD_GBP,
+        description="Net-wealth level above which the synthetic Pareto tail applies, GBP (ONS WAS top-decile threshold)",
     )
     pareto_alpha: float = Field(
-        gt=1, default=1.5, description="Pareto tail exponent (matches top-tail assumptions registry)"
+        gt=1,
+        default=2.5,
+        description="Synthetic Pareto tail exponent calibrated to WAS top-decile/top-1% marginals",
     )
 
     # Couple share (else single-person household).
@@ -79,15 +91,19 @@ class SynthConfig(BaseModel):
         description="Share of households by constituent nation; must sum to ~1",
     )
 
-    # Net-wealth split across asset types (ONS WAS aggregate composition, illustrative).
+    # Net-wealth split across asset types (ONS WAS April 2020 to March 2022).
     asset_shares: dict[str, float] = Field(
         default_factory=lambda: {
-            AssetType.DC_PENSION.value: 0.42,
-            AssetType.MAIN_RESIDENCE.value: 0.36,
-            AssetType.FINANCIAL.value: 0.13,
-            AssetType.PHYSICAL.value: 0.09,
+            AssetType.DC_PENSION.value: 0.3544,
+            AssetType.MAIN_RESIDENCE.value: 0.4025,
+            AssetType.FINANCIAL.value: 0.1411,
+            AssetType.PHYSICAL.value: 0.1021,
         },
         description="Fraction of household net wealth held in each asset type; must sum to ~1",
+    )
+    calibration_source_ids: tuple[str, ...] = Field(
+        default=SYNTH_CALIBRATION_SOURCE_IDS,
+        description="Source-registry IDs for the public marginals used to calibrate this synthetic population",
     )
 
     @model_validator(mode="after")
@@ -226,4 +242,8 @@ def generate_population(config: SynthConfig | None = None) -> SyntheticPopulatio
             )
         )
 
-    return SyntheticPopulation(households=households, seed=config.seed)
+    return SyntheticPopulation(
+        households=households,
+        seed=config.seed,
+        provenance_ids=list(config.calibration_source_ids),
+    )
