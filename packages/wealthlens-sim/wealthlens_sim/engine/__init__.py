@@ -34,12 +34,15 @@ from wealthlens_sim.provenance.manifest import (
     ProvenanceEntry,
     ProvenanceManifest,
 )
+from wealthlens_sim.reforms.g_devolution import DevolutionConfig, split_households_by_scope
 from wealthlens_sim.rules.scenario import Scenario
 from wealthlens_sim.rules.scenario import run_scenario as _run_families
+from wealthlens_sim.schema.household import Household
 from wealthlens_sim.top_tail.types import Interval
 
 __all__ = [
     "N_DECILES",
+    "DevolutionConfig",
     "EngineResult",
     "PopulationSource",
     "Registries",
@@ -95,6 +98,7 @@ def simulate(
     scenario: Scenario,
     *,
     registries: Registries | None = None,
+    devolution: DevolutionConfig | None = None,
 ) -> EngineResult:
     """Score ``scenario`` over ``population`` and return an :class:`EngineResult`.
 
@@ -105,6 +109,14 @@ def simulate(
     calculators, so ``sum(revenue_by_decile) ~= total_revenue_gbp_bn`` (equal up
     to floating-point summation order — a tested invariant).
 
+    When ``devolution`` (Family G) is supplied, the population is first split by
+    nation scope and **only the included subset is scored** — every downstream
+    number (total, per-nation, per-decile, household count) reflects the included
+    households, and the :class:`DevolutionSplit` summary is attached to the
+    result so the excluded nations and their weights stay visible. Family G is a
+    territorial-scope layer, so it is an engine argument rather than a member of
+    the A-E ``Scenario``.
+
     The ``PopulationSource`` protocol is structural and presence-only
     (``runtime_checkable`` checks attribute presence, not element types);
     ``list(population.households)`` therefore fails loudly here if a malformed
@@ -112,16 +124,22 @@ def simulate(
     """
     households = list(population.households)
 
-    aggregate = _run_families(households, scenario)
-    decile_central = revenue_by_wealth_decile(households, scenario.families, n_deciles=N_DECILES)
+    scored: list[Household] = households
+    split = None
+    if devolution is not None:
+        scored, _excluded, split = split_households_by_scope(households, devolution)
+
+    aggregate = _run_families(scored, scenario)
+    decile_central = revenue_by_wealth_decile(scored, scenario.families, n_deciles=N_DECILES)
 
     return EngineResult(
         scenario=scenario,
         total_revenue_gbp_bn=_point_interval(aggregate.total_revenue_bn),
         revenue_by_nation={nation: _point_interval(value) for nation, value in aggregate.revenue_by_nation.items()},
         revenue_by_decile=[_point_interval(value) for value in decile_central],
-        households_scored=len(households),
+        households_scored=len(scored),
         provenance=_build_provenance(scenario, registries),
         population_provenance_ids=list(population.provenance_ids),
         provenance_complete=False,
+        devolution_split=split,
     )
