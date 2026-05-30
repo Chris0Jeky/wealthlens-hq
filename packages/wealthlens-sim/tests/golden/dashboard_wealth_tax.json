@@ -19,7 +19,9 @@
   "households_scored": 500,
   "population_provenance_ids": [
     "ons-was-wealth",
-    "ons-families-households-2022"
+    "ons-families-households-2022",
+    "synth.seed:7",
+    "synth.pareto_alpha:2.5"
   ],
   "provenance": {
     "assumptions_consumed": [

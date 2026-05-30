@@ -146,8 +146,10 @@ class SyntheticPopulation(BaseModel):
     is_synthetic: bool = Field(default=True, description="Always True — never real microdata")
     provenance_ids: list[str] = Field(
         default_factory=list,
-        description="Assumption/source IDs consumed to build this population; the engine "
-        "feeds these into its provenance manifest.",
+        description=(
+            "Source IDs and stable synthetic generation-parameter tags used to build this "
+            "population; the engine surfaces them alongside its provenance manifest."
+        ),
     )
 
     @property
@@ -224,6 +226,14 @@ def _make_person(person_id: str, age: int, wealth: float, asset_shares: dict[str
     )
 
 
+def _generation_provenance_ids(config: SynthConfig) -> list[str]:
+    """Return stable tags for generator parameters that affect reproducibility."""
+    return [
+        f"synth.seed:{config.seed}",
+        f"synth.pareto_alpha:{config.pareto_alpha:.12g}",
+    ]
+
+
 def generate_population(config: SynthConfig | None = None) -> SyntheticPopulation:
     """Generate a deterministic synthetic household population.
 
@@ -266,8 +276,9 @@ def generate_population(config: SynthConfig | None = None) -> SyntheticPopulatio
         "calibration_source_ids" not in config.model_fields_set
         and _CALIBRATION_SENSITIVE_FIELDS.intersection(config.model_fields_set)
     ):
-        provenance_ids = []
+        source_ids: list[str] = []
     else:
-        provenance_ids = list(config.calibration_source_ids)
+        source_ids = list(config.calibration_source_ids)
 
+    provenance_ids = [*source_ids, *_generation_provenance_ids(config)]
     return SyntheticPopulation(households=households, seed=config.seed, provenance_ids=provenance_ids)

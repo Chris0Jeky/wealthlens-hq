@@ -122,10 +122,10 @@ class EngineResult(BaseModel):
     #:
     #: Scope of the claim (what ``True`` does NOT cover, by design in v0.1): the
     #: scenario *policy parameters* are carried verbatim on ``scenario`` (not the
-    #: manifest), and the synthetic population's own *generative parameters* (its
-    #: ``SynthConfig.pareto_alpha`` etc., distinct from the registry alpha used for
-    #: scaling) are not recorded — only source ids that the population provider
-    #: can assert are surfaced in ``population_provenance_ids``.
+    #: manifest), and population-source metadata is surfaced separately in
+    #: ``population_provenance_ids``. For the synthetic provider this includes
+    #: source ids plus stable ``synth.seed`` and ``synth.pareto_alpha`` tags; a
+    #: future real-microdata provider can expose its own ids through the same seam.
     #: ``provenance_complete`` therefore means
     #: "registry-assumption trail for the intervals is complete", not "every input
     #: is traceable from the manifest alone".

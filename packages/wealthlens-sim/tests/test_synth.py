@@ -16,6 +16,10 @@ def _small(**kw) -> SynthConfig:
     return SynthConfig(**kw)
 
 
+def _generation_ids(config: SynthConfig) -> list[str]:
+    return [f"synth.seed:{config.seed}", f"synth.pareto_alpha:{config.pareto_alpha:.12g}"]
+
+
 class TestSynthConfig:
     def test_defaults_valid(self):
         c = SynthConfig()
@@ -129,22 +133,27 @@ class TestGeneratePopulation:
     def test_provenance_ids_seam_present(self):
         config = _small()
         pop = generate_population(config)
-        assert pop.provenance_ids == list(config.calibration_source_ids)
+        assert pop.provenance_ids == [*config.calibration_source_ids, *_generation_ids(config)]
 
-    def test_custom_calibration_clears_default_provenance_ids(self):
+    def test_provenance_ids_record_generation_parameters(self):
+        config = _small(seed=13, pareto_alpha=2.25)
+        pop = generate_population(config)
+        assert pop.provenance_ids == _generation_ids(config)
+
+    def test_custom_calibration_clears_default_source_provenance_ids(self):
         config = _small(median_net_wealth=500_000)
         pop = generate_population(config)
-        assert pop.provenance_ids == []
+        assert pop.provenance_ids == _generation_ids(config)
 
-    def test_custom_nation_shares_clear_default_provenance_ids(self):
+    def test_custom_nation_shares_clear_default_source_provenance_ids(self):
         config = _small(nation_shares={"england": 0.5, "scotland": 0.5})
         pop = generate_population(config)
-        assert pop.provenance_ids == []
+        assert pop.provenance_ids == _generation_ids(config)
 
     def test_custom_calibration_preserves_explicit_provenance_ids(self):
         config = _small(median_net_wealth=500_000, calibration_source_ids=("custom-calibration",))
         pop = generate_population(config)
-        assert pop.provenance_ids == ["custom-calibration"]
+        assert pop.provenance_ids == ["custom-calibration", *_generation_ids(config)]
 
     def test_asset_shares_are_normalised(self):
         # Same seed ⇒ identical drawn wealth (asset_shares don't affect the draw).
