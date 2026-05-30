@@ -63,7 +63,7 @@ def bootstrap_alpha(
         msg = f"Need at least 2 observations above threshold {threshold}, got {n}"
         raise ValueError(msg)
 
-    alphas = np.empty(n_bootstrap)
+    alphas: NDArray[np.float64] = np.empty(n_bootstrap, dtype=np.float64)
     for i in range(n_bootstrap):
         sample = rng.choice(tail, size=n, replace=True)
         log_ratio_sum = float(np.sum(np.log(sample / threshold)))
@@ -73,14 +73,14 @@ def bootstrap_alpha(
             alphas[i] = np.inf
 
     valid_mask = np.isfinite(alphas) & (alphas > 1)
-    alphas = alphas[valid_mask]
-    if len(alphas) == 0:
+    valid_alphas = alphas[valid_mask]
+    if len(valid_alphas) == 0:
         msg = "All bootstrap replicates produced degenerate alpha estimates"
         raise ValueError(msg)
 
     lo = (1 - ci) / 2
     hi = 1 - lo
-    low_q, median, high_q = np.quantile(alphas, [lo, 0.5, hi])
+    low_q, median, high_q = np.quantile(valid_alphas, [lo, 0.5, hi])
     return Interval(low=float(low_q), central=float(median), high=float(high_q))
 
 

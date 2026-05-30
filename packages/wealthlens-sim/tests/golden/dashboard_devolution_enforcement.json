@@ -1,0 +1,149 @@
+{
+  "caveats": [
+    "The headline includes a Family-F enforcement uplift added on top of full statutory liability (the 100%-compliance ceiling), so it overstates collectible revenue \u2014 a documented v0.1 simplification."
+  ],
+  "devolution_scope": {
+    "excluded_count": 78,
+    "excluded_nations": [
+      "northern_ireland",
+      "scotland",
+      "wales"
+    ],
+    "excluded_weight": 4368000.0,
+    "included_count": 422,
+    "included_nations": [
+      "england"
+    ],
+    "included_weight": 23632000.0,
+    "included_weight_fraction": 0.844,
+    "scope": "england_only"
+  },
+  "enforcement_uplift_gbp_bn": {
+    "central": 4.176783718323819,
+    "high": 6.033132037578849,
+    "low": 3.132587788742864
+  },
+  "households_scored": 422,
+  "population_provenance_ids": [],
+  "provenance": {
+    "assumptions_consumed": [
+      {
+        "assumption_id": "toptail.pareto_alpha.overall.v1",
+        "domain": "top-tail",
+        "resolved_value": 1.5,
+        "source": "Vermeulen (2018); calibrated to UK WAS + Sunday Times Rich List"
+      }
+    ],
+    "complete": true,
+    "outputs": [
+      {
+        "assumption_ids": [
+          "toptail.pareto_alpha.overall.v1"
+        ],
+        "layer": "revenue",
+        "output_label": "total_revenue_gbp_bn"
+      },
+      {
+        "assumption_ids": [
+          "toptail.pareto_alpha.overall.v1"
+        ],
+        "layer": "revenue",
+        "output_label": "revenue_by_nation"
+      },
+      {
+        "assumption_ids": [
+          "toptail.pareto_alpha.overall.v1"
+        ],
+        "layer": "revenue",
+        "output_label": "revenue_by_decile"
+      },
+      {
+        "assumption_ids": [
+          "toptail.pareto_alpha.overall.v1"
+        ],
+        "layer": "revenue",
+        "output_label": "enforcement_uplift_gbp_bn"
+      },
+      {
+        "assumption_ids": [],
+        "layer": "policy_rules",
+        "output_label": "devolution_scope:england_only"
+      }
+    ],
+    "version_tag": {
+      "consultation_state": "",
+      "fiscal_event_anchor": "",
+      "macro_baseline_version": "NBS-2025",
+      "policy_version": "2026-05-21",
+      "population_version": "synth-v0.1",
+      "wealthlens_sim_version": "0.1.0"
+    }
+  },
+  "provenance_complete": true,
+  "revenue_by_decile": [
+    {
+      "central": 0.0,
+      "high": 0.0,
+      "low": 0.0
+    },
+    {
+      "central": 0.0,
+      "high": 0.0,
+      "low": 0.0
+    },
+    {
+      "central": 0.0,
+      "high": 0.0,
+      "low": 0.0
+    },
+    {
+      "central": 0.0,
+      "high": 0.0,
+      "low": 0.0
+    },
+    {
+      "central": 0.0,
+      "high": 0.0,
+      "low": 0.0
+    },
+    {
+      "central": 0.0,
+      "high": 0.0,
+      "low": 0.0
+    },
+    {
+      "central": 0.0,
+      "high": 0.0,
+      "low": 0.0
+    },
+    {
+      "central": 0.0,
+      "high": 0.0,
+      "low": 0.0
+    },
+    {
+      "central": 0.7893478793350776,
+      "high": 1.1401691590395564,
+      "low": 0.5920109095013082
+    },
+    {
+      "central": 40.978489303903125,
+      "high": 59.191151216748956,
+      "low": 30.73386697792734
+    }
+  ],
+  "revenue_by_nation": {
+    "england": {
+      "central": 41.767837183238186,
+      "high": 60.331320375788486,
+      "low": 31.32587788742864
+    }
+  },
+  "scenario_name": "annual-wealth-1pct",
+  "schema_version": "1.1",
+  "total_revenue_gbp_bn": {
+    "central": 45.944620901562004,
+    "high": 66.36445241336733,
+    "low": 34.4584656761715
+  }
+}
