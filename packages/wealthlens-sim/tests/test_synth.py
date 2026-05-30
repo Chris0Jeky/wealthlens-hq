@@ -8,16 +8,13 @@ from pydantic import ValidationError
 
 from wealthlens_sim.schema.base import Nation
 from wealthlens_sim.synth import SynthConfig, SyntheticPopulation, generate_population
+from wealthlens_sim.synth.population import _generation_provenance_ids
 
 
 def _small(**kw) -> SynthConfig:
     kw.setdefault("n_households", 2_000)
     kw.setdefault("seed", 7)
     return SynthConfig(**kw)
-
-
-def _generation_ids(config: SynthConfig) -> list[str]:
-    return [f"synth.seed:{config.seed}", f"synth.pareto_alpha:{config.pareto_alpha:.12g}"]
 
 
 class TestSynthConfig:
@@ -133,27 +130,27 @@ class TestGeneratePopulation:
     def test_provenance_ids_seam_present(self):
         config = _small()
         pop = generate_population(config)
-        assert pop.provenance_ids == [*config.calibration_source_ids, *_generation_ids(config)]
+        assert pop.provenance_ids == [*config.calibration_source_ids, *_generation_provenance_ids(config)]
 
     def test_provenance_ids_record_generation_parameters(self):
         config = _small(seed=13, pareto_alpha=2.25)
         pop = generate_population(config)
-        assert pop.provenance_ids == _generation_ids(config)
+        assert pop.provenance_ids == _generation_provenance_ids(config)
 
     def test_custom_calibration_clears_default_source_provenance_ids(self):
         config = _small(median_net_wealth=500_000)
         pop = generate_population(config)
-        assert pop.provenance_ids == _generation_ids(config)
+        assert pop.provenance_ids == _generation_provenance_ids(config)
 
     def test_custom_nation_shares_clear_default_source_provenance_ids(self):
         config = _small(nation_shares={"england": 0.5, "scotland": 0.5})
         pop = generate_population(config)
-        assert pop.provenance_ids == _generation_ids(config)
+        assert pop.provenance_ids == _generation_provenance_ids(config)
 
     def test_custom_calibration_preserves_explicit_provenance_ids(self):
         config = _small(median_net_wealth=500_000, calibration_source_ids=("custom-calibration",))
         pop = generate_population(config)
-        assert pop.provenance_ids == ["custom-calibration", *_generation_ids(config)]
+        assert pop.provenance_ids == ["custom-calibration", *_generation_provenance_ids(config)]
 
     def test_asset_shares_are_normalised(self):
         # Same seed ⇒ identical drawn wealth (asset_shares don't affect the draw).
