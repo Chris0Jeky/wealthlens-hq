@@ -1,8 +1,34 @@
 # Inbox
 
-Last updated: 2026-05-29
+Last updated: 2026-05-30
 
 Every concrete action item extracted from research. Triage into active-sprint, backlog, or done.
+
+---
+
+## Wave 13 candidates (seeded 2026-05-30, after the Wave 12 engine stack)
+
+The Wave 12 engine (synth→rules→engine→outputs) is built and merging. Follow-ups
+surfaced by the build + its adversarial reviews:
+
+- [ ] **Proper enforcement compliance model** — v0.1 adds the Family-F uplift on top
+  of full statutory liability, so the headline overstates above the 100%-compliance
+  ceiling. Give families an explicit baseline-vs-theoretical compliance split anchored
+  to HMRC's published tax-gap stats (already cited in `f_enforcement.py`); consider a
+  finer `PolicyFamily→TaxFamily` map and an optional `enforcement_breakdown` on
+  `EngineResult`. (Currently flagged via the `caveats[]` in the dashboard contract.)
+- [ ] **Monte-Carlo / Sobol uncertainty (`uncertainty/`)** — replace the single
+  multiplicative top-tail-alpha band with per-parameter sampling (SALib / NumPyro).
+- [ ] **Calibrate the synth generator to cited public WAS/ONS marginals** — the grossed
+  total currently overshoots (~£26tn vs ~£15–16tn real); cite sources in `sources.yml`.
+- [ ] **Real WAS/FRS microdata provider behind the `PopulationSource` Protocol** —
+  needs a UKDS licence; the seam already accepts any `households`+`provenance_ids` source.
+- [ ] **Wire the dashboard JSON into a Vue scenario page** — `to_dashboard_json` emits the
+  contract (totals/by-nation/by-decile intervals + provenance + caveats); build the
+  ConfidenceFanChart + ProvenanceTooltip + a caveats banner that renders `caveats[]`.
+- [ ] **Record the synth generative `pareto_alpha` in provenance** — `provenance_complete`
+  currently covers only registry assumptions; the population's own generation params are
+  not in the manifest (documented carve-out). Surface them via `population.provenance_ids`.
 
 ---
 
