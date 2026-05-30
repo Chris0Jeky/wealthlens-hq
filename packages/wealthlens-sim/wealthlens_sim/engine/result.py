@@ -24,6 +24,14 @@ from wealthlens_sim.rules.scenario import Scenario
 from wealthlens_sim.schema.household import Household
 from wealthlens_sim.top_tail.types import Interval
 
+__all__ = [
+    "N_DECILES",
+    "EngineResult",
+    "Interval",
+    "PopulationSource",
+    "Registries",
+]
+
 #: Number of wealth deciles the engine attributes revenue across.
 N_DECILES = 10
 
@@ -72,6 +80,16 @@ class EngineResult(BaseModel):
     revenue_by_decile: list[Interval] = Field(default_factory=list)
     households_scored: int = Field(ge=0)
     provenance: ProvenanceManifest
+    #: Provenance ids carried by the scored population (e.g. synth calibration
+    #: sources). Surfaced verbatim so the population's own provenance is never
+    #: silently dropped; empty for the v0.1 synthetic generator.
+    population_provenance_ids: list[str] = Field(default_factory=list)
+    #: ``False`` while the provenance manifest is known-incomplete. PR3a records
+    #: published-output labels but does not yet ``consume`` the assumptions the
+    #: numbers depend on (policy configs + the top-tail Pareto alpha), so a
+    #: downstream consumer must NOT treat these figures as fully sourced. PR3c
+    #: flips this to ``True`` once the alpha + assumption ranges are consumed.
+    provenance_complete: bool = False
 
     @model_validator(mode="after")
     def _check_decile_count(self) -> EngineResult:
