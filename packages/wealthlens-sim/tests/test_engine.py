@@ -191,6 +191,20 @@ class TestDecileAttribution:
         aggregate = run_families(households, _scenario(cfg))
         assert sum(deciles) == pytest.approx(aggregate.total_revenue_bn)
 
+    def test_tiny_weight_household_conserves_revenue(self):
+        # Regression (review R2): a sub-1e-9 grossing weight straddling a band
+        # boundary must not drop revenue. The decile sum must still equal the
+        # aggregate total — conservation holds for any positive weight.
+        households = [
+            _household("a", net_wealth=3_000_000.0, weight=3.0),
+            _household("tiny", net_wealth=4_000_000.0, weight=1e-12),
+            _household("b", net_wealth=5_000_000.0, weight=6.999_999_999),
+        ]
+        cfg = _wealth_tax(threshold=1_000_000, rate=0.01)
+        deciles = revenue_by_wealth_decile(households, [cfg], n_deciles=N_DECILES)
+        aggregate = run_families(households, _scenario(cfg))
+        assert sum(deciles) == pytest.approx(aggregate.total_revenue_bn)
+
     def test_empty_population_has_no_deciles(self):
         empty = SyntheticPopulation(households=[], seed=0)
         result = simulate(empty, _scenario(_wealth_tax()))

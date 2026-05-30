@@ -98,20 +98,20 @@ def revenue_by_wealth_decile(
         weighted_liability = sum(household_liability(household, sel) for sel in selections) * household.weight
         start = cumulative
         end = cumulative + household.weight
-        # Bands this household's weight interval [start, end) overlaps. The tiny
-        # epsilon keeps an interval ending exactly on a boundary out of the next
-        # (empty-overlap) band; min() guards the final float-rounding edge.
+        # Bands this household's weight interval [start, end) overlaps. The
+        # `overlap > 0` guard alone excludes an interval that ends exactly on a
+        # band boundary (zero overlap in the next band, so no double count) and
+        # any tiny-negative float overlap — no epsilon needed. An epsilon on the
+        # `last` index would drop revenue for sub-epsilon weights, breaking
+        # conservation; min() guards the final float-rounding edge.
         first = min(n_deciles - 1, int(start / band_width))
-        last = min(n_deciles - 1, int((end - 1e-9) / band_width))
-        if first == last:
-            decile_gbp[first] += weighted_liability
-        else:
-            for index in range(first, last + 1):
-                band_lo = index * band_width
-                band_hi = (index + 1) * band_width
-                overlap = min(end, band_hi) - max(start, band_lo)
-                if overlap > 0:
-                    decile_gbp[index] += weighted_liability * (overlap / household.weight)
+        last = min(n_deciles - 1, int(end / band_width))
+        for index in range(first, last + 1):
+            band_lo = index * band_width
+            band_hi = (index + 1) * band_width
+            overlap = min(end, band_hi) - max(start, band_lo)
+            if overlap > 0:
+                decile_gbp[index] += weighted_liability * (overlap / household.weight)
         cumulative = end
 
     return [gbp / _GBP_PER_BN for gbp in decile_gbp]
