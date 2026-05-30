@@ -11,9 +11,8 @@ dashboard alongside its uncertainty band and its provenance (Blueprint v5 §13.6
 
 Data-integrity states a chart must not publish silently are surfaced **loudly at
 the contract root**: ``provenance_complete`` (``False`` ⇒ unsourced, degenerate
-intervals) and a ``caveats`` list the frontend must render (incomplete provenance;
-the v0.1 enforcement overstatement). The nested ``provenance.complete`` mirrors the
-root flag for the detailed block.
+intervals) and a ``caveats`` list the frontend must render. The nested
+``provenance.complete`` mirrors the root flag for the detailed block.
 
 The volatile ``run_timestamp`` is intentionally excluded so the output is
 deterministic for a given result (enabling the golden-file test); the stable
@@ -40,13 +39,6 @@ _INCOMPLETE_PROVENANCE_CAVEAT = (
     "are point estimates and the uncertainty is unquantified — do not present these "
     "figures as fully sourced."
 )
-_ENFORCEMENT_OVERSTATEMENT_CAVEAT = (
-    "The headline includes a Family-F enforcement uplift added on top of full "
-    "statutory liability (the 100%-compliance ceiling), so it overstates collectible "
-    "revenue — a documented v0.1 simplification."
-)
-
-
 def _interval(interval: Interval) -> dict[str, float]:
     return {"low": interval.low, "central": interval.central, "high": interval.high}
 
@@ -54,15 +46,13 @@ def _interval(interval: Interval) -> dict[str, float]:
 def _caveats(result: EngineResult) -> list[str]:
     """Machine-readable data-integrity caveats the frontend MUST render.
 
-    Surfaces, loudly and at the contract root, the two states a chart must not
-    publish silently: unsourced (incomplete-provenance) figures, and a headline
-    inflated by a positive v0.1 enforcement uplift.
+    Surfaces, loudly and at the contract root, states a chart must not publish
+    silently. Enforcement no longer adds revenue above the full-compliance
+    ceiling, so it does not need a separate overstatement caveat.
     """
     caveats: list[str] = []
     if not result.provenance_complete:
         caveats.append(_INCOMPLETE_PROVENANCE_CAVEAT)
-    if result.enforcement_uplift_bn.central > 0.0:
-        caveats.append(_ENFORCEMENT_OVERSTATEMENT_CAVEAT)
     return caveats
 
 

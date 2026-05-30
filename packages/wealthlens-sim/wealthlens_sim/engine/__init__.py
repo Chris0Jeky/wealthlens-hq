@@ -25,7 +25,11 @@ Reference: docs/WAVE12_SIMULATION_ENGINE_DESIGN.md §5.
 from __future__ import annotations
 
 from wealthlens_sim.engine._attribution import household_liability, revenue_by_wealth_decile
-from wealthlens_sim.engine._enforcement import compute_engine_enforcement, tax_family_for
+from wealthlens_sim.engine._enforcement import (
+    baseline_compliance_rate_for,
+    compute_engine_enforcement,
+    tax_family_for,
+)
 from wealthlens_sim.engine._intervals import (
     PARETO_ALPHA_ASSUMPTION_ID,
     alpha_interval_from_registry,
@@ -50,7 +54,7 @@ from wealthlens_sim.reforms.g_devolution import (
     DevolutionSplit,
     split_households_by_scope,
 )
-from wealthlens_sim.rules.scenario import Scenario
+from wealthlens_sim.rules.scenario import FamilyRevenue, Scenario
 from wealthlens_sim.rules.scenario import run_scenario as _run_families
 from wealthlens_sim.schema.household import Household
 from wealthlens_sim.top_tail.types import Interval
@@ -120,6 +124,41 @@ def _build_incomplete_provenance(scenario: Scenario) -> ProvenanceManifest:
     )
 
 
+def _baseline_revenue_by_nation(
+    family_revenues: list[FamilyRevenue],
+    enforcement: EnforcementConfig | None,
+) -> dict[str, float]:
+    """Return nation revenue after baseline compliance rates when F is enabled."""
+    merged: dict[str, float] = {}
+    for family_revenue in family_revenues:
+        rate = 1.0
+        if enforcement is not None:
+            rate = baseline_compliance_rate_for(family_revenue.family, enforcement)
+        for nation, revenue in family_revenue.revenue_by_nation.items():
+            merged[nation] = merged.get(nation, 0.0) + revenue * rate
+    return merged
+
+
+def _baseline_revenue_by_decile(
+    households: list[Household],
+    scenario: Scenario,
+    enforcement: EnforcementConfig | None,
+) -> list[float]:
+    """Return decile revenue after baseline compliance rates when F is enabled."""
+    if not households:
+        return []
+    if enforcement is None:
+        return revenue_by_wealth_decile(households, scenario.families, n_deciles=N_DECILES)
+
+    deciles = [0.0] * N_DECILES
+    for selection in scenario.families:
+        rate = baseline_compliance_rate_for(selection.family, enforcement)
+        family_deciles = revenue_by_wealth_decile(households, [selection], n_deciles=N_DECILES)
+        for i, value in enumerate(family_deciles):
+            deciles[i] += value * rate
+    return deciles
+
+
 def simulate(
     population: PopulationSource,
     scenario: Scenario,
@@ -145,19 +184,17 @@ def simulate(
     territorial-scope layer, so it is an engine argument rather than a member of
     the A-E ``Scenario``.
 
-    When ``enforcement`` (Family F) is supplied, the compliance-gap model is
-    applied to the scenario's family revenues and its net uplift (revenue gained
-    minus enforcement cost) is **added to** ``total_revenue_gbp_bn`` and reported
-    separately on ``enforcement_uplift_bn``. The uplift is an aggregate figure and
-    is NOT attributed to nation or decile, so the decile invariant becomes
+    When ``enforcement`` (Family F) is supplied, the A-E family revenues are
+    treated as theoretical full-compliance liability. The compliance-gap model
+    first converts them to baseline collected revenue, then adds the net uplift
+    from moving from baseline to scenario compliance (minus enforcement cost).
+    The uplift is an aggregate figure and is NOT attributed to nation or decile,
+    so the decile invariant remains
     ``sum(revenue_by_decile) ~= total_revenue_gbp_bn - enforcement_uplift_bn``.
     Family F is a revenue-uplift modifier, so — like G — it is an engine argument
     rather than an A-E ``Scenario`` member. Only the net uplift is surfaced; the
     full per-family/gross/gap breakdown is intentionally not on ``EngineResult``
-    in v0.1 and is recomputable via ``compute_engine_enforcement``. **Caveat:** the
-    A-E calculators report full statutory liability, so adding the uplift on top
-    can push the headline above the 100%-compliance ceiling — see
-    ``_enforcement.compute_engine_enforcement`` for the v0.1 simplification.
+    in v0.1 and is recomputable via ``compute_engine_enforcement``.
 
     **Revenue intervals.** When ``registries`` supplies the top-tail Pareto alpha
     range, every revenue figure carries a genuine ``low``/``central``/``high``
@@ -182,11 +219,15 @@ def simulate(
         scored, _excluded, split = split_households_by_scope(households, devolution)
 
     aggregate = _run_families(scored, scenario)
-    decile_central = revenue_by_wealth_decile(scored, scenario.families, n_deciles=N_DECILES)
+    decile_central = _baseline_revenue_by_decile(scored, scenario, enforcement)
+    revenue_by_nation = _baseline_revenue_by_nation(aggregate.family_revenues, enforcement)
+    baseline_family_revenue = sum(decile_central)
 
     enforcement_uplift = 0.0
     if enforcement is not None:
         enforcement_uplift = compute_engine_enforcement(aggregate.family_revenues, enforcement).net_uplift_bn
+    else:
+        baseline_family_revenue = aggregate.total_revenue_bn
 
     # Interval propagation: derive low/high revenue factors from the top-tail alpha
     # range if the registry provides it; otherwise fall back to degenerate (1.0,
@@ -207,8 +248,8 @@ def simulate(
 
     return EngineResult(
         scenario=scenario,
-        total_revenue_gbp_bn=interval(aggregate.total_revenue_bn + enforcement_uplift),
-        revenue_by_nation={nation: interval(value) for nation, value in aggregate.revenue_by_nation.items()},
+        total_revenue_gbp_bn=interval(baseline_family_revenue + enforcement_uplift),
+        revenue_by_nation={nation: interval(value) for nation, value in revenue_by_nation.items()},
         revenue_by_decile=[interval(value) for value in decile_central],
         enforcement_uplift_bn=interval(enforcement_uplift),
         households_scored=len(scored),

@@ -201,12 +201,12 @@ class TestDataIntegritySurfacing:
         total = dash["total_revenue_gbp_bn"]
         assert total["low"] == total["central"] == total["high"]
 
-    def test_enforcement_headline_carries_overstatement_caveat(self):
+    def test_enforcement_headline_has_no_overstatement_caveat(self):
         dash = to_dashboard_json(_devolution_enforcement_result())
         assert dash["enforcement_uplift_gbp_bn"]["central"] > 0.0
-        assert any("overstates collectible revenue" in c for c in dash["caveats"])
+        assert not any("overstates collectible revenue" in c for c in dash["caveats"])
 
-    def test_negative_net_enforcement_uplift_does_not_carry_overstatement_caveat(self):
+    def test_negative_net_enforcement_uplift_has_no_overstatement_caveat(self):
         pop = generate_population(SynthConfig(n_households=500, seed=7))
         enforcement = EnforcementConfig(
             compliance_rates=(ComplianceRate(tax_family=TaxFamily.OTHER, baseline_rate=0.8, scenario_rate=0.9),),

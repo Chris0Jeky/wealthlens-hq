@@ -6,6 +6,11 @@ import pytest
 from pydantic import ValidationError
 
 from wealthlens_sim.reforms.f_enforcement import (
+    HMRC_OVERALL_BASELINE_COMPLIANCE_RATE_2023_24,
+    HMRC_OVERALL_TAX_GAP_GBP_BN_2023_24,
+    HMRC_OVERALL_TAX_GAP_RATE_2023_24,
+    HMRC_WEALTHY_COMPLIANCE_YIELD_GBP_BN_2023_24,
+    HMRC_WEALTHY_TAX_GAP_GBP_BN_2023_24,
     AggregateEnforcementRevenue,
     ComplianceRate,
     EnforcementConfig,
@@ -88,6 +93,15 @@ class TestComplianceRate:
             scenario_rate=1.0,
         )
         assert cr.scenario_rate == 1.0
+
+    def test_defaults_anchor_to_hmrc_overall_tax_gap(self):
+        cr = ComplianceRate(tax_family=TaxFamily.OTHER)
+        assert pytest.approx(0.053) == HMRC_OVERALL_TAX_GAP_RATE_2023_24
+        assert cr.baseline_rate == pytest.approx(HMRC_OVERALL_BASELINE_COMPLIANCE_RATE_2023_24)
+        assert cr.scenario_rate == 1.0
+        assert pytest.approx(46.8) == HMRC_OVERALL_TAX_GAP_GBP_BN_2023_24
+        assert pytest.approx(1.9) == HMRC_WEALTHY_TAX_GAP_GBP_BN_2023_24
+        assert pytest.approx(5.2) == HMRC_WEALTHY_COMPLIANCE_YIELD_GBP_BN_2023_24
 
     def test_rate_above_one_rejected(self):
         with pytest.raises(ValidationError):
@@ -240,6 +254,8 @@ class TestComputeEnforcementUplift:
         result = compute_enforcement_uplift(theoretical, config)
 
         assert result.total_uplift_bn == pytest.approx(200.0 * 0.05)
+        assert result.total_baseline_revenue_bn == pytest.approx(200.0 * 0.90)
+        assert result.total_scenario_revenue_bn == pytest.approx(200.0 * 0.95)
         assert result.net_uplift_bn == pytest.approx(10.0)
         assert result.enforcement_cost_bn == 0.0
 
@@ -473,6 +489,8 @@ class TestAggregateEnforcementRevenue:
             ),
             total_uplift_bn=5.0,
             total_theoretical_bn=100.0,
+            total_baseline_revenue_bn=90.0,
+            total_scenario_revenue_bn=95.0,
             total_baseline_gap_bn=10.0,
             enforcement_cost_bn=0.5,
             net_uplift_bn=4.5,
@@ -487,6 +505,8 @@ class TestAggregateEnforcementRevenue:
             family_results=(),
             total_uplift_bn=0.0,
             total_theoretical_bn=0.0,
+            total_baseline_revenue_bn=0.0,
+            total_scenario_revenue_bn=0.0,
             total_baseline_gap_bn=0.0,
             enforcement_cost_bn=0.0,
             net_uplift_bn=0.0,

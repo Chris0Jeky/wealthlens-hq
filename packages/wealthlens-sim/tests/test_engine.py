@@ -385,9 +385,9 @@ class TestEnforcement:
         result = simulate(_population(), _scenario(_wealth_tax()))
         assert result.enforcement_uplift_bn.central == 0.0
 
-    def test_enforcement_adds_uplift_to_total(self):
+    def test_enforcement_applies_compliance_without_exceeding_theoretical(self):
         # The annual wealth tax maps to TaxFamily.OTHER; an OTHER compliance
-        # improvement raises the headline total by the modeled uplift.
+        # improvement moves baseline revenue toward the theoretical ceiling.
         pop = _population()
         scenario = _scenario(_wealth_tax())
         base = simulate(pop, scenario)
@@ -395,18 +395,26 @@ class TestEnforcement:
         # OTHER theoretical = wealth-tax revenue; uplift = theoretical * (0.9 - 0.8).
         expected_uplift = base.total_revenue_gbp_bn.central * 0.1
         assert with_enf.enforcement_uplift_bn.central == pytest.approx(expected_uplift)
-        assert with_enf.total_revenue_gbp_bn.central == pytest.approx(
-            base.total_revenue_gbp_bn.central + expected_uplift
-        )
+        assert with_enf.total_revenue_gbp_bn.central == pytest.approx(base.total_revenue_gbp_bn.central * 0.9)
+        assert with_enf.total_revenue_gbp_bn.central <= base.total_revenue_gbp_bn.central
 
     def test_decile_invariant_excludes_enforcement(self):
-        # Enforcement uplift is aggregate-only: deciles cover the family revenue,
-        # so sum(deciles) == total - enforcement_uplift.
+        # Enforcement uplift is aggregate-only: deciles cover baseline-compliance
+        # family revenue, so sum(deciles) == total - enforcement_uplift.
         pop = _population()
         result = simulate(pop, _scenario(_wealth_tax()), enforcement=self._enforcement(baseline=0.7, scenario=0.95))
         decile_sum = sum(iv.central for iv in result.revenue_by_decile)
         assert decile_sum == pytest.approx(result.total_revenue_gbp_bn.central - result.enforcement_uplift_bn.central)
         assert result.enforcement_uplift_bn.central > 0
+
+    def test_nation_breakdown_uses_baseline_compliance_with_enforcement(self):
+        pop = _population()
+        scenario = _scenario(_wealth_tax())
+        base = simulate(pop, scenario)
+        result = simulate(pop, scenario, enforcement=self._enforcement(baseline=0.8, scenario=0.9))
+        assert result.revenue_by_nation["england"].central == pytest.approx(
+            base.revenue_by_nation["england"].central * 0.8
+        )
 
     def test_enforcement_cost_reduces_net_uplift(self):
         pop = _population()
@@ -423,7 +431,7 @@ class TestEnforcement:
 
     def test_negative_net_uplift_reduces_total_below_baseline(self):
         # Documented contract: an enforcement cost exceeding the gross uplift
-        # yields a negative net uplift and a total below the no-enforcement total.
+        # yields a negative net uplift and a total below baseline compliance.
         pop = _population()
         scenario = _scenario(_wealth_tax())
         base = simulate(pop, scenario)
@@ -434,7 +442,7 @@ class TestEnforcement:
             enforcement=self._enforcement(baseline=0.8, scenario=0.9, cost=gross_uplift + 5.0),
         )
         assert result.enforcement_uplift_bn.central == pytest.approx(-5.0)
-        assert result.total_revenue_gbp_bn.central == pytest.approx(base.total_revenue_gbp_bn.central - 5.0)
+        assert result.total_revenue_gbp_bn.central == pytest.approx(base.total_revenue_gbp_bn.central * 0.8 - 5.0)
 
     def test_other_bucket_sums_multiple_families(self):
         # Wealth tax AND HVCTS both map to OTHER, so a single OTHER compliance rate

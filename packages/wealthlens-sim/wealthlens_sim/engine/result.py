@@ -85,9 +85,10 @@ class EngineResult(BaseModel):
     #: compliance-gap figure NOT attributed to nation or decile, so
     #: ``sum(revenue_by_decile) ~= total_revenue_gbp_bn - enforcement_uplift_bn``.
     #: Zero when no enforcement config is supplied. May be negative if enforcement
-    #: cost exceeds the uplift. **v0.1 caveat:** because the A-E base is full
-    #: statutory liability, this uplift sits on top of the 100%-compliance ceiling
-    #: and overstates collectible revenue — see ``engine._enforcement``.
+    #: cost exceeds the uplift. When Family F is supplied, the decile and nation
+    #: breakdowns represent baseline-compliance revenue; the uplift moves that
+    #: baseline toward scenario compliance without exceeding the theoretical
+    #: full-compliance ceiling.
     enforcement_uplift_bn: Interval = Field(default_factory=lambda: Interval(low=0.0, central=0.0, high=0.0))
     #: Count of households actually scored. When a devolution scope is applied
     #: this is the *included* subset (see ``devolution_split``), not the whole

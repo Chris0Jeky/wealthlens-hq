@@ -54,26 +54,31 @@ def theoretical_revenues_by_tax_family(
     return totals
 
 
+def baseline_compliance_rate_for(policy: PolicyFamily, config: EnforcementConfig) -> float:
+    """Return the baseline compliance rate for ``policy``.
+
+    Families without an explicit Family-F compliance rate stay at their modeled
+    amount (factor 1.0), preserving existing revenue for unconfigured families.
+    """
+    tax_family = tax_family_for(policy)
+    for rate in config.compliance_rates:
+        if rate.tax_family == tax_family:
+            return rate.baseline_rate
+    return 1.0
+
+
 def compute_engine_enforcement(
     family_revenues: list[FamilyRevenue],
     config: EnforcementConfig,
 ) -> AggregateEnforcementRevenue:
     """Apply the enforcement compliance-gap model to the scenario's family revenues.
 
-    The modeled A-E family revenues are treated as the *theoretical* base for the
-    per-tax-family compliance-gap calculation, and the engine then **adds** the
-    resulting ``net_uplift_bn`` to the headline total.
-
-    **v0.1 simplification — known to overstate.** The A-E calculators report full
-    statutory liability (no compliance/avoidance haircut), i.e. the base already
-    *is* the 100%-compliance ceiling. Adding a compliance-gap uplift on top of it
-    therefore pushes the headline ABOVE that ceiling, overstating total
-    collectible revenue (a coherent model would report ``theoretical *
-    scenario_rate`` instead, which is <= theoretical). This additive form is a
-    deliberate placeholder until the families gain an explicit baseline-vs-
-    theoretical compliance split; enforcement is opt-in (default off) and the
-    uplift is reported separately on ``EngineResult.enforcement_uplift_bn`` so it
-    can be inspected or removed. See the Wave 12 backlog follow-up.
+    The modeled A-E family revenues are treated as the *theoretical* full-
+    compliance ceiling for each HMRC tax family. The engine separately computes
+    baseline collected revenue (``theoretical * baseline_rate``) and the net
+    uplift from moving from baseline to scenario compliance, so a positive
+    Family-F uplift no longer pushes the headline above the 100%-compliance
+    ceiling.
     """
     theoretical = theoretical_revenues_by_tax_family(family_revenues)
     return compute_enforcement_uplift(theoretical, config)
