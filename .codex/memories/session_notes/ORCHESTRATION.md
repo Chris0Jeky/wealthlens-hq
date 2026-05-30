@@ -9,7 +9,7 @@ Last updated: 2026-05-30
 
 ---
 
-# 🟢 HANDOFF — read this first (2026-05-30, post #333/#334 drain)
+# 🟢 HANDOFF — read this first (2026-05-30, post #335 merge)
 
 **You are continuing an endless end-to-end autonomous cycle on the WealthLens-Sim
 microsimulator.** This session built the entire Wave 12 **engine** (synth → rules →
@@ -36,36 +36,37 @@ plain `gh pr merge <n> --merge` (preserves SHAs); then `gh pr edit <child> --bas
 ## Current state (main)
 - **Full engine is on main** via merged PRs **#329** (engine-core), **#330**
   (devolution), **#331** (enforcement), **#332** (intervals), **#333** (dashboard
-  JSON outputs), and **#334** (headline example). **634 sim tests pass on main;
-  635 pass on the integrated #335 branch.**
+  JSON outputs), **#334** (headline example), and **#335** (synth ONS/WAS
+  calibration/provenance). **638 sim tests pass on main** after #335.
 - `engine.simulate(population, scenario, *, registries=None, devolution=None,
   enforcement=None) -> EngineResult` is the single entry point (named `simulate`,
   NOT `run_scenario`, to avoid colliding with `rules.run_scenario`).
-- **Open PR:** **#335** `feat/synth-ons-calibration` → main calibrates synth
-  defaults to cited public ONS/WAS aggregate marginals and threads source IDs through
-  population provenance. GitHub checks are green; it is the newest open PR, so do
-  not merge it until reviewed, aged, and another PR is opened above it.
+- **Open PR:** **#336** `feat/enforcement-compliance-model` → main replaces the
+  Family-F overstatement placeholder with a baseline-vs-theoretical compliance
+  model. It is rebased on the merged #335 main, merge-state **CLEAN**, all GitHub
+  checks **green**, and its Gemini bot thread is resolved. It is the newest open
+  PR and has not yet had the required 2 independent adversarial reviews, so do
+  **not** merge it yet.
 
 ## ▶️ WHERE TO START (next session, in order)
 1. **Recover:** read this file, `00_ACTIVE.md`, `tasks/active-sprint.md`,
-   `tasks/inbox.md`; run `gh pr list --state open` and `gh pr checks 335`.
-2. **Review/age #335**. It has local verification and CI green as of this handoff, but
-   still needs the normal review/bot-clean cycle before merge.
-3. **Open the next Wave 13 PR above #335 before merging it.** Good candidates are the
-   enforcement compliance model, remaining synth generative provenance, or wiring the
-   dashboard JSON into Vue.
+   `tasks/inbox.md`; run `gh pr list --state open` and `gh pr checks 336`.
+2. **Review/age #336** with two independent adversarial reviews (recommended
+   lenses: enforcement math/compliance-ceiling correctness; engine/dashboard
+   regression and attribution invariants). Address every finding and any new bot
+   comments.
+3. **Open the next Wave 13 PR above #336 before merging it.** Good candidates are
+   remaining synth generative provenance, Monte-Carlo/Sobol uncertainty, or wiring
+   the dashboard JSON into Vue.
 4. Continue the endless cycle: small PR → 2 independent reviews → address all findings
    and bot comments → merge only once the PR is no longer newest.
 
 ## Wave 13 backlog (also in tasks/inbox.md "Wave 13 candidates")
 Ordered by value/data-integrity:
-- **Review and drain #335 synth calibration** once it is no longer newest. It reduces
-  default synthetic gross wealth to ~£14tn on standard seeds using cited public
-  ONS/WAS aggregate marginals in `registries/sources.yml`.
-- **Proper enforcement compliance model** (task #7): the Family-F uplift is added on
-  top of *full statutory liability*, so it overstates above the 100%-compliance
-  ceiling. Give families a baseline-vs-theoretical compliance split anchored to
-  HMRC's published tax-gap stats (already cited in `reforms/f_enforcement.py`).
+- **Review and drain #336 enforcement compliance model** once it is no longer
+  newest. It treats A-E family revenues as theoretical full-compliance liability,
+  converts configured families to baseline compliance, and adds only the net
+  scenario-compliance uplift.
 - **Record remaining synth generative params in provenance** — #335 threads public
   source IDs through `population.provenance_ids`, but the synth `pareto_alpha`/seed
   still aren't recorded. Changing this will require regenerating dashboard goldens
@@ -101,8 +102,9 @@ Package: `packages/wealthlens-sim/wealthlens_sim/`. Engine modules:
 
 **Key invariants / caveats (don't regress):** `sum(revenue_by_decile) ≈ total -
 enforcement_uplift` at EVERY bound; degenerate intervals + `provenance_complete=False`
-when no registry; enforcement overstatement + unsourced state surfaced via `caveats[]`;
-synthetic data clearly labelled everywhere it's published.
+when no registry; on main until #336 merges, the opt-in enforcement uplift is still
+the documented overstatement placeholder and is surfaced via `caveats[]`; synthetic
+data is clearly labelled everywhere it's published.
 
 ## Ops cheat-sheet (environment gotchas that bit this session)
 - Run from the package dir: `cd C:/Users/jekyt/source/wealthlens-hq/packages/wealthlens-sim`

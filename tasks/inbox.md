@@ -8,19 +8,18 @@ Every concrete action item extracted from research. Triage into active-sprint, b
 
 ## Wave 13 candidates (seeded 2026-05-30, after the Wave 12 engine stack)
 
-The Wave 12 engine (synth→rules→engine→outputs) is built and merging. Follow-ups
-surfaced by the build + its adversarial reviews:
+The Wave 12 engine (synth→rules→engine→outputs) is built and merged through
+#335. Follow-ups surfaced by the build + its adversarial reviews:
 
-- [ ] **Proper enforcement compliance model** — v0.1 adds the Family-F uplift on top
-  of full statutory liability, so the headline overstates above the 100%-compliance
-  ceiling. Give families an explicit baseline-vs-theoretical compliance split anchored
-  to HMRC's published tax-gap stats (already cited in `f_enforcement.py`); consider a
-  finer `PolicyFamily→TaxFamily` map and an optional `enforcement_breakdown` on
-  `EngineResult`. (Currently flagged via the `caveats[]` in the dashboard contract.)
+- [ ] **Proper enforcement compliance model** — PR #336 is open, clean, and CI-green.
+  It replaces the Family-F overstatement placeholder with a baseline-vs-theoretical
+  compliance model anchored to HMRC's published tax-gap stats. It still needs the
+  full two-review gate, bot/comment cleanup, and a newer PR above it before merge.
 - [ ] **Monte-Carlo / Sobol uncertainty (`uncertainty/`)** — replace the single
   multiplicative top-tail-alpha band with per-parameter sampling (SALib / NumPyro).
-- [ ] **Calibrate the synth generator to cited public WAS/ONS marginals** — the grossed
-  total currently overshoots (~£26tn vs ~£15–16tn real); cite sources in `sources.yml`.
+- [x] **Calibrate the synth generator to cited public WAS/ONS marginals** — PR #335
+  merged; default synth calibration is Great Britain scoped, cites ONS/WAS sources,
+  and threads source IDs through population provenance. [completed: 2026-05-30]
 - [ ] **Real WAS/FRS microdata provider behind the `PopulationSource` Protocol** —
   needs a UKDS licence; the seam already accepts any `households`+`provenance_ids` source.
 - [ ] **Wire the dashboard JSON into a Vue scenario page** — `to_dashboard_json` emits the
@@ -34,11 +33,10 @@ surfaced by the build + its adversarial reviews:
 
 ## Build: WealthLens-Sim Microsimulator (Blueprint v5)
 
-> **Status (2026-05-29):** Gate 1 (schema + registries + loaders), the top-tail
-> Pareto reconstruction, provenance, and ALL seven policy families (A–G) are
-> MERGED to `main` (PRs #284–#326). Wave 12 (the engine that drives them) is in
-> progress: `synth/` (#327) and `rules/run_scenario` (#328) merged. 564 tests,
-> ci-sim green. See `docs/WAVE12_SIMULATION_ENGINE_DESIGN.md`.
+> **Status (2026-05-30):** Gate 1 (schema + registries + loaders), the top-tail
+> Pareto reconstruction, provenance, all seven policy families (A–G), and the
+> Wave 12 engine/output stack are MERGED to `main` through #335. 638 sim tests
+> pass on main; ci-sim is green. See `docs/WAVE12_SIMULATION_ENGINE_DESIGN.md`.
 
 ### Gate 1: Schema + Registry Layer — DONE
 - [x] Pydantic schema module — households, policies, results (PR #292/#318) [completed: 2026-05-23]
@@ -48,7 +46,7 @@ surfaced by the build + its adversarial reviews:
 ### Gate 2: Data Foundation — partial
 - [x] Top-tail Pareto reconstruction module (Blueprint §5.1-5.3) — 5 baseline variants (PR #295) [completed: 2026-05-29]
 - [x] Synthetic household generator (Wave 12 PR1 #327) — lognormal+Pareto, deterministic [completed: 2026-05-29]
-- [ ] Calibrate synth generator to cited public WAS/ONS marginals (grossed total currently overshoots ~£26tn vs ~£15-16tn real; cite sources in registries/sources.yml before any published figure)
+- [x] Calibrate synth generator to cited public WAS/ONS marginals (PR #335) [completed: 2026-05-30]
 - [ ] FRS-WAS real-microdata linker (Blueprint §7.1-7.2) — needs UKDS licence; behind the population-source Protocol seam
 - [ ] ONS NBS macro reconciliation (`reconcile/`, Gate 2) + reconstruction orchestration (`reconstruction/`)
 
@@ -57,15 +55,15 @@ surfaced by the build + its adversarial reviews:
 - [ ] IHT v0.1 modelling refinement: 10% reduced-rate test uses gross estate not the post-relief "baseline amount" (documented simplification)
 
 ### Gate 4: Behavioural + Uncertainty
-- [ ] Interval propagation in the engine (top-tail alpha interval + assumption RangeValues) — Wave 12 engine PR
+- [x] Interval propagation in the engine (top-tail alpha interval + assumption RangeValues) — Wave 12 engine PR (#332) [completed: 2026-05-30]
 - [ ] Monte Carlo / Sobol uncertainty engine (`uncertainty/`, Blueprint §10) — Wave 13
 - [ ] Migration elasticity, avoidance/lock-in, liquidity-constraint behavioural models (Blueprint §6)
 
 ### Gate 5: Output + Integration
 - [x] Provenance manifest system (Blueprint §13.4) — collector + manifest (PR #296) [completed: 2026-05-29]
 - [x] Nation-level disaggregation — `revenue_by_nation` from every family + merged in `run_scenario` (#328) [completed: 2026-05-29]
-- [ ] **Wave 12 engine PR (task #17, NEXT):** `engine.run_scenario(population, scenario, registries) -> EngineResult` wiring synth→rules→provenance; interval propagation; per-decile attribution (call per-household reforms funcs); population-source `Protocol` seam; families F (enforcement uplift) + G (devolution scope) composition
-- [ ] `outputs.to_dashboard_json` (Gate 9 dashboard contract) + golden-file test
+- [x] **Wave 12 engine PR (task #17):** `engine.simulate(population, scenario, *, registries, devolution, enforcement) -> EngineResult` wiring synth→rules→provenance; interval propagation; per-decile attribution; population-source `Protocol` seam; families F (enforcement uplift) + G (devolution scope) composition (#329-#332) [completed: 2026-05-30]
+- [x] `outputs.to_dashboard_json` (Gate 9 dashboard contract) + golden-file test (#333) [completed: 2026-05-30]
 - [ ] PolicyEngine-UK integration / validation (`engine/` bridge, Blueprint §12)
 - [ ] Dashboard API bridge + assumptions sensitivity dashboard component
 

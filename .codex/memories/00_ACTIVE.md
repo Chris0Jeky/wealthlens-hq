@@ -19,20 +19,19 @@ example, each with 2 independent adversarial reviews + all bot comments addresse
   dashboard contract with root-level `provenance_complete` + a `caveats[]` array;
   `examples.headline_revenue` runnable demo.
 - **Merged to main:** #329 (engine-core), #330 (devolution), #331 (enforcement),
-  #332 (intervals), #333 (dashboard JSON outputs), #334 (headline example).
-  **634 sim tests pass on main; 635 pass on the integrated #335 branch.**
-- **Open:** #335 `feat/synth-ons-calibration` -> main calibrates synth defaults to
-  cited public ONS/WAS marginals and carries source IDs in population provenance.
-  GitHub checks are green; it is the newest open PR, so do not merge it until
-  reviewed/aged and another PR is opened above it.
+  #332 (intervals), #333 (dashboard JSON outputs), #334 (headline example),
+  #335 (synth ONS/WAS calibration and provenance). **638 sim tests pass on main.**
+- **Open:** #336 `feat/enforcement-compliance-model` -> main replaces the opt-in
+  Family-F overstatement placeholder with a baseline-vs-theoretical compliance
+  model. It is rebased on #335, merge-clean, CI-green, and its Gemini bot thread
+  is resolved. It is the newest open PR and still needs the full 2-review
+  adversarial cycle before merge.
 - Reviews caught real issues (decile non-conservation for tiny weights, provenance
   overclaiming, enforcement-overstatement + unsourced-state surfacing in the
   dashboard contract, headline honest-labelling). 33 stale branches pruned.
-- Backlog (tasks/inbox.md Wave 13): proper enforcement compliance model
-  (baseline-vs-theoretical — uplift currently overstates above the 100%-compliance
-  ceiling, flagged via `caveats[]`); Monte-Carlo/Sobol uncertainty; record remaining
-  synth generative params in provenance; wire the
-  dashboard JSON into a Vue scenario page.
+- Backlog (tasks/inbox.md Wave 13): review/drain #336 once aged;
+  Monte-Carlo/Sobol uncertainty; record remaining synth generative params in
+  provenance; wire the dashboard JSON into a Vue scenario page.
 
 ## Prior phase: Gate-1 Simulator merged → Wave 12 (engine/synth)
 
@@ -60,8 +59,8 @@ All dashboard code is on main. Site live. Codebase includes:
 
 | Area | Status | Next step |
 | --- | --- | --- |
-| **WealthLens-Sim** | Gate 1 complete + all 7 policy families (A–G) + top-tail + provenance MERGED to main; Wave 12 `synth/` + `rules/` merged | **Wave 12 engine PR** (`engine.run_scenario` → EngineResult + outputs JSON) |
-| Sim CI | `ci-sim.yml` runs ruff+mypy+pytest (py3.11/3.12) + weekly; 564 tests | Maintain; add coverage of new modules |
+| **WealthLens-Sim** | Gate 1 + Wave 12 engine/output stack + #335 synth calibration MERGED to main | Review/drain #336 enforcement compliance model, then open the next Wave 13 PR above it |
+| Sim CI | `ci-sim.yml` runs ruff+mypy+pytest (py3.11/3.12) + weekly; 638 sim tests on main | Maintain; add coverage of new modules |
 | Sim packaging | registries bundled into wheel+sdist (hatch hook); pip-installable | — |
 | Data pipelines | 8+ pipelines on main | Maintain; add new pipelines as needed |
 | Charts (v0.1) | Live (4 charts + broadsheet redesign) | Build more chart components in Vue |
