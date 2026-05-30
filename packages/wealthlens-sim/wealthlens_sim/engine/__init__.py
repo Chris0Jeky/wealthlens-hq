@@ -22,6 +22,7 @@ Reference: docs/WAVE12_SIMULATION_ENGINE_DESIGN.md §5.
 from __future__ import annotations
 
 from wealthlens_sim.engine._attribution import household_liability, revenue_by_wealth_decile
+from wealthlens_sim.engine._enforcement import compute_engine_enforcement
 from wealthlens_sim.engine.result import (
     N_DECILES,
     EngineResult,
@@ -34,6 +35,7 @@ from wealthlens_sim.provenance.manifest import (
     ProvenanceEntry,
     ProvenanceManifest,
 )
+from wealthlens_sim.reforms.f_enforcement import EnforcementConfig
 from wealthlens_sim.reforms.g_devolution import (
     DevolutionConfig,
     DevolutionSplit,
@@ -48,6 +50,7 @@ __all__ = [
     "N_DECILES",
     "DevolutionConfig",
     "DevolutionSplit",
+    "EnforcementConfig",
     "EngineResult",
     "PopulationSource",
     "Registries",
@@ -104,6 +107,7 @@ def simulate(
     *,
     registries: Registries | None = None,
     devolution: DevolutionConfig | None = None,
+    enforcement: EnforcementConfig | None = None,
 ) -> EngineResult:
     """Score ``scenario`` over ``population`` and return an :class:`EngineResult`.
 
@@ -121,6 +125,15 @@ def simulate(
     result so the excluded nations and their weights stay visible. Family G is a
     territorial-scope layer, so it is an engine argument rather than a member of
     the A-E ``Scenario``.
+
+    When ``enforcement`` (Family F) is supplied, the compliance-gap model is
+    applied to the scenario's family revenues and its net uplift (revenue gained
+    minus enforcement cost) is **added to** ``total_revenue_gbp_bn`` and reported
+    separately on ``enforcement_uplift_bn``. The uplift is an aggregate figure and
+    is NOT attributed to nation or decile, so the decile invariant becomes
+    ``sum(revenue_by_decile) ~= total_revenue_gbp_bn - enforcement_uplift_bn``.
+    Family F is a revenue-uplift modifier, so — like G — it is an engine argument
+    rather than an A-E ``Scenario`` member.
 
     The ``PopulationSource`` protocol is structural and presence-only
     (``runtime_checkable`` checks attribute presence, not element types);
@@ -140,11 +153,16 @@ def simulate(
     aggregate = _run_families(scored, scenario)
     decile_central = revenue_by_wealth_decile(scored, scenario.families, n_deciles=N_DECILES)
 
+    enforcement_uplift = 0.0
+    if enforcement is not None:
+        enforcement_uplift = compute_engine_enforcement(aggregate.family_revenues, enforcement).net_uplift_bn
+
     return EngineResult(
         scenario=scenario,
-        total_revenue_gbp_bn=_point_interval(aggregate.total_revenue_bn),
+        total_revenue_gbp_bn=_point_interval(aggregate.total_revenue_bn + enforcement_uplift),
         revenue_by_nation={nation: _point_interval(value) for nation, value in aggregate.revenue_by_nation.items()},
         revenue_by_decile=[_point_interval(value) for value in decile_central],
+        enforcement_uplift_bn=_point_interval(enforcement_uplift),
         households_scored=len(scored),
         provenance=_build_provenance(scenario, registries),
         population_provenance_ids=list(population.provenance_ids),
