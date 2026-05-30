@@ -184,7 +184,7 @@ def _draw_net_wealth(rng: np.random.Generator, config: SynthConfig) -> NDArray[n
 
 def _assign_by_share(rng: np.random.Generator, shares: dict[str, float], size: int) -> NDArray[np.str_]:
     """Vectorised categorical draw over the keys of ``shares`` (normalised)."""
-    keys = list(shares.keys())
+    keys = sorted(shares)
     probs = np.array([shares[k] for k in keys], dtype=np.float64)
     probs = probs / probs.sum()
     return rng.choice(keys, size=size, p=probs)
@@ -198,7 +198,8 @@ def _make_assets(person_wealth: float, asset_shares: dict[str, float]) -> list[A
     """
     total_share = sum(asset_shares.values()) or 1.0
     assets: list[Asset] = []
-    for asset_type, share in asset_shares.items():
+    for asset_type in sorted(asset_shares):
+        share = asset_shares[asset_type]
         value = person_wealth * (share / total_share)
         if value <= 0:
             continue

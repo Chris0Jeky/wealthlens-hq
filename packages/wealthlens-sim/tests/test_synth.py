@@ -189,6 +189,19 @@ class TestGeneratePopulation:
         b = generate_population(_small(asset_shares={"financial": 0.495, "main_residence": 0.495}))
         assert a.households[0].total_net_wealth == pytest.approx(b.households[0].total_net_wealth)
 
+    def test_mapping_insertion_order_does_not_change_generation(self):
+        nation_a = {"england": 0.75, "scotland": 0.25}
+        nation_b = {"scotland": 0.25, "england": 0.75}
+        assets_a = {"financial": 0.25, "main_residence": 0.75}
+        assets_b = {"main_residence": 0.75, "financial": 0.25}
+        a = generate_population(_small(nation_shares=nation_a, asset_shares=assets_a))
+        b = generate_population(_small(nation_shares=nation_b, asset_shares=assets_b))
+        assert [h.nation for h in a.households] == [h.nation for h in b.households]
+        a_asset_types = [asset.asset_type for asset in a.households[0].persons[0].assets]
+        b_asset_types = [asset.asset_type for asset in b.households[0].persons[0].assets]
+        assert a_asset_types == b_asset_types
+        assert a.provenance_ids == b.provenance_ids
+
     def test_households_are_valid_engine_inputs(self):
         """Smoke test: synthetic households are consumable by a policy-family calculator."""
         from wealthlens_sim.reforms.d_iht_reform import IHTConfig, compute_household_iht
