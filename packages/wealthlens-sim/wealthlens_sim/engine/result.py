@@ -100,7 +100,8 @@ class EngineResult(BaseModel):
     devolution_split: DevolutionSplit | None = None
     #: Provenance ids carried by the scored population (e.g. synth calibration
     #: sources). Surfaced verbatim so the population's own provenance is never
-    #: silently dropped; empty for the v0.1 synthetic generator.
+    #: silently dropped; empty when a generator cannot assert source-backed
+    #: population provenance.
     population_provenance_ids: list[str] = Field(default_factory=list)
     #: ``True`` once every **registry assumption** the published intervals depend
     #: on (the top-tail Pareto alpha driving the revenue bounds) has been consumed
@@ -112,8 +113,9 @@ class EngineResult(BaseModel):
     #: scenario *policy parameters* are carried verbatim on ``scenario`` (not the
     #: manifest), and the synthetic population's own *generative parameters* (its
     #: ``SynthConfig.pareto_alpha`` etc., distinct from the registry alpha used for
-    #: scaling) are not recorded — ``population_provenance_ids`` is empty for the
-    #: v0.1 synthetic generator. ``provenance_complete`` therefore means
+    #: scaling) are not recorded — only source ids that the population provider
+    #: can assert are surfaced in ``population_provenance_ids``.
+    #: ``provenance_complete`` therefore means
     #: "registry-assumption trail for the intervals is complete", not "every input
     #: is traceable from the manifest alone".
     provenance_complete: bool = False

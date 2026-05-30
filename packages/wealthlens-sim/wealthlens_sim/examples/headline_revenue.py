@@ -5,10 +5,11 @@ WealthLens-Sim headline number — *"Reform X raises £Y bn (£low-£high)"* —
 per-nation and per-decile breakdown and a provenance summary. The intervals are
 propagated from the cited top-tail Pareto alpha range.
 
-**Not a real estimate.** The v0.1 synthetic population grosses to materially more
-net wealth than the real UK total (~£15-16tn), so the headline is biased HIGH and
-is illustrative only until the generator is calibrated to published WAS/ONS
-marginals. The printed report says so on every run.
+**Not a real estimate.** The v0.1 synthetic population is source-calibrated to
+public Great Britain WAS/ONS aggregate marginals, but it is still generated data
+rather than observed microdata. The headline remains illustrative until
+validated against licensed microdata and behavioural assumptions. The printed
+report says so on every run.
 
 Run::
 
@@ -74,7 +75,7 @@ def example_result() -> EngineResult:
     return simulate(population, scenario, registries=Registries(assumptions=_assumptions()))
 
 
-_BANNER = "** ILLUSTRATIVE — synthetic, uncalibrated population; NOT a real revenue estimate **"
+_BANNER = "** ILLUSTRATIVE - synthetic, source-calibrated population; NOT a real revenue estimate **"
 
 
 def build_report(result: EngineResult) -> str:
@@ -87,7 +88,7 @@ def build_report(result: EngineResult) -> str:
         _BANNER,
         "",
         f"Scenario: {result.scenario.name}",
-        f"Population: {result.households_scored:,} synthetic households (illustrative, not yet calibrated)",
+        f"Population: {result.households_scored:,} synthetic households (source-calibrated, still illustrative)",
         "",
         f"  Headline revenue (ILLUSTRATIVE / synthetic): {_bn(result.total_revenue_gbp_bn)}",
         "",
@@ -107,10 +108,11 @@ def build_report(result: EngineResult) -> str:
         f"assumptions consumed: {', '.join(consumed) or 'none'}"
     )
     lines.append(
-        "  Note: the v0.1 synthetic population grosses to materially more net wealth "
-        "than the real UK total (~£15-16tn), so this figure is biased HIGH. Synthetic "
-        "data, clearly labelled; intervals propagate the cited top-tail Pareto alpha. "
-        "Verify before publishing."
+        "  Note: the v0.1 synthetic population is calibrated to public Great "
+        "Britain ONS/WAS aggregate marginals, but it is still synthetic data "
+        "rather than observed microdata. Intervals propagate the cited top-tail "
+        "Pareto alpha. Verify behavioural assumptions and calibration before "
+        "publishing."
     )
     return "\n".join(lines)
 

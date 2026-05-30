@@ -86,16 +86,39 @@ sources:
   - id: ons-was-wealth
     name: ONS Wealth and Assets Survey (WAS)
     url: https://www.ons.gov.uk/file?uri=/peoplepopulationandcommunity/personalandhouseholdfinances/incomeandwealth/datasets/totalwealthwealthingreatbritain/july2006tojune2016andapril2014tomarch2022/totalwealthtables.xlsx
-    access_date: "2026-05-16"
+    access_date: "2026-05-30"
     format: xlsx
     licence: OGL-3.0
     update_pattern: multi-year-wave
     pipeline: fetch_ons_wealth.py
     notes: >
-      Total net wealth by decile (Table 2.2). January 2025 edition.
+      Total household wealth and components, April 2020 to March 2022.
+      Calibration anchors for the synthetic population: Table 2.1 total
+      wealth including private pension wealth £13.568tn; Table 2.2 total
+      wealth by decile, including top-decile aggregate £5.523tn; bulletin
+      main points give median household wealth £293,700, top-decile
+      threshold £1,200,500, top-1% threshold £3,121,500, top-1% wealth
+      share 10%, and component shares property 40%, pensions 35%,
+      financial 14%, physical 10%. January 2025 edition.
       CAVEAT: WAS lost accredited official statistics status June 2025;
       response rate declined to 41%; December 2024 DB pension methodology
       change reduced measured wealth by ~£2.3tn.
+
+  - id: ons-families-households-2022
+    name: ONS Families and households in Great Britain, 2022
+    url: https://www.ons.gov.uk/peoplepopulationandcommunity/birthsdeathsandmarriages/families/datasets/householdsbytypeofhouseholdandfamilyregionsofenglandandgbconstituentcountries/2022
+    access_date: "2026-05-30"
+    format: xlsx
+    licence: OGL-3.0
+    update_pattern: annual
+    pipeline: null
+    notes: >
+      Used as the synthetic-population household grossing and nation-share
+      anchor. The 2022 edition reports 23.626m households in England,
+      2.542m in Scotland, and 1.332m in Wales (27.5m Great Britain
+      households, rounded from thousands). Wealth marginals are from WAS
+      Great Britain; v0.1 defaults therefore exclude Northern Ireland until
+      NI-specific wealth marginals are wired.
 
   - id: ons-productivity-pay
     name: ONS Labour Productivity and Average Weekly Earnings

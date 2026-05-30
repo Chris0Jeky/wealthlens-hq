@@ -42,6 +42,7 @@ class TestHeadlineRevenue:
         # The headline line is itself self-labelled (not just labelled elsewhere).
         headline = next(line for line in lines if "Headline revenue" in line)
         assert "ILLUSTRATIVE" in headline or "synthetic" in headline.lower()
-        # The known overshoot (biased high) is disclosed where a CLI user sees it.
-        assert "biased HIGH" in report
-        assert "15-16tn" in report
+        # Calibration is disclosed without implying this is observed microdata.
+        assert "source-calibrated" in report
+        assert "synthetic data rather than observed microdata" in report
+        assert "biased HIGH" not in report
