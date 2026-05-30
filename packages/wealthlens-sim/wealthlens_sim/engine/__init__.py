@@ -34,7 +34,11 @@ from wealthlens_sim.provenance.manifest import (
     ProvenanceEntry,
     ProvenanceManifest,
 )
-from wealthlens_sim.reforms.g_devolution import DevolutionConfig, split_households_by_scope
+from wealthlens_sim.reforms.g_devolution import (
+    DevolutionConfig,
+    DevolutionSplit,
+    split_households_by_scope,
+)
 from wealthlens_sim.rules.scenario import Scenario
 from wealthlens_sim.rules.scenario import run_scenario as _run_families
 from wealthlens_sim.schema.household import Household
@@ -43,6 +47,7 @@ from wealthlens_sim.top_tail.types import Interval
 __all__ = [
     "N_DECILES",
     "DevolutionConfig",
+    "DevolutionSplit",
     "EngineResult",
     "PopulationSource",
     "Registries",
@@ -125,8 +130,11 @@ def simulate(
     households = list(population.households)
 
     scored: list[Household] = households
-    split = None
+    split: DevolutionSplit | None = None
     if devolution is not None:
+        # The excluded households are intentionally dropped: the DevolutionSplit
+        # summary (counts/weights/nations) is the contract, and only the included
+        # subset is scored. Do not "restore" the excluded list without a consumer.
         scored, _excluded, split = split_households_by_scope(households, devolution)
 
     aggregate = _run_families(scored, scenario)

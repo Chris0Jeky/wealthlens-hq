@@ -296,6 +296,36 @@ class TestDevolution:
         assert result.households_scored == len(scotland)
         assert result.devolution_split.included_nations == ("scotland",)
 
+    def test_great_britain_scope_excludes_northern_ireland(self):
+        pop = _population()
+        result = simulate(pop, _scenario(_wealth_tax()), devolution=DevolutionConfig(scope=NationScope.GREAT_BRITAIN))
+        assert result.devolution_split.included_nations == ("england", "scotland", "wales")
+        assert "northern_ireland" in result.devolution_split.excluded_nations
+        assert "northern_ireland" not in result.revenue_by_nation
+
+    def test_custom_multi_nation_scope(self):
+        pop = _population()
+        cfg = DevolutionConfig(scope=NationScope.CUSTOM, included_nations=frozenset({Nation.SCOTLAND, Nation.WALES}))
+        result = simulate(pop, _scenario(_wealth_tax()), devolution=cfg)
+        included = [h for h in pop.households if h.nation in {Nation.SCOTLAND, Nation.WALES}]
+        assert result.households_scored == len(included)
+        assert result.devolution_split.included_nations == ("scotland", "wales")
+        assert set(result.revenue_by_nation) <= {"scotland", "wales"}
+
+    def test_england_only_drops_exactly_the_excluded_nations_revenue(self):
+        # The revenue removed by an England-only scope must equal the revenue the
+        # excluded nations contributed UK-wide — proving the filter removes their
+        # revenue, not merely their household count.
+        pop = _population()
+        scenario = _scenario(_wealth_tax())
+        uk_wide = simulate(pop, scenario)
+        england_only = simulate(pop, scenario, devolution=DevolutionConfig(scope=NationScope.ENGLAND_ONLY))
+        excluded_revenue = sum(
+            value.central for nation, value in uk_wide.revenue_by_nation.items() if nation != "england"
+        )
+        dropped = uk_wide.total_revenue_gbp_bn.central - england_only.total_revenue_gbp_bn.central
+        assert dropped == pytest.approx(excluded_revenue)
+
     def test_decile_invariant_holds_on_included_subset(self):
         pop = _population()
         scenario = _scenario(_wealth_tax())
