@@ -1,10 +1,17 @@
-"""Per-household revenue attribution for decile breakdowns (Wave 12 PR3a).
+"""Per-household revenue attribution by wealth decile (Wave 12 PR3a).
 
 The ``rules.run_scenario`` aggregate API discards per-household detail, so the
 engine recomputes liabilities household-by-household here to attribute revenue to
 wealth deciles. The per-household calculators used are the *same* functions the
-aggregate calculators call internally, so the weighted sum across deciles equals
-the aggregate ``total_revenue_bn`` (an invariant the tests assert).
+aggregate calculators call internally, so the weighted decile sum equals the
+aggregate ``total_revenue_bn`` up to floating-point summation order (a tested
+invariant).
+
+Deciles are **equal-grossing-weight** bins (the standard definition: each decile
+holds 1/n of the weighted population). A household whose grossing weight straddles
+a decile boundary has its revenue split across the bands it overlaps in proportion
+to the weight in each band, so the bins stay exactly even even when survey weights
+are heterogeneous (as real WAS/FRS microdata will be behind the population seam).
 """
 
 from __future__ import annotations
@@ -56,32 +63,55 @@ def revenue_by_wealth_decile(
     *,
     n_deciles: int = 10,
 ) -> list[float]:
-    """Attribute total scenario revenue (GBP bn) across weighted wealth deciles.
+    """Attribute total scenario revenue (GBP bn) across equal-weight wealth deciles.
 
-    Households are ranked by ``total_net_wealth`` ascending and split into
-    ``n_deciles`` equal-grossing-weight bins (each decile holds ~1/n of the
-    grossed-up population, not 1/n of the survey rows). Each household is assigned
-    by the cumulative weight at its *centre* (``cum_before + weight/2``), which
-    avoids the off-by-one bias of using a leading or trailing edge.
+    Households are ranked by ``total_net_wealth`` ascending and laid out along a
+    cumulative-weight axis of length ``total_weight``. The axis is cut into
+    ``n_deciles`` equal bands of width ``total_weight / n_deciles``; each
+    household's weighted liability is split across the bands its weight interval
+    ``[cumulative, cumulative + weight)`` overlaps, proportional to the overlap.
+    This keeps the deciles exactly even (each holds 1/n of the weighted
+    population) and places the highest-wealth weight in the top decile regardless
+    of how heterogeneous the survey weights are.
 
     Returns a list of length ``n_deciles`` (lowest wealth first), or an empty
-    list when there are no households or total weight is non-positive.
+    list when ``households`` is empty.
+
+    Raises:
+        ValueError: if the population is non-empty but its total weight is not
+            positive — a data defect (weights must be > 0), surfaced rather than
+            silently collapsed into an empty result.
     """
     if not households:
         return []
 
     total_weight = sum(h.weight for h in households)
     if total_weight <= 0:
-        return []
+        msg = f"total household weight must be positive to attribute deciles, got {total_weight}"
+        raise ValueError(msg)
 
     ranked = sorted(households, key=lambda h: h.total_net_wealth)
+    band_width = total_weight / n_deciles
     decile_gbp = [0.0] * n_deciles
     cumulative = 0.0
     for household in ranked:
-        liability = sum(household_liability(household, sel) for sel in selections)
-        centre_fraction = (cumulative + household.weight / 2) / total_weight
-        index = min(n_deciles - 1, int(centre_fraction * n_deciles))
-        decile_gbp[index] += liability * household.weight
-        cumulative += household.weight
+        weighted_liability = sum(household_liability(household, sel) for sel in selections) * household.weight
+        start = cumulative
+        end = cumulative + household.weight
+        # Bands this household's weight interval [start, end) overlaps. The tiny
+        # epsilon keeps an interval ending exactly on a boundary out of the next
+        # (empty-overlap) band; min() guards the final float-rounding edge.
+        first = min(n_deciles - 1, int(start / band_width))
+        last = min(n_deciles - 1, int((end - 1e-9) / band_width))
+        if first == last:
+            decile_gbp[first] += weighted_liability
+        else:
+            for index in range(first, last + 1):
+                band_lo = index * band_width
+                band_hi = (index + 1) * band_width
+                overlap = min(end, band_hi) - max(start, band_lo)
+                if overlap > 0:
+                    decile_gbp[index] += weighted_liability * (overlap / household.weight)
+        cumulative = end
 
     return [gbp / _GBP_PER_BN for gbp in decile_gbp]
