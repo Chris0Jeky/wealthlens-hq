@@ -1,9 +1,11 @@
-"""Tests for the engine/ orchestrator (Wave 12 PR3a).
+"""Tests for the engine/ orchestrator (Wave 12 PR3).
 
-Covers the synth -> rules -> provenance wiring, the decile-attribution invariant
-(decile sum ~= aggregate total), equal-weight deciles under heterogeneous survey
-weights, the PopulationSource protocol seam, the provenance manifest + the
-known-incomplete marker, and edge cases (empty population, non-positive weight).
+Covers the synth -> rules -> provenance wiring; the decile-attribution invariant
+(decile sum ~= aggregate total) and equal-weight deciles under heterogeneous
+weights; the PopulationSource protocol seam; Family G devolution scoping; Family F
+enforcement uplift; interval propagation from the top-tail alpha range and the
+complete-vs-incomplete provenance marker; and edge cases (empty population,
+non-positive weight).
 """
 
 from __future__ import annotations
@@ -107,8 +109,8 @@ class TestSimulate:
         result = simulate(pop, _scenario(_wealth_tax()))
         assert result.households_scored == 500
 
-    def test_intervals_are_degenerate_in_pr3a(self):
-        # PR3a placeholder: low == central == high until PR3c propagates ranges.
+    def test_intervals_degenerate_without_registry(self):
+        # No registry => uncertainty unquantified => degenerate intervals.
         result = simulate(_population(), _scenario(_wealth_tax()))
         iv = result.total_revenue_gbp_bn
         assert iv.low == iv.central == iv.high
@@ -244,28 +246,40 @@ class TestProvenance:
         assert "total_revenue_gbp_bn" in labels
         assert all(e.layer == PipelineLayer.REVENUE for e in result.provenance.entries)
 
-    def test_provenance_marked_incomplete_in_pr3a(self):
-        # PR3a does not consume the assumptions the numbers depend on, so the
-        # result must declare its provenance incomplete.
+    def test_provenance_incomplete_without_registry(self):
+        # Without a registry the engine consumes no assumptions, so it must
+        # declare its provenance incomplete.
         result = simulate(_population(n=100), _scenario(_wealth_tax()))
         assert result.provenance_complete is False
+
+    def test_provenance_complete_with_registry(self):
+        # With the assumption registry, the engine consumes the top-tail alpha and
+        # records it against every revenue output, so provenance is complete.
+        pop = _population(n=100)
+        scenario = _scenario(_wealth_tax())
+        result = simulate(pop, scenario, registries=Registries(assumptions=load_assumptions()))
+        assert result.provenance_complete is True
+        assert "toptail.pareto_alpha.overall.v1" in result.provenance.assumptions_consumed
+        for entry in result.provenance.entries:
+            if entry.output_label in {"total_revenue_gbp_bn", "revenue_by_nation", "revenue_by_decile"}:
+                assert "toptail.pareto_alpha.overall.v1" in entry.assumption_ids
 
     def test_manifest_uses_scenario_version_tag(self):
         scenario = _scenario(_wealth_tax())
         result = simulate(_population(n=100), scenario)
         assert result.provenance.version_tag == scenario.version_tag
 
-    def test_registry_path_builds_equivalent_entries(self):
-        # Supplying an assumption registry routes provenance through the
-        # collector; in PR3a it yields the same entries as the registry-free path
-        # (run_timestamp aside, which is necessarily per-run).
-        pop = _population(n=100)
-        scenario = _scenario(_wealth_tax())
-        without = simulate(pop, scenario)
-        with_reg = simulate(pop, scenario, registries=Registries(assumptions=load_assumptions()))
-        assert {e.output_label for e in with_reg.provenance.entries} == {
-            e.output_label for e in without.provenance.entries
-        }
+    def test_devolution_scope_recorded_in_manifest(self):
+        # A scoped run with a registry records the territorial scope in the manifest.
+        pop = _population(n=200)
+        result = simulate(
+            pop,
+            _scenario(_wealth_tax()),
+            registries=Registries(assumptions=load_assumptions()),
+            devolution=DevolutionConfig(scope=NationScope.ENGLAND_ONLY),
+        )
+        labels = {e.output_label for e in result.provenance.entries}
+        assert "devolution_scope:england_only" in labels
 
 
 class TestDevolution:
@@ -437,6 +451,47 @@ class TestEnforcement:
             enforcement=self._enforcement(family=TaxFamily.CGT, baseline=0.5, scenario=0.9),
         )
         assert result.enforcement_uplift_bn.central == pytest.approx(0.0)
+
+
+class TestIntervals:
+    def _registries(self):
+        return Registries(assumptions=load_assumptions())
+
+    def test_registry_yields_non_degenerate_intervals(self):
+        result = simulate(_population(), _scenario(_wealth_tax()), registries=self._registries())
+        iv = result.total_revenue_gbp_bn
+        assert iv.low < iv.central < iv.high
+
+    def test_interval_scale_matches_tail_mean_ratio(self):
+        # The low/high factors come from the Pareto tail-mean ratio at the alpha
+        # bounds (1.3, 1.5, 1.8): factor = [a/(a-1)] / [1.5/0.5].
+        result = simulate(_population(), _scenario(_wealth_tax()), registries=self._registries())
+        iv = result.total_revenue_gbp_bn
+        central_factor = 1.5 / 0.5
+        expected_low = iv.central * ((1.8 / 0.8) / central_factor)  # higher alpha -> less revenue
+        expected_high = iv.central * ((1.3 / 0.3) / central_factor)  # lower alpha -> more revenue
+        assert iv.low == pytest.approx(expected_low)
+        assert iv.high == pytest.approx(expected_high)
+
+    def test_decile_invariant_holds_at_every_bound(self):
+        # The same factor scales every figure, so the decile sum equals the total
+        # (net of enforcement) at low, central, AND high.
+        result = simulate(
+            _population(),
+            _scenario(_wealth_tax()),
+            registries=self._registries(),
+        )
+        for bound in ("low", "central", "high"):
+            decile_sum = sum(getattr(iv, bound) for iv in result.revenue_by_decile)
+            total = getattr(result.total_revenue_gbp_bn, bound)
+            assert decile_sum == pytest.approx(total)
+
+    def test_intervals_deterministic(self):
+        pop = _population()
+        scenario = _scenario(_wealth_tax())
+        r1 = simulate(pop, scenario, registries=self._registries())
+        r2 = simulate(pop, scenario, registries=self._registries())
+        assert r1.total_revenue_gbp_bn == r2.total_revenue_gbp_bn
 
 
 class TestEngineResultModel:
