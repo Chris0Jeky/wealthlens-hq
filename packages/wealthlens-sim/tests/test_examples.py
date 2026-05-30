@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from wealthlens_sim import __version__
 from wealthlens_sim.examples.headline_revenue import build_report, example_result
 
 
@@ -18,6 +19,7 @@ class TestHeadlineRevenue:
         assert iv.low < iv.central < iv.high  # registry supplied => real intervals
         assert result.provenance_complete is True
         assert "toptail.pareto_alpha.overall.v1" in result.provenance.assumptions_consumed
+        assert result.scenario.version_tag.wealthlens_sim_version == __version__
 
     def test_revenue_concentrated_in_top_decile(self):
         result = example_result()

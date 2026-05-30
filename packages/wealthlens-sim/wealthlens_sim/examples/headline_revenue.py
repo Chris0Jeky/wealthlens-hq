@@ -19,6 +19,7 @@ from __future__ import annotations
 
 from functools import lru_cache
 
+from wealthlens_sim import __version__ as wealthlens_sim_version
 from wealthlens_sim.assumptions import load_assumptions
 from wealthlens_sim.assumptions.schema import AssumptionRegistry
 from wealthlens_sim.engine import EngineResult, Registries, simulate
@@ -61,7 +62,7 @@ def example_result() -> EngineResult:
             macro_baseline_version="NBS-2025",
             policy_version="2026-05-30",
             population_version="synth-v0.1",
-            wealthlens_sim_version="0.1.0",
+            wealthlens_sim_version=wealthlens_sim_version,
         ),
         families=[
             FamilySelection(
