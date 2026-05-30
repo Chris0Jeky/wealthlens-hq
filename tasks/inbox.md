@@ -3,8 +3,9 @@
 Last updated: 2026-05-30
 
 > Latest: PR #336 proper enforcement compliance model is merged. PR #337 synth
-> generation provenance is open/newest, green, and merge-clean; it must not be
-> merged until a newer PR is opened above it and the full review gate is satisfied.
+> generation provenance is open/newest with Gemini/Codex bot comments addressed;
+> it must not be merged until a newer PR is opened above it and the full review
+> gate is satisfied.
 
 Every concrete action item extracted from research. Triage into active-sprint, backlog, or done.
 
@@ -31,11 +32,11 @@ the build + its adversarial reviews:
 - [ ] **Wire the dashboard JSON into a Vue scenario page** — `to_dashboard_json` emits the
   contract (totals/by-nation/by-decile intervals + provenance + caveats); build the
   ConfidenceFanChart + ProvenanceTooltip + a caveats banner that renders `caveats[]`.
-- [ ] **Record the synth generative `pareto_alpha` in provenance** — PR #337 is
-  open/newest and threads `synth.seed` + `synth.pareto_alpha` through
-  `population.provenance_ids` / dashboard JSON. GitHub checks are green and its
-  Gemini thread is resolved; it still needs the full two-review gate and a newer
-  PR above it before merge.
+- [ ] **Record synth generation inputs in provenance** — PR #337 is open/newest
+  and threads all generation-affecting `SynthConfig` inputs through
+  `population.provenance_ids` / dashboard JSON. Gemini and Codex bot comments
+  are resolved; it still needs green GitHub checks after the latest bot-fix push,
+  the full two-review gate, and a newer PR above it before merge.
 
 ---
 

@@ -16,10 +16,10 @@ Last updated: 2026-05-30
   `enforcement_net_fiscal_impact_bn`); dashboard schema is `1.2`; 645 sim tests
   pass locally on main after #336.
 - **Open/newest:** #337 `feat/synth-generation-provenance` -> `main`, recording
-  `synth.seed` and `synth.pareto_alpha` in population provenance. Its Gemini
-  comment was addressed and resolved; local verification on the rebased branch is
-  646 sim tests + ruff + mypy passing; GitHub checks are green and merge state is
-  clean. Do not merge #337 while newest.
+  all generation-affecting `SynthConfig` inputs in population provenance. Its
+  Gemini and Codex comments were addressed and resolved; local verification on
+  the rebased branch is 647 sim tests + ruff + mypy passing. Re-check GitHub
+  checks after the latest bot-fix push. Do not merge #337 while newest.
 
 ## Current phase: Wave 13 calibration and extension
 
@@ -37,8 +37,8 @@ example, each with 2 independent adversarial reviews + all bot comments addresse
   #335 (synth ONS/WAS calibration and provenance), and #336 (enforcement
   compliance model). **645 sim tests pass locally on main after #336.**
 - **Open:** #337 `feat/synth-generation-provenance` -> main records synth
-  generation tags in population provenance. It is the newest open PR and still
-  needs the full 2-review adversarial cycle plus a newer PR above it before
+  generation-input tags in population provenance. It is the newest open PR and
+  still needs the full 2-review adversarial cycle plus a newer PR above it before
   merge.
 - Reviews caught real issues (decile non-conservation for tiny weights, provenance
   overclaiming, enforcement-overstatement + unsourced-state surfacing in the

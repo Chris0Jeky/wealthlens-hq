@@ -26,12 +26,12 @@ This section supersedes the older handoff snapshot below.
 - Latest main GitHub runs after `6b0f8e5`: CI Simulator, CodeQL, and Deploy are
   green.
 - **Only open PR:** **#337** `feat/synth-generation-provenance` -> `main`.
-  It records `synth.seed` and `synth.pareto_alpha` in
+  It records all generation-affecting `SynthConfig` inputs in
   `population_provenance_ids`, regenerates dashboard goldens, is the newest open
   PR, and must **not** be merged until another PR is opened above it and the full
-  non-doc gate is satisfied. Its Gemini thread was addressed and resolved. Local
-  verification on the rebased branch: 646 sim tests + ruff + mypy passed; GitHub
-  checks are green and merge state is clean.
+  non-doc gate is satisfied. Gemini and Codex bot threads were addressed and
+  resolved. Local verification on the rebased branch: 647 sim tests + ruff + mypy
+  passed; re-check GitHub checks after the latest bot-fix push.
 
 ## Where to start
 1. Run `gh pr list --state open`, `gh pr checks 337`, and inspect latest main
@@ -53,8 +53,8 @@ This section supersedes the older handoff snapshot below.
 - `DASHBOARD_SCHEMA_VERSION` is `1.2`.
 - When enforcement affects complete outputs, the dashboard provenance includes
   the enforcement compliance model assumption with HMRC and NAO source URLs.
-- Synthetic data remains labelled as synthetic; #337 adds generator parameter
-  tags to the population provenance seam.
+- Synthetic data remains labelled as synthetic; #337 adds generation-input
+  parameter tags to the population provenance seam.
 
 ---
 
