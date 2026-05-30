@@ -9,9 +9,16 @@ per-output assumption trail). Every published number therefore reaches the
 dashboard alongside its uncertainty band and its provenance (Blueprint v5 §13.6,
 §15 Gate-9 dashboard safety).
 
+Data-integrity states a chart must not publish silently are surfaced **loudly at
+the contract root**: ``provenance_complete`` (``False`` ⇒ unsourced, degenerate
+intervals) and a ``caveats`` list the frontend must render (incomplete provenance;
+the v0.1 enforcement overstatement). The nested ``provenance.complete`` mirrors the
+root flag for the detailed block.
+
 The volatile ``run_timestamp`` is intentionally excluded so the output is
 deterministic for a given result (enabling the golden-file test); the stable
-``version_tag`` identifies the run instead.
+``version_tag`` identifies the run instead. To regenerate the golden files after an
+intentional engine change, run the outputs tests with ``REGEN_GOLDEN=1`` set.
 
 Reference: docs/WAVE12_SIMULATION_ENGINE_DESIGN.md §6.
 """
@@ -26,11 +33,37 @@ from wealthlens_sim.top_tail.types import Interval
 __all__ = ["DASHBOARD_SCHEMA_VERSION", "to_dashboard_json"]
 
 #: Bumped when the dashboard JSON shape changes so the frontend can guard on it.
-DASHBOARD_SCHEMA_VERSION = "1.0"
+DASHBOARD_SCHEMA_VERSION = "1.1"
+
+_INCOMPLETE_PROVENANCE_CAVEAT = (
+    "Provenance incomplete: no assumption registry was supplied, so the intervals "
+    "are point estimates and the uncertainty is unquantified — do not present these "
+    "figures as fully sourced."
+)
+_ENFORCEMENT_OVERSTATEMENT_CAVEAT = (
+    "The headline includes a Family-F enforcement uplift added on top of full "
+    "statutory liability (the 100%-compliance ceiling), so it overstates collectible "
+    "revenue — a documented v0.1 simplification."
+)
 
 
 def _interval(interval: Interval) -> dict[str, float]:
     return {"low": interval.low, "central": interval.central, "high": interval.high}
+
+
+def _caveats(result: EngineResult) -> list[str]:
+    """Machine-readable data-integrity caveats the frontend MUST render.
+
+    Surfaces, loudly and at the contract root, the two states a chart must not
+    publish silently: unsourced (incomplete-provenance) figures, and a headline
+    inflated by the v0.1 enforcement overstatement.
+    """
+    caveats: list[str] = []
+    if not result.provenance_complete:
+        caveats.append(_INCOMPLETE_PROVENANCE_CAVEAT)
+    if result.enforcement_uplift_bn.central != 0.0:
+        caveats.append(_ENFORCEMENT_OVERSTATEMENT_CAVEAT)
+    return caveats
 
 
 def _provenance(result: EngineResult) -> dict[str, Any]:
@@ -73,6 +106,10 @@ def to_dashboard_json(result: EngineResult) -> dict[str, Any]:
     return {
         "schema_version": DASHBOARD_SCHEMA_VERSION,
         "scenario_name": result.scenario.name,
+        # Hoisted to the root (not just under `provenance`) so a consumer cannot
+        # miss the unsourced state, and the data-integrity caveats it must render.
+        "provenance_complete": result.provenance_complete,
+        "caveats": _caveats(result),
         "households_scored": result.households_scored,
         "total_revenue_gbp_bn": _interval(result.total_revenue_gbp_bn),
         "enforcement_uplift_gbp_bn": _interval(result.enforcement_uplift_bn),
