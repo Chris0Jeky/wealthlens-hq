@@ -20,6 +20,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from wealthlens_sim.assumptions.schema import AssumptionRegistry
 from wealthlens_sim.provenance.manifest import ProvenanceManifest
+from wealthlens_sim.reforms.g_devolution import DevolutionSplit
 from wealthlens_sim.rules.scenario import Scenario
 from wealthlens_sim.schema.household import Household
 from wealthlens_sim.top_tail.types import Interval
@@ -78,8 +79,15 @@ class EngineResult(BaseModel):
     total_revenue_gbp_bn: Interval
     revenue_by_nation: dict[str, Interval]
     revenue_by_decile: list[Interval] = Field(default_factory=list)
+    #: Count of households actually scored. When a devolution scope is applied
+    #: this is the *included* subset (see ``devolution_split``), not the whole
+    #: population.
     households_scored: int = Field(ge=0)
     provenance: ProvenanceManifest
+    #: The nation-scope split when a Family G devolution scope was applied
+    #: (which nations were included/excluded and their weights); ``None`` when
+    #: the scenario ran UK-wide over the whole population.
+    devolution_split: DevolutionSplit | None = None
     #: Provenance ids carried by the scored population (e.g. synth calibration
     #: sources). Surfaced verbatim so the population's own provenance is never
     #: silently dropped; empty for the v0.1 synthetic generator.
