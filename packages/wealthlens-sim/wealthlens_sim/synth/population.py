@@ -226,11 +226,29 @@ def _make_person(person_id: str, age: int, wealth: float, asset_shares: dict[str
     )
 
 
+def _format_float(value: float) -> str:
+    """Return a compact stable representation for provenance tags."""
+    return f"{value:.12g}"
+
+
+def _format_mapping(values: dict[str, float]) -> str:
+    """Return a stable key-sorted mapping representation for provenance tags."""
+    return ";".join(f"{key}={_format_float(values[key])}" for key in sorted(values))
+
+
 def _generation_provenance_ids(config: SynthConfig) -> list[str]:
-    """Return stable tags for generator parameters that affect reproducibility."""
+    """Return stable tags for generator parameters that affect generated output."""
     return [
+        f"synth.n_households:{config.n_households}",
         f"synth.seed:{config.seed}",
-        f"synth.pareto_alpha:{config.pareto_alpha:.12g}",
+        f"synth.population_households:{_format_float(config.population_households)}",
+        f"synth.median_net_wealth:{_format_float(config.median_net_wealth)}",
+        f"synth.lognormal_sigma:{_format_float(config.lognormal_sigma)}",
+        f"synth.pareto_threshold:{_format_float(config.pareto_threshold)}",
+        f"synth.pareto_alpha:{_format_float(config.pareto_alpha)}",
+        f"synth.couple_share:{_format_float(config.couple_share)}",
+        f"synth.nation_shares:{_format_mapping(config.nation_shares)}",
+        f"synth.asset_shares:{_format_mapping(config.asset_shares)}",
     ]
 
 

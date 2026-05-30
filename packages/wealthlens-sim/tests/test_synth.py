@@ -136,6 +136,35 @@ class TestGeneratePopulation:
         config = _small(seed=13, pareto_alpha=2.25)
         pop = generate_population(config)
         assert pop.provenance_ids == _generation_provenance_ids(config)
+        assert "synth.seed:13" in pop.provenance_ids
+        assert "synth.pareto_alpha:2.25" in pop.provenance_ids
+
+    def test_provenance_ids_record_all_generation_inputs(self):
+        config = _small(
+            n_households=123,
+            population_households=456_000,
+            median_net_wealth=250_000,
+            lognormal_sigma=1.2,
+            pareto_threshold=900_000,
+            pareto_alpha=2.1,
+            couple_share=0.4,
+            nation_shares={"england": 0.75, "scotland": 0.25},
+            asset_shares={"financial": 0.25, "main_residence": 0.75},
+        )
+        ids = generate_population(config).provenance_ids
+        expected = {
+            "synth.n_households:123",
+            "synth.seed:7",
+            "synth.population_households:456000",
+            "synth.median_net_wealth:250000",
+            "synth.lognormal_sigma:1.2",
+            "synth.pareto_threshold:900000",
+            "synth.pareto_alpha:2.1",
+            "synth.couple_share:0.4",
+            "synth.nation_shares:england=0.75;scotland=0.25",
+            "synth.asset_shares:financial=0.25;main_residence=0.75",
+        }
+        assert expected.issubset(set(ids))
 
     def test_custom_calibration_clears_default_source_provenance_ids(self):
         config = _small(median_net_wealth=500_000)

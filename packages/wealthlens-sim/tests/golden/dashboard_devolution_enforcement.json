@@ -35,8 +35,16 @@
   "population_provenance_ids": [
     "ons-was-wealth",
     "ons-families-households-2022",
+    "synth.n_households:500",
     "synth.seed:7",
-    "synth.pareto_alpha:2.5"
+    "synth.population_households:27500000",
+    "synth.median_net_wealth:293700",
+    "synth.lognormal_sigma:1.1",
+    "synth.pareto_threshold:1200500",
+    "synth.pareto_alpha:2.5",
+    "synth.couple_share:0.55",
+    "synth.nation_shares:england=0.859127272727;scotland=0.0924363636364;wales=0.0484363636364",
+    "synth.asset_shares:dc_pension=0.3544;financial=0.1411;main_residence=0.4025;physical=0.1021"
   ],
   "provenance": {
     "assumptions_consumed": [
