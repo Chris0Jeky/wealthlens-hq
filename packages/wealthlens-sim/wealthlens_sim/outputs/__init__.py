@@ -3,7 +3,8 @@
 :func:`to_dashboard_json` converts an :class:`~wealthlens_sim.engine.result.EngineResult`
 into a plain, JSON-serialisable ``dict`` — the contract the dashboard consumes:
 headline total + per-nation + per-decile revenue (each as a low/central/high
-interval), the net enforcement uplift, the devolution scope (if any), and a
+interval), the gross enforcement revenue uplift, enforcement cost, net fiscal
+impact, the devolution scope (if any), and a
 flattened provenance block (the assumptions consumed with their sources, plus the
 per-output assumption trail). Every published number therefore reaches the
 dashboard alongside its uncertainty band and its provenance (Blueprint v5 §13.6,
@@ -11,9 +12,8 @@ dashboard alongside its uncertainty band and its provenance (Blueprint v5 §13.6
 
 Data-integrity states a chart must not publish silently are surfaced **loudly at
 the contract root**: ``provenance_complete`` (``False`` ⇒ unsourced, degenerate
-intervals) and a ``caveats`` list the frontend must render (incomplete provenance;
-the v0.1 enforcement overstatement). The nested ``provenance.complete`` mirrors the
-root flag for the detailed block.
+intervals) and a ``caveats`` list the frontend must render. The nested
+``provenance.complete`` mirrors the root flag for the detailed block.
 
 The volatile ``run_timestamp`` is intentionally excluded so the output is
 deterministic for a given result (enabling the golden-file test); the stable
@@ -33,20 +33,13 @@ from wealthlens_sim.top_tail.types import Interval
 __all__ = ["DASHBOARD_SCHEMA_VERSION", "to_dashboard_json"]
 
 #: Bumped when the dashboard JSON shape changes so the frontend can guard on it.
-DASHBOARD_SCHEMA_VERSION = "1.1"
+DASHBOARD_SCHEMA_VERSION = "1.2"
 
 _INCOMPLETE_PROVENANCE_CAVEAT = (
     "Provenance incomplete: no assumption registry was supplied, so the intervals "
     "are point estimates and the uncertainty is unquantified — do not present these "
     "figures as fully sourced."
 )
-_ENFORCEMENT_OVERSTATEMENT_CAVEAT = (
-    "The headline includes a Family-F enforcement uplift added on top of full "
-    "statutory liability (the 100%-compliance ceiling), so it overstates collectible "
-    "revenue — a documented v0.1 simplification."
-)
-
-
 def _interval(interval: Interval) -> dict[str, float]:
     return {"low": interval.low, "central": interval.central, "high": interval.high}
 
@@ -54,15 +47,13 @@ def _interval(interval: Interval) -> dict[str, float]:
 def _caveats(result: EngineResult) -> list[str]:
     """Machine-readable data-integrity caveats the frontend MUST render.
 
-    Surfaces, loudly and at the contract root, the two states a chart must not
-    publish silently: unsourced (incomplete-provenance) figures, and a headline
-    inflated by a positive v0.1 enforcement uplift.
+    Surfaces, loudly and at the contract root, states a chart must not publish
+    silently. Enforcement no longer adds revenue above the full-compliance
+    ceiling, so it does not need a separate overstatement caveat.
     """
     caveats: list[str] = []
     if not result.provenance_complete:
         caveats.append(_INCOMPLETE_PROVENANCE_CAVEAT)
-    if result.enforcement_uplift_bn.central > 0.0:
-        caveats.append(_ENFORCEMENT_OVERSTATEMENT_CAVEAT)
     return caveats
 
 
@@ -113,6 +104,8 @@ def to_dashboard_json(result: EngineResult) -> dict[str, Any]:
         "households_scored": result.households_scored,
         "total_revenue_gbp_bn": _interval(result.total_revenue_gbp_bn),
         "enforcement_uplift_gbp_bn": _interval(result.enforcement_uplift_bn),
+        "enforcement_cost_gbp_bn": _interval(result.enforcement_cost_bn),
+        "enforcement_net_fiscal_impact_gbp_bn": _interval(result.enforcement_net_fiscal_impact_bn),
         "revenue_by_nation": {nation: _interval(interval) for nation, interval in result.revenue_by_nation.items()},
         "revenue_by_decile": [_interval(interval) for interval in result.revenue_by_decile],
         "devolution_scope": devolution,

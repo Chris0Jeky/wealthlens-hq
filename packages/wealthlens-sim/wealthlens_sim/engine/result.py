@@ -79,16 +79,27 @@ class EngineResult(BaseModel):
     total_revenue_gbp_bn: Interval
     revenue_by_nation: dict[str, Interval]
     revenue_by_decile: list[Interval] = Field(default_factory=list)
-    #: Net Family-F enforcement uplift (revenue from closing the compliance gap,
-    #: minus enforcement cost) in GBP bn. It is **included in
-    #: ``total_revenue_gbp_bn``** (do not add it again) but is an aggregate
-    #: compliance-gap figure NOT attributed to nation or decile, so
+    #: Gross Family-F enforcement revenue uplift from closing the compliance gap
+    #: in GBP bn. It is **included in ``total_revenue_gbp_bn``** (do not add it
+    #: again) but is an aggregate compliance-gap figure NOT attributed to nation
+    #: or decile, so
     #: ``sum(revenue_by_decile) ~= total_revenue_gbp_bn - enforcement_uplift_bn``.
-    #: Zero when no enforcement config is supplied. May be negative if enforcement
-    #: cost exceeds the uplift. **v0.1 caveat:** because the A-E base is full
-    #: statutory liability, this uplift sits on top of the 100%-compliance ceiling
-    #: and overstates collectible revenue — see ``engine._enforcement``.
+    #: Zero when no enforcement config is supplied. When Family F is supplied,
+    #: the decile and nation breakdowns represent baseline-compliance revenue;
+    #: the uplift moves that baseline toward scenario compliance without
+    #: exceeding the theoretical full-compliance ceiling. Enforcement cost is
+    #: expenditure, not revenue, and is surfaced separately below.
     enforcement_uplift_bn: Interval = Field(default_factory=lambda: Interval(low=0.0, central=0.0, high=0.0))
+    #: Additional HMRC enforcement cost in GBP bn. This is not included in
+    #: ``total_revenue_gbp_bn`` because the headline is a revenue figure.
+    enforcement_cost_bn: Interval = Field(default_factory=lambda: Interval(low=0.0, central=0.0, high=0.0))
+    #: Net fiscal impact in GBP bn: gross enforcement revenue uplift minus
+    #: enforcement cost. This may be negative; it is reported separately so the
+    #: revenue headline and attribution invariants cannot go below zero because
+    #: of a spending assumption.
+    enforcement_net_fiscal_impact_bn: Interval = Field(
+        default_factory=lambda: Interval(low=0.0, central=0.0, high=0.0)
+    )
     #: Count of households actually scored. When a devolution scope is applied
     #: this is the *included* subset (see ``devolution_split``), not the whole
     #: population.

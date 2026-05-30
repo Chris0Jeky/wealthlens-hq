@@ -12,20 +12,20 @@ revenue, parameterised by a compliance rate per tax family.
 The core insight: "what if HMRC had better wealth visibility?" may
 raise revenue by increasing observability rather than rates.
 
-Key statistics (2023-24, sources below):
+Key statistics (sources below):
 - UK tax gap: £46.8bn (5.3% of theoretical liabilities)
-- Wealthy individuals (>£200k income or >£2m assets): ~850,000
-- Wealthy compliance yield: ~£5.2bn
-- Wealthy tax gap: ~£1.9bn
+- Wealthy individuals (>£200k income or >£2m assets): ~850,000 in 2023-24
+- Wealthy compliance yield: ~£5.2bn in 2023-24
+- Wealthy tax gap: ~£1.9bn in 2022-23, the latest year available in the NAO report
 
 Sources:
     HMRC, Measuring tax gaps 2025 edition: tax gaps summary,
     https://www.gov.uk/government/statistics/measuring-tax-gaps/1-tax-gaps-summary,
-    accessed 2026-05-23.
+    accessed 2026-05-30.
 
-    NAO, HMRC's approach to collecting tax from wealthy individuals,
-    https://www.nao.org.uk/reports/hmrcs-approach-to-collecting-tax-from-wealthy-individuals/,
-    accessed 2026-05-23.
+    NAO, Collecting the right tax from wealthy individuals,
+    https://www.nao.org.uk/reports/collecting-the-right-tax-from-wealthy-individuals/,
+    accessed 2026-05-30.
 """
 
 from __future__ import annotations
@@ -33,6 +33,22 @@ from __future__ import annotations
 from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+HMRC_OVERALL_TAX_GAP_RATE_2023_24 = 0.053
+HMRC_OVERALL_BASELINE_COMPLIANCE_RATE_2023_24 = 1.0 - HMRC_OVERALL_TAX_GAP_RATE_2023_24
+HMRC_OVERALL_TAX_GAP_GBP_BN_2023_24 = 46.8
+HMRC_WEALTHY_TAX_GAP_GBP_BN_2022_23 = 1.9
+HMRC_WEALTHY_COMPLIANCE_YIELD_GBP_BN_2023_24 = 5.2
+HMRC_OVERALL_TAX_GAP_SOURCE = (
+    "HMRC, Measuring tax gaps 2025 edition: tax gaps summary, "
+    "https://www.gov.uk/government/statistics/measuring-tax-gaps/1-tax-gaps-summary, accessed 2026-05-30"
+)
+NAO_WEALTHY_TAX_SOURCE = (
+    "NAO, Collecting the right tax from wealthy individuals, "
+    "https://www.nao.org.uk/reports/collecting-the-right-tax-from-wealthy-individuals/, accessed 2026-05-30"
+)
+ENFORCEMENT_COMPLIANCE_ASSUMPTION_ID = "model.enforcement.compliance_rates.v0_1"
+ENFORCEMENT_COMPLIANCE_SOURCE = f"{HMRC_OVERALL_TAX_GAP_SOURCE}; {NAO_WEALTHY_TAX_SOURCE}"
 
 
 class TaxFamily(StrEnum):
@@ -53,11 +69,18 @@ class ComplianceRate(BaseModel):
 
     tax_family: TaxFamily
     baseline_rate: float = Field(
-        ge=0, le=1,
-        description="Current-law compliance rate (fraction of theoretical revenue collected)",
+        default=HMRC_OVERALL_BASELINE_COMPLIANCE_RATE_2023_24,
+        ge=0,
+        le=1,
+        description=(
+            "Current-law compliance rate (fraction of theoretical revenue collected); "
+            "default is HMRC's 2023-24 all-tax baseline implied by a 5.3% tax gap"
+        ),
     )
     scenario_rate: float = Field(
-        ge=0, le=1,
+        default=1.0,
+        ge=0,
+        le=1,
         description="Reform-scenario compliance rate after enforcement changes",
     )
 
@@ -139,6 +162,12 @@ class AggregateEnforcementRevenue(BaseModel):
     total_theoretical_bn: float = Field(
         ge=0, description="Total theoretical revenue (GBP billions)",
     )
+    total_baseline_revenue_bn: float = Field(
+        ge=0, description="Total revenue at baseline compliance (GBP billions)",
+    )
+    total_scenario_revenue_bn: float = Field(
+        ge=0, description="Total revenue at scenario compliance before enforcement cost (GBP billions)",
+    )
     total_baseline_gap_bn: float = Field(
         ge=0, description="Total tax gap at baseline (GBP billions)",
     )
@@ -184,12 +213,16 @@ def compute_enforcement_uplift(
 
     total_uplift = sum(r.revenue_uplift_bn for r in family_results)
     total_theoretical = sum(r.theoretical_revenue_bn for r in family_results)
+    total_baseline_revenue = sum(r.baseline_revenue_bn for r in family_results)
+    total_scenario_revenue = sum(r.scenario_revenue_bn for r in family_results)
     total_gap = sum(r.baseline_gap_bn for r in family_results)
 
     return AggregateEnforcementRevenue(
         family_results=tuple(family_results),
         total_uplift_bn=total_uplift,
         total_theoretical_bn=total_theoretical,
+        total_baseline_revenue_bn=total_baseline_revenue,
+        total_scenario_revenue_bn=total_scenario_revenue,
         total_baseline_gap_bn=total_gap,
         enforcement_cost_bn=config.enforcement_cost_bn,
         net_uplift_bn=total_uplift - config.enforcement_cost_bn,

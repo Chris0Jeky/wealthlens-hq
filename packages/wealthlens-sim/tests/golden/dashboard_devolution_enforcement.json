@@ -1,7 +1,5 @@
 {
-  "caveats": [
-    "The headline includes a Family-F enforcement uplift added on top of full statutory liability (the 100%-compliance ceiling), so it overstates collectible revenue \u2014 a documented v0.1 simplification."
-  ],
+  "caveats": [],
   "devolution_scope": {
     "excluded_count": 73,
     "excluded_nations": [
@@ -18,6 +16,16 @@
     "included_weight_fraction": 0.854,
     "scope": "england_only"
   },
+  "enforcement_cost_gbp_bn": {
+    "central": 0.0,
+    "high": 0.0,
+    "low": 0.0
+  },
+  "enforcement_net_fiscal_impact_gbp_bn": {
+    "central": 0.9107550771654518,
+    "high": 1.3155351114612082,
+    "low": 0.6830663078740888
+  },
   "enforcement_uplift_gbp_bn": {
     "central": 0.9107550771654518,
     "high": 1.3155351114612082,
@@ -31,6 +39,21 @@
   "provenance": {
     "assumptions_consumed": [
       {
+        "assumption_id": "model.enforcement.compliance_rates.v0_1",
+        "domain": "tax-compliance",
+        "resolved_value": {
+          "compliance_rates": [
+            {
+              "baseline_rate": 0.8,
+              "scenario_rate": 0.9,
+              "tax_family": "other"
+            }
+          ],
+          "enforcement_cost_bn": 0.0
+        },
+        "source": "HMRC, Measuring tax gaps 2025 edition: tax gaps summary, https://www.gov.uk/government/statistics/measuring-tax-gaps/1-tax-gaps-summary, accessed 2026-05-30; NAO, Collecting the right tax from wealthy individuals, https://www.nao.org.uk/reports/collecting-the-right-tax-from-wealthy-individuals/, accessed 2026-05-30"
+      },
+      {
         "assumption_id": "toptail.pareto_alpha.overall.v1",
         "domain": "top-tail",
         "resolved_value": 1.5,
@@ -41,31 +64,50 @@
     "outputs": [
       {
         "assumption_ids": [
-          "toptail.pareto_alpha.overall.v1"
+          "toptail.pareto_alpha.overall.v1",
+          "model.enforcement.compliance_rates.v0_1"
         ],
         "layer": "revenue",
         "output_label": "total_revenue_gbp_bn"
       },
       {
         "assumption_ids": [
-          "toptail.pareto_alpha.overall.v1"
+          "toptail.pareto_alpha.overall.v1",
+          "model.enforcement.compliance_rates.v0_1"
         ],
         "layer": "revenue",
         "output_label": "revenue_by_nation"
       },
       {
         "assumption_ids": [
-          "toptail.pareto_alpha.overall.v1"
+          "toptail.pareto_alpha.overall.v1",
+          "model.enforcement.compliance_rates.v0_1"
         ],
         "layer": "revenue",
         "output_label": "revenue_by_decile"
       },
       {
         "assumption_ids": [
-          "toptail.pareto_alpha.overall.v1"
+          "toptail.pareto_alpha.overall.v1",
+          "model.enforcement.compliance_rates.v0_1"
         ],
         "layer": "revenue",
         "output_label": "enforcement_uplift_gbp_bn"
+      },
+      {
+        "assumption_ids": [
+          "model.enforcement.compliance_rates.v0_1"
+        ],
+        "layer": "revenue",
+        "output_label": "enforcement_cost_gbp_bn"
+      },
+      {
+        "assumption_ids": [
+          "toptail.pareto_alpha.overall.v1",
+          "model.enforcement.compliance_rates.v0_1"
+        ],
+        "layer": "revenue",
+        "output_label": "enforcement_net_fiscal_impact_gbp_bn"
       },
       {
         "assumption_ids": [],
@@ -130,23 +172,23 @@
       "low": 0.0
     },
     {
-      "central": 9.10755077165453,
-      "high": 13.155351114612099,
-      "low": 6.830663078740898
+      "central": 7.286040617323625,
+      "high": 10.52428089168968,
+      "low": 5.464530462992719
     }
   ],
   "revenue_by_nation": {
     "england": {
-      "central": 9.107550771654525,
-      "high": 13.155351114612092,
-      "low": 6.830663078740894
+      "central": 7.2860406173236205,
+      "high": 10.524280891689674,
+      "low": 5.464530462992715
     }
   },
   "scenario_name": "annual-wealth-1pct",
-  "schema_version": "1.1",
+  "schema_version": "1.2",
   "total_revenue_gbp_bn": {
-    "central": 10.018305848819978,
-    "high": 14.4708862260733,
-    "low": 7.513729386614983
+    "central": 8.196795694489076,
+    "high": 11.839816003150887,
+    "low": 6.147596770866807
   }
 }
