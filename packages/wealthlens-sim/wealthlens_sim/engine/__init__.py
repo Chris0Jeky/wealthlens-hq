@@ -8,14 +8,16 @@ revenue totals, a per-nation and per-wealth-decile breakdown, and a provenance
 manifest. It is named ``simulate`` (not ``run_scenario``) to avoid colliding with
 ``rules.run_scenario``, which has a different signature and return type.
 
-The engine ships the A-E end-to-end path with **degenerate intervals**
-(``low == central == high``) and a **known-incomplete** provenance manifest
-(``EngineResult.provenance_complete is False``): the published numbers depend on
-the policy configs and the top-tail Pareto alpha, but the engine does not yet
-``consume`` those assumptions. Family G (devolution) composes here as of PR3b and
-Family F (enforcement) as of PR3c (via the ``_enforcement`` helper). Real interval
-propagation + full provenance remain pending (the next stacked PR). The
-``registries`` seam is threaded now so that PR needs no signature change.
+Given a ``registries`` bundle carrying the top-tail Pareto alpha range, the engine
+propagates genuine ``low``/``central``/``high`` revenue intervals (see
+``_intervals``) and emits a **complete** provenance manifest that consumes the
+alpha and records it against each published output
+(``EngineResult.provenance_complete is True``). Without a registry it falls back to
+**degenerate intervals** (``low == central == high``) and an incomplete manifest
+(``provenance_complete is False``) — the uncertainty is unquantified. Family G
+(devolution) composes here as of PR3b and Family F (enforcement) as of PR3c (via
+the ``_enforcement`` helper). Richer per-parameter / Monte-Carlo uncertainty is the
+genuinely-deferred Wave 13 (``uncertainty/``) work.
 
 Reference: docs/WAVE12_SIMULATION_ENGINE_DESIGN.md §5.
 """
@@ -24,6 +26,12 @@ from __future__ import annotations
 
 from wealthlens_sim.engine._attribution import household_liability, revenue_by_wealth_decile
 from wealthlens_sim.engine._enforcement import compute_engine_enforcement, tax_family_for
+from wealthlens_sim.engine._intervals import (
+    PARETO_ALPHA_ASSUMPTION_ID,
+    alpha_interval_from_registry,
+    revenue_scale_from_alpha,
+    scaled_interval,
+)
 from wealthlens_sim.engine.result import (
     N_DECILES,
     EngineResult,
@@ -65,34 +73,36 @@ __all__ = [
 _OUTPUT_LABELS = ("total_revenue_gbp_bn", "revenue_by_nation", "revenue_by_decile")
 
 
-def _point_interval(value: float) -> Interval:
-    """Wrap a point estimate as a degenerate interval (PR3a placeholder).
+def _build_complete_provenance(
+    scenario: Scenario,
+    registries: Registries,
+    *,
+    devolution: DevolutionConfig | None,
+) -> ProvenanceManifest:
+    """Build a complete provenance manifest through the collector.
 
-    PR3c replaces these with genuine low/central/high bounds propagated from the
-    top-tail alpha interval and assumption ranges.
+    Consumes the top-tail alpha assumption (which drives the revenue intervals)
+    and records it against every published revenue output. When a devolution
+    scope was applied, a POLICY_RULES entry records the territorial scope so the
+    manifest reflects the geography the numbers were computed under.
     """
-    return Interval(low=value, central=value, high=value)
+    assert registries.assumptions is not None
+    collector = ProvenanceCollector(scenario.version_tag, registries.assumptions)
+    collector.consume(PARETO_ALPHA_ASSUMPTION_ID)
+    for label in _OUTPUT_LABELS:
+        collector.record(label, PipelineLayer.REVENUE, [PARETO_ALPHA_ASSUMPTION_ID])
+    if devolution is not None:
+        collector.record(f"devolution_scope:{devolution.scope.value}", PipelineLayer.POLICY_RULES, [])
+    return collector.build()
 
 
-def _build_provenance(scenario: Scenario, registries: Registries | None) -> ProvenanceManifest:
-    """Build the run's provenance manifest (known-incomplete in PR3a).
+def _build_incomplete_provenance(scenario: Scenario) -> ProvenanceManifest:
+    """Build a known-incomplete manifest when no assumption registry is supplied.
 
-    Records one REVENUE-layer entry per published output. When an assumption
-    registry is supplied the manifest is built through a
-    :class:`ProvenanceCollector` (the seam PR3c uses to ``consume`` the top-tail
-    alpha + assumption ranges); otherwise it is constructed directly. Both paths
-    produce the same *entries* (labels, layer, assumption ids) in PR3a — they do
-    not yet differ because no assumptions are consumed — though each manifest's
-    ``run_timestamp`` is necessarily distinct. The caller stamps
-    ``EngineResult.provenance_complete = False`` so these partial manifests are
-    not mistaken for fully-sourced ones.
+    Records the published-output labels with no consumed assumptions; the caller
+    stamps ``provenance_complete = False`` and the revenue intervals are degenerate
+    (uncertainty unquantified without the registry).
     """
-    if registries is not None and registries.assumptions is not None:
-        collector = ProvenanceCollector(scenario.version_tag, registries.assumptions)
-        for label in _OUTPUT_LABELS:
-            collector.record(label, PipelineLayer.REVENUE, [])
-        return collector.build()
-
     entries = [
         ProvenanceEntry(output_label=label, layer=PipelineLayer.REVENUE, assumption_ids=[]) for label in _OUTPUT_LABELS
     ]
@@ -142,6 +152,13 @@ def simulate(
     can push the headline above the 100%-compliance ceiling — see
     ``_enforcement.compute_engine_enforcement`` for the v0.1 simplification.
 
+    **Revenue intervals.** When ``registries`` supplies the top-tail Pareto alpha
+    range, every revenue figure carries a genuine ``low``/``central``/``high``
+    interval propagated multiplicatively from that range (see ``_intervals``), and
+    the provenance manifest consumes the alpha so ``provenance_complete is True``.
+    Without a registry the intervals are degenerate (``low == central == high``)
+    and ``provenance_complete is False`` — the uncertainty is unquantified.
+
     The ``PopulationSource`` protocol is structural and presence-only
     (``runtime_checkable`` checks attribute presence, not element types);
     ``list(population.households)`` therefore fails loudly here if a malformed
@@ -164,15 +181,32 @@ def simulate(
     if enforcement is not None:
         enforcement_uplift = compute_engine_enforcement(aggregate.family_revenues, enforcement).net_uplift_bn
 
+    # Interval propagation: derive low/high revenue factors from the top-tail alpha
+    # range if the registry provides it; otherwise fall back to degenerate (1.0,
+    # 1.0) factors. The same factors scale every published figure uniformly (a
+    # documented v0.1 single-uncertainty-source simplification).
+    alpha = None
+    if registries is not None and registries.assumptions is not None:
+        alpha = alpha_interval_from_registry(registries.assumptions)
+    scale_low, scale_high = revenue_scale_from_alpha(alpha) if alpha is not None else (1.0, 1.0)
+
+    def interval(value: float) -> Interval:
+        return scaled_interval(value, scale_low, scale_high)
+
+    if alpha is not None and registries is not None:
+        provenance = _build_complete_provenance(scenario, registries, devolution=devolution)
+    else:
+        provenance = _build_incomplete_provenance(scenario)
+
     return EngineResult(
         scenario=scenario,
-        total_revenue_gbp_bn=_point_interval(aggregate.total_revenue_bn + enforcement_uplift),
-        revenue_by_nation={nation: _point_interval(value) for nation, value in aggregate.revenue_by_nation.items()},
-        revenue_by_decile=[_point_interval(value) for value in decile_central],
-        enforcement_uplift_bn=_point_interval(enforcement_uplift),
+        total_revenue_gbp_bn=interval(aggregate.total_revenue_bn + enforcement_uplift),
+        revenue_by_nation={nation: interval(value) for nation, value in aggregate.revenue_by_nation.items()},
+        revenue_by_decile=[interval(value) for value in decile_central],
+        enforcement_uplift_bn=interval(enforcement_uplift),
         households_scored=len(scored),
-        provenance=_build_provenance(scenario, registries),
+        provenance=provenance,
         population_provenance_ids=list(population.provenance_ids),
-        provenance_complete=False,
+        provenance_complete=alpha is not None,
         devolution_split=split,
     )

@@ -1,17 +1,27 @@
-"""Tests for the engine/ orchestrator (Wave 12 PR3a).
+"""Tests for the engine/ orchestrator (Wave 12 PR3).
 
-Covers the synth -> rules -> provenance wiring, the decile-attribution invariant
-(decile sum ~= aggregate total), equal-weight deciles under heterogeneous survey
-weights, the PopulationSource protocol seam, the provenance manifest + the
-known-incomplete marker, and edge cases (empty population, non-positive weight).
+Covers the synth -> rules -> provenance wiring; the decile-attribution invariant
+(decile sum ~= aggregate total) and equal-weight deciles under heterogeneous
+weights; the PopulationSource protocol seam; Family G devolution scoping; Family F
+enforcement uplift; interval propagation from the top-tail alpha range and the
+complete-vs-incomplete provenance marker; and edge cases (empty population,
+non-positive weight).
 """
 
 from __future__ import annotations
+
+from datetime import date
 
 import pytest
 from pydantic import ValidationError
 
 from wealthlens_sim.assumptions import load_assumptions
+from wealthlens_sim.assumptions.schema import (
+    Assumption,
+    AssumptionRegistry,
+    PointValue,
+    TransferabilityScore,
+)
 from wealthlens_sim.engine import (
     N_DECILES,
     DevolutionConfig,
@@ -22,6 +32,7 @@ from wealthlens_sim.engine import (
     simulate,
     tax_family_for,
 )
+from wealthlens_sim.engine._intervals import revenue_scale_from_alpha
 from wealthlens_sim.provenance.manifest import PipelineLayer, ProvenanceManifest
 from wealthlens_sim.reforms.a_annual_wealth import WealthTaxConfig
 from wealthlens_sim.reforms.d_iht_reform import IHTConfig
@@ -107,8 +118,8 @@ class TestSimulate:
         result = simulate(pop, _scenario(_wealth_tax()))
         assert result.households_scored == 500
 
-    def test_intervals_are_degenerate_in_pr3a(self):
-        # PR3a placeholder: low == central == high until PR3c propagates ranges.
+    def test_intervals_degenerate_without_registry(self):
+        # No registry => uncertainty unquantified => degenerate intervals.
         result = simulate(_population(), _scenario(_wealth_tax()))
         iv = result.total_revenue_gbp_bn
         assert iv.low == iv.central == iv.high
@@ -244,28 +255,40 @@ class TestProvenance:
         assert "total_revenue_gbp_bn" in labels
         assert all(e.layer == PipelineLayer.REVENUE for e in result.provenance.entries)
 
-    def test_provenance_marked_incomplete_in_pr3a(self):
-        # PR3a does not consume the assumptions the numbers depend on, so the
-        # result must declare its provenance incomplete.
+    def test_provenance_incomplete_without_registry(self):
+        # Without a registry the engine consumes no assumptions, so it must
+        # declare its provenance incomplete.
         result = simulate(_population(n=100), _scenario(_wealth_tax()))
         assert result.provenance_complete is False
+
+    def test_provenance_complete_with_registry(self):
+        # With the assumption registry, the engine consumes the top-tail alpha and
+        # records it against every revenue output, so provenance is complete.
+        pop = _population(n=100)
+        scenario = _scenario(_wealth_tax())
+        result = simulate(pop, scenario, registries=Registries(assumptions=load_assumptions()))
+        assert result.provenance_complete is True
+        assert "toptail.pareto_alpha.overall.v1" in result.provenance.assumptions_consumed
+        for entry in result.provenance.entries:
+            if entry.output_label in {"total_revenue_gbp_bn", "revenue_by_nation", "revenue_by_decile"}:
+                assert "toptail.pareto_alpha.overall.v1" in entry.assumption_ids
 
     def test_manifest_uses_scenario_version_tag(self):
         scenario = _scenario(_wealth_tax())
         result = simulate(_population(n=100), scenario)
         assert result.provenance.version_tag == scenario.version_tag
 
-    def test_registry_path_builds_equivalent_entries(self):
-        # Supplying an assumption registry routes provenance through the
-        # collector; in PR3a it yields the same entries as the registry-free path
-        # (run_timestamp aside, which is necessarily per-run).
-        pop = _population(n=100)
-        scenario = _scenario(_wealth_tax())
-        without = simulate(pop, scenario)
-        with_reg = simulate(pop, scenario, registries=Registries(assumptions=load_assumptions()))
-        assert {e.output_label for e in with_reg.provenance.entries} == {
-            e.output_label for e in without.provenance.entries
-        }
+    def test_devolution_scope_recorded_in_manifest(self):
+        # A scoped run with a registry records the territorial scope in the manifest.
+        pop = _population(n=200)
+        result = simulate(
+            pop,
+            _scenario(_wealth_tax()),
+            registries=Registries(assumptions=load_assumptions()),
+            devolution=DevolutionConfig(scope=NationScope.ENGLAND_ONLY),
+        )
+        labels = {e.output_label for e in result.provenance.entries}
+        assert "devolution_scope:england_only" in labels
 
 
 class TestDevolution:
@@ -437,6 +460,118 @@ class TestEnforcement:
             enforcement=self._enforcement(family=TaxFamily.CGT, baseline=0.5, scenario=0.9),
         )
         assert result.enforcement_uplift_bn.central == pytest.approx(0.0)
+
+
+def _registry_with_alpha(distribution) -> AssumptionRegistry:
+    """Build a single-assumption registry whose alpha is the given distribution."""
+    return AssumptionRegistry(
+        assumptions=[
+            Assumption(
+                assumption_id="toptail.pareto_alpha.overall.v1",
+                domain="top-tail",
+                value_or_distribution=distribution,
+                source="test",
+                transferability_score=TransferabilityScore.MEDIUM,
+                valid_range="alpha in [1.1, 2.5]",
+                applies_to="test",
+                last_reviewed=date(2026, 5, 30),
+            )
+        ]
+    )
+
+
+class TestIntervals:
+    def _registries(self):
+        return Registries(assumptions=load_assumptions())
+
+    def test_registry_yields_non_degenerate_intervals(self):
+        result = simulate(_population(), _scenario(_wealth_tax()), registries=self._registries())
+        iv = result.total_revenue_gbp_bn
+        assert iv.low < iv.central < iv.high
+
+    def test_interval_scale_matches_tail_mean_ratio(self):
+        # The low/high factors come from the Pareto tail-mean ratio at the alpha
+        # bounds. These mirror registries/assumptions.yml (toptail.pareto_alpha
+        # .overall.v1 = 1.3/1.5/1.8) and must be updated together if it changes.
+        result = simulate(_population(), _scenario(_wealth_tax()), registries=self._registries())
+        iv = result.total_revenue_gbp_bn
+        central_factor = 1.5 / 0.5
+        expected_low = iv.central * ((1.8 / 0.8) / central_factor)  # higher alpha -> less revenue
+        expected_high = iv.central * ((1.3 / 0.3) / central_factor)  # lower alpha -> more revenue
+        assert iv.low == pytest.approx(expected_low)
+        assert iv.high == pytest.approx(expected_high)
+
+    def test_missing_alpha_falls_back_to_degenerate(self):
+        # A registry WITHOUT the alpha assumption is a legitimate fallback:
+        # degenerate intervals + incomplete provenance, no error.
+        registries = Registries(assumptions=AssumptionRegistry(assumptions=[]))
+        result = simulate(_population(), _scenario(_wealth_tax()), registries=registries)
+        iv = result.total_revenue_gbp_bn
+        assert iv.low == iv.central == iv.high
+        assert result.provenance_complete is False
+
+    def test_malformed_alpha_raises(self):
+        # A present-but-wrong-type alpha (PointValue, not a range) is a registry
+        # defect and must fail loudly, not silently downgrade to degenerate.
+        registries = Registries(assumptions=_registry_with_alpha(PointValue(type="point", value=1.5)))
+        with pytest.raises(TypeError, match="must be a range"):
+            simulate(_population(), _scenario(_wealth_tax()), registries=registries)
+
+    def test_negative_central_interval_ordering_with_registry(self):
+        # With a non-degenerate scale AND a negative central (enforcement cost >
+        # uplift), scaled_interval must still satisfy low <= central <= high.
+        pop = _population()
+        scenario = _scenario(_wealth_tax())
+        base = simulate(pop, scenario)
+        gross = base.total_revenue_gbp_bn.central * 0.1
+        enforcement = EnforcementConfig(
+            compliance_rates=(ComplianceRate(tax_family=TaxFamily.OTHER, baseline_rate=0.8, scenario_rate=0.9),),
+            enforcement_cost_bn=gross + 5.0,
+        )
+        result = simulate(pop, scenario, registries=self._registries(), enforcement=enforcement)
+        iv = result.enforcement_uplift_bn
+        assert iv.central < 0
+        assert iv.low <= iv.central <= iv.high
+
+    def test_decile_invariant_at_every_bound_with_enforcement(self):
+        # The subtraction path: deciles cover family revenue only, so at EVERY
+        # bound sum(decile.bound) == total.bound - enforcement.bound.
+        pop = _population()
+        enforcement = EnforcementConfig(
+            compliance_rates=(ComplianceRate(tax_family=TaxFamily.OTHER, baseline_rate=0.7, scenario_rate=0.95),),
+        )
+        result = simulate(pop, _scenario(_wealth_tax()), registries=self._registries(), enforcement=enforcement)
+        for bound in ("low", "central", "high"):
+            decile_sum = sum(getattr(iv, bound) for iv in result.revenue_by_decile)
+            total = getattr(result.total_revenue_gbp_bn, bound)
+            uplift = getattr(result.enforcement_uplift_bn, bound)
+            assert decile_sum == pytest.approx(total - uplift)
+
+    def test_tail_mean_factor_requires_alpha_above_one(self):
+        # alpha <= 1 has an infinite tail mean; revenue_scale_from_alpha must raise
+        # rather than fabricate a factor.
+        with pytest.raises(ValueError, match="must exceed 1"):
+            revenue_scale_from_alpha(Interval(low=0.5, central=0.8, high=0.95))
+
+    def test_decile_invariant_holds_at_every_bound(self):
+        # The same factor scales every figure, so the decile sum equals the total
+        # (net of enforcement) at low, central, AND high.
+        result = simulate(
+            _population(),
+            _scenario(_wealth_tax()),
+            registries=self._registries(),
+        )
+        for bound in ("low", "central", "high"):
+            decile_sum = sum(getattr(iv, bound) for iv in result.revenue_by_decile)
+            total = getattr(result.total_revenue_gbp_bn, bound)
+            assert decile_sum == pytest.approx(total)
+
+    def test_intervals_deterministic(self):
+        pop = _population()
+        scenario = _scenario(_wealth_tax())
+        r1 = simulate(pop, scenario, registries=self._registries())
+        r2 = simulate(pop, scenario, registries=self._registries())
+        assert r1.total_revenue_gbp_bn == r2.total_revenue_gbp_bn
 
 
 class TestEngineResultModel:

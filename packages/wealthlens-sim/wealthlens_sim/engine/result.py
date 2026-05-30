@@ -58,8 +58,8 @@ class Registries:
     A frozen dataclass (not a Pydantic model) so it can hold the registry objects
     without arbitrary-type juggling. Both members are optional: when
     ``assumptions`` is present the engine routes provenance through a
-    :class:`~wealthlens_sim.provenance.collector.ProvenanceCollector`; PR3c
-    consumes the top-tail alpha + assumption ranges through the same seam.
+    :class:`~wealthlens_sim.provenance.collector.ProvenanceCollector` and consumes
+    the top-tail alpha that drives the revenue intervals through that seam.
     """
 
     assumptions: AssumptionRegistry | None = None
@@ -102,11 +102,20 @@ class EngineResult(BaseModel):
     #: sources). Surfaced verbatim so the population's own provenance is never
     #: silently dropped; empty for the v0.1 synthetic generator.
     population_provenance_ids: list[str] = Field(default_factory=list)
-    #: ``False`` while the provenance manifest is known-incomplete. PR3a records
-    #: published-output labels but does not yet ``consume`` the assumptions the
-    #: numbers depend on (policy configs + the top-tail Pareto alpha), so a
-    #: downstream consumer must NOT treat these figures as fully sourced. PR3c
-    #: flips this to ``True`` once the alpha + assumption ranges are consumed.
+    #: ``True`` once every **registry assumption** the published intervals depend
+    #: on (the top-tail Pareto alpha driving the revenue bounds) has been consumed
+    #: and recorded in the manifest. ``False`` when no assumption registry was
+    #: supplied — then the intervals are degenerate (uncertainty unquantified) and
+    #: a consumer must NOT treat the figures as fully sourced.
+    #:
+    #: Scope of the claim (what ``True`` does NOT cover, by design in v0.1): the
+    #: scenario *policy parameters* are carried verbatim on ``scenario`` (not the
+    #: manifest), and the synthetic population's own *generative parameters* (its
+    #: ``SynthConfig.pareto_alpha`` etc., distinct from the registry alpha used for
+    #: scaling) are not recorded — ``population_provenance_ids`` is empty for the
+    #: v0.1 synthetic generator. ``provenance_complete`` therefore means
+    #: "registry-assumption trail for the intervals is complete", not "every input
+    #: is traceable from the manifest alone".
     provenance_complete: bool = False
 
     @model_validator(mode="after")

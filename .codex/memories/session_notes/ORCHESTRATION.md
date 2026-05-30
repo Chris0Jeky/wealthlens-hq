@@ -42,6 +42,27 @@ A `compute_wealth_tax(hh,cfg).tax_liability` · B `compute_one_off_levy(hh,cfg).
 - `population.provenance_ids` is always `[]` today; engine builds manifest from registries it reads.
 - Open decision (PR3b): TaxFamily has no wealth-tax member → map A/B/E→OTHER, C→CGT, D→IHT; document.
 
+### Stack progress (2026-05-30)
+- **PR #329** `feat/engine-core` → main: DONE. 2 adversarial rounds + all bot comments
+  (gemini/codex) addressed. CI **green** (CodeQL+analyze+lint-type-test 3.11/3.12).
+  604 sim tests. Renamed entry `simulate` (not run_scenario). Equal-weight deciles.
+  **Oldest PR — merge candidate once stack is ~3 deep + time elapsed.**
+- **PR #330** `feat/engine-devolution` → feat/engine-core: DONE. 2 reviews + findings.
+  Family G scope filter; `devolution_split` on result; `DevolutionSplit` exported.
+- **PR #331** `feat/engine-enforcement` → feat/engine-devolution: DONE. 2 reviews +
+  findings. Family F uplift; `enforcement_uplift_bn`; documented v0.1 overstatement
+  caveat (A-E is full statutory → uplift exceeds ceiling); follow-up = task #7.
+- **CI on stacked PRs:** workflows trigger on PRs → `main`, so #330/#331 show "no
+  checks" until retargeted to main. Verified locally instead. On merge of #329,
+  retarget #330 base→main with `gh pr edit 330 --base main` (do NOT --delete-branch
+  a stacked base — see [[feedback_stacked_merge_delete_branch]]; it closed children before).
+- **NEXT:** PR3d `feat/engine-intervals` (task #3) = real interval propagation
+  (top-tail α sweep + assumption RangeValue) + COMPLETE provenance (consume α +
+  ranges, thread devolution scope into manifest, flip provenance_complete=True).
+  Then PR3e `feat/outputs-dashboard-json` (task #4). After PR3d opens (stack 4 deep),
+  merge #329 → main.
+- Follow-ups seeded: task #7 (proper enforcement compliance model).
+
 ### Branch hygiene backlog (task #5)
 Stale local `feat/*`,`fix/*` + leftover `worktree-agent-*` branches (prior merged cycle).
 `feat/baselines-loader` is an unmerged orphan on origin — investigate/delete.
