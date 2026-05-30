@@ -1,8 +1,9 @@
 """Tests for the engine/ orchestrator (Wave 12 PR3a).
 
 Covers the synth -> rules -> provenance wiring, the decile-attribution invariant
-(decile sum == aggregate total), the PopulationSource protocol seam, the
-provenance manifest, and edge cases (empty population, registry vs no-registry).
+(decile sum ~= aggregate total), equal-weight deciles under heterogeneous survey
+weights, the PopulationSource protocol seam, the provenance manifest + the
+known-incomplete marker, and edge cases (empty population, non-positive weight).
 """
 
 from __future__ import annotations
@@ -17,17 +18,18 @@ from wealthlens_sim.engine import (
     PopulationSource,
     Registries,
     revenue_by_wealth_decile,
-    run_scenario,
+    simulate,
 )
-from wealthlens_sim.engine.result import Interval
 from wealthlens_sim.provenance.manifest import PipelineLayer, ProvenanceManifest
 from wealthlens_sim.reforms.a_annual_wealth import WealthTaxConfig
 from wealthlens_sim.reforms.d_iht_reform import IHTConfig
 from wealthlens_sim.reforms.e_property_tax import HVCTSConfig
 from wealthlens_sim.rules import FamilySelection, PolicyFamily, Scenario
 from wealthlens_sim.rules import run_scenario as run_families
-from wealthlens_sim.schema.base import VersionTag
+from wealthlens_sim.schema.base import Nation, VersionTag
+from wealthlens_sim.schema.household import Asset, AssetType, Household, Person
 from wealthlens_sim.synth import SynthConfig, SyntheticPopulation, generate_population
+from wealthlens_sim.top_tail.types import Interval
 
 
 def _version() -> VersionTag:
@@ -54,6 +56,21 @@ def _scenario(*families: FamilySelection, name: str = "s") -> Scenario:
     return Scenario(name=name, version_tag=_version(), families=list(families))
 
 
+def _household(hid: str, net_wealth: float, weight: float) -> Household:
+    return Household(
+        household_id=hid,
+        nation=Nation.ENGLAND,
+        weight=weight,
+        persons=[
+            Person(
+                person_id=f"{hid}-p1",
+                age=50,
+                assets=[Asset(asset_type=AssetType.FINANCIAL, gross_value=net_wealth)],
+            )
+        ],
+    )
+
+
 class TestPopulationSourceSeam:
     def test_synthetic_population_satisfies_protocol(self):
         pop = _population(n=50)
@@ -67,9 +84,9 @@ class TestPopulationSourceSeam:
         assert not isinstance(Missing(), PopulationSource)
 
 
-class TestRunScenario:
+class TestSimulate:
     def test_returns_engine_result(self):
-        result = run_scenario(_population(), _scenario(_wealth_tax()))
+        result = simulate(_population(), _scenario(_wealth_tax()))
         assert isinstance(result, EngineResult)
         assert isinstance(result.total_revenue_gbp_bn, Interval)
         assert isinstance(result.provenance, ProvenanceManifest)
@@ -77,26 +94,26 @@ class TestRunScenario:
     def test_total_matches_rules_aggregate(self):
         pop = _population()
         scenario = _scenario(_wealth_tax())
-        result = run_scenario(pop, scenario)
+        result = simulate(pop, scenario)
         aggregate = run_families(pop.households, scenario)
         assert result.total_revenue_gbp_bn.central == pytest.approx(aggregate.total_revenue_bn)
 
     def test_households_scored_counts_population(self):
         pop = _population(n=500)
-        result = run_scenario(pop, _scenario(_wealth_tax()))
+        result = simulate(pop, _scenario(_wealth_tax()))
         assert result.households_scored == 500
 
     def test_intervals_are_degenerate_in_pr3a(self):
         # PR3a placeholder: low == central == high until PR3c propagates ranges.
-        result = run_scenario(_population(), _scenario(_wealth_tax()))
+        result = simulate(_population(), _scenario(_wealth_tax()))
         iv = result.total_revenue_gbp_bn
         assert iv.low == iv.central == iv.high
 
     def test_deterministic(self):
         pop = _population()
         scenario = _scenario(_wealth_tax())
-        r1 = run_scenario(pop, scenario)
-        r2 = run_scenario(pop, scenario)
+        r1 = simulate(pop, scenario)
+        r2 = simulate(pop, scenario)
         assert r1.total_revenue_gbp_bn == r2.total_revenue_gbp_bn
         assert r1.revenue_by_decile == r2.revenue_by_decile
 
@@ -106,26 +123,32 @@ class TestRunScenario:
             _wealth_tax(),
             FamilySelection(family=PolicyFamily.HVCTS, config=HVCTSConfig()),
         )
-        result = run_scenario(pop, scenario)
+        result = simulate(pop, scenario)
         aggregate = run_families(pop.households, scenario)
         for nation, interval in result.revenue_by_nation.items():
             assert interval.central == pytest.approx(aggregate.revenue_by_nation[nation])
 
+    def test_surfaces_population_provenance_ids(self):
+        # The population's own provenance ids must not be silently dropped.
+        pop = SyntheticPopulation(households=[], seed=0, provenance_ids=["was-2022", "frs-2023"])
+        result = simulate(pop, _scenario(_wealth_tax()))
+        assert result.population_provenance_ids == ["was-2022", "frs-2023"]
+
 
 class TestDecileAttribution:
     def test_decile_count_is_ten(self):
-        result = run_scenario(_population(), _scenario(_wealth_tax()))
+        result = simulate(_population(), _scenario(_wealth_tax()))
         assert len(result.revenue_by_decile) == N_DECILES
 
     def test_decile_sum_equals_total(self):
         # The core invariant: per-household decile attribution and the aggregate
-        # total are computed by the same calculators, so they must agree.
+        # total are computed by the same calculators, so they agree to float order.
         pop = _population()
         scenario = _scenario(
             _wealth_tax(),
             FamilySelection(family=PolicyFamily.IHT, config=IHTConfig()),
         )
-        result = run_scenario(pop, scenario)
+        result = simulate(pop, scenario)
         decile_sum = sum(iv.central for iv in result.revenue_by_decile)
         assert decile_sum == pytest.approx(result.total_revenue_gbp_bn.central)
 
@@ -133,44 +156,83 @@ class TestDecileAttribution:
         # A £1m-threshold wealth tax falls on the wealthiest households, so the
         # top decile (index 9) must out-raise the bottom decile (index 0).
         pop = _population()
-        result = run_scenario(pop, _scenario(_wealth_tax()))
+        result = simulate(pop, _scenario(_wealth_tax()))
         assert result.revenue_by_decile[-1].central > result.revenue_by_decile[0].central
+
+    def test_heterogeneous_weights_place_rich_household_in_top_decile(self):
+        # A highest-wealth household that is heavily weighted — but whose weight
+        # is still within one decile band — must land its revenue in the TOP
+        # decile, where its WEALTH places it. Naive centre-of-mass binning would
+        # misplace it toward the middle; equal-weight boundary-splitting does not.
+        # The 99 sub-threshold households pay nothing, so all revenue is the rich
+        # household's, and the decile sum still equals the aggregate total.
+        households = [_household(f"h{i}", net_wealth=10_000.0 * (i + 1), weight=1.0) for i in range(99)]
+        # weight 10 < one band (total 109 / 10 = 10.9), so it sits wholly in decile 9.
+        households.append(_household("rich", net_wealth=5_000_000.0, weight=10.0))
+        cfg = _wealth_tax(threshold=1_000_000, rate=0.01)
+        deciles = revenue_by_wealth_decile(households, [cfg], n_deciles=N_DECILES)
+        assert deciles[-1] > 0
+        assert sum(deciles[:-1]) == pytest.approx(0.0)
+        aggregate = run_families(households, _scenario(cfg))
+        assert sum(deciles) == pytest.approx(aggregate.total_revenue_bn)
+
+    def test_dominant_weight_household_loads_top_decile_most(self):
+        # Equal-weight deciles are slices of the *weighted* population. A single
+        # household carrying most of the grossing weight legitimately occupies
+        # almost every decile (it IS most of the population), but its revenue is
+        # still loaded toward the top (most in the top decile, least in the
+        # bottom) and the sum is conserved — no revenue is lost or invented.
+        households = [_household(f"h{i}", net_wealth=10_000.0 * (i + 1), weight=1.0) for i in range(99)]
+        households.append(_household("rich", net_wealth=5_000_000.0, weight=1000.0))
+        cfg = _wealth_tax(threshold=1_000_000, rate=0.01)
+        deciles = revenue_by_wealth_decile(households, [cfg], n_deciles=N_DECILES)
+        assert deciles[-1] == pytest.approx(max(deciles))  # top decile holds the most
+        assert deciles[0] == pytest.approx(min(deciles))  # bottom decile holds the least
+        aggregate = run_families(households, _scenario(cfg))
+        assert sum(deciles) == pytest.approx(aggregate.total_revenue_bn)
 
     def test_empty_population_has_no_deciles(self):
         empty = SyntheticPopulation(households=[], seed=0)
-        result = run_scenario(empty, _scenario(_wealth_tax()))
+        result = simulate(empty, _scenario(_wealth_tax()))
         assert result.revenue_by_decile == []
         assert result.households_scored == 0
         assert result.total_revenue_gbp_bn.central == 0.0
 
-    def test_helper_zero_weight_returns_empty(self):
-        # Defensive: a non-positive total weight yields no deciles, not a crash.
-        pop = _population(n=20)
-        for hh in pop.households:
-            object.__setattr__(hh, "weight", 0.0)  # bypass frozen for the test
-        deciles = revenue_by_wealth_decile(pop.households, [_wealth_tax()])
-        assert deciles == []
+    def test_non_positive_total_weight_raises(self):
+        # A non-empty population with non-positive weight is a data defect and is
+        # surfaced loudly, not collapsed into an empty (publishable-looking) result.
+        households = [_household("h1", net_wealth=2_000_000.0, weight=1.0)]
+        object.__setattr__(households[0], "weight", 0.0)  # bypass frozen for the test
+        with pytest.raises(ValueError, match="total household weight must be positive"):
+            revenue_by_wealth_decile(households, [_wealth_tax()])
 
 
 class TestProvenance:
     def test_manifest_records_revenue_outputs(self):
-        result = run_scenario(_population(n=100), _scenario(_wealth_tax()))
+        result = simulate(_population(n=100), _scenario(_wealth_tax()))
         labels = {e.output_label for e in result.provenance.entries}
         assert "total_revenue_gbp_bn" in labels
         assert all(e.layer == PipelineLayer.REVENUE for e in result.provenance.entries)
 
+    def test_provenance_marked_incomplete_in_pr3a(self):
+        # PR3a does not consume the assumptions the numbers depend on, so the
+        # result must declare its provenance incomplete.
+        result = simulate(_population(n=100), _scenario(_wealth_tax()))
+        assert result.provenance_complete is False
+
     def test_manifest_uses_scenario_version_tag(self):
         scenario = _scenario(_wealth_tax())
-        result = run_scenario(_population(n=100), scenario)
+        result = simulate(_population(n=100), scenario)
         assert result.provenance.version_tag == scenario.version_tag
 
-    def test_registry_path_builds_equivalent_manifest(self):
+    def test_registry_path_builds_equivalent_entries(self):
         # Supplying an assumption registry routes provenance through the
-        # collector; in PR3a it yields the same entries as the registry-free path.
+        # collector; in PR3a it yields the same entries as the registry-free path
+        # (run_timestamp aside, which is necessarily per-run).
         pop = _population(n=100)
         scenario = _scenario(_wealth_tax())
-        without = run_scenario(pop, scenario)
-        with_reg = run_scenario(pop, scenario, registries=Registries(assumptions=load_assumptions()))
+        without = simulate(pop, scenario)
+        with_reg = simulate(pop, scenario, registries=Registries(assumptions=load_assumptions()))
         assert {e.output_label for e in with_reg.provenance.entries} == {
             e.output_label for e in without.provenance.entries
         }
