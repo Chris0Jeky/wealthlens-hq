@@ -54,7 +54,7 @@ from wealthlens_sim.reforms.g_devolution import (
     DevolutionSplit,
     split_households_by_scope,
 )
-from wealthlens_sim.rules.scenario import FamilyRevenue, Scenario
+from wealthlens_sim.rules.scenario import FamilyRevenue, FamilySelection, Scenario
 from wealthlens_sim.rules.scenario import run_scenario as _run_families
 from wealthlens_sim.schema.household import Household
 from wealthlens_sim.top_tail.types import Interval
@@ -150,10 +150,14 @@ def _baseline_revenue_by_decile(
     if enforcement is None:
         return revenue_by_wealth_decile(households, scenario.families, n_deciles=N_DECILES)
 
-    deciles = [0.0] * N_DECILES
+    rates_to_selections: dict[float, list[FamilySelection]] = {}
     for selection in scenario.families:
         rate = baseline_compliance_rate_for(selection.family, enforcement)
-        family_deciles = revenue_by_wealth_decile(households, [selection], n_deciles=N_DECILES)
+        rates_to_selections.setdefault(rate, []).append(selection)
+
+    deciles = [0.0] * N_DECILES
+    for rate, selections in rates_to_selections.items():
+        family_deciles = revenue_by_wealth_decile(households, selections, n_deciles=N_DECILES)
         for i, value in enumerate(family_deciles):
             deciles[i] += value * rate
     return deciles
