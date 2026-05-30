@@ -136,6 +136,11 @@ class TestGeneratePopulation:
         pop = generate_population(config)
         assert pop.provenance_ids == []
 
+    def test_custom_nation_shares_clear_default_provenance_ids(self):
+        config = _small(nation_shares={"england": 0.5, "scotland": 0.5})
+        pop = generate_population(config)
+        assert pop.provenance_ids == []
+
     def test_custom_calibration_preserves_explicit_provenance_ids(self):
         config = _small(median_net_wealth=500_000, calibration_source_ids=("custom-calibration",))
         pop = generate_population(config)

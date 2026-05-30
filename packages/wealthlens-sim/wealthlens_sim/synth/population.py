@@ -53,6 +53,7 @@ _CALIBRATION_SENSITIVE_FIELDS = frozenset(
         "population_households",
         "median_net_wealth",
         "lognormal_sigma",
+        "nation_shares",
         "pareto_threshold",
         "pareto_alpha",
         "asset_shares",
