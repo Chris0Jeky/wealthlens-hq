@@ -17,7 +17,9 @@ reconstruction, provenance, all 7 policy families A–G) is MERGED to `main` (PR
 4. - [x] Package registries into wheel+sdist via hatch build hook + resolver fallback (PR #326) (@Chris) [completed: 2026-05-29]
 5. - [x] Wave 12 PR1 `synth/`: deterministic synthetic-population generator (PR #327) (@Chris) [completed: 2026-05-29]
 6. - [x] Wave 12 PR2 `rules/`: Scenario + run_scenario over the population (PR #328) (@Chris) [completed: 2026-05-29]
-7. - [ ] **Wave 12 PR3 (NEXT) `engine/`**: `run_scenario(population, scenario, registries) -> EngineResult` — wire synth→rules→provenance, interval propagation, per-decile attribution, F/G composition, `outputs.to_dashboard_json` (@Chris) [due: 2026-06-05]
+7. - [ ] **Wave 12 PR3 `engine/`** (split into a 4-PR stack): `engine.simulate(population, scenario, registries) -> EngineResult` — wire synth→rules→provenance, interval propagation, per-decile attribution, F/G composition, `outputs.to_dashboard_json` (@Chris) [due: 2026-06-05]
+   - 3a `feat/engine-core` (PR #329, in review): Protocol seam + EngineResult + A–E end-to-end + equal-weight deciles + provenance.
+   - 3b enforcement+devolution (F/G); 3c real interval propagation; 3d outputs+golden file.
 
 ## Why These
 
