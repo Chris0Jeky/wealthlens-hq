@@ -9,7 +9,7 @@ Last updated: 2026-05-30
 
 ---
 
-# 🟢 HANDOFF — read this first (2026-05-30, end of engine-stack session)
+# 🟢 HANDOFF — read this first (2026-05-30, post #333/#334 drain)
 
 **You are continuing an endless end-to-end autonomous cycle on the WealthLens-Sim
 microsimulator.** This session built the entire Wave 12 **engine** (synth → rules →
@@ -35,42 +35,41 @@ plain `gh pr merge <n> --merge` (preserves SHAs); then `gh pr edit <child> --bas
 
 ## Current state (main)
 - **Full engine is on main** via merged PRs **#329** (engine-core), **#330**
-  (devolution), **#331** (enforcement), **#332** (intervals). **614 sim tests pass.**
+  (devolution), **#331** (enforcement), **#332** (intervals), **#333** (dashboard
+  JSON outputs), and **#334** (headline example). **634 sim tests pass on main;
+  635 pass on the integrated #335 branch.**
 - `engine.simulate(population, scenario, *, registries=None, devolution=None,
   enforcement=None) -> EngineResult` is the single entry point (named `simulate`,
   NOT `run_scenario`, to avoid colliding with `rules.run_scenario`).
-- **2 OPEN PRs, both fully reviewed (2 rounds) + all bot comments addressed + CI green:**
-  - **#333** `feat/outputs-dashboard-json` → main — `outputs.to_dashboard_json` +
-    golden files. **This is the oldest open PR → the next merge candidate.** It also
-    carries a 1-line engine fix (adds `enforcement_uplift_bn` to `_OUTPUT_LABELS`).
-  - **#334** `feat/sim-headline-example` → main — `examples.headline_revenue` demo.
-    Newest → hold from merging until something lands above it.
+- **Open PR:** **#335** `feat/synth-ons-calibration` → main calibrates synth
+  defaults to cited public ONS/WAS aggregate marginals and threads source IDs through
+  population provenance. GitHub checks are green; it is the newest open PR, so do
+  not merge it until reviewed, aged, and another PR is opened above it.
 
 ## ▶️ WHERE TO START (next session, in order)
 1. **Recover:** read this file, `00_ACTIVE.md`, `tasks/active-sprint.md`,
-   `tasks/inbox.md`; run `gh pr list --state open` and `gh pr checks 333` / `334`.
-2. **Drain #333** if still green + aged: `gh pr merge 333 --merge`; then nothing to
-   retarget (#334 is independent off main). Pull main, run the sim suite. This puts
-   `outputs.to_dashboard_json` + the `enforcement_uplift_bn` provenance fix on main.
-3. **Then #334** becomes mergeable only once it is no longer the newest — so **open a
-   new Wave 13 PR first**, let #334 age behind it, then drain #334.
-4. **Pick the next Wave 13 task** (see backlog below) and run the full PR cycle on it.
+   `tasks/inbox.md`; run `gh pr list --state open` and `gh pr checks 335`.
+2. **Review/age #335**. It has local verification and CI green as of this handoff, but
+   still needs the normal review/bot-clean cycle before merge.
+3. **Open the next Wave 13 PR above #335 before merging it.** Good candidates are the
+   enforcement compliance model, remaining synth generative provenance, or wiring the
+   dashboard JSON into Vue.
+4. Continue the endless cycle: small PR → 2 independent reviews → address all findings
+   and bot comments → merge only once the PR is no longer newest.
 
 ## Wave 13 backlog (also in tasks/inbox.md "Wave 13 candidates")
 Ordered by value/data-integrity:
-- **Calibrate the synth generator to CITED public WAS/ONS marginals.** v0.1 grosses
-  to ~£26–33tn vs real ~£15–16tn, so headline figures are **biased HIGH** (the
-  dashboard `caveats[]` + the example banner already flag this). Cite sources in
-  `registries/sources.yml` (URL + access date) — **do not fabricate stats**. Highest
-  integrity-value item.
+- **Review and drain #335 synth calibration** once it is no longer newest. It reduces
+  default synthetic gross wealth to ~£14tn on standard seeds using cited public
+  ONS/WAS aggregate marginals in `registries/sources.yml`.
 - **Proper enforcement compliance model** (task #7): the Family-F uplift is added on
   top of *full statutory liability*, so it overstates above the 100%-compliance
   ceiling. Give families a baseline-vs-theoretical compliance split anchored to
   HMRC's published tax-gap stats (already cited in `reforms/f_enforcement.py`).
-- **Record synth generative params in provenance** — `population.provenance_ids` is
-  always `[]`; the engine surfaces it (`EngineResult.population_provenance_ids`) and
-  the dashboard emits it, but the synth `pareto_alpha`/seed aren't recorded.
-  NOTE: changing this will require regenerating #333's golden files (`REGEN_GOLDEN=1`).
+- **Record remaining synth generative params in provenance** — #335 threads public
+  source IDs through `population.provenance_ids`, but the synth `pareto_alpha`/seed
+  still aren't recorded. Changing this will require regenerating dashboard goldens
+  (`REGEN_GOLDEN=1 python -m pytest tests/test_outputs.py -q`).
 - **Monte-Carlo / Sobol uncertainty** (`uncertainty/` stub) — replace the single
   multiplicative top-tail-α band with per-parameter sampling (SALib/NumPyro).
 - **Wire the dashboard JSON into a Vue scenario page** (mission: make it visible) —

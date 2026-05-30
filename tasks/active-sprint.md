@@ -4,24 +4,24 @@ Last updated: 2026-05-30
 
 This week's focus. Keep this list to 5-7 tasks.
 
-> **NEXT SESSION START HERE:** the Wave 12 engine is built + mostly merged. Read
+> **NEXT SESSION START HERE:** the Wave 12 engine is now merged. Read
 > `.codex/memories/session_notes/ORCHESTRATION.md` (top "🟢 HANDOFF" section) first —
-> it has the full state, where to start (drain PR #333, then Wave 13), the engine
+> it has the full state, where to start (#335 synth calibration review/aging), the engine
 > architecture, the backlog, and the ops gotchas. Quick status below.
 
 ## Sprint: 2026-05-30 to 2026-06-06 (Wave 13 — calibrate, surface, extend)
 
-**Status:** Full Wave 12 engine on `main` (PRs #329–#332 merged; 614 sim tests).
-2 open PRs, both fully reviewed + bot-clean + CI green: **#333** `outputs/`
-(oldest → next to merge), **#334** `examples/` (newest → hold). Continue the endless
-cycle: drain #333 → add a new Wave 13 PR → let #334 age → drain #334 → repeat.
+**Status:** Full Wave 12 engine is on `main` through **#334**. **#335**
+`feat/synth-ons-calibration` is open as the next Wave 13 PR; it reduces default
+synthetic gross wealth to ~£14tn on standard seeds and cites ONS/WAS sources.
+GitHub checks are green. Do not merge #335 while it is newest; review/age it and
+open another PR above it first.
 
-1. - [ ] **Drain PR #333** (`outputs.to_dashboard_json` + golden files + the
-   `enforcement_uplift_bn` provenance fix) → main once aged/green (@Chris) [due: 2026-06-06]
-2. - [ ] **Calibrate the synth generator to CITED public WAS/ONS marginals** — v0.1
-   overshoots (~£26–33tn vs real ~£15–16tn), so headlines are biased HIGH; cite
-   sources in `registries/sources.yml`. Highest data-integrity value. (@Chris) [due: 2026-06-06]
-3. - [ ] **Drain PR #334** (headline-revenue example) after a new PR lands above it (@Chris) [due: 2026-06-06]
+1. - [x] **Drain PR #333** (`outputs.to_dashboard_json` + golden files + the
+   provenance-label/caveat bot fixes) → main (@Chris) [completed: 2026-05-30]
+2. - [ ] **Calibrate the synth generator to CITED public WAS/ONS marginals** — PR
+   #335 open; verify reviews/CI and let it age before merge. (@Chris) [due: 2026-06-06]
+3. - [x] **Drain PR #334** (headline-revenue example) after a new PR lands above it (@Chris) [completed: 2026-05-30]
 4. - [ ] Wave 13 stretch: proper enforcement compliance model (task #7 in convo);
    record synth generative params in provenance; Monte-Carlo uncertainty; wire the
    dashboard JSON into a Vue scenario page. See `tasks/inbox.md` "Wave 13 candidates". (@Chris)

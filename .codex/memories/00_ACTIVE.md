@@ -7,7 +7,7 @@
 
 Last updated: 2026-05-30
 
-## Current phase: Wave 12 engine stack (synth→rules→engine→outputs)
+## Current phase: Wave 13 calibration and extension
 
 **2026-05-30 cycle:** Built the full Wave 12 PR3 engine as a 5-PR stack + a Wave 13
 example, each with 2 independent adversarial reviews + all bot comments addressed:
@@ -19,17 +19,19 @@ example, each with 2 independent adversarial reviews + all bot comments addresse
   dashboard contract with root-level `provenance_complete` + a `caveats[]` array;
   `examples.headline_revenue` runnable demo.
 - **Merged to main:** #329 (engine-core), #330 (devolution), #331 (enforcement),
-  #332 (intervals). **614 sim tests on main.**
-- **Open + aging (all 2 reviews + bots addressed):** #333 (`outputs`)→main, #334
-  (`examples`)→main. Merge discipline: don't merge the newest; drain the oldest
-  once it has 2 reviews + bots + CI + elapsed time.
+  #332 (intervals), #333 (dashboard JSON outputs), #334 (headline example).
+  **634 sim tests pass on main; 635 pass on the integrated #335 branch.**
+- **Open:** #335 `feat/synth-ons-calibration` -> main calibrates synth defaults to
+  cited public ONS/WAS marginals and carries source IDs in population provenance.
+  GitHub checks are green; it is the newest open PR, so do not merge it until
+  reviewed/aged and another PR is opened above it.
 - Reviews caught real issues (decile non-conservation for tiny weights, provenance
   overclaiming, enforcement-overstatement + unsourced-state surfacing in the
   dashboard contract, headline honest-labelling). 33 stale branches pruned.
 - Backlog (tasks/inbox.md Wave 13): proper enforcement compliance model
   (baseline-vs-theoretical — uplift currently overstates above the 100%-compliance
-  ceiling, flagged via `caveats[]`); Monte-Carlo/Sobol uncertainty; calibrate synth
-  to cited WAS marginals; record synth generative params in provenance; wire the
+  ceiling, flagged via `caveats[]`); Monte-Carlo/Sobol uncertainty; record remaining
+  synth generative params in provenance; wire the
   dashboard JSON into a Vue scenario page.
 
 ## Prior phase: Gate-1 Simulator merged → Wave 12 (engine/synth)
