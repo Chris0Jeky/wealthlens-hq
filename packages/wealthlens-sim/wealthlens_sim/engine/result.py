@@ -102,11 +102,12 @@ class EngineResult(BaseModel):
     #: sources). Surfaced verbatim so the population's own provenance is never
     #: silently dropped; empty for the v0.1 synthetic generator.
     population_provenance_ids: list[str] = Field(default_factory=list)
-    #: ``False`` while the provenance manifest is known-incomplete. PR3a records
-    #: published-output labels but does not yet ``consume`` the assumptions the
-    #: numbers depend on (policy configs + the top-tail Pareto alpha), so a
-    #: downstream consumer must NOT treat these figures as fully sourced. PR3c
-    #: flips this to ``True`` once the alpha + assumption ranges are consumed.
+    #: ``True`` once every registry assumption the published intervals depend on
+    #: (the top-tail Pareto alpha driving the revenue bounds) has been consumed
+    #: and recorded in the manifest. ``False`` when no assumption registry was
+    #: supplied — then the intervals are degenerate (uncertainty unquantified) and
+    #: a consumer must NOT treat the figures as fully sourced. The scenario policy
+    #: parameters are always carried verbatim on ``scenario``, not the manifest.
     provenance_complete: bool = False
 
     @model_validator(mode="after")
