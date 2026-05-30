@@ -11,6 +11,17 @@ Every concrete action item extracted from research. Triage into active-sprint, b
 
 ---
 
+## Reliability follow-ups
+
+- [ ] Fix `make ci-quick` false-positive and dashboard backend failures observed
+  2026-05-30. A valid POSIX-shell run reports 11 pytest failures + 2 errors but
+  still exits 0 because backend commands are guarded with `|| echo ...`.
+  Failures seen: missing `plotly` for productivity-pay pipeline tests,
+  `cgt-concentration` emits non-finite JSON, and invalid dataset names return
+  404 where tests expect 422.
+
+---
+
 ## Wave 13 candidates (seeded 2026-05-30, after the Wave 12 engine stack)
 
 The Wave 12 engine (synth→rules→engine→outputs) is built and merged through

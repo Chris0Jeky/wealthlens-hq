@@ -25,6 +25,15 @@ This section supersedes the older handoff snapshot below.
   wealthlens_sim` -> passed.
 - Latest main GitHub runs after `6b0f8e5`: CI Simulator, CodeQL, and Deploy are
   green.
+- Latest docs/status main commit `4fa75fd`: CodeQL and Deploy are green.
+- Final handoff verification caveat: `bash -lc "make ci-quick"` reaches the
+  dashboard backend tests and reports 11 failures + 2 errors, but the Makefile
+  target still exits 0 because backend commands are guarded with `|| echo ...`.
+  Observed failures are outside the simulator PRs: missing `plotly` for
+  productivity-pay pipeline tests, `cgt-concentration` returning non-finite JSON,
+  and invalid dataset names returning 404 where tests expect 422. Treat as a
+  pre-existing dashboard/backend verification issue; follow-up is seeded in
+  `tasks/inbox.md`.
 - **Only open PR:** **#337** `feat/synth-generation-provenance` -> `main`.
   It records all generation-affecting `SynthConfig` inputs in
   `population_provenance_ids`, regenerates dashboard goldens, is the newest open

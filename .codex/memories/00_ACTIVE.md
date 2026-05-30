@@ -21,6 +21,10 @@ Last updated: 2026-05-30
   inputs and canonical mapping order; local verification on the branch is 648
   sim tests + ruff + mypy passing, and GitHub checks are green. Do not merge #337
   while newest.
+- **Verification caveat:** `bash -lc "make ci-quick"` currently reports
+  dashboard backend pytest failures but exits 0 because the Makefile swallows
+  backend command failures. This is outside the simulator PRs and is seeded in
+  `tasks/inbox.md` as a reliability follow-up.
 
 ## Current phase: Wave 13 calibration and extension
 
