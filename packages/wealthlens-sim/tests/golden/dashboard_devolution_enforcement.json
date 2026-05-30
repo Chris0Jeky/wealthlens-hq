@@ -1,12 +1,29 @@
 {
-  "caveats": [],
-  "devolution_scope": null,
-  "enforcement_uplift_gbp_bn": {
-    "central": 0.0,
-    "high": 0.0,
-    "low": 0.0
+  "caveats": [
+    "The headline includes a Family-F enforcement uplift added on top of full statutory liability (the 100%-compliance ceiling), so it overstates collectible revenue \u2014 a documented v0.1 simplification."
+  ],
+  "devolution_scope": {
+    "excluded_count": 78,
+    "excluded_nations": [
+      "northern_ireland",
+      "scotland",
+      "wales"
+    ],
+    "excluded_weight": 4368000.0,
+    "included_count": 422,
+    "included_nations": [
+      "england"
+    ],
+    "included_weight": 23632000.0,
+    "included_weight_fraction": 0.844,
+    "scope": "england_only"
   },
-  "households_scored": 500,
+  "enforcement_uplift_gbp_bn": {
+    "central": 4.176783718323819,
+    "high": 6.033132037578849,
+    "low": 3.132587788742864
+  },
+  "households_scored": 422,
   "population_provenance_ids": [],
   "provenance": {
     "assumptions_consumed": [
@@ -39,6 +56,11 @@
         ],
         "layer": "revenue",
         "output_label": "revenue_by_decile"
+      },
+      {
+        "assumption_ids": [],
+        "layer": "policy_rules",
+        "output_label": "devolution_scope:england_only"
       }
     ],
     "version_tag": {
@@ -93,14 +115,14 @@
       "low": 0.0
     },
     {
-      "central": 0.7941444526157035,
-      "high": 1.1470975426671273,
-      "low": 0.5956083394617777
+      "central": 0.7893478793350776,
+      "high": 1.1401691590395564,
+      "low": 0.5920109095013082
     },
     {
-      "central": 46.75724688792751,
-      "high": 67.53824550478417,
-      "low": 35.06793516594563
+      "central": 40.978489303903125,
+      "high": 59.191151216748956,
+      "low": 30.73386697792734
     }
   ],
   "revenue_by_nation": {
@@ -108,28 +130,13 @@
       "central": 41.767837183238186,
       "high": 60.331320375788486,
       "low": 31.32587788742864
-    },
-    "northern_ireland": {
-      "central": 1.323968834337608,
-      "high": 1.9123994273765448,
-      "low": 0.992976625753206
-    },
-    "scotland": {
-      "central": 4.211410408841622,
-      "high": 6.083148368326787,
-      "low": 3.158557806631216
-    },
-    "wales": {
-      "central": 0.24817491412578074,
-      "high": 0.3584748759594611,
-      "low": 0.18613118559433556
     }
   },
   "scenario_name": "annual-wealth-1pct",
   "schema_version": "1.1",
   "total_revenue_gbp_bn": {
-    "central": 47.5513913405432,
-    "high": 68.68534304745128,
-    "low": 35.6635435054074
+    "central": 45.944620901562004,
+    "high": 66.36445241336733,
+    "low": 34.4584656761715
   }
 }

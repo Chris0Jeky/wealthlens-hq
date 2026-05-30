@@ -7,6 +7,7 @@ tests for serialisability, intervals, devolution scope, and provenance.
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 from typing import Any
 
@@ -16,12 +17,15 @@ from wealthlens_sim.assumptions import load_assumptions
 from wealthlens_sim.engine import DevolutionConfig, Registries, simulate
 from wealthlens_sim.outputs import DASHBOARD_SCHEMA_VERSION, to_dashboard_json
 from wealthlens_sim.reforms.a_annual_wealth import WealthTaxConfig
+from wealthlens_sim.reforms.f_enforcement import ComplianceRate, EnforcementConfig, TaxFamily
 from wealthlens_sim.reforms.g_devolution import NationScope
 from wealthlens_sim.rules import FamilySelection, PolicyFamily, Scenario
 from wealthlens_sim.schema.base import VersionTag
 from wealthlens_sim.synth import SynthConfig, generate_population
 
-_GOLDEN = Path(__file__).parent / "golden" / "dashboard_wealth_tax.json"
+_GOLDEN_DIR = Path(__file__).parent / "golden"
+_GOLDEN = _GOLDEN_DIR / "dashboard_wealth_tax.json"
+_GOLDEN_DEVO_ENF = _GOLDEN_DIR / "dashboard_devolution_enforcement.json"
 
 
 def _version() -> VersionTag:
@@ -52,6 +56,34 @@ def _golden_result():
     return simulate(pop, _golden_scenario(), registries=Registries(assumptions=load_assumptions()))
 
 
+def _devolution_enforcement_result():
+    # England-only scope + an OTHER enforcement uplift: exercises the devolution
+    # scope serialisation AND the enforcement-overstatement caveat end-to-end.
+    pop = generate_population(SynthConfig(n_households=500, seed=7))
+    enforcement = EnforcementConfig(
+        compliance_rates=(ComplianceRate(tax_family=TaxFamily.OTHER, baseline_rate=0.8, scenario_rate=0.9),),
+    )
+    return simulate(
+        pop,
+        _golden_scenario(),
+        registries=Registries(assumptions=load_assumptions()),
+        devolution=DevolutionConfig(scope=NationScope.ENGLAND_ONLY),
+        enforcement=enforcement,
+    )
+
+
+def _check_golden(path: Path, produced: dict[str, Any]) -> None:
+    """Compare ``produced`` to the golden at ``path``, or regenerate it.
+
+    Set ``REGEN_GOLDEN=1`` to rewrite the golden after an intentional engine
+    change (keeps generation identical to the test's own builders).
+    """
+    if os.environ.get("REGEN_GOLDEN"):
+        path.write_text(json.dumps(produced, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    golden = json.loads(path.read_text(encoding="utf-8"))
+    _assert_json_approx(produced, golden)
+
+
 def _assert_json_approx(actual: Any, expected: Any, path: str = "") -> None:
     """Recursively compare two JSON structures, floats with tolerance.
 
@@ -77,15 +109,36 @@ def _assert_json_approx(actual: Any, expected: Any, path: str = "") -> None:
 
 class TestGoldenFile:
     def test_matches_golden(self):
-        produced = to_dashboard_json(_golden_result())
-        golden = json.loads(_GOLDEN.read_text(encoding="utf-8"))
-        _assert_json_approx(produced, golden)
+        _check_golden(_GOLDEN, to_dashboard_json(_golden_result()))
+
+    def test_matches_golden_devolution_enforcement(self):
+        _check_golden(_GOLDEN_DEVO_ENF, to_dashboard_json(_devolution_enforcement_result()))
 
     def test_output_is_json_serialisable(self):
         # The whole point of the contract: it must round-trip through json.
         produced = to_dashboard_json(_golden_result())
         reparsed = json.loads(json.dumps(produced))
         assert reparsed["scenario_name"] == "annual-wealth-1pct"
+
+    def test_different_scenario_produces_different_json(self):
+        # Guard against a constant/stub to_dashboard_json: a higher rate must
+        # change the headline central total.
+        pop = generate_population(SynthConfig(n_households=500, seed=7))
+        registries = Registries(assumptions=load_assumptions())
+        one_pct = _golden_scenario()
+        two_pct = Scenario(
+            name="annual-wealth-2pct",
+            version_tag=_version(),
+            families=[
+                FamilySelection(
+                    family=PolicyFamily.ANNUAL_WEALTH_TAX,
+                    config=WealthTaxConfig(threshold=1_000_000, rate=0.02),
+                )
+            ],
+        )
+        a = to_dashboard_json(simulate(pop, one_pct, registries=registries))
+        b = to_dashboard_json(simulate(pop, two_pct, registries=registries))
+        assert b["total_revenue_gbp_bn"]["central"] != a["total_revenue_gbp_bn"]["central"]
 
 
 class TestStructure:
@@ -129,3 +182,30 @@ class TestStructure:
         # run_timestamp is excluded so the contract is deterministic (golden-able).
         dash = to_dashboard_json(_golden_result())
         assert "run_timestamp" not in json.dumps(dash)
+
+
+class TestDataIntegritySurfacing:
+    def test_complete_sourced_run_has_no_caveats(self):
+        dash = to_dashboard_json(_golden_result())
+        assert dash["provenance_complete"] is True
+        assert dash["caveats"] == []
+
+    def test_unsourced_run_flags_incomplete_provenance(self):
+        # No registry => degenerate intervals + incomplete provenance. The contract
+        # must make this LOUD: a root flag + a caveat, not just a nested bool.
+        pop = generate_population(SynthConfig(n_households=500, seed=7))
+        dash = to_dashboard_json(simulate(pop, _golden_scenario()))
+        assert dash["provenance_complete"] is False
+        assert any("Provenance incomplete" in c for c in dash["caveats"])
+        # Degenerate intervals are still emitted, but the caveat is the guardrail.
+        total = dash["total_revenue_gbp_bn"]
+        assert total["low"] == total["central"] == total["high"]
+
+    def test_enforcement_headline_carries_overstatement_caveat(self):
+        dash = to_dashboard_json(_devolution_enforcement_result())
+        assert dash["enforcement_uplift_gbp_bn"]["central"] != 0.0
+        assert any("overstates collectible revenue" in c for c in dash["caveats"])
+
+    def test_root_flag_mirrors_nested_provenance_complete(self):
+        dash = to_dashboard_json(_golden_result())
+        assert dash["provenance_complete"] == dash["provenance"]["complete"]
