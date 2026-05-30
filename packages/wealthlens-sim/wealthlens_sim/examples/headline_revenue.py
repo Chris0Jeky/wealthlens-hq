@@ -17,12 +17,15 @@ Run::
 
 from __future__ import annotations
 
+from functools import lru_cache
+
 from wealthlens_sim.assumptions import load_assumptions
+from wealthlens_sim.assumptions.schema import AssumptionRegistry
 from wealthlens_sim.engine import EngineResult, Registries, simulate
 from wealthlens_sim.reforms.a_annual_wealth import WealthTaxConfig
 from wealthlens_sim.rules import FamilySelection, PolicyFamily, Scenario
 from wealthlens_sim.schema.base import VersionTag
-from wealthlens_sim.synth import SynthConfig, generate_population
+from wealthlens_sim.synth import SynthConfig, SyntheticPopulation, generate_population
 from wealthlens_sim.top_tail.types import Interval
 
 
@@ -31,14 +34,27 @@ def _bn(interval: Interval) -> str:
     return f"£{interval.central:,.1f} bn (£{interval.low:,.1f}-£{interval.high:,.1f})"
 
 
+@lru_cache(maxsize=1)
+def _population() -> SyntheticPopulation:
+    """The example population, generated once (frozen + deterministic, so cacheable)."""
+    return generate_population(SynthConfig(n_households=5_000, seed=20))
+
+
+@lru_cache(maxsize=1)
+def _assumptions() -> AssumptionRegistry:
+    """The assumption registry, loaded from disk once."""
+    return load_assumptions()
+
+
 def example_result() -> EngineResult:
     """Score a 1%-above-£1m annual wealth tax over a seeded synthetic population.
 
     Deterministic: the same seed + scenario always yields the same result. A
     registry is supplied so the revenue carries real intervals and a complete
-    provenance manifest.
+    provenance manifest. The population + registry are cached (both are immutable
+    and seed-fixed), so repeated calls in tests/CLI don't re-draw or re-read disk.
     """
-    population = generate_population(SynthConfig(n_households=5_000, seed=20))
+    population = _population()
     scenario = Scenario(
         name="annual wealth tax: 1% above £1m",
         version_tag=VersionTag(
@@ -54,7 +70,7 @@ def example_result() -> EngineResult:
             )
         ],
     )
-    return simulate(population, scenario, registries=Registries(assumptions=load_assumptions()))
+    return simulate(population, scenario, registries=Registries(assumptions=_assumptions()))
 
 
 _BANNER = "** ILLUSTRATIVE — synthetic, uncalibrated population; NOT a real revenue estimate **"
@@ -77,7 +93,8 @@ def build_report(result: EngineResult) -> str:
         "  By nation:",
     ]
     for nation in sorted(result.revenue_by_nation):
-        lines.append(f"    {nation:<18} {_bn(result.revenue_by_nation[nation])}")
+        label = nation.replace("_", " ").title()
+        lines.append(f"    {label:<18} {_bn(result.revenue_by_nation[nation])}")
     lines.append("")
     lines.append("  By wealth decile (lowest -> highest):")
     for i, interval in enumerate(result.revenue_by_decile, start=1):
