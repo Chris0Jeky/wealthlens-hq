@@ -1,17 +1,20 @@
 """Static microsimulation engine — wires synth -> rules -> provenance (Wave 12 PR3a).
 
-:func:`run_scenario` is the engine's single entry point: it scores a
+:func:`simulate` is the engine's single entry point: it scores a
 :class:`~wealthlens_sim.engine.result.PopulationSource` against a
 :class:`~wealthlens_sim.rules.scenario.Scenario` (revenue families A-E) and
 returns an :class:`~wealthlens_sim.engine.result.EngineResult` carrying interval
 revenue totals, a per-nation and per-wealth-decile breakdown, and a provenance
-manifest.
+manifest. It is named ``simulate`` (not ``run_scenario``) to avoid colliding with
+``rules.run_scenario``, which has a different signature and return type.
 
 PR3a ships the A-E end-to-end path with **degenerate intervals**
-(``low == central == high``); real interval propagation (top-tail alpha sweep +
-assumption ``RangeValue``s) lands in PR3c, and Family F (enforcement) + Family G
-(devolution) composition lands in PR3b. The ``registries`` seam is already
-threaded so those PRs need no signature change.
+(``low == central == high``) and a **known-incomplete** provenance manifest
+(``EngineResult.provenance_complete is False``): the published numbers depend on
+the policy configs and the top-tail Pareto alpha, but PR3a does not yet
+``consume`` those assumptions. Real interval propagation + full provenance land
+in PR3c; Family F (enforcement) + Family G (devolution) composition lands in PR3b.
+The ``registries`` seam is threaded now so those PRs need no signature change.
 
 Reference: docs/WAVE12_SIMULATION_ENGINE_DESIGN.md §5.
 """
@@ -42,7 +45,7 @@ __all__ = [
     "Registries",
     "household_liability",
     "revenue_by_wealth_decile",
-    "run_scenario",
+    "simulate",
 ]
 
 #: Labels recorded in the provenance manifest, one per published output.
@@ -59,13 +62,17 @@ def _point_interval(value: float) -> Interval:
 
 
 def _build_provenance(scenario: Scenario, registries: Registries | None) -> ProvenanceManifest:
-    """Build the run's provenance manifest.
+    """Build the run's provenance manifest (known-incomplete in PR3a).
 
-    When an assumption registry is supplied the manifest is built through a
+    Records one REVENUE-layer entry per published output. When an assumption
+    registry is supplied the manifest is built through a
     :class:`ProvenanceCollector` (the seam PR3c uses to ``consume`` the top-tail
-    alpha + assumption ranges); otherwise it is constructed directly with the
-    same REVENUE-layer entries. Both paths yield identical manifests in PR3a
-    because no registry assumptions are consumed yet.
+    alpha + assumption ranges); otherwise it is constructed directly. Both paths
+    produce the same *entries* (labels, layer, assumption ids) in PR3a — they do
+    not yet differ because no assumptions are consumed — though each manifest's
+    ``run_timestamp`` is necessarily distinct. The caller stamps
+    ``EngineResult.provenance_complete = False`` so these partial manifests are
+    not mistaken for fully-sourced ones.
     """
     if registries is not None and registries.assumptions is not None:
         collector = ProvenanceCollector(scenario.version_tag, registries.assumptions)
@@ -83,7 +90,7 @@ def _build_provenance(scenario: Scenario, registries: Registries | None) -> Prov
     )
 
 
-def run_scenario(
+def simulate(
     population: PopulationSource,
     scenario: Scenario,
     *,
@@ -93,9 +100,15 @@ def run_scenario(
 
     Wires the building blocks: ``rules.run_scenario`` supplies the canonical
     aggregate total + per-nation revenue (families A-E), and a per-household pass
-    attributes that revenue across weighted wealth deciles. The decile breakdown
-    and the aggregate total are computed by the *same* underlying calculators, so
-    ``sum(revenue_by_decile) == total_revenue_gbp_bn`` (a tested invariant).
+    attributes that revenue across equal-weight wealth deciles. The decile
+    breakdown and the aggregate total are computed by the *same* underlying
+    calculators, so ``sum(revenue_by_decile) ~= total_revenue_gbp_bn`` (equal up
+    to floating-point summation order — a tested invariant).
+
+    The ``PopulationSource`` protocol is structural and presence-only
+    (``runtime_checkable`` checks attribute presence, not element types);
+    ``list(population.households)`` therefore fails loudly here if a malformed
+    population is passed.
     """
     households = list(population.households)
 
@@ -109,4 +122,6 @@ def run_scenario(
         revenue_by_decile=[_point_interval(value) for value in decile_central],
         households_scored=len(households),
         provenance=_build_provenance(scenario, registries),
+        population_provenance_ids=list(population.provenance_ids),
+        provenance_complete=False,
     )
