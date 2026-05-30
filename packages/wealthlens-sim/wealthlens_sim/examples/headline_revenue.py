@@ -1,0 +1,91 @@
+"""End-to-end example: the headline revenue of a reform scenario.
+
+Runs the engine over a deterministic synthetic population and prints the first
+WealthLens-Sim headline number — *"Reform X raises £Y bn (£low-£high)"* — with its
+per-nation and per-decile breakdown and a provenance summary. The intervals are
+propagated from the cited top-tail Pareto alpha range; the population is clearly
+labelled synthetic and is illustrative only until calibrated to published WAS/ONS
+marginals.
+
+Run::
+
+    python -m wealthlens_sim.examples.headline_revenue
+"""
+
+from __future__ import annotations
+
+from wealthlens_sim.assumptions import load_assumptions
+from wealthlens_sim.engine import EngineResult, Registries, simulate
+from wealthlens_sim.reforms.a_annual_wealth import WealthTaxConfig
+from wealthlens_sim.rules import FamilySelection, PolicyFamily, Scenario
+from wealthlens_sim.schema.base import VersionTag
+from wealthlens_sim.synth import SynthConfig, generate_population
+from wealthlens_sim.top_tail.types import Interval
+
+
+def _bn(interval: Interval) -> str:
+    """Format a GBP-billions interval as ``£central bn (£low-£high)``."""
+    return f"£{interval.central:,.1f} bn (£{interval.low:,.1f}-£{interval.high:,.1f})"
+
+
+def example_result() -> EngineResult:
+    """Score a 1%-above-£1m annual wealth tax over a seeded synthetic population.
+
+    Deterministic: the same seed + scenario always yields the same result. A
+    registry is supplied so the revenue carries real intervals and a complete
+    provenance manifest.
+    """
+    population = generate_population(SynthConfig(n_households=5_000, seed=20))
+    scenario = Scenario(
+        name="annual wealth tax: 1% above £1m",
+        version_tag=VersionTag(
+            macro_baseline_version="NBS-2025",
+            policy_version="2026-05-30",
+            population_version="synth-v0.1",
+            wealthlens_sim_version="0.1.0",
+        ),
+        families=[
+            FamilySelection(
+                family=PolicyFamily.ANNUAL_WEALTH_TAX,
+                config=WealthTaxConfig(threshold=1_000_000, rate=0.01),
+            )
+        ],
+    )
+    return simulate(population, scenario, registries=Registries(assumptions=load_assumptions()))
+
+
+def build_report(result: EngineResult) -> str:
+    """Render a human-readable headline report for ``result``."""
+    lines = [
+        f"Scenario: {result.scenario.name}",
+        f"Population: {result.households_scored:,} synthetic households (illustrative, not yet calibrated)",
+        "",
+        f"  Headline revenue: {_bn(result.total_revenue_gbp_bn)}",
+        "",
+        "  By nation:",
+    ]
+    for nation in sorted(result.revenue_by_nation):
+        lines.append(f"    {nation:<18} {_bn(result.revenue_by_nation[nation])}")
+    lines.append("")
+    lines.append("  By wealth decile (lowest -> highest):")
+    for i, interval in enumerate(result.revenue_by_decile, start=1):
+        lines.append(f"    decile {i:>2}          {_bn(interval)}")
+    lines.append("")
+    consumed = sorted(result.provenance.assumptions_consumed)
+    lines.append(
+        f"  Provenance: {'complete' if result.provenance_complete else 'INCOMPLETE'}; "
+        f"assumptions consumed: {', '.join(consumed) or 'none'}"
+    )
+    lines.append(
+        "  Note: synthetic data, clearly labelled; intervals propagate the cited "
+        "top-tail Pareto alpha. Verify before publishing."
+    )
+    return "\n".join(lines)
+
+
+def main() -> None:
+    print(build_report(example_result()))
+
+
+if __name__ == "__main__":  # pragma: no cover - manual entry point
+    main()
