@@ -26,10 +26,20 @@ class TestHeadlineRevenue:
 
     def test_report_renders_headline_and_provenance(self):
         report = build_report(example_result())
-        assert "Headline revenue:" in report
+        assert "Headline revenue" in report
         assert "By nation:" in report
         assert "By wealth decile" in report
         assert "Provenance: complete" in report
-        # Honest labelling guardrails must be present.
-        assert "synthetic data" in report
-        assert "illustrative" in report
+
+    def test_report_labels_headline_honestly(self):
+        # Data-integrity guardrail: no single line may be quoted as a real estimate.
+        report = build_report(example_result())
+        lines = report.splitlines()
+        # A banner heads the report.
+        assert "ILLUSTRATIVE" in lines[0] and "NOT a real revenue estimate" in lines[0]
+        # The headline line is itself self-labelled (not just labelled elsewhere).
+        headline = next(line for line in lines if "Headline revenue" in line)
+        assert "ILLUSTRATIVE" in headline or "synthetic" in headline.lower()
+        # The known overshoot (biased high) is disclosed where a CLI user sees it.
+        assert "biased HIGH" in report
+        assert "15-16tn" in report

@@ -1,11 +1,14 @@
 """End-to-end example: the headline revenue of a reform scenario.
 
-Runs the engine over a deterministic synthetic population and prints the first
+Runs the engine over a deterministic synthetic population and prints a
 WealthLens-Sim headline number — *"Reform X raises £Y bn (£low-£high)"* — with its
 per-nation and per-decile breakdown and a provenance summary. The intervals are
-propagated from the cited top-tail Pareto alpha range; the population is clearly
-labelled synthetic and is illustrative only until calibrated to published WAS/ONS
-marginals.
+propagated from the cited top-tail Pareto alpha range.
+
+**Not a real estimate.** The v0.1 synthetic population grosses to materially more
+net wealth than the real UK total (~£15-16tn), so the headline is biased HIGH and
+is illustrative only until the generator is calibrated to published WAS/ONS
+marginals. The printed report says so on every run.
 
 Run::
 
@@ -54,13 +57,22 @@ def example_result() -> EngineResult:
     return simulate(population, scenario, registries=Registries(assumptions=load_assumptions()))
 
 
+_BANNER = "** ILLUSTRATIVE — synthetic, uncalibrated population; NOT a real revenue estimate **"
+
+
 def build_report(result: EngineResult) -> str:
-    """Render a human-readable headline report for ``result``."""
+    """Render a human-readable headline report for ``result``.
+
+    The headline line is self-labelled and a banner heads the report so that no
+    single line can be lifted out of context and quoted as a real estimate.
+    """
     lines = [
+        _BANNER,
+        "",
         f"Scenario: {result.scenario.name}",
         f"Population: {result.households_scored:,} synthetic households (illustrative, not yet calibrated)",
         "",
-        f"  Headline revenue: {_bn(result.total_revenue_gbp_bn)}",
+        f"  Headline revenue (ILLUSTRATIVE / synthetic): {_bn(result.total_revenue_gbp_bn)}",
         "",
         "  By nation:",
     ]
@@ -77,8 +89,10 @@ def build_report(result: EngineResult) -> str:
         f"assumptions consumed: {', '.join(consumed) or 'none'}"
     )
     lines.append(
-        "  Note: synthetic data, clearly labelled; intervals propagate the cited "
-        "top-tail Pareto alpha. Verify before publishing."
+        "  Note: the v0.1 synthetic population grosses to materially more net wealth "
+        "than the real UK total (~£15-16tn), so this figure is biased HIGH. Synthetic "
+        "data, clearly labelled; intervals propagate the cited top-tail Pareto alpha. "
+        "Verify before publishing."
     )
     return "\n".join(lines)
 
