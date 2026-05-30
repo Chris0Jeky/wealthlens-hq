@@ -9,24 +9,28 @@ Last updated: 2026-05-30
 
 ## Current phase: Wave 12 engine stack (synth→rules→engine→outputs)
 
-**2026-05-30 cycle (in progress):** Built the full Wave 12 PR3 engine as a 5-PR
-stack, each with 2 independent adversarial reviews + all bot comments addressed:
+**2026-05-30 cycle:** Built the full Wave 12 PR3 engine as a 5-PR stack + a Wave 13
+example, each with 2 independent adversarial reviews + all bot comments addressed:
 - `engine.simulate(population, scenario, *, registries, devolution, enforcement)
   -> EngineResult` — wires synth→rules→provenance; equal-weight per-decile
   attribution; Family G devolution scope; Family F enforcement uplift; real
   interval propagation from the top-tail Pareto alpha range with a complete
   provenance manifest; `outputs.to_dashboard_json` (+ golden files) emitting the
-  dashboard contract with root-level `provenance_complete` + a `caveats[]` array.
-- **Merged to main:** #329 (engine-core), #330 (devolution). **Open + aging:**
-  #331 (enforcement)→main, #332 (intervals)→#331, #333 (outputs)→#332. Do NOT
-  merge the newest; drain the oldest once it has 2 reviews + bots + CI + time.
-- 596 sim tests on main; 628 at the stack tip. Reviews caught real issues
-  (decile non-conservation for tiny weights, provenance overclaiming, enforcement
-  overstatement surfacing). See [ORCHESTRATION.md](session_notes/ORCHESTRATION.md)
-  (the up-to-date copy rides on #332 until the stack merges).
-- Backlog seeded: proper enforcement compliance model (baseline-vs-theoretical,
-  the uplift currently overstates above the 100%-compliance ceiling); Wave 13
-  Monte-Carlo/Sobol uncertainty; calibrate synth to cited WAS marginals.
+  dashboard contract with root-level `provenance_complete` + a `caveats[]` array;
+  `examples.headline_revenue` runnable demo.
+- **Merged to main:** #329 (engine-core), #330 (devolution), #331 (enforcement),
+  #332 (intervals). **614 sim tests on main.**
+- **Open + aging (all 2 reviews + bots addressed):** #333 (`outputs`)→main, #334
+  (`examples`)→main. Merge discipline: don't merge the newest; drain the oldest
+  once it has 2 reviews + bots + CI + elapsed time.
+- Reviews caught real issues (decile non-conservation for tiny weights, provenance
+  overclaiming, enforcement-overstatement + unsourced-state surfacing in the
+  dashboard contract, headline honest-labelling). 33 stale branches pruned.
+- Backlog (tasks/inbox.md Wave 13): proper enforcement compliance model
+  (baseline-vs-theoretical — uplift currently overstates above the 100%-compliance
+  ceiling, flagged via `caveats[]`); Monte-Carlo/Sobol uncertainty; calibrate synth
+  to cited WAS marginals; record synth generative params in provenance; wire the
+  dashboard JSON into a Vue scenario page.
 
 ## Prior phase: Gate-1 Simulator merged → Wave 12 (engine/synth)
 
