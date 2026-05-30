@@ -58,6 +58,13 @@
         "output_label": "revenue_by_decile"
       },
       {
+        "assumption_ids": [
+          "toptail.pareto_alpha.overall.v1"
+        ],
+        "layer": "revenue",
+        "output_label": "enforcement_uplift_bn"
+      },
+      {
         "assumption_ids": [],
         "layer": "policy_rules",
         "output_label": "devolution_scope:england_only"

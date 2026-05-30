@@ -69,8 +69,15 @@ __all__ = [
     "tax_family_for",
 ]
 
-#: Labels recorded in the provenance manifest, one per published output.
-_OUTPUT_LABELS = ("total_revenue_gbp_bn", "revenue_by_nation", "revenue_by_decile")
+#: Labels recorded in the provenance manifest, one per published output — every
+#: number the dashboard contract emits must have a corresponding trail, including
+#: the enforcement uplift (zero when no enforcement config is supplied).
+_OUTPUT_LABELS = (
+    "total_revenue_gbp_bn",
+    "revenue_by_nation",
+    "revenue_by_decile",
+    "enforcement_uplift_bn",
+)
 
 
 def _build_complete_provenance(
