@@ -106,3 +106,19 @@ class EngineResult(BaseModel):
             msg = f"revenue_by_decile must have 0 or {N_DECILES} entries, got {n}"
             raise ValueError(msg)
         return self
+
+    @model_validator(mode="after")
+    def _check_devolution_consistency(self) -> EngineResult:
+        # When a devolution scope was applied, households_scored is the included
+        # subset, so it must equal the split's included_count — guards against an
+        # inconsistent result (e.g. hand-constructed) carrying mismatched counts.
+        if (
+            self.devolution_split is not None
+            and self.households_scored != self.devolution_split.included_count
+        ):
+            msg = (
+                f"households_scored ({self.households_scored}) must match "
+                f"devolution_split.included_count ({self.devolution_split.included_count})"
+            )
+            raise ValueError(msg)
+        return self

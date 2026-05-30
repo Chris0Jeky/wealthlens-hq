@@ -294,11 +294,13 @@ class TestDevolution:
         result = simulate(pop, _scenario(_wealth_tax()), devolution=cfg)
         scotland = [h for h in pop.households if h.nation == Nation.SCOTLAND]
         assert result.households_scored == len(scotland)
+        assert result.devolution_split is not None
         assert result.devolution_split.included_nations == ("scotland",)
 
     def test_great_britain_scope_excludes_northern_ireland(self):
         pop = _population()
         result = simulate(pop, _scenario(_wealth_tax()), devolution=DevolutionConfig(scope=NationScope.GREAT_BRITAIN))
+        assert result.devolution_split is not None
         assert result.devolution_split.included_nations == ("england", "scotland", "wales")
         assert "northern_ireland" in result.devolution_split.excluded_nations
         assert "northern_ireland" not in result.revenue_by_nation
@@ -309,6 +311,7 @@ class TestDevolution:
         result = simulate(pop, _scenario(_wealth_tax()), devolution=cfg)
         included = [h for h in pop.households if h.nation in {Nation.SCOTLAND, Nation.WALES}]
         assert result.households_scored == len(included)
+        assert result.devolution_split is not None
         assert result.devolution_split.included_nations == ("scotland", "wales")
         assert set(result.revenue_by_nation) <= {"scotland", "wales"}
 
@@ -342,6 +345,7 @@ class TestDevolution:
         assert result.households_scored == 0
         assert result.total_revenue_gbp_bn.central == 0.0
         assert result.revenue_by_decile == []
+        assert result.devolution_split is not None
         assert result.devolution_split.included_count == 0
 
 
