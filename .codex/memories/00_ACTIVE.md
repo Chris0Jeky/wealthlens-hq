@@ -5,9 +5,30 @@
 > **POST-MERGE CLEANUP COMPLETE** (2026-05-16): All 192 PRs handled, 874 tests passing, CI green, 496 stale branches deleted.
 > Merge history: [MERGE_ORCHESTRATION.md](.codex/memories/session_notes/MERGE_ORCHESTRATION.md) | PR creation history: [ORCHESTRATION.md](.codex/memories/session_notes/ORCHESTRATION.md) (archived)
 
-Last updated: 2026-05-29
+Last updated: 2026-05-30
 
-## Current phase: Gate-1 Simulator merged → Wave 12 (engine/synth)
+## Current phase: Wave 12 engine stack (synth→rules→engine→outputs)
+
+**2026-05-30 cycle (in progress):** Built the full Wave 12 PR3 engine as a 5-PR
+stack, each with 2 independent adversarial reviews + all bot comments addressed:
+- `engine.simulate(population, scenario, *, registries, devolution, enforcement)
+  -> EngineResult` — wires synth→rules→provenance; equal-weight per-decile
+  attribution; Family G devolution scope; Family F enforcement uplift; real
+  interval propagation from the top-tail Pareto alpha range with a complete
+  provenance manifest; `outputs.to_dashboard_json` (+ golden files) emitting the
+  dashboard contract with root-level `provenance_complete` + a `caveats[]` array.
+- **Merged to main:** #329 (engine-core), #330 (devolution). **Open + aging:**
+  #331 (enforcement)→main, #332 (intervals)→#331, #333 (outputs)→#332. Do NOT
+  merge the newest; drain the oldest once it has 2 reviews + bots + CI + time.
+- 596 sim tests on main; 628 at the stack tip. Reviews caught real issues
+  (decile non-conservation for tiny weights, provenance overclaiming, enforcement
+  overstatement surfacing). See [ORCHESTRATION.md](session_notes/ORCHESTRATION.md)
+  (the up-to-date copy rides on #332 until the stack merges).
+- Backlog seeded: proper enforcement compliance model (baseline-vs-theoretical,
+  the uplift currently overstates above the 100%-compliance ceiling); Wave 13
+  Monte-Carlo/Sobol uncertainty; calibrate synth to cited WAS marginals.
+
+## Prior phase: Gate-1 Simulator merged → Wave 12 (engine/synth)
 
 **2026-05-29 MERGE+ADVANCE cycle:** All 38 open PRs resolved. The entire Gate-1
 `packages/wealthlens-sim` simulator (skeleton, schema, registry loaders, top-tail
