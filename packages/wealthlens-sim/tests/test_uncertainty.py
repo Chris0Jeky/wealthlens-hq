@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import ast
+from pathlib import Path
+
 import numpy as np
 import pytest
 from pydantic import ValidationError
@@ -199,17 +202,45 @@ class TestParameterSamples:
         with pytest.raises(Exception):  # noqa: B017 - dataclass FrozenInstanceError
             samples.names = ()  # type: ignore[misc]
 
+    def test_matrix_is_read_only(self):
+        samples = sample_parameters(_specs(), SamplingConfig(n_samples=8))
+        with pytest.raises(ValueError, match="read-only"):
+            samples.matrix[0, 0] = 0.0
+        with pytest.raises(ValueError, match="read-only"):
+            samples.column("alpha")[0] = 0.0
 
-def test_module_does_not_touch_engine() -> None:
-    """Groundwork guard: the sampling layer must not import the engine yet.
 
-    Wiring is a later, separately reviewed PR; this keeps the feature OFF by
-    construction so default engine behaviour is unchanged.
+def _imports_engine(tree: ast.AST) -> bool:
+    """True if any import node in ``tree`` references ``wealthlens_sim.engine``."""
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            if any(a.name == "wealthlens_sim.engine" or a.name.startswith("wealthlens_sim.engine.") for a in node.names):
+                return True
+        elif isinstance(node, ast.ImportFrom):
+            module = node.module or ""
+            if module == "wealthlens_sim.engine" or module.startswith("wealthlens_sim.engine."):
+                return True
+            # Catch the aliased ``from wealthlens_sim import engine`` form too.
+            if module == "wealthlens_sim" and any(a.name == "engine" for a in node.names):
+                return True
+    return False
+
+
+def test_uncertainty_package_does_not_import_engine() -> None:
+    """Groundwork guard: nothing in the uncertainty package imports the engine.
+
+    Wiring is a later, separately reviewed PR; keeping the feature OFF by
+    construction means default engine behaviour is unchanged. AST-parse *every*
+    module in the package (not just ``sampling.py``, and not a naive substring
+    scan) so ``__init__``-level imports and the dotted / ``from wealthlens_sim
+    import engine`` forms are all caught.
     """
-    import wealthlens_sim.uncertainty.sampling as sampling
+    import wealthlens_sim.uncertainty as pkg
 
-    source = sampling.__file__
-    with open(source, encoding="utf-8") as fh:
-        text = fh.read()
-    assert "import wealthlens_sim.engine" not in text
-    assert "from wealthlens_sim.engine" not in text
+    pkg_dir = Path(pkg.__file__).parent
+    offenders = [
+        path.name
+        for path in sorted(pkg_dir.glob("*.py"))
+        if _imports_engine(ast.parse(path.read_text(encoding="utf-8")))
+    ]
+    assert not offenders, f"uncertainty package must not import the engine yet: {offenders}"

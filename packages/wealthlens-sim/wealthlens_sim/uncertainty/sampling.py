@@ -163,7 +163,9 @@ class ParameterSamples:
 
     ``names`` is sorted and aligns column-for-column with ``matrix``. A NumPy
     array (not a Pydantic field) because this is a numeric workspace handed to the
-    engine, not a serialised contract.
+    engine, not a serialised contract. ``matrix`` is set read-only at construction
+    so the deterministic draw cannot be mutated in place; ``column`` returns a
+    read-only view of it.
     """
 
     names: tuple[str, ...]
@@ -191,8 +193,11 @@ class ParameterSamples:
     def provenance_ids(self) -> list[str]:
         """Stable tags describing this sampling run, for the provenance trail.
 
-        Mirrors the synth ``synth.*`` tagging convention so a Monte-Carlo run is
-        as auditable as a single-point run.
+        Tags use a structured ``uncertainty.<key>:<value>`` grammar (the same
+        ``namespace.key:value`` shape the synth generation-parameter tags use) so
+        a Monte-Carlo run is as auditable as a single-point run. A later
+        engine-wiring PR can fold these into the provenance trail alongside the
+        population's source ids.
         """
         return [
             f"uncertainty.n_samples:{self.n_samples}",
@@ -274,4 +279,7 @@ def sample_parameters(specs: Sequence[ParameterSpec], config: SamplingConfig | N
         else:
             matrix[:, j] = _to_triangular(col, spec.low, spec.central, spec.high)
 
+    # Lock the draw so the "deterministic, immutable" contract holds literally:
+    # neither ``matrix`` nor the views ``column`` returns can be written in place.
+    matrix.flags.writeable = False
     return ParameterSamples(names=names, matrix=matrix)
