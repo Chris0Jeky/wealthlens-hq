@@ -7,23 +7,20 @@
 
 Last updated: 2026-05-31
 
-## Latest Wave 13 status (post #337 merge)
+## Latest status (post review-fix PR #339)
 
 - **Merged to main (2026-05-31):** #337 `feat/synth-generation-provenance` at
-  `94446e3` after the full gate — two independent adversarial reviews
-  (provenance/data-integrity + determinism/regression), all 3 bot threads
-  resolved, CI green, and a newer PR (#338) opened above it. Synth populations now
-  record every generation-affecting `SynthConfig` input in
-  `population_provenance_ids` with canonical sorted mapping order, so two
-  materially different synthetic populations cannot publish identical provenance.
-  677 sim tests pass on the #338 branch (645 on main pre-#337 + synth + sampling).
-- **Open/newest:** #338 `feat/uncertainty-sampling` -> `main` — Wave 13
-  Monte-Carlo groundwork (`uncertainty/sampling.py`: independent + Latin-hypercube
-  draws over uniform/triangular marginals; deterministic; read-only sample matrix;
-  `uncertainty.*` provenance tags). Standalone, **not wired into the engine**
-  (feature OFF, AST guard test). Two independent adversarial reviews
-  (numerical-correctness + API/convention) + all 5 bot threads (3 Gemini, 2 Codex)
-  resolved. Do not merge while newest; open another PR above it first.
+  `94446e3` — full gate passed.
+- **Open PRs (2):**
+  - **#338** `feat/uncertainty-sampling` -> `main` — Wave 13 Monte-Carlo
+    groundwork. Two adversarial reviews done; all 5 bot threads resolved.
+    Standalone, feature OFF. Do not merge while newest.
+  - **#339** `fix/iht-review-findings` -> `main` (newest) — fixes APR/BPR
+    relief basis (`gross_value` → `net_value`) and RNRB taper basis
+    (pre-relief → post-relief estate per HMRC IHTM46013). Removes dead stub
+    `d_iht_transfer.py` and unused `_NATIONS`. One adversarial review (clean
+    approval, no issues >= 80% confidence). CI green (5/5). 651 sim tests +
+    ruff + mypy clean.
 - **Prior (2026-05-30):** #336 `feat/enforcement-compliance-model` merged —
   enforcement cost separate from revenue (`enforcement_cost_bn`,
   `enforcement_net_fiscal_impact_bn`); dashboard schema `1.2`.
@@ -84,8 +81,8 @@ All dashboard code is on main. Site live. Codebase includes:
 
 | Area | Status | Next step |
 | --- | --- | --- |
-| **WealthLens-Sim** | Gate 1 + Wave 12 engine/output stack + #336 enforcement + #337 synth generation provenance MERGED to main | Open a PR above #338 (uncertainty sampling), then drain #338; wire sampling into the engine next |
-| Sim CI | `ci-sim.yml` runs ruff+mypy+pytest (py3.11/3.12) + weekly; 677 sim tests on the #338 branch | Maintain; add coverage of new modules |
+| **WealthLens-Sim** | Gate 1 + Wave 12 engine + #337 provenance MERGED; #338 uncertainty-sampling + #339 IHT review fixes open | Drain #339 and #338 once aged; wire sampling into engine or dashboard JSON into Vue |
+| Sim CI | `ci-sim.yml` runs ruff+mypy+pytest (py3.11/3.12) + weekly; 651 sim tests on main | Maintain; add coverage of new modules |
 | Sim packaging | registries bundled into wheel+sdist (hatch hook); pip-installable | — |
 | Data pipelines | 8+ pipelines on main | Maintain; add new pipelines as needed |
 | Charts (v0.1) | Live (4 charts + broadsheet redesign) | Build more chart components in Vue |

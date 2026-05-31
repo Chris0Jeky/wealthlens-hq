@@ -2,12 +2,11 @@
 
 Last updated: 2026-05-31
 
-> **LATEST:** #337 synth generation provenance is merged to `main` at `94446e3`
-> after two independent adversarial reviews, all bot threads resolved, green CI,
-> and a newer PR opened above it. #338 `feat/uncertainty-sampling` (Wave 13
-> Monte-Carlo sampling groundwork) is now the only open/newest PR; two adversarial
-> reviews done, all 5 bot threads resolved, local 677 sim tests + ruff + mypy
-> green. It must not be merged while newest — open another PR above it first.
+> **LATEST:** #339 `fix/iht-review-findings` is open — fixes two IHT
+> data-integrity issues (APR/BPR relief basis + RNRB taper basis) found by a
+> 4-domain adversarial review, plus dead-code cleanup. One adversarial review
+> done (clean approval); CI green; 651 sim tests + ruff + mypy clean. #339 is
+> now the newest PR; #338 uncertainty-sampling is also open and reviewed.
 > Caveat: `bash -lc "make ci-quick"` currently exposes dashboard backend pytest
 > failures while still exiting 0; this is tracked in `tasks/inbox.md`.
 
