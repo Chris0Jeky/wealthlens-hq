@@ -1,0 +1,45 @@
+PR	mergedAt	CI	diff_lines	title
+284	2026-05-29T17:58:22Z	FAILED	110	docs: add Model Charter (Gate 0 deliverable)
+285	2026-05-29T17:58:26Z	FAILED	99	docs: add AI/LLM disclosure policy
+286	2026-05-29T18:04:06Z	FAILED	477	feat: add wealthlens-sim package skeleton and registries
+291	2026-05-29T17:59:31Z	FAILED	839	chore: batch Dependabot dependency updates
+295	2026-05-29T18:17:10Z	FAILED	946	feat(sim): top-tail Pareto reconstruction module
+296	2026-05-29T18:18:24Z	FAILED	531	feat(sim): provenance manifest and collector
+297	2026-05-29T18:18:41Z	FAILED	742	feat(sim): Family A annual wealth tax calculator
+298	2026-05-29T18:18:57Z	FAILED	1382	feat(reforms): add Family B one-off wealth levy (Blueprint §9)
+299	2026-05-29T18:19:15Z	FAILED	671	feat(reforms): add HVCTS sub-module (Family E, Blueprint §3.4)
+300	2026-05-29T18:19:43Z	FAILED	688	feat(reforms): Family C CGT current-law baseline
+301	2026-05-29T18:19:58Z	FAILED	1148	feat(reforms): Family D IHT current-law baseline
+302	2026-05-29T18:20:15Z	FAILED	756	feat(reforms): Family F enforcement/compliance gap model
+303	2026-05-29T18:20:31Z	FAILED	481	feat(reforms): Family G devolution-asymmetric nation-scope routing
+305	2026-05-29T18:24:42Z	FAILED	13	fix(registry): document api_url field in sources.yml schema header
+306	2026-05-29T18:24:59Z	FAILED	13	fix(registry): add YAML scientific notation safety note to assumptions.yml
+307	2026-05-29T18:25:15Z	FAILED	55	fix(schema): add constituent-nation validator to HouseholdResult
+308	2026-05-29T18:25:44Z	FAILED	231	fix(loaders): robust path discovery, ScheduleValue validation, consistent empty-file errors
+311	2026-05-29T18:00:41Z	FAILED	9	chore(deps): update fastapi requirement from >=0.136.1 to >=0.136.3 in /projects/wealthlens-dashboard/backend
+312	2026-05-29T18:22:20Z	FAILED	9	chore(deps): update uvicorn requirement from >=0.47.0 to >=0.48.0 in /projects/wealthlens-dashboard/backend
+313	2026-05-29T18:22:28Z	FAILED	23	chore(deps-dev): bump js-cookie from 3.0.5 to 3.0.8 in /projects/wealthlens-dashboard/frontend in the npm_and_yarn group across 1 directory
+314	2026-05-29T18:07:20Z	FAILED	309	chore: add AGPL-3.0 license split for wealthlens-sim
+315	2026-05-29T18:07:24Z	FAILED	157	feat: populate sources.yml from existing data pipelines
+316	2026-05-29T18:07:27Z	FAILED	359	feat: populate assumptions registry with 18 initial entries
+317	2026-05-29T18:07:30Z	FAILED	208	feat: populate baselines.yml with UK policy status matrix
+318	2026-05-29T18:07:55Z	FAILED	556	feat(sim): Pydantic schema module — households, policies, results
+319	2026-05-29T18:13:22Z	FAILED	846	feat(sim): assumption + baselines registry loaders with Pydantic validation
+320	2026-05-29T18:29:01Z	FAILED	30	docs(registry): clarify effective_date semantics in baselines.yml
+321	2026-05-29T18:45:12Z	FAILED	193	fix(top-tail): safety guards + int-truncation/ci-validation (review findings)
+322	2026-05-29T18:43:50Z	FAILED	202	fix(provenance): strict bool/int typing + faithful schedule preservation
+323	2026-05-29T18:54:36Z	FAILED	107	ci(sim): add CI workflow for wealthlens-sim (close untested-in-CI gap)
+324	2026-05-29T19:06:06Z	FAILED	190	fix(iht): deduct charitable gifts from estate + cap RNRB at residence value
+325	2026-05-29T19:16:06Z	FAILED	159	fix(security): patch tmp/uuid Dependabot alerts via npm overrides
+326	2026-05-29T19:35:23Z	FAILED	200	feat(sim): package registries into wheel + resolver fallback (pip-install support)
+327	2026-05-29T20:05:01Z	FAILED	414	feat(synth): v0.1 deterministic synthetic-population generator (Wave 12 PR1)
+328	2026-05-29T20:39:46Z	FAILED	398	feat(rules): Scenario + run_scenario over a household population (Wave 12 PR2)
+329	2026-05-30T03:53:34Z	FAILED	780	feat(engine): Wave 12 PR3a — engine.run_scenario (synth→rules→provenance)
+330	2026-05-30T04:14:21Z	FAILED	235	feat(engine): Wave 12 PR3b — Family G devolution scope in simulate()
+331	2026-05-30T07:08:10Z	NO_CHECKS	321	feat(engine): Wave 12 PR3c — Family F enforcement uplift in simulate()
+332	2026-05-30T07:10:32Z	NO_CHECKS	550	feat(engine): Wave 12 PR3d — top-tail alpha interval propagation + complete provenance
+333	2026-05-30T21:38:09Z	FAILED	748	feat(outputs): Wave 12 PR3e — to_dashboard_json + golden-file test
+334	2026-05-30T21:52:31Z	FAILED	195	feat(examples): runnable headline-revenue end-to-end demo (Wave 13)
+335	2026-05-30T22:30:35Z	FAILED	572	feat(synth): calibrate defaults to ONS marginals
+336	2026-05-30T23:18:22Z	FAILED	1082	feat(enforcement): apply compliance baseline model
+337	2026-05-31T00:07:14Z	FAILED	245	feat(synth): record generation provenance
