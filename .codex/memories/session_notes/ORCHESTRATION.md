@@ -92,6 +92,29 @@ This section supersedes the older handoff snapshots below.
 - Synthetic data remains labelled as synthetic; #337 adds generation-input
   parameter tags to the population provenance seam.
 
+## Ops learnings (2026-05-31 session — keep)
+- **Surface `tasks/ACTION-REQUIRED.md` every summary/handoff.** New this session:
+  a curated list of Chris's human action items with how-to guides, wired into
+  CLAUDE.md, AGENTS.md, the SessionStart hook, and memory. Read it at start; only
+  clear items on Chris's explicit confirmation.
+- **Resolve bot review threads via GraphQL** (the bot comments are *review
+  threads*, not issue comments): `addPullRequestReviewThreadReply(input:{
+  pullRequestReviewThreadId, body})` then `resolveReviewThread(input:{threadId})`.
+  Fetch unresolved threads + their ids with the `pullRequest.reviewThreads`
+  GraphQL query filtered on `isResolved==false`.
+- **Review flow:** `gh pr checkout <n>` to put the branch in the working tree so
+  review subagents read real files + run `pytest/ruff/mypy`; give each subagent a
+  *different lens* and tell it not to re-review the other's lens.
+- **Env gotchas:** (1) mypy can throw an internal `Cannot find module for
+  httpx._models.Request` from a corrupted `.mypy_cache` — `rm -rf .mypy_cache`
+  and re-run. (2) Spawning a fresh Python via `subprocess` inside a test can hit
+  `OpenBLAS … Memory allocation … giving up` in this environment — prefer an
+  in-process `ast`-based check over a subprocess for import-isolation guards.
+- **Merging a sibling PR off `main` does not disturb another sibling** when they
+  touch disjoint files; `--delete-branch` is safe for a PR that is **not** a
+  stacked base. `mergeStateStatus` can read `UNKNOWN` for a minute after the base
+  moves — confirm locally with `git merge-tree $(git merge-base …) … …`.
+
 ---
 
 # 🟢 HANDOFF — read this first (2026-05-30, post #335 merge)
