@@ -34,13 +34,15 @@ Last updated: 2026-05-31
 
 ### ⏰ Time-sensitive (act this week)
 
-1. - [ ] **Apply to mySociety SocietyWorks Developer role** `[due: 2026-05-31]` — **P0, due today/overdue**
-   - **Why:** £42–52k, remote, Python — the best-paid civic-tech match and directly aligned with the mission. Listed in `deadlines.md`.
+1. - [ ] **Prepare for mySociety interview (if shortlisted)** `[due: mid-June 2026]` -- **P1**
+   - **Why:** Application submitted 2026-05-31. Shortlist notification expected mid-June. Interview via video conference in following weeks.
    - **How:**
-     1. Find the live posting (mySociety / SocietyWorks careers page or Civil-Service-adjacent board). If the 2026-05-31 date has passed, check for an extension or the next cohort and note it here.
-     2. Tailor the CV in `identity/` (lead with the GE Digital DevSecOps internship, the Springer publication, and WealthLens as live open-source civic tech).
-     3. Cover letter: link the **live** dashboard (`chris0jeky.github.io/wealthlens-hq/`) and the WealthLens-Sim microsimulator as proof of shipping.
-   - **Done when:** application submitted (or consciously skipped — record which).
+     1. Start daily Python coding practice WITHOUT AI (30-60 min/day). See `tasks/applications/interview-prep-general.md`.
+     2. Explore mySociety codebases: FixMyStreet, Alaveteli, TheyWorkForYou on GitHub.
+     3. Do first 10 Exercism Perl exercises.
+     4. Use FixMyStreet and WhatDoTheyKnow for real.
+     5. Prepare STAR stories (see `tasks/applications/mysociety-societyworks-2026.md`).
+   - **Done when:** interview completed (or not shortlisted -- record which).
 
 2. - [ ] **Check the Bethnal Green Ventures Autumn 2026 window** `[due: ~2026-05-31]` — **P1**
    - **Why:** ~£60k for ~7% equity accelerator; the application window is around now (`deadlines.md`).

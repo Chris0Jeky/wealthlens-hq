@@ -199,6 +199,41 @@ the build + its adversarial reviews:
 - [ ] Request named WP team sponsor
 - [ ] Propose WP postcode-to-university data tool to Middlesex University WP team
 
+## WealthLens Schools Initiative (seeded 2026-05-31)
+
+Bring WealthLens data literacy workshops into schools via Middlesex
+University's widening participation programme. Chris is starting this
+initiative and needs approvals, partnerships, and curriculum design.
+
+### Internal approvals and alignment
+
+- [ ] Get buy-in from direct WP team manager for WealthLens workshops
+- [ ] Get approval from the Marketing department head (Chris's department)
+- [ ] Identify any formal approval process for external workshop content at Middlesex
+- [ ] Draft a one-page proposal: what the workshops cover, target age group (Y10+), learning outcomes, how it ties to WP objectives and OfS metrics
+
+### Find academic partners at Middlesex
+
+- [ ] Research economics faculty at Middlesex: who teaches inequality, public policy, or political economy? Look for people whose research aligns
+- [ ] Research business school faculty: anyone working on wealth, taxation, or economic data literacy?
+- [ ] Check if any PhD students at Middlesex are researching wealth inequality, economic education, or data literacy for young people
+- [ ] Look into the Education department: anyone doing work on financial literacy, economic citizenship, or critical data literacy in schools?
+- [ ] Draft a short pitch email for academics: "I run WP workshops and I'm building an open-source data tool for UK wealth inequality. Would you be interested in collaborating on school workshops?"
+
+### External partnerships and models
+
+- [ ] Research existing data literacy / economic education programmes for schools in the UK (e.g., CORE Econ, Economy, Young Money, RSA)
+- [ ] Check if any other universities run inequality-focused WP workshops
+- [ ] Explore whether the "From the Boys" podcast initiative at William Ellis School could be a pilot site for WealthLens workshops
+- [ ] Identify 2-3 schools (beyond William Ellis) that might be interested in piloting
+
+### Workshop design
+
+- [ ] Design a 60-minute workshop outline: "Reading the Data: What Does Wealth Inequality Look Like?"
+- [ ] Identify which WealthLens charts / data are most accessible for Y10 students
+- [ ] Create a simple student handout with 3-4 chart exercises
+- [ ] Plan how to tie workshops to the National Curriculum (citizenship, maths/statistics, PSHE)
+
 ## Build: Tools
 
 - [ ] Build openpoverty-uk Python API wrapping DWP HBAI, ONS FRS, IMD, JRF data
@@ -335,7 +370,7 @@ the build + its adversarial reviews:
 
 ## Career: Job Applications and Education
 
-- [ ] Apply to mySociety SocietyWorks Developer role by 31 May 2026
+- [x] Apply to mySociety SocietyWorks Developer role by 31 May 2026 [submitted: 2026-05-31]. Tracking file: `tasks/applications/mysociety-societyworks-2026.md`
 - [ ] Apply to GDS Senior Developer and HMRC/DWP/MoJ DDaT roles via Civil Service Jobs
 - [ ] Apply to NHS England Band 7 digital roles
 - [ ] Apply to UCL ARC RSE (autumn round, September-November)
