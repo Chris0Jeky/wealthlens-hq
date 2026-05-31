@@ -8,6 +8,7 @@ from pydantic import ValidationError
 
 from wealthlens_sim.schema.base import Nation
 from wealthlens_sim.synth import SynthConfig, SyntheticPopulation, generate_population
+from wealthlens_sim.synth.population import _generation_provenance_ids
 
 
 def _small(**kw) -> SynthConfig:
@@ -129,22 +130,56 @@ class TestGeneratePopulation:
     def test_provenance_ids_seam_present(self):
         config = _small()
         pop = generate_population(config)
-        assert pop.provenance_ids == list(config.calibration_source_ids)
+        assert pop.provenance_ids == [*config.calibration_source_ids, *_generation_provenance_ids(config)]
 
-    def test_custom_calibration_clears_default_provenance_ids(self):
+    def test_provenance_ids_record_generation_parameters(self):
+        config = _small(seed=13, pareto_alpha=2.25)
+        pop = generate_population(config)
+        assert pop.provenance_ids == _generation_provenance_ids(config)
+        assert "synth.seed:13" in pop.provenance_ids
+        assert "synth.pareto_alpha:2.25" in pop.provenance_ids
+
+    def test_provenance_ids_record_all_generation_inputs(self):
+        config = _small(
+            n_households=123,
+            population_households=456_000,
+            median_net_wealth=250_000,
+            lognormal_sigma=1.2,
+            pareto_threshold=900_000,
+            pareto_alpha=2.1,
+            couple_share=0.4,
+            nation_shares={"england": 0.75, "scotland": 0.25},
+            asset_shares={"financial": 0.25, "main_residence": 0.75},
+        )
+        ids = generate_population(config).provenance_ids
+        expected = {
+            "synth.n_households:123",
+            "synth.seed:7",
+            "synth.population_households:456000",
+            "synth.median_net_wealth:250000",
+            "synth.lognormal_sigma:1.2",
+            "synth.pareto_threshold:900000",
+            "synth.pareto_alpha:2.1",
+            "synth.couple_share:0.4",
+            "synth.nation_shares:england=0.75;scotland=0.25",
+            "synth.asset_shares:financial=0.25;main_residence=0.75",
+        }
+        assert expected.issubset(set(ids))
+
+    def test_custom_calibration_clears_default_source_provenance_ids(self):
         config = _small(median_net_wealth=500_000)
         pop = generate_population(config)
-        assert pop.provenance_ids == []
+        assert pop.provenance_ids == _generation_provenance_ids(config)
 
-    def test_custom_nation_shares_clear_default_provenance_ids(self):
+    def test_custom_nation_shares_clear_default_source_provenance_ids(self):
         config = _small(nation_shares={"england": 0.5, "scotland": 0.5})
         pop = generate_population(config)
-        assert pop.provenance_ids == []
+        assert pop.provenance_ids == _generation_provenance_ids(config)
 
     def test_custom_calibration_preserves_explicit_provenance_ids(self):
         config = _small(median_net_wealth=500_000, calibration_source_ids=("custom-calibration",))
         pop = generate_population(config)
-        assert pop.provenance_ids == ["custom-calibration"]
+        assert pop.provenance_ids == ["custom-calibration", *_generation_provenance_ids(config)]
 
     def test_asset_shares_are_normalised(self):
         # Same seed ⇒ identical drawn wealth (asset_shares don't affect the draw).
@@ -153,6 +188,19 @@ class TestGeneratePopulation:
         a = generate_population(_small(asset_shares={"financial": 0.5, "main_residence": 0.5}))
         b = generate_population(_small(asset_shares={"financial": 0.495, "main_residence": 0.495}))
         assert a.households[0].total_net_wealth == pytest.approx(b.households[0].total_net_wealth)
+
+    def test_mapping_insertion_order_does_not_change_generation(self):
+        nation_a = {"england": 0.75, "scotland": 0.25}
+        nation_b = {"scotland": 0.25, "england": 0.75}
+        assets_a = {"financial": 0.25, "main_residence": 0.75}
+        assets_b = {"main_residence": 0.75, "financial": 0.25}
+        a = generate_population(_small(nation_shares=nation_a, asset_shares=assets_a))
+        b = generate_population(_small(nation_shares=nation_b, asset_shares=assets_b))
+        assert [h.nation for h in a.households] == [h.nation for h in b.households]
+        a_asset_types = [asset.asset_type for asset in a.households[0].persons[0].assets]
+        b_asset_types = [asset.asset_type for asset in b.households[0].persons[0].assets]
+        assert a_asset_types == b_asset_types
+        assert a.provenance_ids == b.provenance_ids
 
     def test_households_are_valid_engine_inputs(self):
         """Smoke test: synthetic households are consumable by a policy-family calculator."""

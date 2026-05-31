@@ -146,8 +146,10 @@ class SyntheticPopulation(BaseModel):
     is_synthetic: bool = Field(default=True, description="Always True — never real microdata")
     provenance_ids: list[str] = Field(
         default_factory=list,
-        description="Assumption/source IDs consumed to build this population; the engine "
-        "feeds these into its provenance manifest.",
+        description=(
+            "Source IDs and stable synthetic generation-parameter tags used to build this "
+            "population; the engine surfaces them alongside its provenance manifest."
+        ),
     )
 
     @property
@@ -182,7 +184,7 @@ def _draw_net_wealth(rng: np.random.Generator, config: SynthConfig) -> NDArray[n
 
 def _assign_by_share(rng: np.random.Generator, shares: dict[str, float], size: int) -> NDArray[np.str_]:
     """Vectorised categorical draw over the keys of ``shares`` (normalised)."""
-    keys = list(shares.keys())
+    keys = sorted(shares)
     probs = np.array([shares[k] for k in keys], dtype=np.float64)
     probs = probs / probs.sum()
     return rng.choice(keys, size=size, p=probs)
@@ -196,7 +198,8 @@ def _make_assets(person_wealth: float, asset_shares: dict[str, float]) -> list[A
     """
     total_share = sum(asset_shares.values()) or 1.0
     assets: list[Asset] = []
-    for asset_type, share in asset_shares.items():
+    for asset_type in sorted(asset_shares):
+        share = asset_shares[asset_type]
         value = person_wealth * (share / total_share)
         if value <= 0:
             continue
@@ -222,6 +225,32 @@ def _make_person(person_id: str, age: int, wealth: float, asset_shares: dict[str
         capital_gains_realised=0.0,
         assets=_make_assets(wealth, asset_shares),
     )
+
+
+def _format_float(value: float) -> str:
+    """Return a compact stable representation for provenance tags."""
+    return f"{value:.12g}"
+
+
+def _format_mapping(values: dict[str, float]) -> str:
+    """Return a stable key-sorted mapping representation for provenance tags."""
+    return ";".join(f"{key}={_format_float(values[key])}" for key in sorted(values))
+
+
+def _generation_provenance_ids(config: SynthConfig) -> list[str]:
+    """Return stable tags for generator parameters that affect generated output."""
+    return [
+        f"synth.n_households:{config.n_households}",
+        f"synth.seed:{config.seed}",
+        f"synth.population_households:{_format_float(config.population_households)}",
+        f"synth.median_net_wealth:{_format_float(config.median_net_wealth)}",
+        f"synth.lognormal_sigma:{_format_float(config.lognormal_sigma)}",
+        f"synth.pareto_threshold:{_format_float(config.pareto_threshold)}",
+        f"synth.pareto_alpha:{_format_float(config.pareto_alpha)}",
+        f"synth.couple_share:{_format_float(config.couple_share)}",
+        f"synth.nation_shares:{_format_mapping(config.nation_shares)}",
+        f"synth.asset_shares:{_format_mapping(config.asset_shares)}",
+    ]
 
 
 def generate_population(config: SynthConfig | None = None) -> SyntheticPopulation:
@@ -266,8 +295,9 @@ def generate_population(config: SynthConfig | None = None) -> SyntheticPopulatio
         "calibration_source_ids" not in config.model_fields_set
         and _CALIBRATION_SENSITIVE_FIELDS.intersection(config.model_fields_set)
     ):
-        provenance_ids = []
+        source_ids: list[str] = []
     else:
-        provenance_ids = list(config.calibration_source_ids)
+        source_ids = list(config.calibration_source_ids)
 
+    provenance_ids = [*source_ids, *_generation_provenance_ids(config)]
     return SyntheticPopulation(households=households, seed=config.seed, provenance_ids=provenance_ids)
