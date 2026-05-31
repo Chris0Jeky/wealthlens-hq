@@ -26,14 +26,6 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from wealthlens_sim.schema.base import Nation
 from wealthlens_sim.schema.household import Asset, AssetType, Household, Person
 
-# Constituent nations only (Household rejects the UK aggregate).
-_NATIONS: tuple[Nation, ...] = (
-    Nation.ENGLAND,
-    Nation.SCOTLAND,
-    Nation.WALES,
-    Nation.NORTHERN_IRELAND,
-)
-
 # Public calibration anchors. ONS WAS is Great Britain only, so the v0.1 defaults
 # also gross to Great Britain and exclude Northern Ireland from default nation
 # shares until NI-specific wealth marginals are wired.
