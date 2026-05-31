@@ -22,11 +22,33 @@ When sources conflict, use the higher source and report the conflict.
 3. Read `.codex/memories/00_ACTIVE.md`.
 4. Read `.codex/memories/program/00_READ_THIS_FIRST.md`.
 5. Read `tasks/active-sprint.md`.
-6. Select one primary skill and, at most, one support skill.
+6. Read `tasks/ACTION-REQUIRED.md` — Chris's outstanding human action items; you must surface these (see "Action-required protocol" below).
+7. Select one primary skill and, at most, one support skill.
 7. Identify the smallest safe, reviewable change.
 8. State blockers, assumptions, verification target, and docs-sync target before editing.
 
 Do not bulk-read strategy docs, vision docs, identity docs, or research archives unless the task explicitly requires them.
+
+## Action-required protocol (Chris's reminders — do not skip)
+
+`tasks/ACTION-REQUIRED.md` is the curated list of outstanding tasks that need
+**Chris** (a human), each with a how-to guide. It is the mechanism that stops
+high-leverage actions getting lost. Treat it as a standing instruction:
+
+- **Read it at session start** (it is in "First 5 minutes").
+- **Surface the open items in every summary, status update, handoff, and
+  end-of-turn wrap-up** — not only when asked. Lead with anything time-sensitive
+  (a `[due: …]` that is today or overdue) under a one-line `⚑ Action required:`
+  banner, then a short numbered list of open titles with due flags, then point to
+  the file for the guides. Keep it brief; do not dump the guides every time.
+- **Only clear an item when Chris explicitly says it is done.** Never infer
+  completion. When he confirms: tick the box, move it to the file's `## Done`
+  section with `[completed: YYYY-MM-DD]`, and bump the file's `Last updated`.
+- **When Chris describes a new task for himself**, add it to the file in the
+  documented item format (title, priority, why, how, done-when).
+- The full idea backlog stays in `tasks/inbox.md`; all dated items in
+  `tasks/deadlines.md`. Promote into ACTION-REQUIRED only what is currently
+  actionable and important (keep it ≤ ~8 open items).
 
 ## Who is Chris
 
@@ -109,7 +131,9 @@ Use these Claude skills when relevant:
 ## Important paths
 
 - `.codex/memories/session_notes/ORCHESTRATION.md` — **master control for multi-session workflow** (read first!)
+- `tasks/ACTION-REQUIRED.md` — **Chris's outstanding human action items** (surface these every summary; see "Action-required protocol")
 - `tasks/active-sprint.md` — current priorities
+- `tasks/deadlines.md` — all time-sensitive items in one date table
 - `tasks/inbox.md` — new ideas and untriaged work
 - `tasks/done.md` — completed work with dates
 - `research/raw/` — raw and consolidated research inputs

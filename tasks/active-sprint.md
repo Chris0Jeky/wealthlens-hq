@@ -11,6 +11,10 @@ Last updated: 2026-05-31
 > Caveat: `bash -lc "make ci-quick"` currently exposes dashboard backend pytest
 > failures while still exiting 0; this is tracked in `tasks/inbox.md`.
 
+> **⚑ See [`ACTION-REQUIRED.md`](ACTION-REQUIRED.md)** for Chris's outstanding
+> human action items (job application due today, LinkedIn launch, outreach emails,
+> domain, and a ci-quick fix decision). The agent surfaces these every summary.
+
 This week's focus. Keep this list to 5-7 tasks.
 
 > **NEXT SESSION START HERE:** Wave 13 is active. Read

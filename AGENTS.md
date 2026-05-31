@@ -25,8 +25,13 @@ An end-to-end autonomous workflow may be in progress. **Always check** [`.codex/
 2. Read `.codex/memories/00_ACTIVE.md`.
 3. Read `.codex/memories/program/00_READ_THIS_FIRST.md`.
 4. Read `tasks/active-sprint.md` for current priorities.
-5. Use the matching repo skill (`codex-repo-onramp`, `codex-worktree-issue-worker`, `codex-verification-doc-sync`, or `codex-question-batch`) before broad searching.
-6. Identify the smallest change that creates measurable progress.
+5. Read `tasks/ACTION-REQUIRED.md` — Chris's outstanding human action items (see "Action-required protocol").
+6. Use the matching repo skill (`codex-repo-onramp`, `codex-worktree-issue-worker`, `codex-verification-doc-sync`, or `codex-question-batch`) before broad searching.
+7. Identify the smallest change that creates measurable progress.
+
+## Action-required protocol
+
+`tasks/ACTION-REQUIRED.md` is the curated list of outstanding tasks that need **Chris** (a human), each with a how-to guide. Surface its open items in every summary, status update, and handoff — lead with anything `[due: …]` today or overdue under a one-line `⚑ Action required:` banner. Only clear an item when Chris explicitly confirms it is done (then move it to the file's `## Done` with `[completed: YYYY-MM-DD]`); never infer completion. When Chris describes a new task for himself, add it in the file's item format. Keep the list ≤ ~8 open items; the full backlog stays in `tasks/inbox.md`, all dated items in `tasks/deadlines.md`.
 
 ## Codex autonomy skills
 
@@ -172,7 +177,7 @@ Repo-local Codex skills live under `.agents/skills/` and supplement this file. U
 - `vision/` — mission, theory of change, horizon, north stars, inspiration
 - `identity/` — about Chris, CV, principles, passions, portfolio, skills
 - `research/` — raw inputs, synthesised insights, data source registry, reading list
-- `tasks/` — active sprint, inbox, done, outreach tracking, learning, social media
+- `tasks/` — `ACTION-REQUIRED.md` (Chris's human action items — surface every summary), active sprint, deadlines, inbox, done, outreach tracking, learning, social media
 
 ### Memory and planning
 
