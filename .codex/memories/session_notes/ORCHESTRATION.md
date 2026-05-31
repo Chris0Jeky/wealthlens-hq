@@ -5,14 +5,40 @@
 >
 > **CRITICAL**: Update this file BEFORE every compaction risk (long tool calls, large diffs).
 
-Last updated: 2026-05-30
+Last updated: 2026-05-31
 
-# CURRENT HANDOFF - read this first (2026-05-30, post #336 merge)
+# CURRENT HANDOFF - read this first (2026-05-31, post #337 merge)
 
-This section supersedes the older handoff snapshot below.
+This section supersedes the older handoff snapshots below.
 
-## Current state
-- `main` is at merge commit `6b0f8e5` after merging **#336**
+## Current state (2026-05-31)
+- `main` is at merge commit `94446e3` after merging **#337**
+  `feat/synth-generation-provenance`. Before merge, #337 got the full gate this
+  session: two independent adversarial reviews (provenance/data-integrity lens +
+  determinism/regression lens), all 3 bot threads resolved, CI green, and a newer
+  PR opened above it. The one review finding (the `EngineResult` docstring named
+  only 2 of the now-10 `synth.*` tags) was fixed in `9d114fa`. Synth populations
+  now record every generation-affecting `SynthConfig` input in
+  `population_provenance_ids`, with canonical sorted mapping order so two
+  materially different populations cannot publish identical provenance.
+- **Only open PR:** **#338** `feat/uncertainty-sampling` -> `main` (newest — do
+  NOT merge while newest). Wave 13 Monte-Carlo groundwork: new
+  `uncertainty/sampling.py` (`ParameterSpec`/`SamplingConfig`/`ParameterSamples`/
+  `sample_parameters`) — independent + Latin-hypercube draws over uniform/
+  triangular marginals, deterministic, sorted-name order, read-only sample matrix,
+  `uncertainty.*` provenance tags carrying n_samples/seed/method/parameters. It is
+  standalone and **not wired into the engine** (feature OFF; an AST guard test
+  enforces no engine import). Two independent adversarial reviews done (numerical-
+  correctness + API/convention); all 5 bot threads (3 Gemini + 2 Codex) resolved.
+  Local: 677 sim tests + ruff + mypy green; GitHub checks running.
+- **Next step:** open another small Wave 13 PR above #338 before considering #338
+  for merge, then drain #338. Good candidates: wire the sampling layer into the
+  engine (replace the single multiplicative top-tail-alpha band with Monte-Carlo
+  propagation over the sampled matrix; default OFF), or wire the dashboard JSON
+  into a Vue scenario page.
+
+## Prior state (2026-05-30, post #336 merge)
+- `main` was at merge commit `6b0f8e5` after merging **#336**
   `feat/enforcement-compliance-model`.
 - #336 replaced the Family-F overstatement placeholder with a
   baseline-vs-theoretical compliance model. Two independent adversarial reviews

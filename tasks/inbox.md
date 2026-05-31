@@ -1,11 +1,12 @@
 # Inbox
 
-Last updated: 2026-05-30
+Last updated: 2026-05-31
 
-> Latest: PR #336 proper enforcement compliance model is merged. PR #337 synth
-> generation provenance is open/newest and green with Gemini/Codex bot comments
-> addressed; it must not be merged until a newer PR is opened above it and the
-> full review gate is satisfied.
+> Latest: PR #337 synth generation provenance is merged to main at `94446e3`
+> (full gate: two adversarial reviews, all bot threads resolved, CI green, newer
+> PR above it). PR #338 `feat/uncertainty-sampling` (Wave 13 Monte-Carlo sampling
+> groundwork) is open/newest and green with all 5 bot threads resolved; it must
+> not be merged until a newer PR is opened above it.
 
 Every concrete action item extracted from research. Triage into active-sprint, backlog, or done.
 
@@ -33,8 +34,14 @@ the build + its adversarial reviews:
   baseline-vs-theoretical compliance model anchored to HMRC/NAO tax-gap evidence;
   enforcement cost is separate from revenue and enforcement assumptions are in
   dashboard provenance. [completed: 2026-05-30]
-- [ ] **Monte-Carlo / Sobol uncertainty (`uncertainty/`)** — replace the single
-  multiplicative top-tail-alpha band with per-parameter sampling (SALib / NumPyro).
+- [~] **Monte-Carlo / Sobol uncertainty (`uncertainty/`)** — sampling layer
+  groundwork is open as PR #338 `feat/uncertainty-sampling`:
+  `uncertainty/sampling.py` provides deterministic independent + Latin-hypercube
+  draws over uniform/triangular marginals (`ParameterSpec`/`SamplingConfig`/
+  `ParameterSamples`/`sample_parameters`), standalone and not yet wired into the
+  engine. NEXT: wire it into the engine to replace the single multiplicative
+  top-tail-alpha band with Monte-Carlo propagation (default OFF), then add Sobol
+  sensitivity on the same draws (SALib / NumPyro when those deps are pulled in).
 - [x] **Calibrate the synth generator to cited public WAS/ONS marginals** — PR #335
   merged; default synth calibration is Great Britain scoped, cites ONS/WAS sources,
   and threads source IDs through population provenance. [completed: 2026-05-30]
@@ -43,11 +50,11 @@ the build + its adversarial reviews:
 - [ ] **Wire the dashboard JSON into a Vue scenario page** — `to_dashboard_json` emits the
   contract (totals/by-nation/by-decile intervals + provenance + caveats); build the
   ConfidenceFanChart + ProvenanceTooltip + a caveats banner that renders `caveats[]`.
-- [ ] **Record synth generation inputs in provenance** — PR #337 is open/newest
-  and threads all generation-affecting `SynthConfig` inputs through
-  `population.provenance_ids` / dashboard JSON. Gemini and Codex bot comments
-  are resolved and GitHub checks are green; it still needs the full two-review
-  gate and a newer PR above it before merge.
+- [x] **Record synth generation inputs in provenance** — PR #337 merged to main
+  at `94446e3`. Threads all generation-affecting `SynthConfig` inputs through
+  `population.provenance_ids` / dashboard JSON with canonical sorted mapping
+  order. Full gate satisfied: two independent adversarial reviews, all bot
+  threads resolved, CI green, newer PR (#338) above it. [completed: 2026-05-31]
 
 ---
 
@@ -76,7 +83,8 @@ the build + its adversarial reviews:
 
 ### Gate 4: Behavioural + Uncertainty
 - [x] Interval propagation in the engine (top-tail alpha interval + assumption RangeValues) — Wave 12 engine PR (#332) [completed: 2026-05-30]
-- [ ] Monte Carlo / Sobol uncertainty engine (`uncertainty/`, Blueprint §10) — Wave 13
+- [~] Monte Carlo / Sobol uncertainty engine (`uncertainty/`, Blueprint §10) — Wave 13;
+  sampling-layer groundwork open as PR #338 (`uncertainty/sampling.py`), engine wiring next
 - [ ] Migration elasticity, avoidance/lock-in, liquidity-constraint behavioural models (Blueprint §6)
 
 ### Gate 5: Output + Integration

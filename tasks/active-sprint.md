@@ -1,12 +1,13 @@
 # Active Sprint
 
-Last updated: 2026-05-30
+Last updated: 2026-05-31
 
-> **LATEST:** #336 enforcement compliance model is merged to `main` at `6b0f8e5`
-> after two adversarial review rounds, green CI, and all findings/comments fixed.
-> #337 synth generation provenance is now the only open/newest PR; its Gemini
-> and Codex comments are addressed/resolved, local verification passed, and GitHub
-> checks are green. It must not be merged while newest.
+> **LATEST:** #337 synth generation provenance is merged to `main` at `94446e3`
+> after two independent adversarial reviews, all bot threads resolved, green CI,
+> and a newer PR opened above it. #338 `feat/uncertainty-sampling` (Wave 13
+> Monte-Carlo sampling groundwork) is now the only open/newest PR; two adversarial
+> reviews done, all 5 bot threads resolved, local 677 sim tests + ruff + mypy
+> green. It must not be merged while newest — open another PR above it first.
 > Caveat: `bash -lc "make ci-quick"` currently exposes dashboard backend pytest
 > failures while still exiting 0; this is tracked in `tasks/inbox.md`.
 
@@ -35,9 +36,13 @@ and open another PR above it first.
    main after two independent adversarial review rounds; fixed enforcement cost
    vs revenue, NAO year/source, interval invariants, and enforcement provenance.
    (@Chris) [completed: 2026-05-30]
-5. - [ ] Wave 13 stretch: review/drain #337 synth generation provenance; open a
-   newer PR above it before merge; then continue with Monte-Carlo uncertainty or
-   dashboard JSON Vue wiring. See `tasks/inbox.md` "Wave 13 candidates". (@Chris)
+5. - [x] Wave 13: review/drain #337 synth generation provenance — merged to main
+   at `94446e3` after two independent adversarial reviews, all bot threads
+   resolved, green CI, and a newer PR (#338) opened above it. (@Chris) [completed: 2026-05-31]
+6. - [ ] Wave 13: drain #338 `feat/uncertainty-sampling` (Monte-Carlo sampling
+   groundwork) once a newer PR lands above it; then wire the sampling layer into
+   the engine (Monte-Carlo propagation, default OFF) or wire the dashboard JSON
+   into a Vue scenario page. See `tasks/inbox.md` "Wave 13 candidates". (@Chris)
 
 ## Completed sprint: 2026-05-29 to 2026-06-05 (Wave 12 engine)
 

@@ -5,22 +5,28 @@
 > **POST-MERGE CLEANUP COMPLETE** (2026-05-16): All 192 PRs handled, 874 tests passing, CI green, 496 stale branches deleted.
 > Merge history: [MERGE_ORCHESTRATION.md](.codex/memories/session_notes/MERGE_ORCHESTRATION.md) | PR creation history: [ORCHESTRATION.md](.codex/memories/session_notes/ORCHESTRATION.md) (archived)
 
-Last updated: 2026-05-30
+Last updated: 2026-05-31
 
-## Latest Wave 13 status (post #336 merge)
+## Latest Wave 13 status (post #337 merge)
 
-- **Merged to main:** #336 `feat/enforcement-compliance-model` after two
-  independent adversarial review rounds, all findings fixed, Gemini thread
-  resolved/outdated, CI green, and a newer PR opened above it. Enforcement cost
-  is now separate from revenue (`enforcement_cost_bn`,
-  `enforcement_net_fiscal_impact_bn`); dashboard schema is `1.2`; 645 sim tests
-  pass locally on main after #336.
-- **Open/newest:** #337 `feat/synth-generation-provenance` -> `main`, recording
-  all generation-affecting `SynthConfig` inputs in population provenance. Its
-  Gemini and Codex comments were addressed and resolved, including all generation
-  inputs and canonical mapping order; local verification on the branch is 648
-  sim tests + ruff + mypy passing, and GitHub checks are green. Do not merge #337
-  while newest.
+- **Merged to main (2026-05-31):** #337 `feat/synth-generation-provenance` at
+  `94446e3` after the full gate — two independent adversarial reviews
+  (provenance/data-integrity + determinism/regression), all 3 bot threads
+  resolved, CI green, and a newer PR (#338) opened above it. Synth populations now
+  record every generation-affecting `SynthConfig` input in
+  `population_provenance_ids` with canonical sorted mapping order, so two
+  materially different synthetic populations cannot publish identical provenance.
+  677 sim tests pass on the #338 branch (645 on main pre-#337 + synth + sampling).
+- **Open/newest:** #338 `feat/uncertainty-sampling` -> `main` — Wave 13
+  Monte-Carlo groundwork (`uncertainty/sampling.py`: independent + Latin-hypercube
+  draws over uniform/triangular marginals; deterministic; read-only sample matrix;
+  `uncertainty.*` provenance tags). Standalone, **not wired into the engine**
+  (feature OFF, AST guard test). Two independent adversarial reviews
+  (numerical-correctness + API/convention) + all 5 bot threads (3 Gemini, 2 Codex)
+  resolved. Do not merge while newest; open another PR above it first.
+- **Prior (2026-05-30):** #336 `feat/enforcement-compliance-model` merged —
+  enforcement cost separate from revenue (`enforcement_cost_bn`,
+  `enforcement_net_fiscal_impact_bn`); dashboard schema `1.2`.
 - **Verification caveat:** `bash -lc "make ci-quick"` currently reports
   dashboard backend pytest failures but exits 0 because the Makefile swallows
   backend command failures. This is outside the simulator PRs and is seeded in
@@ -78,8 +84,8 @@ All dashboard code is on main. Site live. Codebase includes:
 
 | Area | Status | Next step |
 | --- | --- | --- |
-| **WealthLens-Sim** | Gate 1 + Wave 12 engine/output stack + #336 enforcement compliance MERGED to main | Review/drain #337 synth generation provenance, then open the next Wave 13 PR above it |
-| Sim CI | `ci-sim.yml` runs ruff+mypy+pytest (py3.11/3.12) + weekly; 645 sim tests on main after #336 | Maintain; add coverage of new modules |
+| **WealthLens-Sim** | Gate 1 + Wave 12 engine/output stack + #336 enforcement + #337 synth generation provenance MERGED to main | Open a PR above #338 (uncertainty sampling), then drain #338; wire sampling into the engine next |
+| Sim CI | `ci-sim.yml` runs ruff+mypy+pytest (py3.11/3.12) + weekly; 677 sim tests on the #338 branch | Maintain; add coverage of new modules |
 | Sim packaging | registries bundled into wheel+sdist (hatch hook); pip-installable | — |
 | Data pipelines | 8+ pipelines on main | Maintain; add new pipelines as needed |
 | Charts (v0.1) | Live (4 charts + broadsheet redesign) | Build more chart components in Vue |
