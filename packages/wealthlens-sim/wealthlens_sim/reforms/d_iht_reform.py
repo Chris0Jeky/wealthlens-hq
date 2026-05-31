@@ -15,8 +15,10 @@ Simplifying assumptions (explicit per Blueprint v5 §3.3):
   has_direct_descendants flag, not from detailed estate planning. The
   band is capped at the net value of the residence assets (UK RNRB
   cannot exceed the value of the residence passed to descendants).
-- APR/BPR qualifying value is taken from PRIVATE_BUSINESS asset type
-  only (agricultural land not separately modelled in v0.1)
+  RNRB taper is applied against the estate after APR/BPR and
+  charitable deductions, per HMRC IHTM46013.
+- APR/BPR qualifying value is the net value of PRIVATE_BUSINESS assets
+  (agricultural land not separately modelled in v0.1)
 - Pension inclusion flag defaults to False (pre-April 2027 baseline)
 - Charitable gifts (charitable_fraction x estate) are exempt and
   deducted from the chargeable estate before NRB/RNRB; the 36% reduced
@@ -294,7 +296,7 @@ def _compute_person_iht(
     estate_after_relief = max(0.0, estate_value - apr_bpr_relief - charitable_donation)
 
     rnrb = _compute_rnrb(
-        estate_value,
+        estate_after_relief,
         owns_residence,
         has_direct_descendants,
         config,
@@ -376,7 +378,7 @@ def compute_household_iht(
                 owns_residence = True
                 residence_value += asset.net_value
             if asset.asset_type in APR_BPR_TYPES:
-                apr_bpr_qualifying += asset.gross_value
+                apr_bpr_qualifying += asset.net_value
 
         estate_value = max(0.0, estate_value)
 

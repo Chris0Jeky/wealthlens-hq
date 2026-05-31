@@ -578,7 +578,7 @@ class TestAPRBPRExceedsEstate:
         assert not result.is_liable
         assert result.taxable_estate == 0.0
 
-    def test_apr_bpr_gross_value_used(self):
+    def test_apr_bpr_net_value_used(self):
         person = make_person(assets=[
             (AssetType.PRIVATE_BUSINESS, 3_000_000, 500_000),
             (AssetType.FINANCIAL, 1_000_000, 0),
@@ -586,8 +586,8 @@ class TestAPRBPRExceedsEstate:
         hh = make_household([person])
         result = compute_household_iht(hh, IHTConfig())
         pr = result.person_results[0]
-        expected_relief = 2_500_000 + (500_000 * 0.50)
-        assert pr.apr_bpr_relief == pytest.approx(expected_relief)
+        # Net business value = 3M - 500k = 2.5M (at the allowance boundary)
+        assert pr.apr_bpr_relief == pytest.approx(2_500_000)
 
 
 class TestPersonIdPassthrough:
@@ -650,9 +650,11 @@ class TestCombinedAPRBPRAndRNRBTaper:
         )
         expected_relief = 2_500_000 + (500_000 * 0.50)
         assert result.apr_bpr_relief == pytest.approx(expected_relief)
-        assert result.rnrb_used == 0.0
-        estate_after = estate - expected_relief
-        expected_taxable = estate_after - 325_000
+        estate_after = estate - expected_relief  # 2,250,000
+        # RNRB taper on post-relief estate: (2.25M - 2M) / 2 = 125k taper
+        expected_rnrb = 175_000 - 125_000
+        assert result.rnrb_used == pytest.approx(expected_rnrb)
+        expected_taxable = estate_after - 325_000 - expected_rnrb
         assert result.taxable_estate == pytest.approx(expected_taxable)
 
     def test_moderate_estate_with_business_and_rnrb(self):
@@ -667,6 +669,44 @@ class TestCombinedAPRBPRAndRNRBTaper:
         estate_after = estate - 500_000
         expected_taxable = estate_after - (325_000 + 175_000)
         assert result.taxable_estate == pytest.approx(expected_taxable)
+
+
+class TestRNRBTaperOnPostReliefEstate:
+    """RNRB taper uses the post-relief estate (after APR/BPR and charitable
+    deductions), not the raw estate — per HMRC IHTM46013."""
+
+    def test_apr_bpr_reduces_taper(self):
+        config = IHTConfig()
+        estate = 2_500_000
+        # Without relief: taper = (2.5M - 2M) / 2 = 250k → RNRB tapers to 0.
+        no_bpr = _compute_person_iht(estate, True, True, 0, False, 0.0, config)
+        assert no_bpr.rnrb_used == 0.0
+        # With 1M APR/BPR: estate_after_relief = 1.5M < 2M → no taper, full RNRB.
+        with_bpr = _compute_person_iht(estate, True, True, 1_000_000, False, 0.0, config)
+        assert with_bpr.rnrb_used == pytest.approx(175_000)
+
+    def test_charitable_reduces_taper(self):
+        config = IHTConfig()
+        estate = 2_500_000
+        no_charity = _compute_person_iht(estate, True, True, 0, False, 0.0, config)
+        assert no_charity.rnrb_used == 0.0
+        # 30% charitable: estate_after_relief = 2.5M * 0.7 = 1.75M < 2M → full RNRB.
+        with_charity = _compute_person_iht(estate, True, True, 0, False, 0.30, config)
+        assert with_charity.rnrb_used == pytest.approx(175_000)
+
+    def test_leveraged_business_relief_uses_net(self):
+        # gross=5M, debt=3M → net=2M. Relief should be on the 2M net, not 5M gross.
+        person = make_person(assets=[
+            (AssetType.PRIVATE_BUSINESS, 5_000_000, 3_000_000),
+            (AssetType.FINANCIAL, 1_000_000, 0),
+        ])
+        hh = make_household([person])
+        result = compute_household_iht(hh, IHTConfig())
+        pr = result.person_results[0]
+        # estate_value = net(business) + net(financial) = 2M + 1M = 3M
+        assert pr.estate_value == pytest.approx(3_000_000)
+        # APR/BPR on 2M net business value (below 2.5M allowance → 100% relief)
+        assert pr.apr_bpr_relief == pytest.approx(2_000_000)
 
 
 class TestCharitableAndRNRBFixes:
