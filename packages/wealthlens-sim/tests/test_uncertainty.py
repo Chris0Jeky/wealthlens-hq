@@ -192,14 +192,29 @@ class TestParameterSamples:
         assert rows[0]["alpha"] == pytest.approx(samples.matrix[0, 0])
 
     def test_provenance_ids(self):
-        samples = sample_parameters(_specs(), SamplingConfig(n_samples=32))
+        samples = sample_parameters(
+            _specs(), SamplingConfig(n_samples=32, seed=4, method=SamplingMethod.INDEPENDENT)
+        )
         ids = samples.provenance_ids()
         assert "uncertainty.n_samples:32" in ids
+        assert "uncertainty.method:independent" in ids
+        assert "uncertainty.seed:4" in ids
         assert "uncertainty.parameters:alpha;threshold" in ids
 
+    def test_provenance_distinguishes_seed_and_method(self):
+        # Two runs over the same parameters but a different seed/method must
+        # publish distinct provenance so the draw set stays reproducible.
+        base = sample_parameters(_specs(), SamplingConfig(n_samples=16, seed=1, method=SamplingMethod.LATIN_HYPERCUBE))
+        other_seed = sample_parameters(_specs(), SamplingConfig(n_samples=16, seed=2, method=SamplingMethod.LATIN_HYPERCUBE))
+        other_method = sample_parameters(_specs(), SamplingConfig(n_samples=16, seed=1, method=SamplingMethod.INDEPENDENT))
+        assert base.provenance_ids() != other_seed.provenance_ids()
+        assert base.provenance_ids() != other_method.provenance_ids()
+
     def test_is_frozen(self):
+        from dataclasses import FrozenInstanceError
+
         samples = sample_parameters(_specs(), SamplingConfig(n_samples=8))
-        with pytest.raises(Exception):  # noqa: B017 - dataclass FrozenInstanceError
+        with pytest.raises(FrozenInstanceError):
             samples.names = ()  # type: ignore[misc]
 
     def test_matrix_is_read_only(self):

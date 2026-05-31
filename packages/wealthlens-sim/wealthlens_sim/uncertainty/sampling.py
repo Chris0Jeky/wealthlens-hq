@@ -163,13 +163,23 @@ class ParameterSamples:
 
     ``names`` is sorted and aligns column-for-column with ``matrix``. A NumPy
     array (not a Pydantic field) because this is a numeric workspace handed to the
-    engine, not a serialised contract. ``matrix`` is set read-only at construction
-    so the deterministic draw cannot be mutated in place; ``column`` returns a
-    read-only view of it.
+    engine, not a serialised contract. ``matrix`` is set read-only in
+    ``__post_init__`` so the deterministic draw cannot be mutated in place via the
+    array or the views ``column`` returns — for *any* construction path, not only
+    :func:`sample_parameters`. ``seed`` and ``method`` are carried so the draw is
+    fully reproducible from the sample block (and its provenance) alone.
     """
 
     names: tuple[str, ...]
     matrix: NDArray[np.float64]
+    seed: int
+    method: SamplingMethod
+
+    def __post_init__(self) -> None:
+        # Lock the draw so the "deterministic, immutable" contract holds literally.
+        # Mutating the array's writeable flag is not a frozen-field rebind, so it
+        # is permitted on the frozen dataclass; views inherit the read-only flag.
+        self.matrix.flags.writeable = False
 
     @property
     def n_samples(self) -> int:
@@ -195,12 +205,16 @@ class ParameterSamples:
 
         Tags use a structured ``uncertainty.<key>:<value>`` grammar (the same
         ``namespace.key:value`` shape the synth generation-parameter tags use) so
-        a Monte-Carlo run is as auditable as a single-point run. A later
-        engine-wiring PR can fold these into the provenance trail alongside the
-        population's source ids.
+        a Monte-Carlo run is as auditable as a single-point run. ``seed`` and
+        ``method`` are included so two runs over the same parameters but a
+        different seed or draw method publish *distinct* provenance and the exact
+        draw set is reproducible from the trail. A later engine-wiring PR can fold
+        these into the provenance trail alongside the population's source ids.
         """
         return [
             f"uncertainty.n_samples:{self.n_samples}",
+            f"uncertainty.method:{self.method.value}",
+            f"uncertainty.seed:{self.seed}",
             f"uncertainty.parameters:{';'.join(self.names)}",
         ]
 
@@ -279,7 +293,5 @@ def sample_parameters(specs: Sequence[ParameterSpec], config: SamplingConfig | N
         else:
             matrix[:, j] = _to_triangular(col, spec.low, spec.central, spec.high)
 
-    # Lock the draw so the "deterministic, immutable" contract holds literally:
-    # neither ``matrix`` nor the views ``column`` returns can be written in place.
-    matrix.flags.writeable = False
-    return ParameterSamples(names=names, matrix=matrix)
+    # ParameterSamples.__post_init__ locks ``matrix`` read-only.
+    return ParameterSamples(names=names, matrix=matrix, seed=config.seed, method=config.method)
