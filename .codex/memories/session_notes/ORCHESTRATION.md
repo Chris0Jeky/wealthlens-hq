@@ -42,33 +42,40 @@ success on the #338 merge). Everything open at session start is merged:
   gained `interval_method` + `uncertainty_provenance_ids` (schema 1.3). 2 reviews
   (HIGH crash + MEDIUM dashboard provenance + LOW + 3 bot threads, all fixed).
   774 sim tests on main.
-- **#347 OPEN → main** (newest; do NOT merge while newest): frontend
-  **ConfidenceFanChart** — the first Vue consumer of the dashboard JSON. Prop-driven
-  SVG fan (low/central/high band + central marker), warning `AlertBanner` for
-  `caveats[]`, `interval_method` label, degenerate/unsourced → point-estimate.
-  **Fully reviewed + fixed:** 2-lens internal review (HIGH WCAG 1.4.11 light-mode
-  contrast; `vector-effect=non-scaling-stroke`; visual/aria consistency gate;
-  required `intervalMethod`; figcaption-first; `--wl-*` tokens; schema-version
-  const) + 6 gemini bot threads (malformed/non-finite payload → loud "Interval
-  data unavailable" via an `isValid` guard). 13 vitest + eslint + vue-tsc + prettier
-  clean. CI running; all threads resolved. Ages until a newer PR sits above it.
-- **Branch hygiene:** all merged feature branches pruned (engine-*, synth-*,
-  enforcement-*, uncertainty-sampling, uncertainty-propagation, engine-uncertainty-wiring).
+- **#347 MERGED** (`aa533a5`): frontend **ConfidenceFanChart** — the first Vue
+  consumer of the dashboard JSON. 2-lens internal review (HIGH WCAG 1.4.11 contrast;
+  `vector-effect=non-scaling-stroke`; visual/aria gate; required `intervalMethod`;
+  figcaption-first; `--wl-*` tokens) + 7 bot threads (incl. an `isValid` loud-fail
+  guard, + an outdated codex schema-version thread). 13 vitest, all clean.
+- **#348 OPEN → main** (newest; do NOT merge while newest): **`/api/simulator`
+  bridge** — `GET /api/simulator/` (scenario list) + `GET
+  /api/simulator/scenarios/{id}` serve the dashboard JSON contract (passed through
+  unmodified). The backend does NOT import the simulator at runtime; a reproducible
+  pipeline `automation/data-pipelines/generate_simulator_dashboards.py` runs
+  `simulate()`+`to_dashboard_json()` for 4 scenarios → deterministic JSON in
+  `data/simulator/`, served statically (matches the `/api/data` pattern). 404/422/503
+  error paths; 199 backend tests; ruff+mypy clean. Generator kept in `automation/`
+  so the backend stays mypy-clean in CI (no `wealthlens_sim` dep). Under 2-lens review.
+- **Branch hygiene:** all merged feature branches pruned.
 
-## SESSION TALLY (2026-06-04): 8 PRs merged (#338, #339, #340-344, #345, #346) +
-## #347 open. Every PR: 2 independent adversarial reviews + all bot threads resolved.
-## Caught a real data-integrity regression (#339 RNRB) + a real crash bug (#346).
+## SESSION TALLY (2026-06-04): **10 PRs merged** (#338, #339, #340-344, #345, #346,
+## #347) + #348 open. Every PR: 2 independent adversarial reviews + all bot threads
+## resolved. Caught a data-integrity regression (#339 RNRB), a crash bug (#346
+## central=1.0), and a measured WCAG contrast failure (#347).
 
-## ▶️ NEXT TASKS (seeded) — above #347 so it can then merge
-1. **Drain #347** once not-newest + CI green + review findings fixed.
-2. **FastAPI `/api/simulator/dashboard` bridge** + a `useSimulatorDashboard`
-   composable, then embed ConfidenceFanChart in a scenario page (the live "make it
-   visible" wiring; #347 is deliberately prop-driven/backend-free for now).
+## ▶️ NEXT TASKS (seeded) — above #348 so it can then merge
+1. **Drain #348** once not-newest + CI green + review findings fixed.
+2. **Embed the chart live**: a `useSimulatorDashboard` composable fetching
+   `/api/simulator/scenarios/{id}` + a scenario page rendering `ConfidenceFanChart`
+   (both now exist on main; this wires them together — the live "make it visible").
 3. **More sampled parameters** — sample assumption `RangeValue`s alongside the
-   top-tail alpha in the engine MC band (today only alpha is sampled), then Sobol
-   sensitivity on the same draws (pull in SALib).
+   top-tail alpha in the engine MC band, then Sobol sensitivity (SALib). Optionally
+   add an `?uncertainty=` query to the API to emit a `monte_carlo` band.
 - Merge discipline unchanged: 2 reviews + all comments + CI + aged; never the newest;
   re-check threads after EVERY push (codex re-reviews each one).
+- **Tooling note:** do NOT put raw backticks in `git commit -m` / `gh ... --body`
+  via Bash double-quotes — they trigger command substitution. Single-quote the body
+  or drop backticks.
 
 ---
 
