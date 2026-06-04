@@ -107,4 +107,30 @@ describe('SimulatorView', () => {
     const wrapper = mount(SimulatorView)
     expect(wrapper.find('[role="alert"]').text()).toContain('scenario 503')
   })
+
+  it('shows an empty-state message when the list is loaded but empty', () => {
+    scenarioList.value = { scenarios: [] }
+    const wrapper = mount(SimulatorView)
+    expect(wrapper.find('[role="status"]').text()).toContain(
+      'No scenarios are available',
+    )
+    expect(wrapper.find('#scenario-select').exists()).toBe(false)
+  })
+
+  it('refuses to render the chart on a schema-version mismatch', () => {
+    scenarioList.value = SCENARIOS
+    dashboard.value = { ...DASHBOARD, schema_version: '99.0' }
+    const wrapper = mount(SimulatorView)
+    expect(wrapper.findComponent(ConfidenceFanChart).exists()).toBe(false)
+    expect(wrapper.find('[role="alert"]').text()).toContain('newer data format')
+  })
+
+  it('announces the current scenario in a polite live region', () => {
+    scenarioList.value = SCENARIOS
+    dashboard.value = DASHBOARD
+    const wrapper = mount(SimulatorView)
+    const live = wrapper.find('[aria-live="polite"]')
+    expect(live.exists()).toBe(true)
+    expect(live.text()).toContain('Now showing 1% wealth tax')
+  })
 })

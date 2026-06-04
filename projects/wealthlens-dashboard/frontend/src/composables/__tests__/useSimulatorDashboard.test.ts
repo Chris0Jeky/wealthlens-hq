@@ -76,6 +76,19 @@ describe('useSimulatorDashboard composables', () => {
     expect(fetch).not.toHaveBeenCalled()
   })
 
+  it('does not fetch the empty origin when the id is cleared after a value', async () => {
+    mockJson({ schema_version: '1.3' })
+    const id = ref('one-percent-wealth-tax')
+    withSetup(() => useSimulatorDashboard(id))
+    await nextTick()
+    await nextTick()
+    id.value = '' // a "clear" — must NOT fire fetch('')
+    await nextTick()
+    await nextTick()
+    const urls = (fetch as ReturnType<typeof vi.fn>).mock.calls.map((c) => c[0])
+    expect(urls).not.toContain('')
+  })
+
   it('surfaces an HTTP error', async () => {
     mockJson(null, false, 503)
     const { result } = withSetup(() => useSimulatorDashboard(ref('x')))

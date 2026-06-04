@@ -27,15 +27,25 @@ export function useFetch<T = unknown>(
     if (abortController) {
       abortController.abort()
     }
+
+    const resolvedUrl = typeof url === 'string' ? url : url.value
+    if (!resolvedUrl) {
+      // No URL (e.g. a reactive id was cleared) — hold off rather than fetch('')
+      // against the page origin, which returns the app's HTML with ok=true and then
+      // throws on response.json(), leaving a spurious "Unexpected token <" error.
+      loading.value = false
+      return
+    }
+
     abortController = new AbortController()
 
     loading.value = true
     error.value = null
 
-    const resolvedUrl = typeof url === 'string' ? url : url.value
-
     try {
-      const response = await fetch(resolvedUrl, { signal: abortController.signal })
+      const response = await fetch(resolvedUrl, {
+        signal: abortController.signal,
+      })
       if (!response.ok) {
         error.value = `HTTP ${response.status}: ${response.statusText}`
         data.value = null
