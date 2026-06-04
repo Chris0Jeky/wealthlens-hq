@@ -46,8 +46,12 @@ success on the #338 merge). Everything open at session start is merged:
   **ConfidenceFanChart** — the first Vue consumer of the dashboard JSON. Prop-driven
   SVG fan (low/central/high band + central marker), warning `AlertBanner` for
   `caveats[]`, `interval_method` label, degenerate/unsourced → point-estimate.
-  Accessible (role=img + full aria-label, sr-only, static SVG, WCAG-AA dark-mode).
-  9 vitest + eslint + vue-tsc + prettier clean. Under 2-lens review (a11y + Vue/TS).
+  **Fully reviewed + fixed:** 2-lens internal review (HIGH WCAG 1.4.11 light-mode
+  contrast; `vector-effect=non-scaling-stroke`; visual/aria consistency gate;
+  required `intervalMethod`; figcaption-first; `--wl-*` tokens; schema-version
+  const) + 6 gemini bot threads (malformed/non-finite payload → loud "Interval
+  data unavailable" via an `isValid` guard). 13 vitest + eslint + vue-tsc + prettier
+  clean. CI running; all threads resolved. Ages until a newer PR sits above it.
 - **Branch hygiene:** all merged feature branches pruned (engine-*, synth-*,
   enforcement-*, uncertainty-sampling, uncertainty-propagation, engine-uncertainty-wiring).
 
