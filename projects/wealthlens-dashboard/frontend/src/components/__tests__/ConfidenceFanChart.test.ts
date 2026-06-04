@@ -124,4 +124,22 @@ describe('ConfidenceFanChart', () => {
     expect(wrapper.text()).toContain('£-1.00bn')
     expect(wrapper.text()).toContain('£-2.00bn')
   })
+
+  it('fails loud (not a silent NaN) for a non-finite interval value', () => {
+    const wrapper = mount(ConfidenceFanChart, {
+      props: props({ interval: { low: NaN, central: 2, high: 3 } }),
+    })
+    expect(wrapper.text()).toContain('Interval data unavailable')
+    expect(wrapper.find('[role="img"]').exists()).toBe(false)
+    expect(wrapper.find('[role="status"]').exists()).toBe(true)
+    expect(wrapper.text()).not.toContain('NaN')
+  })
+
+  it('shows the unavailable state when the interval is missing', () => {
+    const wrapper = mount(ConfidenceFanChart, {
+      props: props({ interval: undefined }),
+    })
+    expect(wrapper.text()).toContain('Interval data unavailable')
+    expect(wrapper.find('[role="img"]').exists()).toBe(false)
+  })
 })

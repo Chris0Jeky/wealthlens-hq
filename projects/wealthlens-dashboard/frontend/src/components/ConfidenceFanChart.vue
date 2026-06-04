@@ -20,6 +20,23 @@ function fmt(value: number): string {
   return `${props.currency}${value.toFixed(props.decimals)}${props.unit}`
 }
 
+/**
+ * The component is typed (`interval: Interval`), but a real payload from the
+ * future API bridge could still carry a missing or non-finite value (NaN/Infinity
+ * — e.g. a model that emitted an undefined revenue figure). Rather than render a
+ * silent "NaN" or a broken SVG, we detect that loudly and show an "unavailable"
+ * state — consistent with the project's fail-loud data-integrity stance.
+ */
+const isValid = computed(() => {
+  const iv = props.interval
+  return (
+    iv != null &&
+    Number.isFinite(iv.low) &&
+    Number.isFinite(iv.central) &&
+    Number.isFinite(iv.high)
+  )
+})
+
 const span = computed(() => props.interval.high - props.interval.low)
 const isDegenerate = computed(() => span.value <= 0)
 
@@ -73,7 +90,10 @@ const ariaLabel = computed(() => {
       </ul>
     </AlertBanner>
 
-    <figure class="rounded-lg border border-wl-rule bg-wl-card p-4">
+    <figure
+      v-if="isValid"
+      class="rounded-lg border border-wl-rule bg-wl-card p-4"
+    >
       <figcaption class="mb-2 text-sm font-medium text-wl-ink">
         {{ label }}
       </figcaption>
@@ -143,6 +163,16 @@ const ariaLabel = computed(() => {
         >
         <template v-else>Band: {{ methodLabel }}.</template>
       </p>
+    </figure>
+
+    <!-- Fail loud on malformed/non-finite data rather than rendering a silent NaN. -->
+    <figure
+      v-else
+      role="status"
+      class="rounded-lg border border-wl-rule bg-wl-card p-4 text-sm text-wl-ink-muted"
+    >
+      <figcaption class="mb-1 font-medium text-wl-ink">{{ label }}</figcaption>
+      Interval data unavailable.
     </figure>
   </div>
 </template>
