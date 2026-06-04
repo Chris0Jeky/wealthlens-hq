@@ -44,7 +44,10 @@ class TestGetScenario:
     def test_passes_through_the_dashboard_contract(self) -> None:
         body = client.get(f"/api/simulator/scenarios/{_KNOWN_ID}").json()
         # The data-integrity fields a chart must render are present and unmodified.
-        assert body["schema_version"] == "1.3"
+        # The exact schema_version is pinned by the regeneration guard (in the
+        # generator's own tests); here we only require it is present + non-empty, so
+        # a simulator schema bump doesn't break the bridge test spuriously.
+        assert isinstance(body["schema_version"], str) and body["schema_version"]
         assert isinstance(body["provenance_complete"], bool)
         assert isinstance(body["caveats"], list)
         assert body["interval_method"] in {"alpha_sweep", "monte_carlo"}
@@ -76,7 +79,33 @@ class TestGetScenario:
         finally:
             SIMULATOR_SCENARIOS.pop("ungenerated-scenario", None)
 
-    def test_every_registered_scenario_has_a_generated_file(self) -> None:
-        # Guard against registry/generator drift: each registered id must have a file.
-        for scenario_id in SIMULATOR_SCENARIOS:
-            assert (SIMULATOR_DIR / f"{scenario_id}.json").exists(), scenario_id
+    def test_503_when_payload_is_malformed(self, monkeypatch, tmp_path) -> None:
+        # A registered scenario whose file is valid JSON but NOT a dashboard
+        # contract (missing required keys) must 503, not be served as if valid.
+        monkeypatch.setattr("app.routers.simulator.SIMULATOR_DIR", tmp_path)
+        monkeypatch.setitem(SIMULATOR_SCENARIOS, "malformed", {"name": "x", "description": "y"})
+        (tmp_path / "malformed.json").write_text('{"not": "a contract"}', encoding="utf-8")
+        try:
+            response = client.get("/api/simulator/scenarios/malformed")
+            assert response.status_code == 503
+        finally:
+            SIMULATOR_SCENARIOS.pop("malformed", None)
+
+
+class TestRegistryDriftGuards:
+    """The backend registry and the generator's fixtures must not diverge."""
+
+    def test_files_and_registry_match_both_ways(self) -> None:
+        on_disk = {p.stem for p in SIMULATOR_DIR.glob("*.json")}
+        assert on_disk == set(SIMULATOR_SCENARIOS), (
+            "data/simulator/*.json must match the SIMULATOR_SCENARIOS registry exactly "
+            "(orphan fixtures or un-generated scenarios)"
+        )
+
+    def test_listing_name_matches_the_served_scenario_name(self) -> None:
+        # The listing name is hardcoded separately from the generator, which sets the
+        # fixture's scenario_name. They must agree, or the list advertises a label the
+        # served contract contradicts.
+        for scenario_id, meta in SIMULATOR_SCENARIOS.items():
+            body = client.get(f"/api/simulator/scenarios/{scenario_id}").json()
+            assert body["scenario_name"] == meta["name"], scenario_id

@@ -37,59 +37,59 @@ SIMULATOR_DIR = FilePath(__file__).resolve().parents[3] / "data" / "simulator"
 # Scenario results are deterministic (seeded synth population), so cache hard.
 _CACHE = "public, max-age=86400"  # 24 hours
 
-# Available scenarios. Keep this registry in sync with the ids produced by
-# scripts/generate_simulator_data.py (the 404 check and the listing use it; the
-# JSON files carry the actual numbers).
+# Required top-level keys every served payload must carry — guards against a
+# hand-edited or schema-drifted fixture being served as a valid contract.
+_REQUIRED_KEYS = ("schema_version", "total_revenue_gbp_bn", "caveats", "interval_method")
+
+# Available scenarios. The ``name`` MUST equal the generator's scenario name (it
+# flows into the fixture's ``scenario_name``; a drift-guard test enforces this).
+# Source of truth for the ids/names is
+# automation/data-pipelines/generate_simulator_dashboards.py. These are
+# illustrative estimates over a SYNTHETIC v0.1 population, not official forecasts —
+# the description says so. IHT scenarios are excluded until the synth IHT
+# calibration lands (the synth IHT headline is a known ~100x overshoot).
 SIMULATOR_SCENARIOS: dict[str, dict[str, str]] = {
     "one-percent-wealth-tax": {
         "name": "1% annual wealth tax above £1m",
-        "description": "An annual 1% wealth tax on net wealth above £1,000,000.",
+        "description": (
+            "Illustrative estimate over a synthetic v0.1 population (not an official "
+            "forecast): an annual 1% wealth tax on net wealth above £1,000,000."
+        ),
     },
     "two-percent-wealth-tax": {
         "name": "2% annual wealth tax above £1m",
-        "description": "An annual 2% wealth tax on net wealth above £1,000,000.",
-    },
-    "iht-current-baseline": {
-        "name": "Inheritance tax — current-law baseline",
-        "description": "Family D inheritance tax at current-law (2026-27) parameters.",
-    },
-    "wealth-tax-and-iht": {
-        "name": "1% wealth tax above £1m plus the IHT baseline",
-        "description": "A 1% annual wealth tax above £1m combined with the current IHT baseline.",
+        "description": (
+            "Illustrative estimate over a synthetic v0.1 population (not an official "
+            "forecast): an annual 2% wealth tax on net wealth above £1,000,000."
+        ),
     },
 }
 
 
 def _read_scenario(scenario_id: str) -> dict[str, Any]:
-    """Read a scenario's dashboard JSON, raising clear HTTP errors.
+    """Read a scenario's dashboard JSON, raising 503 on any data problem.
 
-    503 when the precomputed file is missing or unreadable (so the caller gets a
-    "run the generator first" hint rather than an opaque 500); the parsed payload
-    is otherwise returned verbatim.
+    503 (not 500) when the precomputed file is missing, unreadable, not a JSON
+    object, or missing required contract keys. The actionable detail (e.g. "run the
+    generator") is *logged*; the global error handler returns a generic 503 body to
+    clients, so no filesystem paths or exception strings leak.
     """
     path = SIMULATOR_DIR / f"{scenario_id}.json"
     if not path.exists():
-        logger.warning("Simulator scenario file not found: %s", scenario_id)
-        raise HTTPException(
-            status_code=503,
-            detail=(
-                f"Scenario data not generated: {scenario_id} — run "
-                "automation/data-pipelines/generate_simulator_dashboards.py"
-            ),
+        logger.warning(
+            "Simulator scenario file not found: %s — run "
+            "automation/data-pipelines/generate_simulator_dashboards.py",
+            scenario_id,
         )
+        raise HTTPException(status_code=503, detail="Scenario data not generated")
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
     except (json.JSONDecodeError, OSError, UnicodeDecodeError) as e:
         logger.error("Failed to read scenario '%s': %s", scenario_id, e)
-        raise HTTPException(
-            status_code=503,
-            detail=f"Failed to read scenario '{scenario_id}': {e}",
-        ) from e
-    if not isinstance(payload, dict):
-        raise HTTPException(
-            status_code=503,
-            detail=f"Scenario '{scenario_id}' payload is not a JSON object",
-        )
+        raise HTTPException(status_code=503, detail="Failed to read scenario data") from e
+    if not isinstance(payload, dict) or not all(key in payload for key in _REQUIRED_KEYS):
+        logger.error("Scenario '%s' payload is not a valid dashboard contract", scenario_id)
+        raise HTTPException(status_code=503, detail="Scenario data is malformed")
     return payload
 
 
