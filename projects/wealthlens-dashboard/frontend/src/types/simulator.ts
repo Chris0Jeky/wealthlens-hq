@@ -30,6 +30,35 @@ export type IntervalMethod = 'alpha_sweep' | 'monte_carlo'
  */
 export const DASHBOARD_SCHEMA_VERSION = '1.3'
 
+/**
+ * The dashboard JSON contract served by `GET /api/simulator/scenarios/{id}` — the
+ * full `to_dashboard_json` payload. Only the fields the scenario page reads are
+ * modelled; the contract carries more (per-nation/decile intervals, provenance).
+ */
+export interface SimulatorDashboardData {
+  schema_version: string
+  scenario_name: string
+  provenance_complete: boolean
+  /** Data-integrity caveats the consumer MUST render. */
+  caveats: string[]
+  interval_method: IntervalMethod
+  total_revenue_gbp_bn: Interval
+  households_scored: number
+  revenue_by_decile: Interval[]
+}
+
+/** One scenario in the `GET /api/simulator/` listing. */
+export interface SimulatorScenario {
+  id: string
+  name: string
+  description: string
+}
+
+/** Response of `GET /api/simulator/`. */
+export interface SimulatorScenarioList {
+  scenarios: SimulatorScenario[]
+}
+
 /** Props for {@link ConfidenceFanChart}. Prop-driven so it needs no backend. */
 export interface ConfidenceFanChartProps {
   /** The interval to render (e.g. a revenue figure in GBP billions). */
