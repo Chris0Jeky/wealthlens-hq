@@ -50,6 +50,7 @@ from wealthlens_sim.schema.base import Nation, VersionTag
 from wealthlens_sim.schema.household import Asset, AssetType, Household, Person
 from wealthlens_sim.synth import SynthConfig, SyntheticPopulation, generate_population
 from wealthlens_sim.top_tail.types import Interval
+from wealthlens_sim.uncertainty import SamplingConfig
 
 
 def _version() -> VersionTag:
@@ -311,6 +312,68 @@ class TestProvenance:
         scenario = _scenario(_wealth_tax())
         result = simulate(_population(n=100), scenario)
         assert result.provenance.version_tag == scenario.version_tag
+
+
+class TestMonteCarloUncertainty:
+    """The optional ``uncertainty`` config replaces the single multiplicative alpha
+    band with a Monte-Carlo credible interval — default OFF."""
+
+    @staticmethod
+    def _registries() -> Registries:
+        return Registries(assumptions=load_assumptions())
+
+    def test_off_by_default(self):
+        result = simulate(_population(n=100), _scenario(_wealth_tax()), registries=self._registries())
+        assert result.uncertainty_provenance_ids == []
+
+    def test_mc_produces_band_and_provenance(self):
+        result = simulate(
+            _population(n=100), _scenario(_wealth_tax()), registries=self._registries(),
+            uncertainty=SamplingConfig(n_samples=512, seed=0),
+        )
+        iv = result.total_revenue_gbp_bn
+        assert iv.low < iv.high                      # a real sampled band
+        assert iv.low <= iv.central <= iv.high
+        ids = result.uncertainty_provenance_ids
+        assert any(s.startswith("uncertainty.n_samples:") for s in ids)
+        assert any(s.startswith("uncertainty.specs:") for s in ids)
+        assert "uncertainty.central:explicit:1.0" in ids
+        assert any(s.startswith("uncertainty.quantiles:") for s in ids)
+
+    def test_mc_central_matches_single_band(self):
+        # Enabling MC must not move the headline: central is the point estimate.
+        pop, scenario = _population(n=100), _scenario(_wealth_tax())
+        single = simulate(pop, scenario, registries=self._registries())
+        mc = simulate(pop, scenario, registries=self._registries(),
+                      uncertainty=SamplingConfig(n_samples=512, seed=0))
+        assert mc.total_revenue_gbp_bn.central == pytest.approx(single.total_revenue_gbp_bn.central)
+        for d_single, d_mc in zip(single.revenue_by_decile, mc.revenue_by_decile, strict=True):
+            assert d_mc.central == pytest.approx(d_single.central)
+
+    def test_mc_band_within_single_band(self):
+        # The 5-95 quantile band is contained in the full alpha-range band.
+        pop, scenario = _population(n=100), _scenario(_wealth_tax())
+        single = simulate(pop, scenario, registries=self._registries())
+        mc = simulate(pop, scenario, registries=self._registries(),
+                      uncertainty=SamplingConfig(n_samples=2000, seed=1))
+        s, m = single.total_revenue_gbp_bn, mc.total_revenue_gbp_bn
+        assert s.low <= m.low <= m.central <= m.high <= s.high
+
+    def test_mc_deterministic(self):
+        pop, scenario = _population(n=100), _scenario(_wealth_tax())
+        cfg = SamplingConfig(n_samples=256, seed=7)
+        a = simulate(pop, scenario, registries=self._registries(), uncertainty=cfg)
+        b = simulate(pop, scenario, registries=self._registries(), uncertainty=cfg)
+        assert a.total_revenue_gbp_bn == b.total_revenue_gbp_bn
+        assert a.uncertainty_provenance_ids == b.uncertainty_provenance_ids
+
+    def test_mc_without_registry_is_noop(self):
+        # No registry alpha → MC cannot run; degenerate band, no MC provenance.
+        result = simulate(_population(n=100), _scenario(_wealth_tax()),
+                          uncertainty=SamplingConfig(n_samples=256, seed=0))
+        iv = result.total_revenue_gbp_bn
+        assert iv.low == iv.central == iv.high
+        assert result.uncertainty_provenance_ids == []
 
     def test_devolution_scope_recorded_in_manifest(self):
         # A scoped run with a registry records the territorial scope in the manifest.

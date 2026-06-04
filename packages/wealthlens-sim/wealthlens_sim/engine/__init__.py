@@ -33,6 +33,7 @@ from wealthlens_sim.engine._enforcement import (
 from wealthlens_sim.engine._intervals import (
     PARETO_ALPHA_ASSUMPTION_ID,
     alpha_interval_from_registry,
+    revenue_scale_at_alpha,
     revenue_scale_from_alpha,
     scaled_interval,
 )
@@ -63,6 +64,12 @@ from wealthlens_sim.rules.scenario import FamilyRevenue, FamilySelection, Scenar
 from wealthlens_sim.rules.scenario import run_scenario as _run_families
 from wealthlens_sim.schema.household import Household
 from wealthlens_sim.top_tail.types import Interval
+from wealthlens_sim.uncertainty import (
+    ParameterSpec,
+    SamplingConfig,
+    propagate,
+    sample_parameters,
+)
 
 __all__ = [
     "N_DECILES",
@@ -222,6 +229,7 @@ def simulate(
     registries: Registries | None = None,
     devolution: DevolutionConfig | None = None,
     enforcement: EnforcementConfig | None = None,
+    uncertainty: SamplingConfig | None = None,
 ) -> EngineResult:
     """Score ``scenario`` over ``population`` and return an :class:`EngineResult`.
 
@@ -261,6 +269,15 @@ def simulate(
     Without a registry the intervals are degenerate (``low == central == high``)
     and ``provenance_complete is False`` — the uncertainty is unquantified.
 
+    When ``uncertainty`` (a :class:`SamplingConfig`) is supplied **and** a registry
+    alpha is present, the band is instead a **Monte-Carlo** credible interval: the
+    top-tail alpha is sampled across its range and the revenue scale factor is
+    propagated to ``lower``/``upper`` quantiles. The *central* figure is unchanged
+    (the point estimate at the central alpha), so enabling the feature does not move
+    the headline — only the band. The sampling/propagation provenance is recorded in
+    ``uncertainty_provenance_ids``. Default ``None`` keeps the single multiplicative
+    alpha sweep, so existing behaviour is unchanged (feature OFF by default).
+
     The ``PopulationSource`` protocol is structural and presence-only
     (``runtime_checkable`` checks attribute presence, not element types);
     ``list(population.households)`` therefore fails loudly here if a malformed
@@ -297,7 +314,32 @@ def simulate(
     alpha = None
     if registries is not None and registries.assumptions is not None:
         alpha = alpha_interval_from_registry(registries.assumptions)
-    scale_low, scale_high = revenue_scale_from_alpha(alpha) if alpha is not None else (1.0, 1.0)
+
+    uncertainty_provenance_ids: list[str] = []
+    if uncertainty is not None and alpha is not None:
+        # Monte-Carlo band (feature ON): sample the top-tail alpha across its
+        # registry range and propagate the revenue scale factor. ``central=1.0`` is
+        # the point estimate at the central alpha, so the published *central* figure
+        # is identical to the single-band mode — only the band becomes a sampled
+        # credible interval. The propagation provenance ids are recorded so the MC
+        # run is reproducible and auditable.
+        central_alpha = alpha.central
+        alpha_spec = ParameterSpec.from_interval(
+            PARETO_ALPHA_ASSUMPTION_ID, alpha, source_id=PARETO_ALPHA_ASSUMPTION_ID
+        )
+        alpha_samples = sample_parameters([alpha_spec], uncertainty)
+        scale_result = propagate(
+            alpha_samples,
+            lambda draw: revenue_scale_at_alpha(draw[PARETO_ALPHA_ASSUMPTION_ID], central_alpha),
+            central=1.0,
+        )
+        scale_low = scale_result.interval.low
+        scale_high = scale_result.interval.high
+        uncertainty_provenance_ids = list(scale_result.provenance_ids)
+    else:
+        # Single multiplicative alpha sweep (feature OFF, the default) or no
+        # registry (degenerate band).
+        scale_low, scale_high = revenue_scale_from_alpha(alpha) if alpha is not None else (1.0, 1.0)
 
     def interval(value: float) -> Interval:
         return scaled_interval(value, scale_low, scale_high)
@@ -326,6 +368,7 @@ def simulate(
         households_scored=len(scored),
         provenance=provenance,
         population_provenance_ids=list(population.provenance_ids),
+        uncertainty_provenance_ids=uncertainty_provenance_ids,
         provenance_complete=alpha is not None,
         devolution_split=split,
     )
