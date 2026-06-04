@@ -12,12 +12,18 @@ on:
       - "packages/wealthlens-sim/**"
       - "registries/**"
       - ".github/workflows/ci-sim.yml"
+      - "automation/data-pipelines/generate_simulator_dashboards.py"
+      - "automation/data-pipelines/tests/test_simulator_dashboards.py"
+      - "projects/wealthlens-dashboard/data/simulator/**"
   pull_request:
     branches: [main]
     paths:
       - "packages/wealthlens-sim/**"
       - "registries/**"
       - ".github/workflows/ci-sim.yml"
+      - "automation/data-pipelines/generate_simulator_dashboards.py"
+      - "automation/data-pipelines/tests/test_simulator_dashboards.py"
+      - "projects/wealthlens-dashboard/data/simulator/**"
   # Weekly run catches breakage from unpinned dependency drift (numpy/scipy/etc.)
   # that a path-filtered trigger would miss between sim-package changes.
   schedule:
@@ -66,3 +72,11 @@ jobs:
       - name: Run tests
         run: python -m pytest -q --cov=wealthlens_sim --cov-report=term-missing --cov-fail-under=90
         working-directory: packages/wealthlens-sim
+
+      # Staleness guard: the committed simulator dashboard fixtures
+      # (data/simulator/*.json, served by /api/simulator) must equal a fresh run of
+      # the deterministic generator. Run from the repo root so its paths resolve;
+      # wealthlens_sim is on the path from the editable install above. This turns
+      # "changed the engine but forgot to regenerate the fixtures" into a CI failure.
+      - name: Simulator dashboard fixtures are up to date
+        run: python -m pytest automation/data-pipelines/tests/test_simulator_dashboards.py -q
