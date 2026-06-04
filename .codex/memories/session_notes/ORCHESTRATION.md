@@ -7,7 +7,57 @@
 
 Last updated: 2026-06-04
 
-# CURRENT HANDOFF - read this first (2026-06-04, endless-cycle resume)
+# CURRENT HANDOFF - read this first (2026-06-04 PM, post-drain checkpoint)
+
+This section supersedes the older handoff snapshots below.
+
+## ✅ Cycle complete (2026-06-04) — drained every open PR; one new PR in flight
+
+**main is clean and green** (716 sim tests; CI Simulator + CodeQL + Deploy all
+success on the #338 merge). Everything open at session start is merged:
+
+- **#339 MERGED** (`6a5521c`): caught + reverted a **data-integrity regression** —
+  the RNRB £2m taper must use the PRE-relief estate (HMRC IHTM46023, verified to
+  0.98 via web research; the bots' IHTM46013 cite was itself wrong). Kept the
+  APR/BPR-on-net-value fix + dead-code cleanup. 2 fresh adversarial reviews.
+- **#340–#344 MERGED**: 5 Dependabot frontend bumps, risk-triaged (echarts 6.1
+  breaking changes verified not to reach this code).
+- **#338 MERGED** (`3b31de2`): the uncertainty **sampling** layer, hardened through
+  **7 codex P2 rounds + 4 adversarial reviews** (full marginal specs in provenance;
+  exact round-tripping float repr; injective charset validator; private matrix
+  copy; reject non-finite bounds + reserved `-` source sentinel; ParameterSamples
+  shape/metadata + non-finite-value validation). One round (strict [low,high]
+  bounds) was reasoned-declined: LHS/triangular draws sit a sub-ULP outside bounds.
+- **#345 OPEN → main** (newest; do NOT merge while newest): uncertainty
+  **propagation** layer — `propagate(samples, evaluate, *, lower/upper_quantile,
+  central) -> PropagationResult` (quantile band + median-or-point-estimate central
+  + per-draw outputs + provenance). 2 adversarial reviews + gemini/copilot bots all
+  addressed: HIGH (central from a single `np.quantile([lower,0.5,upper])` call, not
+  `np.median` — fixes a ULP Interval-invariant violation at lower=upper=0.5);
+  MEDIUM (optional point-estimate `central` override for the engine's headline
+  semantics); LOW/nits (mean/std overflow guard, canonical `_format_float` tag,
+  ddof doc, kw_only). CI running; all threads resolved.
+- **Branch hygiene:** 8 merged stale branches pruned (start of session) + the
+  merged `feat/uncertainty-sampling` base pruned after #345 retargeted to main.
+
+## ▶️ NEXT TASK (seeded, ready to build) — wire propagation into the engine
+Narrow, default-OFF slice (the next PR, sits above #345 so #345 can then merge):
+- Add an optional `uncertainty: SamplingConfig | None = None` to
+  `engine.simulate(...)`. Default `None` = today's single multiplicative top-tail-
+  alpha band (unchanged). When provided: build a `ParameterSpec` for the top-tail
+  alpha from its registry range (`toptail.pareto_alpha.overall.v1`), `sample_parameters`,
+  and for each draw compute the revenue scale `tail_mean_factor(alpha)/tail_mean_factor(central)`
+  (`engine/_intervals.py`), then `propagate` each revenue figure (total/by-nation/
+  by-decile) with `central=<the point estimate at central alpha>` to get MC quantile
+  bands. Thread the propagation provenance ids into the manifest. Keep feature OFF
+  by default; the AST guard moves (engine MAY import uncertainty, but uncertainty
+  still must NOT import engine). 2 adversarial reviews; small commits.
+- Then: more sampled parameters (assumption RangeValues), Sobol sensitivity on the
+  same draws, and the Vue scenario page (ConfidenceFanChart + caveats banner).
+
+---
+
+# CURRENT HANDOFF - (2026-06-04 AM, endless-cycle resume) — SUPERSEDED above
 
 This section supersedes the older handoff snapshots below.
 

@@ -34,14 +34,23 @@ the build + its adversarial reviews:
   baseline-vs-theoretical compliance model anchored to HMRC/NAO tax-gap evidence;
   enforcement cost is separate from revenue and enforcement assumptions are in
   dashboard provenance. [completed: 2026-05-30]
-- [~] **Monte-Carlo / Sobol uncertainty (`uncertainty/`)** — sampling layer
-  groundwork is open as PR #338 `feat/uncertainty-sampling`:
-  `uncertainty/sampling.py` provides deterministic independent + Latin-hypercube
-  draws over uniform/triangular marginals (`ParameterSpec`/`SamplingConfig`/
-  `ParameterSamples`/`sample_parameters`), standalone and not yet wired into the
-  engine. NEXT: wire it into the engine to replace the single multiplicative
-  top-tail-alpha band with Monte-Carlo propagation (default OFF), then add Sobol
-  sensitivity on the same draws (SALib / NumPyro when those deps are pulled in).
+- [x] **Monte-Carlo sampling layer (`uncertainty/sampling.py`)** — PR #338 merged
+  (`3b31de2`) after 7 codex rounds + 4 adversarial reviews: deterministic
+  independent + Latin-hypercube draws over uniform/triangular marginals
+  (`ParameterSpec`/`SamplingConfig`/`ParameterSamples`/`sample_parameters`) with a
+  fully injective, exact-float, reproducible provenance trail. [completed: 2026-06-04]
+- [~] **Monte-Carlo propagation layer (`uncertainty/propagation.py`)** — open as PR
+  #345 `feat/uncertainty-propagation` (2 reviews, all findings fixed):
+  `propagate(samples, evaluate, *, lower/upper_quantile, central) -> PropagationResult`
+  runs a scalar `evaluate` once per joint draw and summarises a cited Interval
+  (quantile band + median-or-point-estimate central) + per-draw outputs (for Sobol)
+  + reproducible provenance. Engine-free.
+- [ ] **Wire propagation into the engine (default OFF)** — add optional
+  `uncertainty: SamplingConfig | None = None` to `engine.simulate`; when set, sample
+  the top-tail alpha from its registry range and `propagate` each revenue figure
+  (total/by-nation/by-decile) into Monte-Carlo quantile bands with `central` = the
+  point estimate at central alpha. Default None = today's single alpha band. Then
+  add more sampled parameters (assumption RangeValues) + Sobol sensitivity.
 - [x] **Calibrate the synth generator to cited public WAS/ONS marginals** — PR #335
   merged; default synth calibration is Great Britain scoped, cites ONS/WAS sources,
   and threads source IDs through population provenance. [completed: 2026-05-30]
