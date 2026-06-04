@@ -33,7 +33,9 @@ from wealthlens_sim.top_tail.types import Interval
 __all__ = ["DASHBOARD_SCHEMA_VERSION", "to_dashboard_json"]
 
 #: Bumped when the dashboard JSON shape changes so the frontend can guard on it.
-DASHBOARD_SCHEMA_VERSION = "1.2"
+#: 1.3 adds ``interval_method`` + ``uncertainty_provenance_ids`` so a Monte-Carlo
+#: band is never published while labelled as the single alpha sweep.
+DASHBOARD_SCHEMA_VERSION = "1.3"
 
 _INCOMPLETE_PROVENANCE_CAVEAT = (
     "Provenance incomplete: no assumption registry was supplied, so the intervals "
@@ -102,6 +104,12 @@ def to_dashboard_json(result: EngineResult) -> dict[str, Any]:
         "provenance_complete": result.provenance_complete,
         "caveats": _caveats(result),
         "households_scored": result.households_scored,
+        # How the published low/high band was derived, so a consumer is never told a
+        # Monte-Carlo credible interval is the single deterministic alpha sweep.
+        # ``monte_carlo`` ⇒ see ``uncertainty_provenance_ids`` for the sampling
+        # method/seed/draws/quantiles; ``alpha_sweep`` ⇒ the top-tail-alpha-range
+        # multiplicative band recorded in ``provenance``.
+        "interval_method": "monte_carlo" if result.uncertainty_provenance_ids else "alpha_sweep",
         "total_revenue_gbp_bn": _interval(result.total_revenue_gbp_bn),
         "enforcement_uplift_gbp_bn": _interval(result.enforcement_uplift_bn),
         "enforcement_cost_gbp_bn": _interval(result.enforcement_cost_bn),
@@ -110,5 +118,8 @@ def to_dashboard_json(result: EngineResult) -> dict[str, Any]:
         "revenue_by_decile": [_interval(interval) for interval in result.revenue_by_decile],
         "devolution_scope": devolution,
         "population_provenance_ids": list(result.population_provenance_ids),
+        # Monte-Carlo sampling/propagation trail (seed, method, draws, sampled
+        # marginals, quantiles). Empty when ``interval_method == "alpha_sweep"``.
+        "uncertainty_provenance_ids": list(result.uncertainty_provenance_ids),
         "provenance": _provenance(result),
     }

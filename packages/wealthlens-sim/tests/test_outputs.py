@@ -22,6 +22,7 @@ from wealthlens_sim.reforms.g_devolution import NationScope
 from wealthlens_sim.rules import FamilySelection, PolicyFamily, Scenario
 from wealthlens_sim.schema.base import VersionTag
 from wealthlens_sim.synth import SynthConfig, generate_population
+from wealthlens_sim.uncertainty import SamplingConfig
 
 _GOLDEN_DIR = Path(__file__).parent / "golden"
 _GOLDEN = _GOLDEN_DIR / "dashboard_wealth_tax.json"
@@ -145,6 +146,23 @@ class TestStructure:
     def test_schema_version_present(self):
         result = to_dashboard_json(_golden_result())
         assert result["schema_version"] == DASHBOARD_SCHEMA_VERSION
+
+    def test_interval_method_alpha_sweep_by_default(self):
+        result = to_dashboard_json(_golden_result())
+        assert result["interval_method"] == "alpha_sweep"
+        assert result["uncertainty_provenance_ids"] == []
+
+    def test_interval_method_monte_carlo_when_sampled(self):
+        # An MC run must label its band as monte_carlo and carry the sampling trail,
+        # so a consumer is never told an MC credible interval is the alpha sweep.
+        pop = generate_population(SynthConfig(n_households=500, seed=7))
+        registries = Registries(assumptions=load_assumptions())
+        result = to_dashboard_json(
+            simulate(pop, _golden_scenario(), registries=registries,
+                     uncertainty=SamplingConfig(n_samples=256, seed=0))
+        )
+        assert result["interval_method"] == "monte_carlo"
+        assert any(s.startswith("uncertainty.n_samples:") for s in result["uncertainty_provenance_ids"])
 
     def test_intervals_have_low_central_high(self):
         result = to_dashboard_json(_golden_result())
