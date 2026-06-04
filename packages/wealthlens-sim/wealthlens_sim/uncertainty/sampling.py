@@ -143,6 +143,26 @@ class ParameterSpec(BaseModel):
             source_id=source_id,
         )
 
+    def provenance_tag(self) -> str:
+        """Canonical, deterministic one-line encoding of this marginal spec.
+
+        Captures everything that changes the drawn column for a parameter — name,
+        distribution kind, bounds/mode, and source id — so two specs that produce
+        different draws encode to *different* strings (and identical specs encode
+        identically). Floats use the same compact ``.12g`` discipline as the synth
+        generation-parameter tags for stable, locale-independent output.
+        ``central`` is always included (it does not affect a UNIFORM draw but keeps
+        the encoding total and unambiguous); ``source_id`` renders as ``-`` when
+        absent so a change of evidence is always reflected in provenance.
+        """
+        source = self.source_id if self.source_id is not None else "-"
+        return (
+            f"{self.name}="
+            f"{self.distribution.value}"
+            f"({_format_float(self.low)},{_format_float(self.central)},{_format_float(self.high)})"
+            f"@{source}"
+        )
+
 
 class SamplingConfig(BaseModel):
     """Controls the size, reproducibility, and method of a sampling run."""
@@ -167,10 +187,14 @@ class ParameterSamples:
     ``__post_init__`` so the deterministic draw cannot be mutated in place via the
     array or the views ``column`` returns — for *any* construction path, not only
     :func:`sample_parameters`. ``seed`` and ``method`` are carried so the draw is
-    fully reproducible from the sample block (and its provenance) alone.
+    fully reproducible from the sample block (and its provenance) alone. ``specs``
+    retains the ordered marginal definitions (aligned column-for-column with
+    ``names``/``matrix``) so the run can be regenerated and so its provenance can
+    capture the full marginal of every parameter, not merely its name.
     """
 
     names: tuple[str, ...]
+    specs: tuple[ParameterSpec, ...]
     matrix: NDArray[np.float64]
     seed: int
     method: SamplingMethod
@@ -208,15 +232,26 @@ class ParameterSamples:
         a Monte-Carlo run is as auditable as a single-point run. ``seed`` and
         ``method`` are included so two runs over the same parameters but a
         different seed or draw method publish *distinct* provenance and the exact
-        draw set is reproducible from the trail. A later engine-wiring PR can fold
-        these into the provenance trail alongside the population's source ids.
+        draw set is reproducible from the trail. The ``uncertainty.specs`` tag
+        canonically encodes every parameter's full marginal (distribution, bounds,
+        mode, source id), so two runs that share names/seed/method/sample-count but
+        differ in bounds, distribution, or source publish *distinct* provenance —
+        identical ids therefore imply an identical draw matrix. A later
+        engine-wiring PR can fold these into the provenance trail alongside the
+        population's source ids.
         """
         return [
             f"uncertainty.n_samples:{self.n_samples}",
             f"uncertainty.method:{self.method.value}",
             f"uncertainty.seed:{self.seed}",
             f"uncertainty.parameters:{';'.join(self.names)}",
+            f"uncertainty.specs:{';'.join(spec.provenance_tag() for spec in self.specs)}",
         ]
+
+
+def _format_float(value: float) -> str:
+    """Compact, stable float repr for provenance tags (matches the synth layer)."""
+    return f"{value:.12g}"
 
 
 def _unit_samples(rng: np.random.Generator, n: int, n_params: int, method: SamplingMethod) -> NDArray[np.float64]:
@@ -293,5 +328,13 @@ def sample_parameters(specs: Sequence[ParameterSpec], config: SamplingConfig | N
         else:
             matrix[:, j] = _to_triangular(col, spec.low, spec.central, spec.high)
 
-    # ParameterSamples.__post_init__ locks ``matrix`` read-only.
-    return ParameterSamples(names=names, matrix=matrix, seed=config.seed, method=config.method)
+    # ParameterSamples.__post_init__ locks ``matrix`` read-only. ``ordered`` is the
+    # sorted-by-name spec list used to build each column, so it stays aligned with
+    # ``names``/``matrix`` and lets provenance capture every parameter's marginal.
+    return ParameterSamples(
+        names=names,
+        specs=tuple(ordered),
+        matrix=matrix,
+        seed=config.seed,
+        method=config.method,
+    )

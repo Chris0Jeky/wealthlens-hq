@@ -210,6 +210,61 @@ class TestParameterSamples:
         assert base.provenance_ids() != other_seed.provenance_ids()
         assert base.provenance_ids() != other_method.provenance_ids()
 
+    def test_provenance_ids_includes_specs_tag(self):
+        # The specs tag canonically encodes each marginal (name, distribution,
+        # bounds/mode via .12g, source_id) in sorted-name order.
+        samples = sample_parameters(
+            _specs(), SamplingConfig(n_samples=32, seed=4, method=SamplingMethod.INDEPENDENT)
+        )
+        ids = samples.provenance_ids()
+        assert (
+            "uncertainty.specs:alpha=triangular(2,2.5,3)@-;threshold=uniform(1,1,2)@-"
+            in ids
+        )
+
+    def test_provenance_distinguishes_bounds(self):
+        # Same name/seed/method/n_samples but a different bound must yield a
+        # different draw matrix AND distinct provenance (the core fix: identical
+        # provenance ids must imply an identical draw matrix).
+        cfg = SamplingConfig(n_samples=16, seed=1, method=SamplingMethod.INDEPENDENT)
+        base = sample_parameters([ParameterSpec(name="alpha", low=2.0, central=2.5, high=3.0)], cfg)
+        wider = sample_parameters([ParameterSpec(name="alpha", low=2.0, central=2.5, high=9.0)], cfg)
+        assert base.provenance_ids() != wider.provenance_ids()
+        assert not np.array_equal(base.matrix, wider.matrix)
+
+    def test_provenance_distinguishes_distribution(self):
+        cfg = SamplingConfig(n_samples=16, seed=1)
+        tri = sample_parameters(
+            [ParameterSpec(name="u", low=0.0, central=1.0, high=2.0, distribution=Distribution.TRIANGULAR)], cfg
+        )
+        uni = sample_parameters(
+            [ParameterSpec(name="u", low=0.0, central=1.0, high=2.0, distribution=Distribution.UNIFORM)], cfg
+        )
+        assert tri.provenance_ids() != uni.provenance_ids()
+        assert not np.array_equal(tri.matrix, uni.matrix)
+
+    def test_provenance_distinguishes_source_id(self):
+        # source_id does not alter the draw, but it is an evidence change that
+        # must remain auditable from the provenance trail.
+        cfg = SamplingConfig(n_samples=16, seed=1)
+        a = sample_parameters([ParameterSpec(name="x", low=1.0, central=2.0, high=3.0, source_id="ons-2024")], cfg)
+        b = sample_parameters([ParameterSpec(name="x", low=1.0, central=2.0, high=3.0, source_id="ons-2025")], cfg)
+        assert a.provenance_ids() != b.provenance_ids()
+
+    def test_identical_specs_same_provenance_and_matrix(self):
+        # Converse: identical specs (in any order) → identical provenance AND draws.
+        cfg = SamplingConfig(n_samples=32, seed=7)
+        a = sample_parameters(_specs(), cfg)
+        b = sample_parameters(list(reversed(_specs())), cfg)
+        assert a.provenance_ids() == b.provenance_ids()
+        assert np.array_equal(a.matrix, b.matrix)
+
+    def test_specs_retained_in_sorted_order(self):
+        # The run is reproducible from the sample block alone: specs are retained,
+        # ordered, and aligned column-for-column with names.
+        samples = sample_parameters(_specs(), SamplingConfig(n_samples=8))
+        assert tuple(s.name for s in samples.specs) == samples.names == ("alpha", "threshold")
+
     def test_is_frozen(self):
         from dataclasses import FrozenInstanceError
 
