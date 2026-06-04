@@ -28,32 +28,38 @@ success on the #338 merge). Everything open at session start is merged:
   copy; reject non-finite bounds + reserved `-` source sentinel; ParameterSamples
   shape/metadata + non-finite-value validation). One round (strict [low,high]
   bounds) was reasoned-declined: LHS/triangular draws sit a sub-ULP outside bounds.
-- **#345 OPEN → main** (newest; do NOT merge while newest): uncertainty
-  **propagation** layer — `propagate(samples, evaluate, *, lower/upper_quantile,
-  central) -> PropagationResult` (quantile band + median-or-point-estimate central
-  + per-draw outputs + provenance). 2 adversarial reviews + gemini/copilot bots all
-  addressed: HIGH (central from a single `np.quantile([lower,0.5,upper])` call, not
-  `np.median` — fixes a ULP Interval-invariant violation at lower=upper=0.5);
-  MEDIUM (optional point-estimate `central` override for the engine's headline
-  semantics); LOW/nits (mean/std overflow guard, canonical `_format_float` tag,
-  ddof doc, kw_only). CI running; all threads resolved.
-- **Branch hygiene:** 8 merged stale branches pruned (start of session) + the
-  merged `feat/uncertainty-sampling` base pruned after #345 retargeted to main.
+- **#345 MERGED** (`e1cc424`): uncertainty **propagation** layer —
+  `propagate(samples, evaluate, *, lower/upper_quantile, central) ->
+  PropagationResult`. 2 adversarial reviews + gemini/copilot bots all addressed
+  (HIGH: central from one `np.quantile([lower,0.5,upper])` call, fixing a ULP
+  Interval-invariant violation at lower=upper=0.5; MEDIUM: optional point-estimate
+  `central` override; LOW/nits).
+- **#346 OPEN → main** (newest; do NOT merge while newest): engine **Monte-Carlo
+  wiring** — `simulate(..., uncertainty: SamplingConfig | None = None)`, default OFF
+  = byte-identical. When ON, the revenue band is an MC credible interval (sample
+  the top-tail alpha, propagate the scale factor, **extend the band to include the
+  point estimate** so it never crashes on a skewed alpha / tiny n). Dashboard JSON
+  gains `interval_method` + `uncertainty_provenance_ids` (schema 1.3) so an MC band
+  is never published as the alpha sweep. **2 adversarial reviews** (HIGH crash on
+  skewed-alpha/small-n + MEDIUM dashboard provenance + LOW negative-net-fiscal, all
+  fixed) + 3 bot threads (same HIGH, already fixed) resolved. 774 sim tests; goldens
+  regenerated (OFF diff = only the 2 new fields). CI nudged after retarget.
+- **Branch hygiene:** 8 merged stale branches pruned (start of session) +
+  `feat/uncertainty-sampling` + `feat/uncertainty-propagation` pruned after their
+  PRs merged and children retargeted to main.
 
-## ▶️ NEXT TASK (seeded, ready to build) — wire propagation into the engine
-Narrow, default-OFF slice (the next PR, sits above #345 so #345 can then merge):
-- Add an optional `uncertainty: SamplingConfig | None = None` to
-  `engine.simulate(...)`. Default `None` = today's single multiplicative top-tail-
-  alpha band (unchanged). When provided: build a `ParameterSpec` for the top-tail
-  alpha from its registry range (`toptail.pareto_alpha.overall.v1`), `sample_parameters`,
-  and for each draw compute the revenue scale `tail_mean_factor(alpha)/tail_mean_factor(central)`
-  (`engine/_intervals.py`), then `propagate` each revenue figure (total/by-nation/
-  by-decile) with `central=<the point estimate at central alpha>` to get MC quantile
-  bands. Thread the propagation provenance ids into the manifest. Keep feature OFF
-  by default; the AST guard moves (engine MAY import uncertainty, but uncertainty
-  still must NOT import engine). 2 adversarial reviews; small commits.
-- Then: more sampled parameters (assumption RangeValues), Sobol sensitivity on the
-  same draws, and the Vue scenario page (ConfidenceFanChart + caveats banner).
+## ▶️ NEXT TASKS (seeded, ready to build) — above #346 so it can then merge
+1. **Drain #346** once it is no longer newest (open a newer PR above it), CI green,
+   aged. It's fully reviewed + all threads resolved.
+2. **Vue ConfidenceFanChart + caveats banner** (mission: make it visible) — render
+   the dashboard JSON band (low/central/high) + `caveats[]` + the new
+   `interval_method` marker. Frontend domain (Vue 3 + TS + ECharts), so a clean,
+   self-contained slice that doesn't touch the simulator. OR:
+3. **More sampled parameters** — sample assumption `RangeValue`s alongside the
+   top-tail alpha in the engine MC band (today only alpha is sampled), then Sobol
+   sensitivity on the same draws (pull in SALib).
+- Merge discipline unchanged: 2 reviews + all comments + CI + aged; never the newest;
+  re-check threads after EVERY push (codex re-reviews each one).
 
 ---
 
