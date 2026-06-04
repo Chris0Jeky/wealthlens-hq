@@ -125,9 +125,12 @@ def propagate(
         msg = "evaluate returned a non-finite value for at least one draw"
         raise ValueError(msg)
 
-    low = float(np.quantile(outputs, lower_quantile))
-    band_central = float(np.quantile(outputs, 0.5))
-    high = float(np.quantile(outputs, upper_quantile))
+    # One np.quantile call (a single partition/sort) for all three bounds. Because
+    # they come from the same sorted data and lower_quantile <= 0.5 <= upper_quantile,
+    # low <= band_central <= high holds exactly — the band can never trip Interval.
+    low, band_central, high = (
+        float(v) for v in np.quantile(outputs, [lower_quantile, 0.5, upper_quantile])
+    )
 
     if central is None:
         centre = band_central
