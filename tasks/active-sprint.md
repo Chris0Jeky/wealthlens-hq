@@ -1,14 +1,15 @@
 # Active Sprint
 
-Last updated: 2026-05-31
+Last updated: 2026-06-04
 
-> **LATEST:** #339 `fix/iht-review-findings` is open — fixes two IHT
-> data-integrity issues (APR/BPR relief basis + RNRB taper basis) found by a
-> 4-domain adversarial review, plus dead-code cleanup. One adversarial review
-> done (clean approval); CI green; 651 sim tests + ruff + mypy clean. #339 is
-> now the newest PR; #338 uncertainty-sampling is also open and reviewed.
-> Caveat: `bash -lc "make ci-quick"` currently exposes dashboard backend pytest
-> failures while still exiting 0; this is tracked in `tasks/inbox.md`.
+> **LATEST (2026-06-04):** Full PR drain. Merged to main: **#339** (IHT RNRB
+> taper regression reverted, HMRC-verified), **#340–#344** (5 Dependabot), and
+> **#338** (uncertainty *sampling* layer, hardened over 7 codex rounds + 4
+> adversarial reviews). Open stack → main: **#345** uncertainty *propagation*
+> (reviewed, all findings fixed; merge-ready) and **#346** engine Monte-Carlo
+> *wiring* (default OFF; under 2-lens review). 751 sim tests; CI green.
+> Caveat: `make ci-quick` still hides dashboard backend pytest failures (exits 0);
+> tracked in `tasks/inbox.md`, gated on Chris (ACTION-REQUIRED #6).
 
 > **⚑ See [`ACTION-REQUIRED.md`](ACTION-REQUIRED.md)** for Chris's outstanding
 > human action items (job application due today, LinkedIn launch, outreach emails,
@@ -42,10 +43,13 @@ and open another PR above it first.
 5. - [x] Wave 13: review/drain #337 synth generation provenance — merged to main
    at `94446e3` after two independent adversarial reviews, all bot threads
    resolved, green CI, and a newer PR (#338) opened above it. (@Chris) [completed: 2026-05-31]
-6. - [ ] Wave 13: drain #338 `feat/uncertainty-sampling` (Monte-Carlo sampling
-   groundwork) once a newer PR lands above it; then wire the sampling layer into
-   the engine (Monte-Carlo propagation, default OFF) or wire the dashboard JSON
-   into a Vue scenario page. See `tasks/inbox.md` "Wave 13 candidates". (@Chris)
+6. - [x] Wave 13: drain #338 `feat/uncertainty-sampling` — **merged** to main
+   (`3b31de2`) after 7 codex P2 rounds + 4 adversarial reviews. (@Chris) [completed: 2026-06-04]
+7. - [~] Wave 13: build the uncertainty **propagation** layer (#345) + wire it into
+   the engine as an optional Monte-Carlo revenue band, default OFF (#346, stacked
+   on #345). #345 merge-ready; #346 under review. Then: more sampled parameters
+   (assumption RangeValues), Sobol sensitivity, and a Vue ConfidenceFanChart that
+   renders the dashboard JSON band + caveats. See `tasks/inbox.md`. (@Chris)
 
 ## Completed sprint: 2026-05-29 to 2026-06-05 (Wave 12 engine)
 
