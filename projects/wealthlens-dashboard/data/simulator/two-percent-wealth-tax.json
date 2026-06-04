@@ -84,9 +84,9 @@
       "consultation_state": "",
       "fiscal_event_anchor": "",
       "macro_baseline_version": "NBS-2025",
-      "policy_version": "2026-06-04",
+      "policy_version": "2026-27",
       "population_version": "synth-v0.1",
-      "wealthlens_sim_version": "0.1.0"
+      "wealthlens_sim_version": "0.1.0.dev0"
     }
   },
   "provenance_complete": true,
