@@ -39,7 +39,8 @@ class TestPropagate:
         result = propagate(samples, lambda p: p["alpha"])
         col = samples.column("alpha")
         assert result.interval.low == pytest.approx(float(np.quantile(col, 0.05)))
-        assert result.interval.central == pytest.approx(float(np.median(col)))
+        # central is the 0.5 quantile (same primitive as the band), not np.median.
+        assert result.interval.central == pytest.approx(float(np.quantile(col, 0.5)))
         assert result.interval.high == pytest.approx(float(np.quantile(col, 0.95)))
         assert result.mean == pytest.approx(float(np.mean(col)))
         assert result.std == pytest.approx(float(np.std(col)))
@@ -62,11 +63,42 @@ class TestPropagate:
         assert result.interval.low == pytest.approx(float(np.quantile(col, 0.25)))
         assert result.interval.high == pytest.approx(float(np.quantile(col, 0.75)))
 
-    def test_median_boundary_quantiles(self):
-        # lower=upper=0.5 collapses the band onto the median (still a valid Interval).
-        result = propagate(_samples(), lambda p: p["alpha"], lower_quantile=0.5, upper_quantile=0.5)
-        assert result.interval.low == pytest.approx(result.interval.central)
-        assert result.interval.high == pytest.approx(result.interval.central)
+    @pytest.mark.parametrize("seed", range(10))
+    def test_median_boundary_quantiles(self, seed: int):
+        # lower=upper=0.5 collapses the band onto the 0.5 quantile. Because central
+        # is derived from the SAME np.quantile primitive, low==central==high
+        # *exactly* and the Interval validator never trips — across seeds (a revert
+        # to np.median would reintroduce the ~1-ULP mismatch and fail here).
+        result = propagate(_samples(seed=seed), lambda p: p["alpha"], lower_quantile=0.5, upper_quantile=0.5)
+        assert result.interval.low == result.interval.central == result.interval.high
+
+    def test_explicit_central_override(self):
+        # The engine wants the headline figure to be the point estimate at central
+        # parameters, not the draw median; an in-band explicit central is used verbatim.
+        samples = _samples()
+        col = samples.column("alpha")
+        point = float(np.quantile(col, 0.5)) + 1e-6  # in-band, != median
+        result = propagate(samples, lambda p: p["alpha"], central=point)
+        assert result.interval.central == point
+        assert f"uncertainty.central:explicit:{point!r}" in result.provenance_ids
+        assert "uncertainty.central:median" not in result.provenance_ids
+
+    def test_explicit_central_out_of_band_raises(self):
+        with pytest.raises(ValueError, match="within the"):
+            propagate(_samples(), lambda p: p["alpha"], central=1e9)
+
+    def test_explicit_central_non_finite_raises(self):
+        with pytest.raises(ValueError, match="finite"):
+            propagate(_samples(), lambda p: p["alpha"], central=float("inf"))
+
+    def test_rejects_overflowing_summary(self):
+        # Individual outputs are finite (~1e308) but the squared-deviation sum in
+        # np.std overflows to +inf — fail loud rather than publish a non-finite std.
+        def evaluate(p: Mapping[str, float]) -> float:
+            return 1e308 if p["alpha"] >= 2.5 else -1e308
+
+        with pytest.raises(ValueError, match="overflow"):
+            propagate(_samples(), evaluate)
 
     @pytest.mark.parametrize(
         ("lo", "hi"),
