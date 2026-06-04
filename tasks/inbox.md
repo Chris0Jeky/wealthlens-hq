@@ -1,14 +1,32 @@
 # Inbox
 
-Last updated: 2026-05-31
+Last updated: 2026-06-04
 
-> Latest: PR #337 synth generation provenance is merged to main at `94446e3`
-> (full gate: two adversarial reviews, all bot threads resolved, CI green, newer
-> PR above it). PR #338 `feat/uncertainty-sampling` (Wave 13 Monte-Carlo sampling
-> groundwork) is open/newest and green with all 5 bot threads resolved; it must
-> not be merged until a newer PR is opened above it.
+> Latest: 11 PRs merged 2026-06-04 (#338-#348). The simulator dashboard pipeline
+> is live end-to-end: `/api/simulator` bridge (#348) + the `/simulator` scenario
+> page (#349, open/newest, fully reviewed, aging). See ORCHESTRATION.md.
 
 Every concrete action item extracted from research. Triage into active-sprint, backlog, or done.
+
+## Simulator dashboard follow-ups (from #348/#349 reviews — data integrity)
+
+- [ ] **Publish simulator JSON statically** so `/simulator` works on the deployed
+  (static) GitHub Pages build, then un-gate the route (currently registered only in
+  non-static mode). Copy `data/simulator/*.json` + add a `scenarios.json` index into
+  the frontend build (or a build step), and add a nav link. [why: the page is dev-only until then]
+- [ ] **Surface the synthetic-population caveat in `to_dashboard_json` itself** (not
+  only the generator that injects it into the served fixtures), so every consumer of
+  the contract gets it. Upstream `wealthlens-sim`.
+- [ ] **Add URL + access date to provenance sources.** The served provenance cites
+  source strings / opaque population source ids, not URLs — the repo data-integrity
+  rule wants URL + access date per source. Upstream `wealthlens-sim`.
+- [ ] **Calibrate synthetic IHT** before serving any IHT scenario: the synth IHT
+  sums each household's stock estate liability across the grossed-up population (not
+  an annual death/estate-flow cohort), giving ~£1,009bn vs ~£7-8bn real. IHT
+  scenarios were dropped from the served set until this is fixed.
+- [ ] **Clean up the gitignored compiled `.js` shadows** in `frontend/src` (they
+  shadow `.ts` locally because Vite resolves `.js` first — confused a local test
+  run; CI is unaffected). Add a `git clean`/predev step or stop emitting them.
 
 ---
 

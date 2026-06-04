@@ -47,28 +47,46 @@ success on the #338 merge). Everything open at session start is merged:
   `vector-effect=non-scaling-stroke`; visual/aria gate; required `intervalMethod`;
   figcaption-first; `--wl-*` tokens) + 7 bot threads (incl. an `isValid` loud-fail
   guard, + an outdated codex schema-version thread). 13 vitest, all clean.
-- **#348 OPEN → main** (newest; do NOT merge while newest): **`/api/simulator`
-  bridge** — `GET /api/simulator/` (scenario list) + `GET
-  /api/simulator/scenarios/{id}` serve the dashboard JSON contract (passed through
-  unmodified). The backend does NOT import the simulator at runtime; a reproducible
-  pipeline `automation/data-pipelines/generate_simulator_dashboards.py` runs
-  `simulate()`+`to_dashboard_json()` for 4 scenarios → deterministic JSON in
-  `data/simulator/`, served statically (matches the `/api/data` pattern). 404/422/503
-  error paths; 199 backend tests; ruff+mypy clean. Generator kept in `automation/`
-  so the backend stays mypy-clean in CI (no `wealthlens_sim` dep). Under 2-lens review.
+- **#348 MERGED** (`e60482a`): **`/api/simulator` bridge** — `GET /api/simulator/`
+  + `GET /api/simulator/scenarios/{id}` serve the dashboard contract unmodified.
+  Backend does NOT import the simulator; a reproducible pipeline
+  `automation/data-pipelines/generate_simulator_dashboards.py` writes deterministic
+  JSON to `data/simulator/`, served statically. **Review caught a real
+  data-integrity issue:** the synthetic IHT scenario served ~£1,009bn (vs ~£7-8bn
+  real, a ~130x synth overshoot) — DROPPED the IHT scenarios, kept the 2 plausible
+  wealth-tax ones, framed as illustrative synthetic estimates + a synthetic-pop
+  caveat injected into `caveats[]`. Also: truthful `wealthlens_sim_version`
+  provenance, bidirectional registry/fixture drift guards, a CI staleness guard
+  (regenerate + tolerant float compare) wired into ci-sim. 201 backend tests.
+- **#349 OPEN → main** (newest; do NOT merge while newest): **live scenario page** —
+  `/simulator` route + `useSimulatorDashboard` composable + `SimulatorView` rendering
+  `ConfidenceFanChart` from the live endpoint. 2-lens review (HIGH static-deploy
+  gating behind `!STATIC_MODE`; HIGH a11y `aria-live` scenario announce; schema
+  guard; empty-list state) + 10 bot threads (codex P1 route-count; **a real
+  useFetch stale-fetch bug** — a superseded fetch cleared the new call's loading +
+  could clobber data → scoped all writes to the current call via `isCurrent()`).
+  Up to date with main. 26+ vitest, vue-tsc + eslint clean. Ages until newer PR.
+  NOTE: local gitignored `.js` shadows in `frontend/src` shadow `.ts` (Vite resolves
+  `.js` first) — delete them to test against source; CI is unaffected (fresh checkout).
 - **Branch hygiene:** all merged feature branches pruned.
 
-## SESSION TALLY (2026-06-04): **10 PRs merged** (#338, #339, #340-344, #345, #346,
-## #347) + #348 open. Every PR: 2 independent adversarial reviews + all bot threads
-## resolved. Caught a data-integrity regression (#339 RNRB), a crash bug (#346
-## central=1.0), and a measured WCAG contrast failure (#347).
+## SESSION TALLY (2026-06-04): **11 PRs merged** (#338, #339, #340-344, #345, #346,
+## #347, #348) + #349 open. Every PR: 2 independent adversarial reviews + all bot
+## threads resolved. Caught a data-integrity regression (#339 RNRB), a crash bug
+## (#346 central=1.0), a WCAG contrast failure (#347), an implausible served IHT
+## figure (#348 ~£1009bn), and a useFetch stale-fetch race (#349).
 
-## ▶️ NEXT TASKS (seeded) — above #348 so it can then merge
-1. **Drain #348** once not-newest + CI green + review findings fixed.
-2. **Embed the chart live**: a `useSimulatorDashboard` composable fetching
-   `/api/simulator/scenarios/{id}` + a scenario page rendering `ConfidenceFanChart`
-   (both now exist on main; this wires them together — the live "make it visible").
-3. **More sampled parameters** — sample assumption `RangeValue`s alongside the
+## ▶️ SEEDED FOLLOW-UPS (data-integrity + visibility)
+1. **Drain #349** once not-newest + CI green.
+2. **Publish simulator JSON statically** so `/simulator` works on the deployed
+   (static) site + un-gate the route: copy `data/simulator/*.json` + a
+   `scenarios.json` index into the frontend build, add a nav link.
+3. **Synthetic-pop caveat in `to_dashboard_json`** (not just the generator) +
+   **URL/access-date in provenance** sources (served provenance cites source
+   strings/ids, not URLs — the data-integrity rule wants URLs). Both upstream sim.
+4. **IHT calibration** — the synth IHT sums stock estate liability across the
+   grossed-up population (not an annual death cohort); fix before serving IHT.
+5. **More sampled parameters** — sample assumption `RangeValue`s alongside the
    top-tail alpha in the engine MC band, then Sobol sensitivity (SALib). Optionally
    add an `?uncertainty=` query to the API to emit a `monte_carlo` band.
 - Merge discipline unchanged: 2 reviews + all comments + CI + aged; never the newest;
