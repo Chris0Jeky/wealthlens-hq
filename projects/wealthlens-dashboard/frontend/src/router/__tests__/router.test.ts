@@ -27,8 +27,15 @@ describe("Router configuration", () => {
   it("has the expected number of route definitions", () => {
     // home, dataset-detail, chart, methodology, data-sources, about,
     // contribute, wealth-calculator, wealth-scale, faq,
-    // wealth-tax-simulator, tax-calculator, not-found catch-all
-    expect(router.getRoutes()).toHaveLength(13);
+    // wealth-tax-simulator, tax-calculator, simulator, not-found catch-all.
+    // The /simulator route is registered only when not in static mode
+    // (VITE_STATIC_DATA !== "true"); the test env is non-static, so it is present.
+    expect(router.getRoutes()).toHaveLength(14);
+  });
+
+  it('resolves /simulator to the "simulator" route (non-static build)', () => {
+    const resolved = router.resolve("/simulator");
+    expect(resolved.name).toBe("simulator");
   });
 
   it('resolves /tools/wealth-tax-simulator to the "wealth-tax-simulator" route', () => {

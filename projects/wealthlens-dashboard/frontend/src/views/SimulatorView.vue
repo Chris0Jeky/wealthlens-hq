@@ -30,11 +30,14 @@ const {
 
 const selectedId = ref('')
 
-// Default to the first scenario once the list arrives.
+// Default to the first scenario once the list arrives, and recover if a refetch
+// drops the currently-selected id (otherwise we'd fetch a now-missing scenario).
 watch(
   scenarioList,
   (list) => {
-    if (list?.scenarios.length && !selectedId.value) {
+    if (!list?.scenarios.length) return
+    const ids = list.scenarios.map((s) => s.id)
+    if (!selectedId.value || !ids.includes(selectedId.value)) {
       selectedId.value = list.scenarios[0].id
     }
   },
@@ -75,7 +78,7 @@ const liveSummary = computed(() => {
     <p class="mt-2 text-sm text-wl-ink-muted">
       Headline revenue estimates for wealth-tax policy scenarios, from the open
       WealthLens microsimulator. Figures are illustrative estimates over a
-      synthetic population — not official forecasts — and every band shows its
+      synthetic population (not official forecasts), and every band shows its
       uncertainty and provenance.
     </p>
 
@@ -153,7 +156,10 @@ const liveSummary = computed(() => {
             :caveats="dashboard.caveats"
             :provenance-complete="dashboard.provenance_complete"
           />
-          <p class="mt-2 text-xs text-wl-ink-faint">
+          <p
+            v-if="Number.isFinite(dashboard.households_scored)"
+            class="mt-2 text-xs text-wl-ink-faint"
+          >
             Scored over
             {{ dashboard.households_scored.toLocaleString() }} synthetic
             households.
