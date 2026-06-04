@@ -1,0 +1,68 @@
+name: Dependabot auto-merge
+
+# Auto-approve + enable auto-merge for LOW-RISK Dependabot PRs: patch/minor bumps
+# of development and transitive (indirect) dependencies. GitHub only completes the
+# merge once all required status checks are green, so this never merges a red PR.
+#
+# Deliberately NOT auto-merged (left for manual review):
+#   - major version bumps (breaking changes);
+#   - direct PRODUCTION dependency bumps (e.g. echarts, vue, fastapi) — these can
+#     change runtime behaviour even on a minor bump.
+#
+# Security: this uses `pull_request_target` (needs write access to enable
+# auto-merge), but it never checks out or executes the PR's code — it only reads
+# Dependabot metadata and runs `gh` against the PR. The job is gated on the actor
+# being dependabot[bot].
+#
+# Prerequisites (one-time, in repo settings — a human must enable these):
+#   1. Settings > General > "Allow auto-merge" must be ON, or `gh pr merge --auto`
+#      errors.
+#   2. Branch protection on `main` should require the CI checks, otherwise
+#      auto-merge completes as soon as the PR is mergeable (no green-gate).
+
+on:
+  pull_request_target:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: dependabot-auto-merge-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  auto-merge:
+    runs-on: ubuntu-latest
+    if: ${{ github.actor == 'dependabot[bot]' }}
+    timeout-minutes: 5
+    steps:
+      - name: Fetch Dependabot metadata
+        id: meta
+        uses: dependabot/fetch-metadata@v2
+
+      - name: Approve and enable auto-merge (patch/minor dev + transitive)
+        if: >-
+          ${{ (steps.meta.outputs.update-type == 'version-update:semver-patch' ||
+               steps.meta.outputs.update-type == 'version-update:semver-minor') &&
+              (steps.meta.outputs.dependency-type == 'direct:development' ||
+               steps.meta.outputs.dependency-type == 'indirect') }}
+        run: |
+          gh pr review --approve "$PR_URL"
+          gh pr merge --auto --merge "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Leave a note on bumps left for manual review
+        if: >-
+          ${{ !((steps.meta.outputs.update-type == 'version-update:semver-patch' ||
+                 steps.meta.outputs.update-type == 'version-update:semver-minor') &&
+                (steps.meta.outputs.dependency-type == 'direct:development' ||
+                 steps.meta.outputs.dependency-type == 'indirect')) }}
+        run: |
+          gh pr comment "$PR_URL" --body "Auto-merge skipped: \`${{ steps.meta.outputs.dependency-type }}\` / \`${{ steps.meta.outputs.update-type }}\` is a major or direct-production bump — leaving this one for manual review."
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
