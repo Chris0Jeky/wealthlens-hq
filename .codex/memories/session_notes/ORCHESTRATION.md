@@ -51,6 +51,33 @@ This section supersedes the older handoff snapshots below.
    OFF) as the next PR.
 5. Loop: re-analyse, seed, build. Defer questions for Chris to wrap-up.
 
+## PROGRESS LOG (2026-06-04, live)
+- **main now at `17d99be`.** Merged 5 Dependabot frontend bumps (#340 echarts
+  6.1.0, #341 vitest, #342 typescript-eslint, #343 eslint, #344 tsx) after a
+  triage agent cleared each (echarts 6.1 breaking changes don't reach this code;
+  rest are dev-tooling patch/minor). 8 stale merged branches pruned local+remote.
+- **#339** fixed: RNRB taper reverted to PRE-relief estate (commit 5f594a3) +
+  partial-taper discriminating test. Two fresh adversarial reviews APPROVE; a
+  reviewer independently confirmed the code's IHTM46023 citation is *more*
+  accurate than the bots' IHTM46013. All 5 bot threads resolved. CI green.
+- **#338** fixed in 3 commits: (a) record full marginal specs in provenance
+  (codex P2 #1); (b) exact round-tripping float repr + injective charset validator
+  (internal medium/low review findings — `.12g` truncation broke the
+  "identical provenance ⟹ identical draws" guarantee); (c) own a private matrix
+  copy before locking read-only (codex P2 #2 — view/owned-array mutation gap).
+  697 sim tests. All 3 codex threads resolved. CI green.
+  NOTE: each push attracted a fresh codex review → re-check threads after EVERY
+  push before merging.
+- **NEXT (in progress):** build `uncertainty/propagation.py` (#345) stacked on
+  feat/uncertainty-sampling — generic, engine-free Monte-Carlo propagation of a
+  ParameterSamples block through a scalar `evaluate(params)->float`, returning a
+  cited Interval (median + quantile band) + reproducible provenance. Keeps the
+  no-engine-import AST guard valid; the engine wiring is a later PR. 2 reviews.
+- **THEN merge:** verify #338/#339 threads stable + CI green, then merge **#338**
+  with plain `gh pr merge 338 --merge` (it is the stacked base of #345 — do NOT
+  `--delete-branch`), `gh pr edit 345 --base main`, then merge **#339**. Keep #345
+  aging as the backlog.
+
 ## Deferred questions for Chris (ask at wrap-up)
 - Authorize the `make ci-quick` reliability fix (ACTION-REQUIRED #6): Makefile
   swallows backend test failures (false green). Underlying bugs: missing `plotly`,
