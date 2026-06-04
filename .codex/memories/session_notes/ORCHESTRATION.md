@@ -5,11 +5,62 @@
 >
 > **CRITICAL**: Update this file BEFORE every compaction risk (long tool calls, large diffs).
 
-Last updated: 2026-05-31
+Last updated: 2026-06-04
 
-# CURRENT HANDOFF - read this first (2026-05-31, post review-fix PR #339)
+# CURRENT HANDOFF - read this first (2026-06-04, endless-cycle resume)
 
 This section supersedes the older handoff snapshots below.
+
+## Current state (2026-06-04) — live, reconciled with GitHub
+
+- `main` clean at `621611c`. All open-PR CI green.
+- **Open PRs (7):**
+  - **#338** `feat/uncertainty-sampling` -> `main` — Wave 13 Monte-Carlo sampling
+    groundwork. Aged 5d. CI green. Had 2 reviews, but **1 codex P2 thread is still
+    UNRESOLVED**: provenance only records parameter *names*, so two runs with the
+    same names/seed/method/n but different bounds/distribution/source_id get
+    identical provenance ids and are not reproducible. FIX IN PROGRESS: carry the
+    ordered `specs` on `ParameterSamples` + emit a canonical `uncertainty.specs:`
+    provenance tag (per-spec: name, distribution, low/central/high via `.12g`,
+    source_id). Plan verified by workflow `wf_84dd2d45-e80`.
+  - **#339** `fix/iht-review-findings` -> `main` (newest sim PR) — **CONTAINED A
+    DATA-INTEGRITY REGRESSION.** It made 2 changes: (1) APR/BPR relief on
+    `asset.net_value` not `gross_value` [CORRECT, keep]; (2) RNRB taper threshold
+    switched to `estate_after_relief` [**WRONG, revert**]. Verified against HMRC
+    IHTM46023 + gov.uk RNRB guidance + IHTA 1984 s8D (confidence 0.98): the £2m
+    taper threshold uses the estate value AFTER liabilities but BEFORE APR/BPR
+    reliefs and exemptions. HMRC's "Brian" worked example applies 100% APR without
+    reducing the taper base. 3 bots flagged it (gemini CRITICAL, codex P1).
+    FIX: revert the `_compute_rnrb` call arg to `estate_value`, drop the wrong
+    docstring lines, restore/repair the taper tests (pre-relief basis). No goldens.
+  - **#340-#344** Dependabot frontend bumps (echarts 6.1.0, vitest 4.1.8,
+    typescript-eslint 8.60.1, eslint 10.4.1, tsx 4.22.4). All CLEAN, CI green,
+    aged ~1d. Handle as a group with proportionate (changelog + CI) review.
+- **Branch hygiene DONE:** 8 merged stale branches (engine-*, synth-ons-*,
+  enforcement-compliance-*, sim-headline-*) deleted local + remote.
+
+## Plan for this cycle (in order)
+1. Apply the verified #339 revert + #338 provenance fix (small incremental commits).
+2. Run fresh adversarial reviews: 2 independent lenses on corrected #339
+   (tax-law + test/regression), review on #338's new provenance commit
+   (determinism/reproducibility + typing/back-compat), Dependabot triage.
+3. Address ALL findings; reply-to + resolve ALL bot threads (GraphQL).
+4. Merge discipline: merge **#338** (older, fully gated, not newest) once CI
+   re-greens; merge the safe Dependabot PRs; keep **#339** aging until a newer PR
+   sits above it. Then open new Wave 13 work (wire sampling into engine, default
+   OFF) as the next PR.
+5. Loop: re-analyse, seed, build. Defer questions for Chris to wrap-up.
+
+## Deferred questions for Chris (ask at wrap-up)
+- Authorize the `make ci-quick` reliability fix (ACTION-REQUIRED #6): Makefile
+  swallows backend test failures (false green). Underlying bugs: missing `plotly`,
+  `cgt-concentration` non-finite JSON, 404-vs-422 dataset validation.
+- OK to keep auto-merging Dependabot dev-dep bumps with green CI without a 2-review
+  gate (proportionate rigor)?
+
+---
+
+# CURRENT HANDOFF - (2026-05-31, post review-fix PR #339) — SUPERSEDED by 2026-06-04 above
 
 ## Current state (2026-05-31)
 - `main` is at merge commit `94446e3` after merging **#337**
