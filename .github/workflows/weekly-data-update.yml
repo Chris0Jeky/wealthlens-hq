@@ -9,9 +9,15 @@ permissions:
   contents: write
   pull-requests: write
 
+# Serialize scheduled runs; never cancel a run mid commit/push.
+concurrency:
+  group: weekly-data-update
+  cancel-in-progress: false
+
 jobs:
   update-data:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v6
 
