@@ -34,27 +34,32 @@ success on the #338 merge). Everything open at session start is merged:
   (HIGH: central from one `np.quantile([lower,0.5,upper])` call, fixing a ULP
   Interval-invariant violation at lower=upper=0.5; MEDIUM: optional point-estimate
   `central` override; LOW/nits).
-- **#346 OPEN → main** (newest; do NOT merge while newest): engine **Monte-Carlo
-  wiring** — `simulate(..., uncertainty: SamplingConfig | None = None)`, default OFF
-  = byte-identical. When ON, the revenue band is an MC credible interval (sample
-  the top-tail alpha, propagate the scale factor, **extend the band to include the
+- **#346 MERGED** (`74528c1`): engine **Monte-Carlo wiring** —
+  `simulate(..., uncertainty: SamplingConfig | None = None)`, default OFF =
+  byte-identical. When ON, the revenue band is an MC credible interval (sample the
+  top-tail alpha, propagate the scale factor, **extend the band to include the
   point estimate** so it never crashes on a skewed alpha / tiny n). Dashboard JSON
-  gains `interval_method` + `uncertainty_provenance_ids` (schema 1.3) so an MC band
-  is never published as the alpha sweep. **2 adversarial reviews** (HIGH crash on
-  skewed-alpha/small-n + MEDIUM dashboard provenance + LOW negative-net-fiscal, all
-  fixed) + 3 bot threads (same HIGH, already fixed) resolved. 774 sim tests; goldens
-  regenerated (OFF diff = only the 2 new fields). CI nudged after retarget.
-- **Branch hygiene:** 8 merged stale branches pruned (start of session) +
-  `feat/uncertainty-sampling` + `feat/uncertainty-propagation` pruned after their
-  PRs merged and children retargeted to main.
+  gained `interval_method` + `uncertainty_provenance_ids` (schema 1.3). 2 reviews
+  (HIGH crash + MEDIUM dashboard provenance + LOW + 3 bot threads, all fixed).
+  774 sim tests on main.
+- **#347 OPEN → main** (newest; do NOT merge while newest): frontend
+  **ConfidenceFanChart** — the first Vue consumer of the dashboard JSON. Prop-driven
+  SVG fan (low/central/high band + central marker), warning `AlertBanner` for
+  `caveats[]`, `interval_method` label, degenerate/unsourced → point-estimate.
+  Accessible (role=img + full aria-label, sr-only, static SVG, WCAG-AA dark-mode).
+  9 vitest + eslint + vue-tsc + prettier clean. Under 2-lens review (a11y + Vue/TS).
+- **Branch hygiene:** all merged feature branches pruned (engine-*, synth-*,
+  enforcement-*, uncertainty-sampling, uncertainty-propagation, engine-uncertainty-wiring).
 
-## ▶️ NEXT TASKS (seeded, ready to build) — above #346 so it can then merge
-1. **Drain #346** once it is no longer newest (open a newer PR above it), CI green,
-   aged. It's fully reviewed + all threads resolved.
-2. **Vue ConfidenceFanChart + caveats banner** (mission: make it visible) — render
-   the dashboard JSON band (low/central/high) + `caveats[]` + the new
-   `interval_method` marker. Frontend domain (Vue 3 + TS + ECharts), so a clean,
-   self-contained slice that doesn't touch the simulator. OR:
+## SESSION TALLY (2026-06-04): 8 PRs merged (#338, #339, #340-344, #345, #346) +
+## #347 open. Every PR: 2 independent adversarial reviews + all bot threads resolved.
+## Caught a real data-integrity regression (#339 RNRB) + a real crash bug (#346).
+
+## ▶️ NEXT TASKS (seeded) — above #347 so it can then merge
+1. **Drain #347** once not-newest + CI green + review findings fixed.
+2. **FastAPI `/api/simulator/dashboard` bridge** + a `useSimulatorDashboard`
+   composable, then embed ConfidenceFanChart in a scenario page (the live "make it
+   visible" wiring; #347 is deliberately prop-driven/backend-free for now).
 3. **More sampled parameters** — sample assumption `RangeValue`s alongside the
    top-tail alpha in the engine MC band (today only alpha is sampled), then Sobol
    sensitivity on the same draws (pull in SALib).
