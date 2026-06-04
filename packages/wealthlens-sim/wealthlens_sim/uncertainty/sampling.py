@@ -99,6 +99,27 @@ class ParameterSpec(BaseModel):
             raise ValueError(msg)
         return self
 
+    @model_validator(mode="after")
+    def _identifiers_are_provenance_safe(self) -> ParameterSpec:
+        """Forbid the provenance-tag structural delimiters in name/source_id.
+
+        The canonical tag is ``name=dist(low,central,high)@source_id`` and tags are
+        joined with ``;``. If ``name`` or ``source_id`` could contain any of those
+        delimiters (or whitespace), two distinct spec sets could serialise to the
+        same ``uncertainty.specs`` string, defeating the reproducibility guarantee.
+        Parameter names and registry source ids are simple identifiers, so this
+        precondition is cheap to enforce and keeps the readable grammar injective.
+        """
+        forbidden = set(";=@(),") | set(" \t\n\r\f\v")
+        for field, val in (("name", self.name), ("source_id", self.source_id)):
+            if val is not None and (set(val) & forbidden):
+                msg = (
+                    f"ParameterSpec {field}={val!r} must not contain whitespace or "
+                    "any of the provenance delimiters ; = @ ( ) ,"
+                )
+                raise ValueError(msg)
+        return self
+
     @classmethod
     def from_interval(
         cls,
@@ -149,11 +170,13 @@ class ParameterSpec(BaseModel):
         Captures everything that changes the drawn column for a parameter — name,
         distribution kind, bounds/mode, and source id — so two specs that produce
         different draws encode to *different* strings (and identical specs encode
-        identically). Floats use the same compact ``.12g`` discipline as the synth
-        generation-parameter tags for stable, locale-independent output.
-        ``central`` is always included (it does not affect a UNIFORM draw but keeps
-        the encoding total and unambiguous); ``source_id`` renders as ``-`` when
-        absent so a change of evidence is always reflected in provenance.
+        identically). Floats use an exact round-tripping ``repr`` (see
+        :func:`_format_float`) so even sub-12-significant-figure bound differences
+        are reflected. ``central`` is always included (it does not affect a UNIFORM
+        draw but keeps the encoding total and unambiguous); ``source_id`` renders as
+        ``-`` when absent so a change of evidence is always reflected in provenance.
+        The structural delimiters (``; = @ ( ) ,`` and whitespace) are rejected from
+        ``name``/``source_id`` by a validator, so this readable grammar is injective.
         """
         source = self.source_id if self.source_id is not None else "-"
         return (
@@ -250,8 +273,17 @@ class ParameterSamples:
 
 
 def _format_float(value: float) -> str:
-    """Compact, stable float repr for provenance tags (matches the synth layer)."""
-    return f"{value:.12g}"
+    """Exact, stable float repr for provenance tags.
+
+    Uses ``repr`` — the shortest string that round-trips to the *same* float64 —
+    so two specs differing in any bound (even below 12 significant figures)
+    serialise to *different* tags. This makes the provenance guarantee literal:
+    identical ``uncertainty.specs`` tags imply identical drawn columns, not merely
+    columns equal to ~12 significant figures. ``+ 0.0`` folds ``-0.0`` to ``0.0``
+    (numerically identical, identical draws) so a cosmetic sign-of-zero cannot
+    perturb the tag.
+    """
+    return repr(value + 0.0)
 
 
 def _unit_samples(rng: np.random.Generator, n: int, n_params: int, method: SamplingMethod) -> NDArray[np.float64]:

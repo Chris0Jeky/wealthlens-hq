@@ -49,6 +49,18 @@ class TestParameterSpec:
         with pytest.raises(ValidationError):
             spec.low = 0.0  # type: ignore[misc]
 
+    @pytest.mark.parametrize("bad_name", ["a;b", "a=b", "a@b", "a(b", "a)b", "a,b", "a b"])
+    def test_rejects_provenance_delimiter_in_name(self, bad_name: str):
+        # Names must stay free of the provenance-tag delimiters so the
+        # uncertainty.specs encoding is injective.
+        with pytest.raises(ValidationError):
+            ParameterSpec(name=bad_name, low=1.0, central=2.0, high=3.0)
+
+    @pytest.mark.parametrize("bad_source", ["src;x", "src@x", "a,b", "with space"])
+    def test_rejects_provenance_delimiter_in_source_id(self, bad_source: str):
+        with pytest.raises(ValidationError):
+            ParameterSpec(name="x", low=1.0, central=2.0, high=3.0, source_id=bad_source)
+
     def test_from_interval(self):
         spec = ParameterSpec.from_interval("a", Interval(low=1.0, central=2.0, high=4.0))
         assert (spec.low, spec.central, spec.high) == (1.0, 2.0, 4.0)
@@ -218,9 +230,19 @@ class TestParameterSamples:
         )
         ids = samples.provenance_ids()
         assert (
-            "uncertainty.specs:alpha=triangular(2,2.5,3)@-;threshold=uniform(1,1,2)@-"
+            "uncertainty.specs:alpha=triangular(2.0,2.5,3.0)@-;threshold=uniform(1.0,1.0,2.0)@-"
             in ids
         )
+
+    def test_provenance_distinguishes_subresolution_bound(self):
+        # A bound revision below 12 significant figures still changes the draws,
+        # so it MUST change provenance — the exact-repr encoding guarantees this
+        # where the old .12g formatting would have collided the tags.
+        cfg = SamplingConfig(n_samples=16, seed=1, method=SamplingMethod.INDEPENDENT)
+        base = sample_parameters([ParameterSpec(name="a", low=2.0, central=2.5, high=3.0)], cfg)
+        nudged = sample_parameters([ParameterSpec(name="a", low=2.0, central=2.5, high=3.0 + 1e-13)], cfg)
+        assert base.provenance_ids() != nudged.provenance_ids()
+        assert not np.array_equal(base.matrix, nudged.matrix)
 
     def test_provenance_distinguishes_bounds(self):
         # Same name/seed/method/n_samples but a different bound must yield a
