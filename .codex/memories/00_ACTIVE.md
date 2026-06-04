@@ -5,25 +5,35 @@
 > **POST-MERGE CLEANUP COMPLETE** (2026-05-16): All 192 PRs handled, 874 tests passing, CI green, 496 stale branches deleted.
 > Merge history: [MERGE_ORCHESTRATION.md](.codex/memories/session_notes/MERGE_ORCHESTRATION.md) | PR creation history: [ORCHESTRATION.md](.codex/memories/session_notes/ORCHESTRATION.md) (archived)
 
-Last updated: 2026-05-31
+Last updated: 2026-06-04
 
-## Latest status (post review-fix PR #339)
+## Latest status (2026-06-04 endless-cycle drain)
 
-- **Merged to main (2026-05-31):** #337 `feat/synth-generation-provenance` at
-  `94446e3` — full gate passed.
+- **Merged to main (2026-06-04):**
+  - **#339** `fix/iht-review-findings` at `6a5521c` — **reverted a data-integrity
+    regression**: the RNRB £2m taper is tested against the PRE-relief estate
+    (after liabilities, before APR/BPR + exemptions) per HMRC IHTM46023 (verified
+    0.98 confidence; the bots' IHTM46013 cite was actually wrong). Kept the
+    APR/BPR-on-net-value fix + dead-code cleanup. Two fresh adversarial reviews.
+  - **#340–#344** five Dependabot frontend bumps (echarts 6.1.0, vitest,
+    typescript-eslint, eslint, tsx) — merged after a risk-triage agent cleared
+    each (echarts 6.1 breaking changes don't reach this code).
 - **Open PRs (2):**
-  - **#338** `feat/uncertainty-sampling` -> `main` — Wave 13 Monte-Carlo
-    groundwork. Two adversarial reviews done; all 5 bot threads resolved.
-    Standalone, feature OFF. Do not merge while newest.
-  - **#339** `fix/iht-review-findings` -> `main` (newest) — fixes APR/BPR
-    relief basis (`gross_value` → `net_value`) and RNRB taper basis
-    (pre-relief → post-relief estate per HMRC IHTM46013). Removes dead stub
-    `d_iht_transfer.py` and unused `_NATIONS`. One adversarial review (clean
-    approval, no issues >= 80% confidence). CI green (5/5). 651 sim tests +
-    ruff + mypy clean.
-- **Prior (2026-05-30):** #336 `feat/enforcement-compliance-model` merged —
-  enforcement cost separate from revenue (`enforcement_cost_bn`,
-  `enforcement_net_fiscal_impact_bn`); dashboard schema `1.2`.
+  - **#338** `feat/uncertainty-sampling` -> `main` — Wave 13 sampling layer.
+    Hardened through **7 codex P2 rounds + 4 adversarial reviews**, all resolved:
+    record full marginal specs in provenance; exact round-tripping float repr;
+    injective charset validator; private matrix copy; reject non-finite bounds +
+    reserved source sentinel; validate ParameterSamples shape/metadata; reject
+    non-finite matrix values. CI green. The merge candidate (oldest open PR).
+  - **#345** `feat/uncertainty-propagation` -> `feat/uncertainty-sampling`
+    (stacked) — engine-free Monte-Carlo `propagate(samples, evaluate)` ->
+    `PropagationResult` (median/point-estimate central + quantile band + per-draw
+    outputs + provenance). Two adversarial reviews; HIGH (central from
+    `np.quantile(.,0.5)` not `np.median`), MEDIUM (optional point-estimate central
+    override for the engine), LOW/nits all fixed. Retarget to main after #338.
+- **Branch hygiene:** 8 merged stale branches pruned local+remote.
+- **Prior (2026-05-31):** #337 `feat/synth-generation-provenance` merged at
+  `94446e3`. #336 enforcement compliance model merged (schema `1.2`).
 - **Verification caveat:** `bash -lc "make ci-quick"` currently reports
   dashboard backend pytest failures but exits 0 because the Makefile swallows
   backend command failures. This is outside the simulator PRs and is seeded in
