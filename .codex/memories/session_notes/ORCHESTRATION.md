@@ -78,6 +78,23 @@ This section supersedes the older handoff snapshots below.
   `--delete-branch`), `gh pr edit 345 --base main`, then merge **#339**. Keep #345
   aging as the backlog.
 
+### UPDATE (later 2026-06-04)
+- **#339 MERGED** to main at `6a5521c` (`--merge --delete-branch`; it had no
+  children). 652 sim tests on main; post-merge main CI running.
+- **#338** got TWO more codex rounds after the matrix-copy fix, both addressed:
+  (d) reject non-finite ParameterSpec bounds (inf span → NaN draws); (e) reject the
+  reserved `source_id="-"` sentinel. **Total 5 codex P2 rounds, all resolved.**
+  702 tests on branch; CI green; 0 open threads as of the finite-bounds push —
+  WATCH for one more codex pass before merging.
+- **#345** open, stacked on `feat/uncertainty-sampling`, under 2-lens review.
+  Its base moved (finite-bounds commit) so it's 1 commit behind — rebase onto
+  `main` at retarget time (after #338 merges main will already contain everything).
+- **REMAINING THIS CYCLE:** (1) confirm #338 fully stable → merge #338 `--merge`
+  (base of #345 stack; do NOT --delete-branch) → `gh pr edit 345 --base main` +
+  rebase #345 onto main + force-push. (2) address #345 review findings. (3) keep
+  #345 aging; build next Wave 13 (engine wiring of propagation, default OFF) or the
+  Vue scenario page. (4) update 00_ACTIVE.md + active-sprint + inbox at checkpoint.
+
 ## Deferred questions for Chris (ask at wrap-up)
 - Authorize the `make ci-quick` reliability fix (ACTION-REQUIRED #6): Makefile
   swallows backend test failures (false green). Underlying bugs: missing `plotly`,
