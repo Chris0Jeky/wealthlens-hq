@@ -1,6 +1,6 @@
 # ⚑ ACTION REQUIRED — Chris's outstanding tasks
 
-Last updated: 2026-05-31
+Last updated: 2026-06-05
 
 > **This file is the single curated list of things that need _Chris_ (a human),
 > not the autonomous agent.** It exists so high-leverage actions never get lost in
@@ -44,10 +44,11 @@ Last updated: 2026-05-31
      5. Prepare STAR stories (see `tasks/applications/mysociety-societyworks-2026.md`).
    - **Done when:** interview completed (or not shortlisted -- record which).
 
-2. - [ ] **Check the Bethnal Green Ventures Autumn 2026 window** `[due: ~2026-05-31]` — **P1**
-   - **Why:** ~£60k for ~7% equity accelerator; the application window is around now (`deadlines.md`).
-   - **How:** Confirm exact open/close dates on the BGV site; if open and you want to pursue it, start the EOI; if not yet open, replace this with the real date.
-   - **Done when:** dates confirmed and either applied or scheduled.
+2. - [ ] **Decide on the Bethnal Green Ventures Autumn 2026 application** `[due: 2026-06-21]` — **P1, TIME-SENSITIVE**
+   - **Why:** NOT overdue — researched 2026-06-05: the window is **OPEN now**, deadline **21 June 2026, 23:59 BST** (the ~31 May date was the *opening* month, not a deadline; Spring 2026 closed back in January). ~£60k for ~7% equity; ~12-week hybrid programme starting Sept 2026; interviews 8–15 July. Strong thematic fit — their "Inclusive Society" pillar explicitly covers *reducing inequality / poverty / civic participation*, which is exactly WealthLens.
+   - **Two real blockers to weigh first:** (a) BGV invests **only in for-profit companies limited by shares** — they explicitly cannot invest in CICs / non-profits / charities, so the "open-source, non-profit-leaning" framing would need a for-profit company wrapper; (b) **solo founders are disfavoured** ("you can apply as an individual, but it's more likely we'll invest with a team") — a co-founder materially strengthens the application.
+   - **How:** Apply at `bethnalgreenventures.com/apply` before 21 June. If the for-profit structure or solo-founder issue is a dealbreaker, decide instead to skip this round and target **Spring 2027** (expect a ~early-Jan 2027 deadline) — and either way, record the decision so this item can close.
+   - **Done when:** applied, OR explicitly decided to skip with the next target window noted.
 
 ### 🚀 Unblocked & high-leverage (v0.1 is live — these were waiting on a public URL)
 
@@ -74,12 +75,10 @@ Last updated: 2026-05-31
 
 ### 🛠 Decision needed (agent is blocked on your go-ahead)
 
-6. - [ ] **Authorize the `make ci-quick` reliability fix** — **P2, decision**
-   - **Why:** `make ci-quick` currently **exits 0 even when the dashboard backend tests fail** — the Makefile guards backend commands with `|| echo …`, so a real POSIX-shell run hides **11 failures + 2 errors**. Pre-push verification is therefore giving a false green. (Surfaced 2026-05-30; tracked in `inbox.md` "Reliability follow-ups".)
-   - **Root causes observed:** (a) `plotly` missing for the productivity-pay pipeline tests; (b) `cgt-concentration` emits non-finite JSON (NaN/Inf) the API can't serialise; (c) invalid dataset names return **404** where tests expect **422**.
-   - **The decision:** these are in the **dashboard backend**, a different domain from the simulator work the agent has been doing. Fixing them will make `ci-quick` correctly go **red** until all three are fixed. Do you want the agent to take this on as a reviewed PR (fix the Makefile to propagate exit codes **and** fix the three root causes together), or leave it parked?
-   - **Agent-doable once you say go.** Reply "do the ci-quick fix" to authorise.
-   - **Done when:** you decide (and, if approved, the PR merges).
+6. - [ ] **Merge the `make ci-quick` reliability fix (PR #350)** — **P2, authorized + done, pending merge**
+   - **Status (2026-06-05):** you authorized this; **fixed in PR #350**. The Makefile no longer swallows failures (`|| echo …` removed), so `make ci-quick` now runs real ruff + mypy + pytest and fails loudly. The dashboard-backend failures it used to hide are already resolved — a real run now shows **201 passed**. PR #350 also installs dev deps in `backend-install`, adds job timeouts, and enables Dependabot auto-merge.
+   - **One repo-setting action for you:** for Dependabot auto-merge to work, enable **Settings → General → Allow auto-merge** and require the CI checks in branch protection on `main`.
+   - **Done when:** PR #350 merges (then move this to Done).
 
 ---
 
