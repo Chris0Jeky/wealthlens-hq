@@ -102,4 +102,29 @@ describe('useFetch', () => {
       expect(result.data.value).toEqual({ page: 2 })
     })
   })
+
+  it('a superseded (stale) fetch cannot clear loading or overwrite fresh data', async () => {
+    // First request hangs; the second resolves. When the first finally resolves it
+    // must not flip loading back on/off or clobber the second's data.
+    let resolveFirst!: (v: unknown) => void
+    const firstResponse = { ok: true, status: 200, json: () => Promise.resolve({ stale: true }) }
+    ;(fetch as ReturnType<typeof vi.fn>)
+      .mockReturnValueOnce(new Promise((r) => (resolveFirst = r)))
+      .mockResolvedValue({ ok: true, status: 200, json: () => Promise.resolve({ fresh: true }) })
+
+    const url = ref('/first')
+    const { result } = withSetup(() => useFetch(url))
+    await nextTick()
+    url.value = '/second' // supersede the first (still pending) request
+    await vi.waitFor(() => {
+      expect(result.data.value).toEqual({ fresh: true })
+      expect(result.loading.value).toBe(false)
+    })
+
+    resolveFirst(firstResponse) // the stale request finally resolves
+    await nextTick()
+    await nextTick()
+    expect(result.data.value).toEqual({ fresh: true }) // not clobbered
+    expect(result.loading.value).toBe(false) // not re-toggled
+  })
 })

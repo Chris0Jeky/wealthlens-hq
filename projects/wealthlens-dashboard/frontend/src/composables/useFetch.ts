@@ -37,15 +37,19 @@ export function useFetch<T = unknown>(
       return
     }
 
-    abortController = new AbortController()
+    const controller = new AbortController()
+    abortController = controller
+    // Only the latest call may mutate state: a superseded (aborted) call that
+    // resolves later must not clear the new call's loading flag or overwrite its
+    // data (rapid scenario switching A -> B -> C).
+    const isCurrent = () => abortController === controller
 
     loading.value = true
     error.value = null
 
     try {
-      const response = await fetch(resolvedUrl, {
-        signal: abortController.signal,
-      })
+      const response = await fetch(resolvedUrl, { signal: controller.signal })
+      if (!isCurrent()) return
       if (!response.ok) {
         error.value = `HTTP ${response.status}: ${response.statusText}`
         data.value = null
@@ -54,10 +58,11 @@ export function useFetch<T = unknown>(
       }
     } catch (e) {
       if (e instanceof DOMException && e.name === 'AbortError') return
+      if (!isCurrent()) return
       error.value = e instanceof Error ? e.message : 'Unknown error'
       data.value = null
     } finally {
-      loading.value = false
+      if (isCurrent()) loading.value = false
     }
   }
 
