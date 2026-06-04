@@ -13,6 +13,7 @@ from wealthlens_sim.assumptions.schema import RangeValue
 from wealthlens_sim.top_tail.types import Interval
 from wealthlens_sim.uncertainty import (
     Distribution,
+    ParameterSamples,
     ParameterSpec,
     SamplingConfig,
     SamplingMethod,
@@ -300,6 +301,31 @@ class TestParameterSamples:
             samples.matrix[0, 0] = 0.0
         with pytest.raises(ValueError, match="read-only"):
             samples.column("alpha")[0] = 0.0
+
+    def test_direct_construction_copies_owned_matrix(self):
+        # A caller that keeps the passed array must not be able to mutate the
+        # locked draw: ParameterSamples owns a private copy.
+        spec = (ParameterSpec(name="x", low=0.0, central=1.0, high=2.0),)
+        base = np.zeros((4, 1), dtype=np.float64)
+        samples = ParameterSamples(
+            names=("x",), specs=spec, matrix=base, seed=0, method=SamplingMethod.INDEPENDENT
+        )
+        base[0, 0] = 999.0  # caller still holds and mutates the original
+        assert samples.matrix[0, 0] == 0.0
+        with pytest.raises(ValueError, match="read-only"):
+            samples.matrix[0, 0] = 1.0
+
+    def test_direct_construction_copies_view_matrix(self):
+        # The classic gap: a VIEW whose base array stays writeable. Mutating the
+        # base must not leak into the locked draw.
+        spec = (ParameterSpec(name="x", low=0.0, central=1.0, high=2.0),)
+        backing = np.zeros((4, 2), dtype=np.float64)
+        view = backing[:, :1]
+        samples = ParameterSamples(
+            names=("x",), specs=spec, matrix=view, seed=0, method=SamplingMethod.INDEPENDENT
+        )
+        backing[0, 0] = 999.0  # mutate through the still-writeable base
+        assert samples.matrix[0, 0] == 0.0
 
 
 def _imports_engine(tree: ast.AST) -> bool:

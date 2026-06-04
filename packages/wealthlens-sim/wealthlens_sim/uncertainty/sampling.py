@@ -223,10 +223,19 @@ class ParameterSamples:
     method: SamplingMethod
 
     def __post_init__(self) -> None:
-        # Lock the draw so the "deterministic, immutable" contract holds literally.
-        # Mutating the array's writeable flag is not a frozen-field rebind, so it
-        # is permitted on the frozen dataclass; views inherit the read-only flag.
-        self.matrix.flags.writeable = False
+        # Own the draw before locking it, so the "deterministic, immutable" contract
+        # holds for ANY construction path. Merely flipping ``writeable`` on the
+        # passed array is not enough: a caller can construct ParameterSamples around
+        # a *view* (whose writeable base array stays mutable) or around an array it
+        # still references and can re-enable writing on — either lets an external
+        # mutation silently corrupt the values the engine/provenance later read.
+        # Copying to a private array no caller can reach, then marking *that*
+        # read-only, closes both holes. ``object.__setattr__`` rebinds the field on
+        # the frozen dataclass; the copy is O(n_samples * n_params), negligible
+        # beside the draw itself.
+        owned = self.matrix.copy()
+        owned.flags.writeable = False
+        object.__setattr__(self, "matrix", owned)
 
     @property
     def n_samples(self) -> int:
