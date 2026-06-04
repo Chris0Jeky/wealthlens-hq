@@ -20,6 +20,7 @@ from wealthlens_sim.assumptions.schema import (
     Assumption,
     AssumptionRegistry,
     PointValue,
+    RangeValue,
     TransferabilityScore,
 )
 from wealthlens_sim.engine import (
@@ -313,6 +314,18 @@ class TestProvenance:
         result = simulate(_population(n=100), scenario)
         assert result.provenance.version_tag == scenario.version_tag
 
+    def test_devolution_scope_recorded_in_manifest(self):
+        # A scoped run with a registry records the territorial scope in the manifest.
+        pop = _population(n=200)
+        result = simulate(
+            pop,
+            _scenario(_wealth_tax()),
+            registries=Registries(assumptions=load_assumptions()),
+            devolution=DevolutionConfig(scope=NationScope.ENGLAND_ONLY),
+        )
+        labels = {e.output_label for e in result.provenance.entries}
+        assert "devolution_scope:england_only" in labels
+
 
 class TestMonteCarloUncertainty:
     """The optional ``uncertainty`` config replaces the single multiplicative alpha
@@ -337,7 +350,9 @@ class TestMonteCarloUncertainty:
         ids = result.uncertainty_provenance_ids
         assert any(s.startswith("uncertainty.n_samples:") for s in ids)
         assert any(s.startswith("uncertainty.specs:") for s in ids)
-        assert "uncertainty.central:explicit:1.0" in ids
+        # The scale propagation records its own (median) central; the engine anchors
+        # the published revenue central at the point estimate via scaled_interval.
+        assert "uncertainty.central:median" in ids
         assert any(s.startswith("uncertainty.quantiles:") for s in ids)
 
     def test_mc_central_matches_single_band(self):
@@ -375,17 +390,55 @@ class TestMonteCarloUncertainty:
         assert iv.low == iv.central == iv.high
         assert result.uncertainty_provenance_ids == []
 
-    def test_devolution_scope_recorded_in_manifest(self):
-        # A scoped run with a registry records the territorial scope in the manifest.
-        pop = _population(n=200)
+    @pytest.mark.parametrize(
+        "alpha",
+        [
+            RangeValue(type="range", low=1.1, central=1.15, high=2.5),  # skew-low: mode at ~4th pct
+            RangeValue(type="range", low=1.1, central=2.45, high=2.5),  # skew-high: mode at ~96th pct
+        ],
+    )
+    def test_mc_skewed_alpha_does_not_crash(self, alpha: RangeValue):
+        # The point estimate (scale==1.0) is the mode, which for a skewed alpha can
+        # sit outside the 5-95 scale band — the band is extended to include it, so
+        # the engine returns a valid Interval instead of crashing.
+        reg = Registries(assumptions=_registry_with_alpha(alpha))
+        result = simulate(_population(n=100), _scenario(_wealth_tax()), registries=reg,
+                          uncertainty=SamplingConfig(n_samples=512, seed=0))
+        iv = result.total_revenue_gbp_bn
+        assert iv.low <= iv.central <= iv.high
+        assert result.uncertainty_provenance_ids != []
+
+    @pytest.mark.parametrize("n_samples", [1, 2, 3])
+    @pytest.mark.parametrize("seed", range(6))
+    def test_mc_tiny_n_samples_does_not_crash(self, n_samples: int, seed: int):
+        # Tiny sample counts can leave 1.0 outside the quantile band; the engine
+        # must still return a valid bracketing Interval, never raise.
         result = simulate(
-            pop,
-            _scenario(_wealth_tax()),
-            registries=Registries(assumptions=load_assumptions()),
-            devolution=DevolutionConfig(scope=NationScope.ENGLAND_ONLY),
+            _population(n=100), _scenario(_wealth_tax()), registries=self._registries(),
+            uncertainty=SamplingConfig(n_samples=n_samples, seed=seed),
         )
-        labels = {e.output_label for e in result.provenance.entries}
-        assert "devolution_scope:england_only" in labels
+        iv = result.total_revenue_gbp_bn
+        assert iv.low <= iv.central <= iv.high
+
+    def test_mc_negative_net_fiscal_impact(self):
+        # The trickiest figure: net fiscal impact is negative when cost > uplift, and
+        # scaled_interval relies on min/max to reorder flipped bounds. Central is
+        # preserved and the MC band is contained in the full alpha-range band.
+        enforcement = EnforcementConfig(
+            compliance_rates=(
+                ComplianceRate(tax_family=TaxFamily.OTHER, baseline_rate=0.8, scenario_rate=0.9),
+            ),
+            enforcement_cost_bn=10.0,  # cost above the uplift so net fiscal impact is negative
+        )
+        pop, scenario = _population(n=100), _scenario(_wealth_tax())
+        single = simulate(pop, scenario, registries=self._registries(), enforcement=enforcement)
+        mc = simulate(pop, scenario, registries=self._registries(), enforcement=enforcement,
+                      uncertainty=SamplingConfig(n_samples=2000, seed=1))
+        s = single.enforcement_net_fiscal_impact_bn
+        m = mc.enforcement_net_fiscal_impact_bn
+        assert s.central < 0  # precondition: the figure is actually negative
+        assert m.central == pytest.approx(s.central)
+        assert s.low <= m.low <= m.central <= m.high <= s.high
 
 
 class TestDevolution:

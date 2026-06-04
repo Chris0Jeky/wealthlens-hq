@@ -318,11 +318,18 @@ def simulate(
     uncertainty_provenance_ids: list[str] = []
     if uncertainty is not None and alpha is not None:
         # Monte-Carlo band (feature ON): sample the top-tail alpha across its
-        # registry range and propagate the revenue scale factor. ``central=1.0`` is
-        # the point estimate at the central alpha, so the published *central* figure
-        # is identical to the single-band mode — only the band becomes a sampled
-        # credible interval. The propagation provenance ids are recorded so the MC
-        # run is reproducible and auditable.
+        # registry range and propagate the revenue scale factor to a lower/upper
+        # quantile band. The published *central* figure stays the point estimate at
+        # the central alpha (scale == 1.0), applied by ``scaled_interval`` — so
+        # enabling the feature does not move the headline, only the band.
+        #
+        # scale == 1.0 is the *mode* of the scale distribution but not necessarily
+        # inside its 5-95 quantile band: for a skewed registry alpha (mode near a
+        # bound) or a tiny ``n_samples`` the band can sit entirely above or below
+        # 1.0. We therefore EXTEND the band to include 1.0 rather than asserting it
+        # (passing ``central=1.0`` to propagate would crash on a valid-but-skewed
+        # alpha). The propagation provenance ids are recorded so the run is
+        # reproducible.
         central_alpha = alpha.central
         alpha_spec = ParameterSpec.from_interval(
             PARETO_ALPHA_ASSUMPTION_ID, alpha, source_id=PARETO_ALPHA_ASSUMPTION_ID
@@ -331,10 +338,9 @@ def simulate(
         scale_result = propagate(
             alpha_samples,
             lambda draw: revenue_scale_at_alpha(draw[PARETO_ALPHA_ASSUMPTION_ID], central_alpha),
-            central=1.0,
         )
-        scale_low = scale_result.interval.low
-        scale_high = scale_result.interval.high
+        scale_low = min(scale_result.interval.low, 1.0)
+        scale_high = max(scale_result.interval.high, 1.0)
         uncertainty_provenance_ids = list(scale_result.provenance_ids)
     else:
         # Single multiplicative alpha sweep (feature OFF, the default) or no
