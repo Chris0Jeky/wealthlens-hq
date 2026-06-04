@@ -21,7 +21,7 @@
     "generate:sitemap": "python ../../../scripts/generate_sitemap.py"
   },
   "dependencies": {
-    "echarts": "^6.0.0",
+    "echarts": "^6.1.0",
     "pinia": "^3.0.0",
     "vue": "^3.5.0",
     "vue-echarts": "^8.0.1",
