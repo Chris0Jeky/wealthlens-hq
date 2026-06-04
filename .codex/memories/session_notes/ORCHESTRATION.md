@@ -7,9 +7,30 @@
 
 Last updated: 2026-06-04
 
-# CURRENT HANDOFF - read this first (2026-06-04 PM, post-drain checkpoint)
+# CURRENT HANDOFF - read this first (2026-06-05, wrap-up)
 
 This section supersedes the older handoff snapshots below.
+
+## ⏸️ Wrap-up state (2026-06-05) — two open PRs, both fully reviewed/aged
+
+- **#349 OPEN** (live scenario page) — fully reviewed (2 lenses + 10 bot threads), up
+  to date with main, all green. **Not newest anymore (#350 is above it) → mergeable
+  first next session** (plain `gh pr merge 349 --merge --delete-branch` after a CI +
+  thread re-check).
+- **#350 OPEN** (CI hardening) — Makefile de-swallowed so `make ci-quick` fails
+  loudly (verified: runs real ruff+mypy+201 pytest); Dependabot auto-merge workflow;
+  job timeouts + concurrency. Its description lists **deferred CI follow-ups** (root/
+  automation test suites not in CI; mypy on automation/tests commented out; deploy
+  has no build gate; format/coverage not enforced; pin actions to SHAs) — each its
+  own next PR. Merge #350 AFTER #349 (keep one PR above it, or it's the last).
+- **Chris's repo-setting TODO** (for #350's Dependabot auto-merge to work): enable
+  Settings → General → "Allow auto-merge" + require CI checks in branch protection.
+- **BGV is LIVE, not overdue:** Autumn 2026 deadline **21 June 2026** (see
+  ACTION-REQUIRED.md) — for-profit-structure + solo-founder caveats noted.
+- Both deferred questions answered by Chris: Dependabot auto-merge = ENABLE (done in
+  #350); ci-quick fix = DO (done in #350).
+
+---
 
 ## ✅ Cycle complete (2026-06-04) — drained every open PR; one new PR in flight
 
