@@ -15,8 +15,12 @@ Simplifying assumptions (explicit per Blueprint v5 §3.3):
   has_direct_descendants flag, not from detailed estate planning. The
   band is capped at the net value of the residence assets (UK RNRB
   cannot exceed the value of the residence passed to descendants).
-- APR/BPR qualifying value is taken from PRIVATE_BUSINESS asset type
-  only (agricultural land not separately modelled in v0.1)
+  The RNRB taper threshold (£2m) is tested against the estate value
+  after liabilities but BEFORE APR/BPR reliefs and exemptions, per
+  HMRC IHTM46023 ("do not take off any... reliefs such as agricultural
+  or business property relief").
+- APR/BPR qualifying value is the net value of PRIVATE_BUSINESS assets
+  (agricultural land not separately modelled in v0.1)
 - Pension inclusion flag defaults to False (pre-April 2027 baseline)
 - Charitable gifts (charitable_fraction x estate) are exempt and
   deducted from the chargeable estate before NRB/RNRB; the 36% reduced
@@ -293,6 +297,10 @@ def _compute_person_iht(
     charitable_donation = min(1.0, max(0.0, charitable_fraction)) * estate_value
     estate_after_relief = max(0.0, estate_value - apr_bpr_relief - charitable_donation)
 
+    # RNRB taper is tested against the PRE-relief estate value (after
+    # liabilities, before APR/BPR and exemptions) per HMRC IHTM46023 — NOT the
+    # post-relief estate. Using estate_after_relief would let estates holding
+    # large relievable business/agricultural property escape the taper.
     rnrb = _compute_rnrb(
         estate_value,
         owns_residence,
@@ -376,7 +384,7 @@ def compute_household_iht(
                 owns_residence = True
                 residence_value += asset.net_value
             if asset.asset_type in APR_BPR_TYPES:
-                apr_bpr_qualifying += asset.gross_value
+                apr_bpr_qualifying += asset.net_value
 
         estate_value = max(0.0, estate_value)
 

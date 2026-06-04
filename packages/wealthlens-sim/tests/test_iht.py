@@ -578,7 +578,7 @@ class TestAPRBPRExceedsEstate:
         assert not result.is_liable
         assert result.taxable_estate == 0.0
 
-    def test_apr_bpr_gross_value_used(self):
+    def test_apr_bpr_net_value_used(self):
         person = make_person(assets=[
             (AssetType.PRIVATE_BUSINESS, 3_000_000, 500_000),
             (AssetType.FINANCIAL, 1_000_000, 0),
@@ -586,8 +586,8 @@ class TestAPRBPRExceedsEstate:
         hh = make_household([person])
         result = compute_household_iht(hh, IHTConfig())
         pr = result.person_results[0]
-        expected_relief = 2_500_000 + (500_000 * 0.50)
-        assert pr.apr_bpr_relief == pytest.approx(expected_relief)
+        # Net business value = 3M - 500k = 2.5M (at the allowance boundary)
+        assert pr.apr_bpr_relief == pytest.approx(2_500_000)
 
 
 class TestPersonIdPassthrough:
@@ -650,6 +650,7 @@ class TestCombinedAPRBPRAndRNRBTaper:
         )
         expected_relief = 2_500_000 + (500_000 * 0.50)
         assert result.apr_bpr_relief == pytest.approx(expected_relief)
+        # RNRB taper uses the PRE-relief estate (£5m > £2.35m) → fully tapered.
         assert result.rnrb_used == 0.0
         estate_after = estate - expected_relief
         expected_taxable = estate_after - 325_000
@@ -667,6 +668,54 @@ class TestCombinedAPRBPRAndRNRBTaper:
         estate_after = estate - 500_000
         expected_taxable = estate_after - (325_000 + 175_000)
         assert result.taxable_estate == pytest.approx(expected_taxable)
+
+
+class TestRNRBTaperOnPreReliefEstate:
+    """RNRB taper is tested against the PRE-relief estate value (after
+    liabilities, before APR/BPR reliefs and charitable/spousal exemptions) —
+    per HMRC IHTM46023. Reliefs and exemptions must NOT reduce the taper base."""
+
+    def test_apr_bpr_does_not_reduce_taper(self):
+        config = IHTConfig()
+        estate = 2_500_000  # pre-relief, above the £2.35m full-taper point
+        no_bpr = _compute_person_iht(estate, True, True, 0, False, 0.0, config)
+        assert no_bpr.rnrb_used == 0.0
+        # APR/BPR must NOT reduce the taper base: the pre-relief estate is still
+        # £2.5m → a £250k taper fully eliminates the £175k RNRB. (A post-relief
+        # taper would have wrongly restored the full £175k here.)
+        with_bpr = _compute_person_iht(estate, True, True, 1_000_000, False, 0.0, config)
+        assert with_bpr.rnrb_used == 0.0
+
+    def test_charitable_does_not_reduce_taper(self):
+        config = IHTConfig()
+        estate = 2_500_000
+        no_charity = _compute_person_iht(estate, True, True, 0, False, 0.0, config)
+        assert no_charity.rnrb_used == 0.0
+        # Charitable gifts must NOT reduce the taper base either.
+        with_charity = _compute_person_iht(estate, True, True, 0, False, 0.30, config)
+        assert with_charity.rnrb_used == 0.0
+
+    def test_partial_taper_uses_pre_relief_estate(self):
+        # Pre-relief estate £2.1m → taper (2.1M - 2M) / 2 = £50k → RNRB £125k,
+        # even with £1m relief. A post-relief base (£1.1m < £2m) would wrongly
+        # restore the full £175k, so this locks the partial-taper direction too.
+        config = IHTConfig()
+        result = _compute_person_iht(2_100_000, True, True, 1_000_000, False, 0.0, config)
+        assert result.rnrb_used == pytest.approx(125_000)
+
+    def test_leveraged_business_relief_uses_net(self):
+        # gross=5M, debt=3M → net=2M. Relief should be on the 2M net, not 5M gross.
+        person = make_person(assets=[
+            (AssetType.PRIVATE_BUSINESS, 5_000_000, 3_000_000),
+            (AssetType.FINANCIAL, 1_000_000, 0),
+        ])
+        hh = make_household([person])
+        result = compute_household_iht(hh, IHTConfig())
+        pr = result.person_results[0]
+        # estate_value = net(business) + net(financial) = 2M + 1M = 3M
+        assert pr.estate_value == pytest.approx(3_000_000)
+        # APR/BPR on 2M net business value (below 2.5M allowance → 100% relief)
+        assert pr.apr_bpr_relief == pytest.approx(2_000_000)
 
 
 class TestCharitableAndRNRBFixes:
