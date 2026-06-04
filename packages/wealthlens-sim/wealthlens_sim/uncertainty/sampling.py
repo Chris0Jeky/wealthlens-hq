@@ -259,6 +259,17 @@ class ParameterSamples:
         if len(set(self.names)) != len(self.names):
             msg = f"parameter names must be unique, got {self.names}"
             raise ValueError(msg)
+        # A directly supplied (cached/external) matrix could carry NaN/inf, which
+        # would silently corrupt column()/as_dicts() and any engine run while
+        # provenance still advertises a finite marginal. Reject non-finite values.
+        # (We deliberately do NOT enforce per-column [low, high] bounds: the
+        # module's own LHS / triangular draws can sit a sub-ULP outside the bounds —
+        # see the 1e-9 tolerance in test_samples_within_bounds — so a hard bound
+        # check would reject valid output. External callers own the marginal
+        # fidelity of cached draws; provenance records the specs they assert.)
+        if not bool(np.all(np.isfinite(self.matrix))):
+            msg = "matrix must contain only finite sample values (no NaN/inf)"
+            raise ValueError(msg)
         # Own the draw before locking it, so the "deterministic, immutable" contract
         # holds for ANY construction path. Merely flipping ``writeable`` on the
         # passed array is not enough: a caller can construct ParameterSamples around

@@ -387,6 +387,18 @@ class TestParameterSamples:
                 seed=0, method=SamplingMethod.INDEPENDENT,
             )
 
+    @pytest.mark.parametrize("bad", [np.nan, np.inf, -np.inf])
+    def test_rejects_non_finite_matrix_values(self, bad: float):
+        # A cached/external matrix carrying NaN/inf would corrupt downstream runs
+        # while provenance still advertises a finite marginal.
+        spec = (ParameterSpec(name="x", low=0.0, central=1.0, high=2.0),)
+        matrix = np.zeros((4, 1), dtype=np.float64)
+        matrix[0, 0] = bad
+        with pytest.raises(ValueError, match="finite"):
+            ParameterSamples(
+                names=("x",), specs=spec, matrix=matrix, seed=0, method=SamplingMethod.INDEPENDENT
+            )
+
 
 def _imports_engine(tree: ast.AST) -> bool:
     """True if any import node in ``tree`` references ``wealthlens_sim.engine``."""
