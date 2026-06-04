@@ -1,0 +1,172 @@
+{
+  "caveats": [
+    "Illustrative estimate over a synthetic v0.1 population (household microdata statistically generated and calibrated to published aggregates), not an official forecast. Treat the figures as indicative, not as a costing."
+  ],
+  "devolution_scope": null,
+  "enforcement_cost_gbp_bn": {
+    "central": 0.0,
+    "high": 0.0,
+    "low": 0.0
+  },
+  "enforcement_net_fiscal_impact_gbp_bn": {
+    "central": 0.0,
+    "high": 0.0,
+    "low": 0.0
+  },
+  "enforcement_uplift_gbp_bn": {
+    "central": 0.0,
+    "high": 0.0,
+    "low": 0.0
+  },
+  "households_scored": 2000,
+  "interval_method": "alpha_sweep",
+  "population_provenance_ids": [
+    "ons-was-wealth",
+    "ons-families-households-2022",
+    "synth.n_households:2000",
+    "synth.seed:20",
+    "synth.population_households:27500000",
+    "synth.median_net_wealth:293700",
+    "synth.lognormal_sigma:1.1",
+    "synth.pareto_threshold:1200500",
+    "synth.pareto_alpha:2.5",
+    "synth.couple_share:0.55",
+    "synth.nation_shares:england=0.859127272727;scotland=0.0924363636364;wales=0.0484363636364",
+    "synth.asset_shares:dc_pension=0.3544;financial=0.1411;main_residence=0.4025;physical=0.1021"
+  ],
+  "provenance": {
+    "assumptions_consumed": [
+      {
+        "assumption_id": "toptail.pareto_alpha.overall.v1",
+        "domain": "top-tail",
+        "resolved_value": 1.5,
+        "source": "Vermeulen (2018); calibrated to UK WAS + Sunday Times Rich List"
+      }
+    ],
+    "complete": true,
+    "outputs": [
+      {
+        "assumption_ids": [
+          "toptail.pareto_alpha.overall.v1"
+        ],
+        "layer": "revenue",
+        "output_label": "total_revenue_gbp_bn"
+      },
+      {
+        "assumption_ids": [
+          "toptail.pareto_alpha.overall.v1"
+        ],
+        "layer": "revenue",
+        "output_label": "revenue_by_nation"
+      },
+      {
+        "assumption_ids": [
+          "toptail.pareto_alpha.overall.v1"
+        ],
+        "layer": "revenue",
+        "output_label": "revenue_by_decile"
+      },
+      {
+        "assumption_ids": [],
+        "layer": "revenue",
+        "output_label": "enforcement_uplift_gbp_bn"
+      },
+      {
+        "assumption_ids": [],
+        "layer": "revenue",
+        "output_label": "enforcement_cost_gbp_bn"
+      },
+      {
+        "assumption_ids": [],
+        "layer": "revenue",
+        "output_label": "enforcement_net_fiscal_impact_gbp_bn"
+      }
+    ],
+    "version_tag": {
+      "consultation_state": "",
+      "fiscal_event_anchor": "",
+      "macro_baseline_version": "NBS-2025",
+      "policy_version": "2026-27",
+      "population_version": "synth-v0.1",
+      "wealthlens_sim_version": "0.1.0.dev0"
+    }
+  },
+  "provenance_complete": true,
+  "revenue_by_decile": [
+    {
+      "central": 0.0,
+      "high": 0.0,
+      "low": 0.0
+    },
+    {
+      "central": 0.0,
+      "high": 0.0,
+      "low": 0.0
+    },
+    {
+      "central": 0.0,
+      "high": 0.0,
+      "low": 0.0
+    },
+    {
+      "central": 0.0,
+      "high": 0.0,
+      "low": 0.0
+    },
+    {
+      "central": 0.0,
+      "high": 0.0,
+      "low": 0.0
+    },
+    {
+      "central": 0.0,
+      "high": 0.0,
+      "low": 0.0
+    },
+    {
+      "central": 0.0,
+      "high": 0.0,
+      "low": 0.0
+    },
+    {
+      "central": 0.0,
+      "high": 0.0,
+      "low": 0.0
+    },
+    {
+      "central": 0.13271646334783002,
+      "high": 0.1917015581690878,
+      "low": 0.09953734751087251
+    },
+    {
+      "central": 18.751857413893273,
+      "high": 27.086016264512505,
+      "low": 14.063893060419954
+    }
+  ],
+  "revenue_by_nation": {
+    "england": {
+      "central": 16.658969277128254,
+      "high": 24.062955622518587,
+      "low": 12.494226957846191
+    },
+    "scotland": {
+      "central": 0.5608097745407321,
+      "high": 0.810058563225502,
+      "low": 0.4206073309055491
+    },
+    "wales": {
+      "central": 1.6647948255721197,
+      "high": 2.4047036369375063,
+      "low": 1.2485961191790897
+    }
+  },
+  "scenario_name": "1% annual wealth tax above \u00a31m",
+  "schema_version": "1.3",
+  "total_revenue_gbp_bn": {
+    "central": 18.884573877241113,
+    "high": 27.27771782268161,
+    "low": 14.163430407930836
+  },
+  "uncertainty_provenance_ids": []
+}
