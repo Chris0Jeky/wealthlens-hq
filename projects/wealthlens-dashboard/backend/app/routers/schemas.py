@@ -112,3 +112,17 @@ class FreshnessResponse(BaseModel):
 
     datasets: dict[str, DatasetFreshnessEntry]
     thresholds: FreshnessThresholds
+
+
+class SimulatorScenarioInfo(BaseModel):
+    """One available WealthLens-Sim scenario."""
+
+    id: str
+    name: str
+    description: str
+
+
+class SimulatorScenarioListResponse(BaseModel):
+    """Response for GET /api/simulator/ — available scenarios."""
+
+    scenarios: list[SimulatorScenarioInfo]

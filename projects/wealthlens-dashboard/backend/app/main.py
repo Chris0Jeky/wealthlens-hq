@@ -22,7 +22,7 @@ from app.logging_config import setup_logging
 from app.logging_middleware import RequestLoggingMiddleware
 from app.middleware import SecurityHeadersMiddleware
 from app.rate_limit import RateLimitMiddleware
-from app.routers import data
+from app.routers import data, simulator
 from app.timeout_middleware import TimeoutMiddleware
 
 setup_logging(os.environ.get("LOG_LEVEL", "INFO"))
@@ -115,6 +115,7 @@ if not cors_origins:
 
 tags_metadata = [
     {"name": "data", "description": "Dataset access and metadata endpoints"},
+    {"name": "simulator", "description": "WealthLens-Sim scenario dashboard results"},
     {"name": "health", "description": "Service health and availability checks"},
 ]
 
@@ -173,6 +174,7 @@ app.add_middleware(RequestLoggingMiddleware)
 register_error_handlers(app)
 
 app.include_router(data.router, prefix="/api/data", tags=["data"])
+app.include_router(simulator.router, prefix="/api/simulator", tags=["simulator"])
 
 
 @app.get("/api/health/data", tags=["health"], summary="Dataset availability check")
