@@ -52,6 +52,15 @@ OUT_DIR = _REPO / "projects" / "wealthlens-dashboard" / "data" / "simulator"
 _POP_HOUSEHOLDS = 2_000
 _POP_SEED = 20
 
+#: Surfaced in every served fixture's ``caveats[]`` — the contract field the chart
+#: renders — so the synthetic-population framing reaches a consumer that fetches the
+#: scenario payload directly, not only the API listing description.
+_SYNTHETIC_POPULATION_CAVEAT = (
+    "Illustrative estimate over a synthetic v0.1 population (household microdata "
+    "statistically generated and calibrated to published aggregates), not an "
+    "official forecast. Treat the figures as indicative, not as a costing."
+)
+
 
 def _version() -> VersionTag:
     return VersionTag(
@@ -98,7 +107,12 @@ def build_payloads() -> dict[str, dict[str, Any]]:
     for scenario_id, (name, families) in SCENARIOS.items():
         scenario = Scenario(name=name, version_tag=_version(), families=families)
         result = simulate(population, scenario, registries=registries)
-        payloads[scenario_id] = to_dashboard_json(result)
+        payload = to_dashboard_json(result)
+        # Prepend the synthetic-population caveat to whatever the contract already
+        # carries (e.g. an incomplete-provenance caveat), so the chart's caveat
+        # banner always states these are synthetic estimates.
+        payload["caveats"] = [_SYNTHETIC_POPULATION_CAVEAT, *payload["caveats"]]
+        payloads[scenario_id] = payload
     return payloads
 
 
