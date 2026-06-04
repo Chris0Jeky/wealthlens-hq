@@ -650,11 +650,10 @@ class TestCombinedAPRBPRAndRNRBTaper:
         )
         expected_relief = 2_500_000 + (500_000 * 0.50)
         assert result.apr_bpr_relief == pytest.approx(expected_relief)
-        estate_after = estate - expected_relief  # 2,250,000
-        # RNRB taper on post-relief estate: (2.25M - 2M) / 2 = 125k taper
-        expected_rnrb = 175_000 - 125_000
-        assert result.rnrb_used == pytest.approx(expected_rnrb)
-        expected_taxable = estate_after - 325_000 - expected_rnrb
+        # RNRB taper uses the PRE-relief estate (£5m > £2.35m) → fully tapered.
+        assert result.rnrb_used == 0.0
+        estate_after = estate - expected_relief
+        expected_taxable = estate_after - 325_000
         assert result.taxable_estate == pytest.approx(expected_taxable)
 
     def test_moderate_estate_with_business_and_rnrb(self):
@@ -671,28 +670,30 @@ class TestCombinedAPRBPRAndRNRBTaper:
         assert result.taxable_estate == pytest.approx(expected_taxable)
 
 
-class TestRNRBTaperOnPostReliefEstate:
-    """RNRB taper uses the post-relief estate (after APR/BPR and charitable
-    deductions), not the raw estate — per HMRC IHTM46013."""
+class TestRNRBTaperOnPreReliefEstate:
+    """RNRB taper is tested against the PRE-relief estate value (after
+    liabilities, before APR/BPR reliefs and charitable/spousal exemptions) —
+    per HMRC IHTM46023. Reliefs and exemptions must NOT reduce the taper base."""
 
-    def test_apr_bpr_reduces_taper(self):
+    def test_apr_bpr_does_not_reduce_taper(self):
         config = IHTConfig()
-        estate = 2_500_000
-        # Without relief: taper = (2.5M - 2M) / 2 = 250k → RNRB tapers to 0.
+        estate = 2_500_000  # pre-relief, above the £2.35m full-taper point
         no_bpr = _compute_person_iht(estate, True, True, 0, False, 0.0, config)
         assert no_bpr.rnrb_used == 0.0
-        # With 1M APR/BPR: estate_after_relief = 1.5M < 2M → no taper, full RNRB.
+        # APR/BPR must NOT reduce the taper base: the pre-relief estate is still
+        # £2.5m → a £250k taper fully eliminates the £175k RNRB. (A post-relief
+        # taper would have wrongly restored the full £175k here.)
         with_bpr = _compute_person_iht(estate, True, True, 1_000_000, False, 0.0, config)
-        assert with_bpr.rnrb_used == pytest.approx(175_000)
+        assert with_bpr.rnrb_used == 0.0
 
-    def test_charitable_reduces_taper(self):
+    def test_charitable_does_not_reduce_taper(self):
         config = IHTConfig()
         estate = 2_500_000
         no_charity = _compute_person_iht(estate, True, True, 0, False, 0.0, config)
         assert no_charity.rnrb_used == 0.0
-        # 30% charitable: estate_after_relief = 2.5M * 0.7 = 1.75M < 2M → full RNRB.
+        # Charitable gifts must NOT reduce the taper base either.
         with_charity = _compute_person_iht(estate, True, True, 0, False, 0.30, config)
-        assert with_charity.rnrb_used == pytest.approx(175_000)
+        assert with_charity.rnrb_used == 0.0
 
     def test_leveraged_business_relief_uses_net(self):
         # gross=5M, debt=3M → net=2M. Relief should be on the 2M net, not 5M gross.
