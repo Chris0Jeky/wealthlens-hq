@@ -114,6 +114,13 @@ class EngineResult(BaseModel):
     #: silently dropped; empty when a generator cannot assert source-backed
     #: population provenance.
     population_provenance_ids: list[str] = Field(default_factory=list)
+    #: Provenance ids for the Monte-Carlo uncertainty propagation, when an
+    #: ``uncertainty`` sampling config was supplied to :func:`simulate` (the seed,
+    #: method, sample count, the sampled marginals, and the centre/quantile choices
+    #: — see :meth:`ParameterSamples.provenance_ids` / :class:`PropagationResult`).
+    #: Empty when the feature is OFF (the default), in which case the revenue band
+    #: is the single multiplicative top-tail-alpha sweep recorded in the manifest.
+    uncertainty_provenance_ids: list[str] = Field(default_factory=list)
     #: ``True`` once every **registry assumption** the published intervals depend
     #: on (the top-tail Pareto alpha driving the revenue bounds) has been consumed
     #: and recorded in the manifest. ``False`` when no assumption registry was

@@ -51,6 +51,19 @@ def revenue_scale_from_alpha(alpha: Interval) -> tuple[float, float]:
     return factor_low, factor_high
 
 
+def revenue_scale_at_alpha(alpha: float, central_alpha: float) -> float:
+    """Multiplicative revenue factor for a *single* alpha draw, relative to central.
+
+    ``revenue_scale_from_alpha`` returns the band endpoints from an alpha interval;
+    this returns the scale for one sampled alpha value, used by Monte-Carlo
+    propagation to build a revenue band from many draws. ``revenue_scale_at_alpha(a,
+    central) == 1.0`` exactly when ``a == central``, so the central-parameter point
+    estimate is preserved. Requires ``alpha > 1`` and ``central_alpha > 1`` for a
+    finite tail mean (``_tail_mean_factor`` raises otherwise).
+    """
+    return _tail_mean_factor(alpha) / _tail_mean_factor(central_alpha)
+
+
 def scaled_interval(central: float, scale_low: float, scale_high: float) -> Interval:
     """Build a revenue interval by scaling ``central`` by the ``(low, high)`` factors.
 
