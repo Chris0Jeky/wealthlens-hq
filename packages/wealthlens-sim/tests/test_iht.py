@@ -695,6 +695,14 @@ class TestRNRBTaperOnPreReliefEstate:
         with_charity = _compute_person_iht(estate, True, True, 0, False, 0.30, config)
         assert with_charity.rnrb_used == 0.0
 
+    def test_partial_taper_uses_pre_relief_estate(self):
+        # Pre-relief estate £2.1m → taper (2.1M - 2M) / 2 = £50k → RNRB £125k,
+        # even with £1m relief. A post-relief base (£1.1m < £2m) would wrongly
+        # restore the full £175k, so this locks the partial-taper direction too.
+        config = IHTConfig()
+        result = _compute_person_iht(2_100_000, True, True, 1_000_000, False, 0.0, config)
+        assert result.rnrb_used == pytest.approx(125_000)
+
     def test_leveraged_business_relief_uses_net(self):
         # gross=5M, debt=3M → net=2M. Relief should be on the 2M net, not 5M gross.
         person = make_person(assets=[
