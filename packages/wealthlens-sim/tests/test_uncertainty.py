@@ -348,6 +348,45 @@ class TestParameterSamples:
         backing[0, 0] = 999.0  # mutate through the still-writeable base
         assert samples.matrix[0, 0] == 0.0
 
+    def test_rejects_non_2d_matrix(self):
+        spec = (ParameterSpec(name="x", low=0.0, central=1.0, high=2.0),)
+        with pytest.raises(ValueError, match="2-D"):
+            ParameterSamples(
+                names=("x",), specs=spec, matrix=np.zeros(4, dtype=np.float64),
+                seed=0, method=SamplingMethod.INDEPENDENT,
+            )
+
+    def test_rejects_misaligned_names_specs_columns(self):
+        specs = (
+            ParameterSpec(name="a", low=0.0, central=1.0, high=2.0),
+            ParameterSpec(name="b", low=0.0, central=1.0, high=2.0),
+        )
+        # two names/specs but only one matrix column
+        with pytest.raises(ValueError, match="align"):
+            ParameterSamples(
+                names=("a", "b"), specs=specs, matrix=np.zeros((4, 1), dtype=np.float64),
+                seed=0, method=SamplingMethod.INDEPENDENT,
+            )
+
+    def test_rejects_specs_name_mismatch(self):
+        spec = (ParameterSpec(name="b", low=0.0, central=1.0, high=2.0),)
+        with pytest.raises(ValueError, match="same names"):
+            ParameterSamples(
+                names=("a",), specs=spec, matrix=np.zeros((4, 1), dtype=np.float64),
+                seed=0, method=SamplingMethod.INDEPENDENT,
+            )
+
+    def test_rejects_duplicate_names(self):
+        specs = (
+            ParameterSpec(name="x", low=0.0, central=1.0, high=2.0),
+            ParameterSpec(name="x", low=0.0, central=1.0, high=2.0),
+        )
+        with pytest.raises(ValueError, match="unique"):
+            ParameterSamples(
+                names=("x", "x"), specs=specs, matrix=np.zeros((4, 2), dtype=np.float64),
+                seed=0, method=SamplingMethod.INDEPENDENT,
+            )
+
 
 def _imports_engine(tree: ast.AST) -> bool:
     """True if any import node in ``tree`` references ``wealthlens_sim.engine``."""

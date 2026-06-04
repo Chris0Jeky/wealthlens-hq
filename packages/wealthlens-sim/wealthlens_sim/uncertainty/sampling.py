@@ -238,6 +238,27 @@ class ParameterSamples:
     method: SamplingMethod
 
     def __post_init__(self) -> None:
+        # Validate internal consistency BEFORE locking, so a directly constructed
+        # block (the cached/external-draw path the tests exercise) cannot advertise
+        # parameters in names/specs/provenance that don't match the actual columns —
+        # which would make provenance_ids() lie and column() fall through to an
+        # IndexError instead of the documented KeyError.
+        if self.matrix.ndim != 2:
+            msg = f"matrix must be 2-D (n_samples x n_parameters), got {self.matrix.ndim}-D"
+            raise ValueError(msg)
+        n_cols = int(self.matrix.shape[1])
+        if not (len(self.names) == len(self.specs) == n_cols):
+            msg = (
+                f"names ({len(self.names)}), specs ({len(self.specs)}), and matrix "
+                f"columns ({n_cols}) must all align"
+            )
+            raise ValueError(msg)
+        if tuple(spec.name for spec in self.specs) != self.names:
+            msg = "specs must carry the same names as `names`, column-for-column"
+            raise ValueError(msg)
+        if len(set(self.names)) != len(self.names):
+            msg = f"parameter names must be unique, got {self.names}"
+            raise ValueError(msg)
         # Own the draw before locking it, so the "deterministic, immutable" contract
         # holds for ANY construction path. Merely flipping ``writeable`` on the
         # passed array is not enough: a caller can construct ParameterSamples around
