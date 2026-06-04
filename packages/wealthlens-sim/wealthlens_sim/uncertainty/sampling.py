@@ -30,6 +30,7 @@ Design notes
 
 from __future__ import annotations
 
+import math
 from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
 from enum import StrEnum
@@ -94,6 +95,14 @@ class ParameterSpec(BaseModel):
 
     @model_validator(mode="after")
     def _ascending(self) -> ParameterSpec:
+        # Non-finite bounds (inf / -inf) pass the ordering check but make the draw
+        # ill-defined: an infinite span yields NaN in _to_triangular/_to_uniform,
+        # silently corrupting the sample matrix and any engine run that consumes it.
+        # NaN bounds already fail the ordering comparison; reject all non-finite
+        # values explicitly so a sampled marginal always has a finite support.
+        if not all(math.isfinite(v) for v in (self.low, self.central, self.high)):
+            msg = f"ParameterSpec {self.name!r} bounds must be finite, got ({self.low}, {self.central}, {self.high})"
+            raise ValueError(msg)
         if not (self.low <= self.central <= self.high):
             msg = f"ParameterSpec {self.name!r} must satisfy low <= central <= high, got ({self.low}, {self.central}, {self.high})"
             raise ValueError(msg)
@@ -118,6 +127,12 @@ class ParameterSpec(BaseModel):
                     "any of the provenance delimiters ; = @ ( ) ,"
                 )
                 raise ValueError(msg)
+        # ``-`` is the sentinel an *absent* source_id renders as in the provenance
+        # tag (``@-``); an explicit source_id of "-" would be indistinguishable from
+        # None, so an evidence change could go unrecorded. Reserve it.
+        if self.source_id == "-":
+            msg = "ParameterSpec source_id must not be '-' (reserved as the absent-source sentinel in provenance tags)"
+            raise ValueError(msg)
         return self
 
     @classmethod

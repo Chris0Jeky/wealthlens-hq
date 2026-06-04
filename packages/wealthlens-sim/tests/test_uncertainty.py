@@ -45,6 +45,27 @@ class TestParameterSpec:
         spec = ParameterSpec(name="fixed", low=4.0, central=4.0, high=4.0)
         assert spec.low == spec.central == spec.high == 4.0
 
+    @pytest.mark.parametrize(
+        "kwargs",
+        [
+            {"low": 0.0, "central": 1.0, "high": float("inf")},
+            {"low": float("-inf"), "central": 1.0, "high": 2.0},
+            {"low": 0.0, "central": float("inf"), "high": float("inf")},
+            {"low": 0.0, "central": float("nan"), "high": 2.0},
+        ],
+    )
+    def test_rejects_non_finite_bounds(self, kwargs: dict[str, float]):
+        # Infinite bounds pass the ordering check but make an infinite span that
+        # draws NaN; reject all non-finite marginals up front.
+        with pytest.raises(ValidationError):
+            ParameterSpec(name="x", **kwargs)
+
+    def test_rejects_reserved_source_sentinel(self):
+        # "-" is the absent-source sentinel in provenance tags; an explicit "-"
+        # would be indistinguishable from None.
+        with pytest.raises(ValidationError):
+            ParameterSpec(name="x", low=1.0, central=2.0, high=3.0, source_id="-")
+
     def test_is_frozen(self):
         spec = ParameterSpec(name="x", low=1.0, central=2.0, high=3.0)
         with pytest.raises(ValidationError):
