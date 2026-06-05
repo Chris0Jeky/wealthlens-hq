@@ -66,6 +66,24 @@ IHT_MAIN_RATE: float = 0.40
 IHT_CHARITABLE_RATE: float = 0.36
 CHARITABLE_THRESHOLD: float = 0.10
 
+#: Crude annual estate-crystallisation rate used to convert the STOCK of at-death
+#: IHT liability (summed over the whole grossed-up population, as if everyone died
+#: this year) into an annual FLOW (only the estates that pass at death each year).
+#: ~ ONS Deaths registered in England and Wales 2023 (581,363) / ~27.5m GB
+#: households (the synth population base). v0.1 simplifications (all documented and
+#: acceptable ONLY because IHT is NOT served on Tier A):
+#:   - E&W deaths on the GB-scoped synth understates GB by ~10%;
+#:   - DENOMINATOR GRAIN: a per-HOUSEHOLD death rate is applied to per-person-summed
+#:     household liability, so multi-person households are over-stated by ~mean adults
+#:     per household (~1.7x) vs a true per-person rate (deaths/adults). The Tier B
+#:     refinement is a per-person age-specific q_x;
+#:   - per-household not per-estate (spousal second-death timing not modelled);
+#:   - uniform, not age-specific.
+#: The headline remains ~3x high from synth top-tail over-concentration regardless.
+#: See docs/IHT_CALIBRATION.md. Source: source id ``ons-deaths-registered``,
+#: assumption ``model.iht.annual_mortality_rate.v1``.
+ANNUAL_MORTALITY_RATE_2026: float = 581_363 / 27_500_000  # ~= 0.0211
+
 RESIDENCE_TYPES: frozenset[AssetType] = frozenset({
     AssetType.MAIN_RESIDENCE,
 })
@@ -148,6 +166,14 @@ class IHTConfig(BaseModel):
         default=True,
         description="Whether spousal/civil-partner transfers are fully exempt",
     )
+    annual_mortality_rate: float = Field(
+        default=ANNUAL_MORTALITY_RATE_2026, ge=0, le=1,
+        description=(
+            "Annual estate-crystallisation rate converting the STOCK of at-death IHT "
+            "liability into an annual FLOW (see ANNUAL_MORTALITY_RATE_2026 and "
+            "docs/IHT_CALIBRATION.md). Set 1.0 to recover the raw stock."
+        ),
+    )
 
     @model_validator(mode="after")
     def _rates_consistent(self) -> IHTConfig:
@@ -191,11 +217,23 @@ class AggregateIHTRevenue(BaseModel):
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
-    total_revenue_bn: float = Field(description="Total IHT revenue (GBP billions)")
-    taxpayer_count: float = Field(ge=0, description="Weighted count of liable households")
-    population_count: float = Field(ge=0, description="Weighted count of all households in the dataset")
+    total_revenue_bn: float = Field(
+        description="Annual IHT revenue FLOW (GBP billions): the at-death stock scaled by annual_mortality_rate"
+    )
+    taxpayer_count: float = Field(
+        ge=0,
+        description=(
+            "Annual weighted count of crystallising IHT estates (liable household weight scaled by "
+            "annual_mortality_rate). NOTE: unlike sibling families this is an annual FLOW, not a stock "
+            "household count — IHT taxes estates that pass at death each year. See docs/IHT_CALIBRATION.md"
+        ),
+    )
+    population_count: float = Field(ge=0, description="Weighted count of all households in the dataset (stock)")
     liable_sample_count: int = Field(ge=0, description="Unweighted count of liable survey households")
-    mean_liability: float = Field(ge=0, description="Population-weighted mean IHT among liable households (GBP)")
+    mean_liability: float = Field(
+        ge=0,
+        description="Mean at-death IHT per paying estate (GBP); rate-independent (the mortality rate cancels)",
+    )
     revenue_by_nation: dict[str, float] = Field(
         default_factory=dict,
         description="Revenue in GBP billions, keyed by Nation value",
@@ -443,7 +481,22 @@ def compute_aggregate_iht_revenue(
             taxpayer_weight += hh.weight
             liable_count_unweighted += 1
 
+    # Mean at-death IHT per paying estate, computed BEFORE the flow scaling so it is
+    # rate-independent (the mortality rate would otherwise cancel, but computing it
+    # here also keeps it correct at the rate=0 boundary where taxpayer_weight -> 0).
     mean_liability = total_revenue / taxpayer_weight if taxpayer_weight > 0 else 0.0
+
+    # Convert the STOCK of at-death liability (summed as if every household died this
+    # year) into an annual FLOW: scale the revenue and the weighted payer count by
+    # the annual estate-crystallisation rate. population_count stays the unscaled
+    # household base. The served IHT scenario remains EXCLUDED: Tier A fixes the ~40x
+    # stock-vs-flow error but leaves a ~3x synth top-tail over-concentration. See
+    # docs/IHT_CALIBRATION.md.
+    rate = config.annual_mortality_rate
+    total_revenue *= rate
+    taxpayer_weight *= rate
+    revenue_by_nation = {k: v * rate for k, v in revenue_by_nation.items()}
+
     nation_bn = {k: v / 1e9 for k, v in revenue_by_nation.items()}
 
     return AggregateIHTRevenue(

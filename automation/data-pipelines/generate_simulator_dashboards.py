@@ -10,11 +10,14 @@ in this directory feed ``/api/data``.
 
 **These figures are illustrative estimates over a *synthetic* v0.1 population, not
 official forecasts.** Only scenarios whose headline is in a defensible range are
-included: the synthetic IHT estimate is a known ~100x overshoot (the synth
-population over-states top wealth and applies IHT as-if-at-death to everyone), so
-IHT scenarios are intentionally excluded until the synth IHT calibration lands
-(tracked in tasks/inbox.md). Do not serve a scenario whose number can't be
-sanity-checked against published statistics without a caveat.
+included. IHT scenarios are still **intentionally excluded**: Tier A calibration
+(see docs/IHT_CALIBRATION.md) fixed the ~40x stock-vs-flow error by applying an
+ONS-sourced annual mortality rate (the model no longer taxes every household
+as-if-at-death this year), bringing the headline from ~£1009bn to ~£21bn. But that
+is still ~3x the ~£7-8bn real figure because the synth over-states top wealth, so
+IHT is not serveable until Tier B (age-specific mortality + age-wealth correlation).
+Do not serve a scenario whose number can't be sanity-checked against published
+statistics without a caveat.
 
 Run it after any simulator change:
 

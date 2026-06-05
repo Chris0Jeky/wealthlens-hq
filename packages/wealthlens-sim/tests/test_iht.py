@@ -7,6 +7,7 @@ from _helpers import make_household, make_person
 from pydantic import ValidationError
 
 from wealthlens_sim.reforms.d_iht_reform import (
+    ANNUAL_MORTALITY_RATE_2026,
     HouseholdIHTResult,
     IHTConfig,
     IHTResult,
@@ -19,6 +20,7 @@ from wealthlens_sim.reforms.d_iht_reform import (
 )
 from wealthlens_sim.schema.base import Nation
 from wealthlens_sim.schema.household import AssetType, Household
+from wealthlens_sim.synth import SynthConfig, generate_population
 
 
 class TestIHTConfig:
@@ -423,6 +425,57 @@ class TestAggregateIHTRevenue:
         result = compute_aggregate_iht_revenue(self._make_population(), config)
         if result.taxpayer_count > 0:
             assert result.mean_liability > 0
+
+
+class TestIHTMortalityFlow:
+    """Tier A: the aggregate converts the at-death STOCK into an annual FLOW via the
+    mortality rate. See docs/IHT_CALIBRATION.md."""
+
+    def _make_population(self) -> list[Household]:
+        return TestAggregateIHTRevenue()._make_population()
+
+    def test_default_rate_is_ons_derived(self):
+        # Pin the sourced default (ONS E&W deaths 2023 / ~27.5m GB households).
+        assert IHTConfig().annual_mortality_rate == pytest.approx(581_363 / 27_500_000)
+        assert pytest.approx(0.0211, abs=1e-3) == ANNUAL_MORTALITY_RATE_2026
+
+    def test_mortality_rate_scales_revenue_below_stock(self):
+        pop = self._make_population()
+        flow = compute_aggregate_iht_revenue(pop, IHTConfig()).total_revenue_bn
+        stock = compute_aggregate_iht_revenue(pop, IHTConfig(annual_mortality_rate=1.0)).total_revenue_bn
+        assert stock > 0
+        assert flow == pytest.approx(stock * ANNUAL_MORTALITY_RATE_2026)
+        assert flow < stock  # the flow is a small fraction of the stock
+
+    def test_mean_liability_invariant_to_rate(self):
+        # mean per paying estate is the at-death mean; the rate cancels.
+        pop = self._make_population()
+        flow = compute_aggregate_iht_revenue(pop, IHTConfig())
+        stock = compute_aggregate_iht_revenue(pop, IHTConfig(annual_mortality_rate=1.0))
+        assert flow.mean_liability == pytest.approx(stock.mean_liability)
+
+    def test_zero_rate_zeros_flow_but_keeps_at_death_mean(self):
+        # rate=0 => zero annual flow, but mean_liability stays the at-death mean
+        # (computed before scaling, so the rate=0 boundary doesn't zero it).
+        pop = self._make_population()
+        zero = compute_aggregate_iht_revenue(pop, IHTConfig(annual_mortality_rate=0.0))
+        stock = compute_aggregate_iht_revenue(pop, IHTConfig(annual_mortality_rate=1.0))
+        assert zero.total_revenue_bn == 0.0
+        assert zero.taxpayer_count == 0.0
+        assert zero.mean_liability == pytest.approx(stock.mean_liability)
+        assert zero.mean_liability > 0
+
+    def test_real_synth_headline_is_annual_flow_scale(self):
+        # Sanity bound on the REAL served population (generator params): the headline
+        # must be annual-flow scale, NOT the ~£1000bn stock the pre-Tier-A model gave.
+        pop = generate_population(SynthConfig(n_households=2_000, seed=20))
+        flow = compute_aggregate_iht_revenue(pop.households, IHTConfig()).total_revenue_bn
+        stock = compute_aggregate_iht_revenue(
+            pop.households, IHTConfig(annual_mortality_rate=1.0)
+        ).total_revenue_bn
+        assert stock > 200  # confirms we are exercising the real overshoot (~£1009bn)
+        assert flow < 100  # annual-flow scale, not the stock
+        assert flow == pytest.approx(stock * ANNUAL_MORTALITY_RATE_2026, rel=1e-6)
 
 
 class TestIHTResultModel:

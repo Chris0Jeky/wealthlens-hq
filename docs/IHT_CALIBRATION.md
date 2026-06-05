@@ -1,6 +1,7 @@
 # IHT Calibration: stock-to-flow and the synth overshoot
 
-Status: DESIGN NOTE (scoping). Last updated: 2026-06-05.
+Status: Tier A IMPLEMENTED (stock-to-flow mortality conversion); Tier B/C pending.
+IHT scenarios remain EXCLUDED. Last updated: 2026-06-05.
 Owner area: `packages/wealthlens-sim` (Family D, inheritance tax).
 Related: `tasks/inbox.md` (IHT calibration item), Blueprint v5 section 3.3
 ("credible IHT modelling requires mortality and age structure").
@@ -44,7 +45,7 @@ ages are drawn uniformly on [18, 90) and are uncorrelated with wealth.
    household crystallisation rate of roughly **0.024**. Multiplying the stock by
    this rate is the missing conversion.
 2. **Synth top-tail over-concentration (~3x residual).** Even after the mortality
-   conversion the headline is ~£24bn, still ~3x the ~£7-8bn real figure. The synth
+   conversion the headline is ~£21bn, still ~3x the ~£7-8bn real figure. The synth
    population over-states top wealth (lognormal body + Pareto tail, currently not
    calibrated tightly enough at the very top, and ages uncorrelated with wealth),
    so the taxable estate mass above the NRB is too large. This is a *separate*
@@ -68,20 +69,26 @@ high. That 3.2x is error (2), confirming the two are distinct.
 
 ## Tiered plan
 
-### Tier A (next PR) - annual mortality conversion. Small, principled, no schema change.
-Apply an ONS-sourced annual mortality/crystallisation rate to the aggregate:
-`annual_iht = mortality_rate * sum(at_death_liability * weight)`. Add
-`IHTConfig.annual_mortality_rate` (default sourced from ONS deaths / households),
-a `registries/sources.yml` entry for ONS deaths, and a
-`registries/assumptions.yml` entry `model.iht.annual_mortality_rate.v1`. The
-per-household calculation is unchanged (the at-death liability is a valid
-quantity). Expected headline ~£24bn.
+### Tier A - annual mortality conversion. DONE (2026-06-05).
+Applied an ONS-sourced annual mortality/crystallisation rate to the aggregate AND
+the decile/nation attribution (so the engine's decile-sum == total invariant and the
+enforcement baseline stay consistent): `annual_iht = mortality_rate *
+sum(at_death_liability * weight)`. Added `IHTConfig.annual_mortality_rate` (default
+`ANNUAL_MORTALITY_RATE_2026 = 581_363 / 27_500_000 ~= 0.0211`), the
+`registries/sources.yml` `ons-deaths-registered` entry, and the
+`registries/assumptions.yml` `model.iht.annual_mortality_rate.v1` assumption. The
+per-household at-death calculation is unchanged. **Measured result on the real synth
+(n=2000, seed=20): stock £1009.0bn -> flow £21.3bn** (a sanity-bound test pins this).
+Still ~3x the ~£7-8bn real, so IHT stays excluded.
 
-Tier A limitations to document in code: uniform mortality (does not yet use
-age-specific q_x), a deaths-per-household approximation (IHT crystallises per
-estate, often on the second spouse death; not modelled in v0.1), and it does NOT
-fix error (2). **IHT scenarios stay excluded after Tier A** because ~£24bn is
-still not sanity-checkable against ~£7-8bn.
+Tier A limitations (documented in code): uniform mortality (does not yet use
+age-specific q_x); a deaths-per-household approximation (IHT crystallises per
+estate, often on the second spouse death; not modelled in v0.1); a DENOMINATOR
+GRAIN mismatch (a per-household death rate is applied to per-person-summed household
+liability, over-stating multi-person households by ~mean adults per household ~1.7x
+vs a per-person deaths/adults rate — the Tier B per-person q_x fixes this); and it
+does NOT fix error (2). **IHT scenarios stay excluded after Tier A** because ~£21bn
+is still not sanity-checkable against ~£7-8bn.
 
 ### Tier B - age-specific mortality + age-wealth correlation. Medium.
 Use ONS National Life Tables q_x per the head's age, and make the synth draw ages
@@ -98,7 +105,7 @@ tables. Blocks on the UKDS licence (see `tasks/inbox.md` real-provider item).
 Do not re-enable any served IHT scenario until the headline is sanity-checkable
 against ~£7-8bn real (within a defensible band, with caveats). On current analysis
 that requires at least Tier B (plus a tighter synth top-tail). Tier A is a strict
-improvement (1,009bn -> ~24bn) and removes the most egregious (stock-vs-flow)
+improvement (1,009bn -> ~21bn) and removes the most egregious (stock-vs-flow)
 error, but is not sufficient on its own to serve.
 
 ## Open question for Chris (deferred)

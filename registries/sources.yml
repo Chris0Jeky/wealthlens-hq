@@ -172,3 +172,19 @@ sources:
       Top 1% and top 10% share of net personal wealth in Great Britain.
       Variables: shweal_p99p100_992_j (top 1%), shweal_p90p100_992_j
       (top 10%). Equal-split adults basis. Historical data from 1820+.
+
+  - id: ons-deaths-registered
+    name: ONS Deaths registered in England and Wales (summary tables)
+    url: https://www.ons.gov.uk/peoplepopulationandcommunity/birthsdeathsandmarriages/deaths/bulletins/deathsregistrationsummarytables/2023
+    access_date: "2026-06-05"
+    format: html
+    licence: OGL-3.0
+    update_pattern: annual
+    pipeline: none
+    notes: >
+      Deaths registered in England and Wales: 581,363 in 2023. Used to derive the
+      IHT annual estate-crystallisation rate (deaths / ~27.5m GB households =
+      0.0211) that converts the at-death IHT stock into an annual flow. v0.1
+      simplification: E&W deaths applied to the GB-scoped synth (understates GB by
+      ~10%); per-household not per-estate; uniform not age-specific. See
+      docs/IHT_CALIBRATION.md and assumption model.iht.annual_mortality_rate.v1.

@@ -49,7 +49,14 @@ def household_liability(household: Household, selection: FamilySelection) -> flo
             return compute_household_cgt(household, config).total_cgt_liability
         case PolicyFamily.IHT:
             assert isinstance(config, IHTConfig)
-            return compute_household_iht(household, config).total_iht_liability
+            # Annual FLOW: scale the at-death liability by the mortality rate so the
+            # decile/nation attribution matches compute_aggregate_iht_revenue's scaled
+            # total (the engine's decile-sum == total invariant, and the enforcement
+            # baseline that also flows through here). See docs/IHT_CALIBRATION.md.
+            return (
+                compute_household_iht(household, config).total_iht_liability
+                * config.annual_mortality_rate
+            )
         case PolicyFamily.HVCTS:
             assert isinstance(config, HVCTSConfig)
             return compute_hvcts(household, config).total_surcharge
