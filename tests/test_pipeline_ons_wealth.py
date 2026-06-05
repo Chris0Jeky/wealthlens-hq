@@ -90,6 +90,45 @@ def test_fallback_data_values_match_ons() -> None:
 
 
 # ---------------------------------------------------------------------------
+# Unit tests for _to_finite_float (NaN/inf rejection — same bug class as #361)
+# ---------------------------------------------------------------------------
+
+
+def test_to_finite_float_plain_number() -> None:
+    assert fetch_ons_wealth._to_finite_float(42) == 42.0
+    assert fetch_ons_wealth._to_finite_float(13.9) == pytest.approx(13.9)
+    assert fetch_ons_wealth._to_finite_float("100") == 100.0
+
+
+def test_to_finite_float_comma_grouped_text() -> None:
+    """Comma-grouped spreadsheet text should parse to the grouped value."""
+    assert fetch_ons_wealth._to_finite_float("14,200") == 14200.0
+
+
+def test_to_finite_float_nan_returns_none() -> None:
+    """A blank cell pandas reads as NaN must be rejected (the #361 bug)."""
+    assert fetch_ons_wealth._to_finite_float(float("nan")) is None
+    assert fetch_ons_wealth._to_finite_float("nan") is None
+
+
+def test_to_finite_float_inf_returns_none() -> None:
+    assert fetch_ons_wealth._to_finite_float(float("inf")) is None
+    assert fetch_ons_wealth._to_finite_float(float("-inf")) is None
+
+
+def test_to_finite_float_empty_string_returns_none() -> None:
+    assert fetch_ons_wealth._to_finite_float("") is None
+
+
+def test_to_finite_float_none_returns_none() -> None:
+    assert fetch_ons_wealth._to_finite_float(None) is None
+
+
+def test_to_finite_float_non_numeric_returns_none() -> None:
+    assert fetch_ons_wealth._to_finite_float("not a number") is None
+
+
+# ---------------------------------------------------------------------------
 # Unit tests for _shorten_decile_label
 # ---------------------------------------------------------------------------
 
