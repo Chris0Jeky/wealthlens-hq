@@ -11,25 +11,30 @@ function mockFreshnessResponse(dateStr: string, source = "ONS Wealth and Assets 
 }
 
 /**
- * Returns a YYYY-MM-DD string for N days ago. Uses UTC date arithmetic (setUTCDate)
- * so it is timezone-independent: mixing local getDate() with toISOString() (UTC) used
- * to produce an off-by-one in UTC+ timezones just after local midnight, making these
- * relative-time assertions flaky. Combined with the frozen clock below (noon UTC, where
- * every realistic timezone shares the same calendar date), the day diff is exact.
+ * Returns a YYYY-MM-DD string for N days ago, formatted from LOCAL date components.
+ *
+ * The component computes "today" from local components (useDataFreshness daysAgo:
+ * Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())), so this helper must
+ * also use local components — then the entry date and the component's "today" agree
+ * in EVERY timezone. The original bug mixed local getDate() with toISOString() (UTC),
+ * which is off by one in UTC+ zones just after local midnight. (Building from UTC
+ * instead only papers over UTC-12..+11 and still fails UTC+12..+14.) The frozen clock
+ * below then just removes the wall-clock dependency for a stable absolute date.
  */
 function daysAgoDate(days: number): string {
   const d = new Date();
-  d.setUTCDate(d.getUTCDate() - days);
-  return d.toISOString().split("T")[0];
+  d.setDate(d.getDate() - days);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
 describe("DataFreshnessBadge", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
-    // Freeze the clock so "today"/"N days ago" labels are deterministic regardless of
-    // the wall clock or the runner's timezone. Noon UTC: all realistic timezones are on
-    // the same calendar date, so the component's local-date "today" and the UTC-based
-    // helper above agree. Only Date is faked, leaving promises/timers untouched.
+    // Freeze the clock so the absolute "today" is stable across runs (no midnight-tick
+    // race). Timezone-independence comes from daysAgoDate using LOCAL components to
+    // match the component, NOT from the frozen instant — so any runner timezone works.
+    // Only Date is faked, leaving promises/timers untouched (flushPromises still runs).
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date("2026-06-15T12:00:00Z"));
     _resetCache();
