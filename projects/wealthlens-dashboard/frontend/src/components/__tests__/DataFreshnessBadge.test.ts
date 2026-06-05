@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { mount, flushPromises } from "@vue/test-utils";
 import DataFreshnessBadge from "@/components/DataFreshnessBadge.vue";
 import { _resetCache } from "@/composables/useDataFreshness";
@@ -10,17 +10,33 @@ function mockFreshnessResponse(dateStr: string, source = "ONS Wealth and Assets 
   };
 }
 
-/** Returns an ISO date string for N days ago from today. */
+/**
+ * Returns a YYYY-MM-DD string for N days ago. Uses UTC date arithmetic (setUTCDate)
+ * so it is timezone-independent: mixing local getDate() with toISOString() (UTC) used
+ * to produce an off-by-one in UTC+ timezones just after local midnight, making these
+ * relative-time assertions flaky. Combined with the frozen clock below (noon UTC, where
+ * every realistic timezone shares the same calendar date), the day diff is exact.
+ */
 function daysAgoDate(days: number): string {
   const d = new Date();
-  d.setDate(d.getDate() - days);
+  d.setUTCDate(d.getUTCDate() - days);
   return d.toISOString().split("T")[0];
 }
 
 describe("DataFreshnessBadge", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    // Freeze the clock so "today"/"N days ago" labels are deterministic regardless of
+    // the wall clock or the runner's timezone. Noon UTC: all realistic timezones are on
+    // the same calendar date, so the component's local-date "today" and the UTC-based
+    // helper above agree. Only Date is faked, leaving promises/timers untouched.
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-06-15T12:00:00Z"));
     _resetCache();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it("renders date for known dataset", async () => {
