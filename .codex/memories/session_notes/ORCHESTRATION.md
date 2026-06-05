@@ -15,10 +15,11 @@ This section supersedes the older handoff snapshots below.
 
 Chris ended the autonomous loop on 2026-06-05; the scheduled wakeup was cancelled.
 Clean slate: **9 PRs merged this session (#349–#357)**, main green, no open PRs.
-Resume from the seeded task queue below when restarting. 3 decisions are pending
-Chris's answer (asked at wrap-up): IHT v0.1 depth (Tier A done+excluded vs Tier B),
-ruff-format enforcement (72-file reformat — go/no-go), BGV Autumn 2026 (his call by
-2026-06-21). #357 was merged at wrap-up (fully reviewed, both approvals clean).
+Resume from the seeded task queue below when restarting. **Wrap-up decisions (Chris,
+2026-06-05):** (1) IHT = ship Tier A + keep EXCLUDED; do NOT pursue Tier B now (it
+stays a backlog item, deprioritised). (2) ruff-format = do NOT enforce; keep
+check-only (no 72-file reformat). (3) BGV = SKIP Autumn 2026 → target Spring 2027
+(prep over summer/autumn). #357 merged at wrap-up (both reviews clean).
 
 - **#357 MERGED** (`chore/ci-sha-pin-actions`): SHA-pinned all 10 workflows' GitHub
   Actions to commit hashes (26 pins, `@<sha> # vN`) — supply-chain hardening. 2
@@ -82,15 +83,15 @@ packages/wealthlens-sim onto the path.)
    tests/ — 32 pre-existing errors across 13 files, do INCREMENTALLY per-dir, fix the
    real ones (e.g. test_simulator_dashboards.py:47 object-minus-float; tests/ can't
    find app.routers = a mypy path config issue); (b) deploy build-gate (decide
-   workflow_run vs in-job test/typecheck before deploy); (c) ruff format is 72-file
-   churn — needs a deliberate go/no-go from Chris before enforcing (seed as a
-   question, don't unilaterally reformat). Each its own PR.
-3. **Expand the simulation**: sample assumption RangeValues alongside top-tail
+   workflow_run vs in-job test/typecheck before deploy). Each its own PR.
+   NOTE: ruff-format enforcement is DECLINED by Chris (2026-06-05) — keep check-only,
+   do not do the 72-file reformat.
+2. **Expand the simulation**: sample assumption RangeValues alongside top-tail
    alpha; Sobol sensitivity (SALib); optional `?uncertainty=` API band.
-4. **IHT Tier B** (serveable IHT): per-person age-specific mortality (ONS National
-   Life Tables q_x) + age-wealth correlation in the synth; wire
-   `model.iht.annual_mortality_rate.v1` into provenance; fix the per-person grain +
-   Gate-3 charitable baseline-amount. See `docs/IHT_CALIBRATION.md`.
+3. **IHT Tier B** — DEPRIORITISED (Chris 2026-06-05: keep IHT excluded for v0.1, do
+   not pursue now). Backlog only: per-person age-specific mortality (ONS q_x) +
+   age-wealth correlation; wire `model.iht.annual_mortality_rate.v1` into provenance;
+   per-person grain + Gate-3 baseline. See `docs/IHT_CALIBRATION.md`.
 5. **Real WAS/FRS population provider** behind the PopulationSource protocol (needs
    a UKDS licence) — also unlocks testing the `is_synthetic=False` path end-to-end.
 6. **B1: assumption-source citation URLs** in `registries/assumptions.yml` (verified,

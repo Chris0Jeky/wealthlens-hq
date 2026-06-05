@@ -44,12 +44,10 @@ Last updated: 2026-06-05
      5. Prepare STAR stories (see `tasks/applications/mysociety-societyworks-2026.md`).
    - **Done when:** interview completed (or not shortlisted -- record which).
 
-2. - [ ] **Decide on the Bethnal Green Ventures Autumn 2026 application** `[due: 2026-06-21]` — **P1, TIME-SENSITIVE**
-   - **Why:** NOT overdue — researched 2026-06-05: the window is **OPEN now**, deadline **21 June 2026, 23:59 BST** (the ~31 May date was the *opening* month, not a deadline; Spring 2026 closed back in January). ~£60k for ~7% equity; ~12-week hybrid programme starting Sept 2026; interviews 8–15 July. Strong thematic fit — their "Inclusive Society" pillar explicitly covers *reducing inequality / poverty / civic participation*, which is exactly WealthLens.
-   - **Two real blockers to weigh first:** (a) BGV invests **only in for-profit companies limited by shares** — they explicitly cannot invest in CICs / non-profits / charities, so the "open-source, non-profit-leaning" framing would need a for-profit company wrapper; (b) **solo founders are disfavoured** ("you can apply as an individual, but it's more likely we'll invest with a team") — a co-founder materially strengthens the application.
-   - **How:** Apply at `bethnalgreenventures.com/apply` before 21 June. If the for-profit structure or solo-founder issue is a dealbreaker, decide instead to skip this round and target **Spring 2027** (expect a ~early-Jan 2027 deadline) — and either way, record the decision so this item can close.
-   - **Full sourced analysis:** `tasks/bgv-go-no-go-2026.md` (go/no-go memo, all facts cited to the official BGV pages). **Recommendation there: restructure-then-apply / lean skip Autumn 2026 → target Spring 2027**, because the for-profit-Ltd requirement (a real identity decision that forecloses the CIC/charity route) plus the solo-founder gate and absence of a commercial model would make a rushed 16-day application weak against ~3-4% odds. Apply now only if you already want a for-profit Ltd and can credibly name a co-founder this week.
-   - **Done when:** applied, OR explicitly decided to skip with the next target window noted.
+2. - [ ] **BGV: prep for Spring 2027** (Autumn 2026 SKIPPED — decided 2026-06-05) — **P2 (no longer this-week-urgent)**
+   - **Decision (2026-06-05):** skip the BGV Autumn 2026 round (deadline was 21 June) and target **Spring 2027** (~early-Jan 2027 deadline), to clear the two blockers first rather than rush a weak 16-day application against ~3-4% odds. Full rationale: `tasks/bgv-go-no-go-2026.md`.
+   - **How (over summer/autumn 2026):** decide the legal structure (UK for-profit Ltd vs keep the CIC/charity option — BGV only funds for-profit-companies-limited-by-shares, so this forecloses one path either way); line up at least one co-founder; draft a one-page impact + revenue thesis. Then apply when Spring 2027 opens.
+   - **Done when:** Spring 2027 application submitted, OR re-decided.
 
 ### 🚀 Unblocked & high-leverage (v0.1 is live — these were waiting on a public URL)
 

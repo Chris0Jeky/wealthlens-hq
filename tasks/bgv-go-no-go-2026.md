@@ -1,8 +1,9 @@
 # GO / NO-GO: Bethnal Green Ventures (BGV) Autumn 2026
 
 Last updated: 2026-06-05
-Status: DECISION PENDING (Chris) — deadline 2026-06-21, 23:59 BST
-Supports: `tasks/ACTION-REQUIRED.md` item "Decide on the BGV Autumn 2026 application"
+Status: **DECIDED 2026-06-05 — SKIP Autumn 2026, target Spring 2027** (Chris).
+Next: clear the for-profit-Ltd + solo-founder blockers over summer/autumn 2026, then
+apply ~early-Jan 2027. See `tasks/ACTION-REQUIRED.md` (BGV Spring 2027 prep).
 
 > Researched 2026-06-05 against the official BGV site (apply / our-offer / FAQ
 > pages) plus reputable secondary sources. All facts carry numbered citations in
