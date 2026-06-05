@@ -29,6 +29,10 @@ on:
       - "projects/wealthlens-dashboard/**"
       - "pyproject.toml"
       - ".github/workflows/ci-pipelines.yml"
+  # Weekly catch-all: runs regardless of the path filters above, so a new test
+  # file or a dependency drift can't slip through unrun (mirrors ci-sim).
+  schedule:
+    - cron: "0 7 * * 1"
 
 permissions:
   contents: read
@@ -66,14 +70,20 @@ jobs:
       - name: Root test suite
         run: python -m pytest tests/ -q
 
-      # Dashboard tests/ (API smoke). Its conftest adds ../backend to sys.path.
+      # Dashboard tests/ (API smoke; the substantive backend suite lives in
+      # backend/tests/ and is executed by ci-backend.yml). Its conftest adds
+      # ../backend to sys.path.
       - name: Dashboard test suite
         run: python -m pytest tests/ -q
         working-directory: projects/wealthlens-dashboard
 
-      # Data-pipeline validate tests. The hyphenated dir is not importable, so put
-      # it on PYTHONPATH (matches the Makefile `pipeline-test` target).
-      - name: Data-pipeline validate tests
-        run: python -m pytest automation/data-pipelines/tests/test_validate.py -q
+      # Whole pipeline tests dir (so new test files are picked up automatically),
+      # EXCEPT test_simulator_dashboards.py which ci-sim.yml already runs (it needs
+      # the editable wealthlens-sim install). The hyphenated dir is not importable,
+      # so put it on PYTHONPATH (matches the Makefile `pipeline-test` target).
+      - name: Data-pipeline tests
+        run: >-
+          python -m pytest automation/data-pipelines/tests/
+          --ignore=automation/data-pipelines/tests/test_simulator_dashboards.py -q
         env:
           PYTHONPATH: automation/data-pipelines
