@@ -76,7 +76,12 @@ class TestValidateAll:
         monkeypatch.setattr("validate.DATA_DIR", tmp_path)
         for check in CHECKS:
             (tmp_path / check["file"]).write_text(self._synth_valid_csv(check))
-        target = next(c for c in CHECKS if c.get("ranges"))
+        # Robust against CHECKS reordering: require a ranged column that is not also a
+        # unique key (so the corruption hits the non-finite guard, not the dupes path).
+        target = next(
+            c for c in CHECKS
+            if c.get("ranges") and any(col not in c.get("unique_keys", []) for col in c["ranges"])
+        )
         keys = target.get("unique_keys", [])
         numeric_col = next(c for c in target["ranges"] if c not in keys)
         cols = sorted(target["columns"])

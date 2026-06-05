@@ -82,24 +82,37 @@ CHECKS: list[dict] = [
     },
     {
         "file": "tax_composition.csv",
-        "columns": {"year", "income_tax_bn", "nics_bn", "cgt_bn", "iht_bn", "sdlt_bn", "work_pct", "wealth_pct"},
+        # Require the derived published totals + the data_source provenance column too,
+        # so a regenerated CSV that drops them is caught (and the totals get NONFINITE-
+        # guarded). Downstream API/charts expose this CSV directly.
+        "columns": {
+            "year", "income_tax_bn", "nics_bn", "cgt_bn", "iht_bn", "sdlt_bn",
+            "work_taxes_bn", "wealth_taxes_bn", "total_selected_bn",
+            "work_pct", "wealth_pct", "data_source",
+        },
         "min_rows": 3,
         "dtypes": {
             "income_tax_bn": "float", "nics_bn": "float", "cgt_bn": "float",
-            "iht_bn": "float", "sdlt_bn": "float", "work_pct": "float", "wealth_pct": "float",
+            "iht_bn": "float", "sdlt_bn": "float",
+            "work_taxes_bn": "float", "wealth_taxes_bn": "float", "total_selected_bn": "float",
+            "work_pct": "float", "wealth_pct": "float",
         },
         "ranges": {
             "income_tax_bn": (0.0, 2_000.0), "nics_bn": (0.0, 2_000.0),
             "cgt_bn": (0.0, 200.0), "iht_bn": (0.0, 200.0), "sdlt_bn": (0.0, 200.0),
+            "work_taxes_bn": (0.0, 4_000.0), "wealth_taxes_bn": (0.0, 1_000.0),
+            "total_selected_bn": (0.0, 5_000.0),
             "work_pct": (0.0, 100.0), "wealth_pct": (0.0, 100.0),
         },
         "unique_keys": ["year"],
     },
     {
         "file": "boe_rates.csv",
-        "columns": {"date", "bank_rate"},
+        # Require cpi_annual to be present: it is emitted + consumed by the chart, and
+        # the dtype/range guards below only fire for columns that EXIST, so without this
+        # a dropped column would validate clean and the chart would NaN out every row.
+        "columns": {"date", "bank_rate", "cpi_annual"},
         "min_rows": 10,
-        # cpi_annual is also emitted; guard it too (can be negative in deflation).
         "dtypes": {"bank_rate": "float", "cpi_annual": "float"},
         "ranges": {"bank_rate": (0.0, 50.0), "cpi_annual": (-10.0, 50.0)},
         "unique_keys": ["date"],
