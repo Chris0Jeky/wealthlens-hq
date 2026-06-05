@@ -12,6 +12,7 @@ import sys
 from datetime import date
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 logger = logging.getLogger(__name__)
@@ -66,11 +67,24 @@ CHECKS: list[dict] = [
         "file": "ons_gdhi_by_region.csv",
         "columns": {"region", "gdhi_per_head", "year"},
         "min_rows": 10,
+        "dtypes": {"gdhi_per_head": "numeric", "year": "int"},
+        "ranges": {"gdhi_per_head": (5_000, 200_000), "year": (1990, date.today().year + 5)},
+        "unique_keys": ["region"],
     },
     {
         "file": "tax_composition.csv",
         "columns": {"year", "income_tax_bn", "nics_bn", "cgt_bn", "iht_bn", "sdlt_bn", "work_pct", "wealth_pct"},
         "min_rows": 3,
+        "dtypes": {
+            "income_tax_bn": "float", "nics_bn": "float", "cgt_bn": "float",
+            "iht_bn": "float", "sdlt_bn": "float", "work_pct": "float", "wealth_pct": "float",
+        },
+        "ranges": {
+            "income_tax_bn": (0.0, 2_000.0), "nics_bn": (0.0, 2_000.0),
+            "cgt_bn": (0.0, 200.0), "iht_bn": (0.0, 200.0), "sdlt_bn": (0.0, 200.0),
+            "work_pct": (0.0, 100.0), "wealth_pct": (0.0, 100.0),
+        },
+        "unique_keys": ["year"],
     },
     {
         "file": "boe_rates.csv",
@@ -146,6 +160,25 @@ def validate_all() -> list[str]:
                         errors.append(f"RANGE: {check['file']}.{col} has {below} values below {lo}")
                     if above > 0:
                         errors.append(f"RANGE: {check['file']}.{col} has {above} values above {hi}")
+
+        # Non-finite guard: a blank (NaN) or inf value in a numeric column slips past
+        # every other check — `nan < lo` and `nan > hi` are both False (RANGE), a
+        # genuine NaN cancels in the COERCE diff, a NaN column is still float dtype
+        # (DTYPE), and NULLS only flags fully-null ROWS. So a single blank source cell
+        # could publish a NaN unnoticed. Flag any non-finite value in a declared-numeric
+        # column (those with a range or an int/float/numeric dtype).
+        numeric_cols = set(check.get("ranges", {})) | {
+            col for col, kind in check.get("dtypes", {}).items() if kind in ("int", "float", "numeric")
+        }
+        for col in sorted(numeric_cols):
+            if col in df.columns:
+                coerced = pd.to_numeric(df[col], errors="coerce")
+                blank = int(df[col].isna().sum())  # raw blank cells in the source column
+                infinite = int(np.isinf(coerced).sum())
+                if blank + infinite > 0:
+                    errors.append(
+                        f"NONFINITE: {check['file']}.{col} has {blank + infinite} blank/infinite value(s)"
+                    )
 
         if "unique_keys" in check:
             keys = check["unique_keys"]
