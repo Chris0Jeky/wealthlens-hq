@@ -205,9 +205,36 @@ class TestStructure:
 
 
 class TestDataIntegritySurfacing:
-    def test_complete_sourced_run_has_no_caveats(self):
+    def test_complete_sourced_synth_run_carries_population_caveat(self):
+        # A fully-sourced run over the SYNTHETIC population carries exactly the
+        # synthetic-population caveat (emitted by the contract itself now) and NOT
+        # the incomplete-provenance caveat.
         dash = to_dashboard_json(_golden_result())
         assert dash["provenance_complete"] is True
+        assert any("synthetic v0.1 population" in c for c in dash["caveats"])
+        assert not any("Provenance incomplete" in c for c in dash["caveats"])
+
+    def test_non_synth_population_omits_synthetic_caveat(self):
+        # The synthetic-population caveat is conditioned on the population_version,
+        # so a (future) real-microdata population must not carry it.
+        scenario = Scenario(
+            name="annual-wealth-1pct",
+            version_tag=VersionTag(
+                macro_baseline_version="NBS-2025",
+                policy_version="2026-05-21",
+                population_version="real-was-2026",
+                wealthlens_sim_version="0.1.0",
+            ),
+            families=[
+                FamilySelection(
+                    family=PolicyFamily.ANNUAL_WEALTH_TAX,
+                    config=WealthTaxConfig(threshold=1_000_000, rate=0.01),
+                )
+            ],
+        )
+        pop = generate_population(SynthConfig(n_households=500, seed=7))
+        dash = to_dashboard_json(simulate(pop, scenario, registries=Registries(assumptions=load_assumptions())))
+        assert not any("synthetic v0.1 population" in c for c in dash["caveats"])
         assert dash["caveats"] == []
 
     def test_unsourced_run_flags_incomplete_provenance(self):

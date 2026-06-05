@@ -42,6 +42,17 @@ _INCOMPLETE_PROVENANCE_CAVEAT = (
     "are point estimates and the uncertainty is unquantified — do not present these "
     "figures as fully sourced."
 )
+
+#: Emitted at the contract root for any run over a SYNTHETIC population (the v0.1
+#: default), so every consumer of the contract — not only callers of the downstream
+#: fixture generator — is told the figures are over generated microdata, not a real
+#: costing. Conditioned on ``version_tag.population_version`` so a future
+#: real-microdata population does not carry it.
+_SYNTHETIC_POPULATION_CAVEAT = (
+    "Illustrative estimate over a synthetic v0.1 population (household microdata "
+    "statistically generated and calibrated to published aggregates), not an "
+    "official forecast. Treat the figures as indicative, not as a costing."
+)
 def _interval(interval: Interval) -> dict[str, float]:
     return {"low": interval.low, "central": interval.central, "high": interval.high}
 
@@ -54,6 +65,8 @@ def _caveats(result: EngineResult) -> list[str]:
     ceiling, so it does not need a separate overstatement caveat.
     """
     caveats: list[str] = []
+    if result.provenance.version_tag.population_version.startswith("synth"):
+        caveats.append(_SYNTHETIC_POPULATION_CAVEAT)
     if not result.provenance_complete:
         caveats.append(_INCOMPLETE_PROVENANCE_CAVEAT)
     return caveats
