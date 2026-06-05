@@ -213,8 +213,14 @@ def generate_simulator_static() -> int:
     for scenario_id, meta in scenarios.items():
         src = SIM_SRC_DIR / f"{scenario_id}.json"
         if not src.exists():
-            print(f"  SKIP simulator {scenario_id}: {src} not found")
-            continue
+            # Fail loud: a registered scenario with no fixture would silently drop
+            # from scenarios.json, diverging from the API (list_scenarios lists every
+            # registered scenario; get_scenario 503s on a missing fixture). Failing
+            # the export beats a partial publish that hides a policy scenario.
+            raise FileNotFoundError(
+                f"Simulator fixture for registered scenario '{scenario_id}' not found at {src}. "
+                "Run automation/data-pipelines/generate_simulator_dashboards.py first."
+            )
         # Validate before publishing: a well-formed JSON object carrying the same
         # required contract keys the backend enforces, so a malformed or incomplete
         # fixture fails the build instead of being served statically as a broken
@@ -235,15 +241,6 @@ def generate_simulator_static() -> int:
     (SIM_OUT_DIR / "scenarios.json").write_text(
         json.dumps({"scenarios": index}), encoding="utf-8"
     )
-    if scenarios and not index:
-        # Registry has scenarios but no fixtures were found: the static site would
-        # serve an empty list. Warn loudly (the UI degrades gracefully, so this is
-        # not a hard build failure) — usually means the generator ran before
-        # generate_simulator_dashboards.py produced the fixtures.
-        print(
-            f"  WARNING: 0/{len(scenarios)} simulator fixtures found in {SIM_SRC_DIR}; "
-            "scenarios.json is empty."
-        )
     print(f"Generated {len(index)}/{len(scenarios)} simulator scenarios in {SIM_OUT_DIR}")
     return len(index)
 
