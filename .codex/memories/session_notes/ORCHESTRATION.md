@@ -11,12 +11,22 @@ Last updated: 2026-06-05
 
 This section supersedes the older handoff snapshots below.
 
-## ▶️ Live state (2026-06-05 PM) — #349–#354 MERGED, no open PRs
+## ▶️ Live state (2026-06-05 PM) — #349–#354 MERGED, #355 open & reviewed
 
-This session drained #349–#354 (each with the full adversarial gate: real findings
-of all severities fixed, every bot thread resolved, CI green). Loop is running per
-Chris's standing instruction. Next: provenance goal B2 (task #1 below).
+This session drained #349–#354 (full adversarial gate each) and opened #355
+(provenance goal B2). Loop is running per Chris's standing instruction.
 
+- **#355 OPEN** (`feat/population-provenance-urls`): adds a structured
+  `population_provenance` block to `to_dashboard_json` — registered data sources
+  (`ons-was-wealth`, `ons-families-households-2022`) resolved against
+  `registries/sources.yml` to {id,name,url,access_date,licence} (real URLs, both
+  verified HTTP 200 by review, nothing fabricated); `synth.*` params id-only;
+  additive (no schema bump). 2 subagent reviews (no fabrication confirmed; flows to
+  the deployed site) + gemini bot — hardened: malformed-YAML degrades not crashes,
+  access_date isoformat-normalised, conftest cache-clear fixture, docstring nuance.
+  23 outputs + 780 sim + mypy(45) + ruff green; drift-guard 3/3. Newest PR → age,
+  then merge first next cycle. (B1 — URLs for assumption citation strings — deferred,
+  needs verified citations, no fabrication.)
 - **#354 MERGED** (`8377e72`): synthetic-population caveat emitted from
   `to_dashboard_json` (was generator-only). Both bots + both subagent reviews flagged
   the caveat keying off the `version_tag` string (fail-OPEN on a mistagged synth pop);
@@ -62,15 +72,13 @@ packages/wealthlens-sim onto the path.)
 
 ## 🔜 Seeded next tasks (highest-leverage first) — for the endless loop
 
-1. **Provenance URLs — goal B2 (doable now)**: in `to_dashboard_json`, resolve
-   `population_provenance_ids` (e.g. `ons-was-wealth`, `ons-families-households-2022`)
-   against `registries/sources.yml` (already holds real url+access_date via
-   `find_registries_dir()`) and emit a structured `population_provenance` block
-   {id,name,url,access_date,licence}; keep the id list for back-compat; synth.* config
-   ids have no URL (not external sources). Additive → no schema bump needed. B1 (URLs
-   for assumption citation strings) needs verified citations — separate, no fabrication.
-2. **IHT calibration**: synth IHT sums stock liability (~£1009bn) vs ~£7-8bn real;
-   IHT scenarios stay excluded until fixed.
+1. **Drain #355** once aged + still green + no new bot threads (`gh pr merge 355
+   --merge --delete-branch`). (Provenance goal B2 — population_provenance with real
+   URLs; mark the inbox B2 item done on merge.)
+2. **IHT calibration** (big, may be multi-PR / research-heavy): synth IHT sums each
+   household's stock estate liability across the grossed-up population (~£1009bn)
+   instead of an annual death/estate-flow cohort (~£7-8bn real). Fix the model
+   before re-enabling any IHT scenario (currently excluded). Scope carefully first.
 3. **Remaining deferred CI hardening (from #350 desc)**: enable mypy on
    automation/ + tests/ (pre-existing type errors); deploy build-gate; enforce
    format/coverage; SHA-pin actions. Each its own PR.
