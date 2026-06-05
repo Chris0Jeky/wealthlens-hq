@@ -74,6 +74,15 @@ jobs:
       - name: Type-check automation/
         run: python -m mypy automation
 
+      # Root tests/ type-check, a SEPARATE mypy invocation from automation/ on
+      # purpose: both dirs contain a `tests` package, so a single `mypy automation
+      # tests` aborts with "Duplicate module named tests" (same root cause as the
+      # split pytest runs below). mypy_path (pyproject) resolves the hyphenated
+      # pipeline/analysis dirs that conftest wires onto sys.path at runtime; app.* is
+      # an opaque boundary (checked by ci-backend).
+      - name: Type-check tests/
+        run: python -m mypy tests
+
       # Root tests/ (pipeline + API + analysis). conftest.py wires sys.path
       # (automation/analysis, backend, data-pipelines) and seeds CSV fixtures.
       - name: Root test suite
