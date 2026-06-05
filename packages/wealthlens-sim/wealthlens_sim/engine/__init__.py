@@ -374,6 +374,8 @@ def simulate(
         households_scored=len(scored),
         provenance=provenance,
         population_provenance_ids=list(population.provenance_ids),
+        # Ground truth from the population source (fail-closed if a source omits it).
+        population_is_synthetic=getattr(population, "is_synthetic", True),
         uncertainty_provenance_ids=uncertainty_provenance_ids,
         provenance_complete=alpha is not None,
         devolution_split=split,

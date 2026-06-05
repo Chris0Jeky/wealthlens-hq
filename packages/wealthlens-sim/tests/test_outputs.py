@@ -214,28 +214,17 @@ class TestDataIntegritySurfacing:
         assert any("synthetic v0.1 population" in c for c in dash["caveats"])
         assert not any("Provenance incomplete" in c for c in dash["caveats"])
 
-    def test_non_synth_population_omits_synthetic_caveat(self):
-        # Exercises the version_tag STRING gate (not a real population: the data is
-        # still a SyntheticPopulation, only its version_tag is non-synth). Confirms a
-        # population_version not starting with "synth" omits the caveat — the
-        # ground-truth is_synthetic path is a tracked follow-up.
-        scenario = Scenario(
-            name="annual-wealth-1pct",
-            version_tag=VersionTag(
-                macro_baseline_version="NBS-2025",
-                policy_version="2026-05-21",
-                population_version="real-was-2026",
-                wealthlens_sim_version="0.1.0",
-            ),
-            families=[
-                FamilySelection(
-                    family=PolicyFamily.ANNUAL_WEALTH_TAX,
-                    config=WealthTaxConfig(threshold=1_000_000, rate=0.01),
-                )
-            ],
+    def test_real_population_omits_synthetic_caveat(self):
+        # GROUND TRUTH: a population whose is_synthetic flag is False must NOT carry
+        # the synthetic-population caveat. (No real-microdata provider exists yet, so
+        # flip the flag on a generated population via model_copy to exercise the
+        # is_synthetic gate directly — independent of the version_tag string.)
+        pop = generate_population(SynthConfig(n_households=500, seed=7)).model_copy(
+            update={"is_synthetic": False}
         )
-        pop = generate_population(SynthConfig(n_households=500, seed=7))
-        dash = to_dashboard_json(simulate(pop, scenario, registries=Registries(assumptions=load_assumptions())))
+        dash = to_dashboard_json(
+            simulate(pop, _golden_scenario(), registries=Registries(assumptions=load_assumptions()))
+        )
         assert not any("synthetic v0.1 population" in c for c in dash["caveats"])
         assert dash["caveats"] == []
 

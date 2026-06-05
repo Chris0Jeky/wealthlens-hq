@@ -114,6 +114,12 @@ class EngineResult(BaseModel):
     #: silently dropped; empty when a generator cannot assert source-backed
     #: population provenance.
     population_provenance_ids: list[str] = Field(default_factory=list)
+    #: Whether the scored population is synthetic (generated microdata) rather than
+    #: real respondent microdata. Carried from the population source so the dashboard
+    #: contract can surface the synthetic-population caveat from GROUND TRUTH rather
+    #: than inferring it from a version-tag string. Defaults ``True`` (fail-closed:
+    #: if a source does not assert it is real, treat it as synthetic and warn).
+    population_is_synthetic: bool = Field(default=True)
     #: Provenance ids for the Monte-Carlo uncertainty propagation, when an
     #: ``uncertainty`` sampling config was supplied to :func:`simulate` (the seed,
     #: method, sample count, the sampled marginals, and the centre/quantile choices

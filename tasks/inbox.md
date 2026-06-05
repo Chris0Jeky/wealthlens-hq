@@ -14,16 +14,13 @@ Every concrete action item extracted from research. Triage into active-sprint, b
   (static) GitHub Pages build, un-gate the route + nav link. [completed: 2026-06-05, PR #351]
 - [x] **Surface the synthetic-population caveat in `to_dashboard_json` itself** (not
   only the generator), so every consumer of the contract gets it. [completed: 2026-06-05, PR #354]
-- [ ] **Make the synthetic caveat key off ground-truth `is_synthetic`, not the
-  `population_version` string.** (Adversarial-review finding on PR #354.) Today
-  `to_dashboard_json._caveats` emits the synthetic-population caveat when
-  `version_tag.population_version` starts with `"synth"`. The population's real
-  `SyntheticPopulation.is_synthetic` flag is dropped at the engine boundary
-  (`PopulationSource` protocol + `EngineResult` don't carry it), so a synthetic
-  population mistagged without a `synth` prefix (e.g. `frs_was_v0.1`) would fail
-  OPEN — no caveat. Fix: thread `is_synthetic` into `EngineResult` (fail-closed
-  default `True`) and gate on it; needs a non-synthetic population provider to test
-  omission, so do it alongside the real WAS/FRS provider below. Upstream `wealthlens-sim`.
+- [x] **Make the synthetic caveat key off ground-truth `is_synthetic`, not the
+  `population_version` string.** [completed: 2026-06-05, PR #354] Threaded
+  `population_is_synthetic` through `EngineResult` (fail-closed default `True`,
+  from `getattr(population, "is_synthetic", True)`); `_caveats` now gates on it, so a
+  synthetic population can't fail open by being mistagged. Tested via a `model_copy`
+  flip to `is_synthetic=False`. (A genuine real-microdata provider is still the
+  separate WAS/FRS task below.)
 - [ ] **Add URL + access date to provenance sources.** The served provenance cites
   source strings / opaque population source ids, not URLs — the repo data-integrity
   rule wants URL + access date per source. Two parts: (B2, doable now) resolve

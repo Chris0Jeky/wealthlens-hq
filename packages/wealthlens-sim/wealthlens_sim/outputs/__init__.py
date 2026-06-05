@@ -67,13 +67,12 @@ def _caveats(result: EngineResult) -> list[str]:
     ceiling, so it does not need a separate overstatement caveat.
     """
     caveats: list[str] = []
-    # NOTE: keyed off the version_tag string because EngineResult does not yet carry
-    # the population's ground-truth ``is_synthetic`` flag (dropped at the engine
-    # boundary). Correct for every current population (only ``synth-v0.1`` exists),
-    # but a synthetic population mistagged without a "synth" prefix would fail OPEN
-    # (no caveat). Follow-up: thread ``is_synthetic`` into the contract, fail-closed
-    # — tracked in tasks/inbox.md, coupled to the real WAS/FRS population provider.
-    if result.provenance.version_tag.population_version.startswith("synth"):
+    # Keyed off the population's GROUND-TRUTH is_synthetic flag (threaded through
+    # EngineResult from the population source), not a version-tag string — so a
+    # synthetic population can never fail open (omit the caveat) by being mistagged,
+    # and the default is fail-closed (treat as synthetic and warn) when a source
+    # omits the flag.
+    if result.population_is_synthetic:
         caveats.append(_SYNTHETIC_POPULATION_CAVEAT)
     if not result.provenance_complete:
         caveats.append(_INCOMPLETE_PROVENANCE_CAVEAT)
