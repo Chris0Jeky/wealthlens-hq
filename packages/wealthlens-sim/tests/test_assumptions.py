@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from urllib.parse import urlparse
 
 import pytest
 import yaml
@@ -231,11 +232,14 @@ class TestSourceUrls:
         reg = load_assumptions()
         non_dom = reg.get("behaviour.migration.non_dom_stock_elasticity.v1")
         assert non_dom is not None
-        assert any("warwick.ac.uk" in u for u in non_dom.source_urls)
-        # Every URL in the shipped registry is a well-formed http(s) URL.
+        # Host-exact check (not a substring) so the assertion can't be fooled by a
+        # lookalike domain, and to satisfy CodeQL's URL-substring rule.
+        assert any(urlparse(u).netloc == "warwick.ac.uk" for u in non_dom.source_urls)
+        # Every URL in the shipped registry is a well-formed http(s) URL with a host.
         for a in reg.assumptions:
             for url in a.source_urls:
-                assert url.startswith(("https://", "http://"))
+                parsed = urlparse(url)
+                assert parsed.scheme in ("https", "http") and parsed.netloc
 
 
 class TestAssumptionRegistry:
