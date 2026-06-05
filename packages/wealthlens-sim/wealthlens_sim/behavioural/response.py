@@ -94,9 +94,10 @@ class BehaviouralResponse:
 
     ``factor`` multiplies a mechanical revenue figure to give the illustrative
     behavioural one (``factor < 1`` ⇒ revenue eroded). ``channel_factors`` is the
-    per-channel ``(name, 1 + ε·Δτ)`` breakdown, aligned with the input order.
-    ``clamped`` is ``True`` when the raw product fell below 0 and was clamped to 0 (the
-    reduced form cannot erode more than 100%). ``provenance_ids`` records the method,
+    per-channel ``(name, max(0, 1 + e*dtau))`` breakdown, aligned with the input order.
+    ``clamped`` is ``True`` when ANY channel's raw factor fell below 0 and was clamped to
+    0 (a single channel cannot erode more than 100% of the base). ``provenance_ids``
+    records the method,
     the rate change, and each channel's marginal so the estimate is auditable.
     """
 
@@ -128,8 +129,17 @@ def revenue_response_factor(
 
     channel_factors: list[tuple[str, float]] = []
     combined = 1.0
+    clamped = False
     for channel in channels:
-        f_i = 1.0 + channel.semi_elasticity * rate_change_pp
+        raw = 1.0 + channel.semi_elasticity * rate_change_pp
+        # Clamp EACH channel to >= 0 *before* composing. A single channel cannot erode
+        # more than 100% of the base; and — critically — without per-channel clamping an
+        # EVEN number of over-eroding channels (each raw factor < 0) would multiply two
+        # negatives into a spurious POSITIVE combined factor, silently masking the
+        # over-response. Clamping per channel keeps the product monotonic and >= 0.
+        f_i = max(0.0, raw)
+        if raw < 0.0:
+            clamped = True
         channel_factors.append((channel.name, f_i))
         combined *= f_i
 
@@ -137,8 +147,7 @@ def revenue_response_factor(
         msg = "composed behavioural factor is non-finite (inputs overflow a usable range)"
         raise ValueError(msg)
 
-    clamped = combined < 0.0
-    factor = 0.0 if clamped else combined
+    factor = combined  # already >= 0: a product of non-negative per-channel factors
 
     provenance_ids = (
         "behavioural.method:first_order_reduced_form",

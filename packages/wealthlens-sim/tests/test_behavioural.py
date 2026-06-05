@@ -52,6 +52,31 @@ class TestRevenueResponseFactor:
         result = revenue_response_factor([ch], rate_change_pp=2.0)  # 1 + (-1.6) = -0.6
         assert result.factor == 0.0
         assert result.clamped is True
+        assert result.channel_factors == (("extreme", 0.0),)
+
+    def test_even_over_eroding_channels_do_not_mask(self) -> None:
+        # Two channels each over-eroding (raw factor -0.6). WITHOUT per-channel clamping
+        # the product would be a spurious POSITIVE (-0.6 * -0.6 = 0.36), masking the
+        # over-response. Per-channel clamping makes each 0 -> product 0, clamped True.
+        chans = [
+            BehaviouralChannel(name="a", semi_elasticity=-0.8),
+            BehaviouralChannel(name="b", semi_elasticity=-0.8),
+        ]
+        result = revenue_response_factor(chans, rate_change_pp=2.0)  # each raw = -0.6
+        assert result.factor == 0.0
+        assert result.clamped is True
+        assert result.channel_factors == (("a", 0.0), ("b", 0.0))
+
+    def test_mixed_one_clamped_one_normal(self) -> None:
+        # One over-eroding channel (clamped to 0) makes the whole product 0, regardless
+        # of a healthy channel — a fully-eroded base stays fully eroded.
+        chans = [
+            BehaviouralChannel(name="ok", semi_elasticity=-0.04),  # raw 0.96
+            BehaviouralChannel(name="extreme", semi_elasticity=-0.8),  # raw -0.6 -> 0
+        ]
+        result = revenue_response_factor(chans, rate_change_pp=2.0)
+        assert result.factor == 0.0
+        assert result.clamped is True
 
     def test_deterministic(self) -> None:
         chans = [BehaviouralChannel(name="a", semi_elasticity=-0.04, source_id="s")]
