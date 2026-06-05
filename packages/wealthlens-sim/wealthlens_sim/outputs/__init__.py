@@ -98,19 +98,26 @@ def _source_index() -> dict[str, dict[str, str]]:
     """
     try:
         raw = yaml.safe_load((find_registries_dir() / "sources.yml").read_text(encoding="utf-8"))
-        entries = raw.get("sources", []) if isinstance(raw, dict) else []
     except (FileNotFoundError, OSError, yaml.YAMLError):
+        return {}
+    entries = raw.get("sources", []) if isinstance(raw, dict) else []
+    if not isinstance(entries, list):  # malformed-but-parseable: degrade, do not crash
         return {}
     index: dict[str, dict[str, str]] = {}
     for entry in entries:
+        if not isinstance(entry, dict):
+            continue
         sid = entry.get("id")
         if not sid:
             continue
-        index[sid] = {
-            "name": entry.get("name", ""),
-            "url": entry.get("url", ""),
-            "access_date": str(entry.get("access_date", "")),
-            "licence": entry.get("licence", ""),
+        # access_date should be a quoted YYYY-MM-DD string; if a future entry omits
+        # the quotes YAML parses it as a date, so normalise via isoformat().
+        access = entry.get("access_date", "")
+        index[str(sid)] = {
+            "name": str(entry.get("name", "")),
+            "url": str(entry.get("url", "")),
+            "access_date": access.isoformat() if hasattr(access, "isoformat") else str(access),
+            "licence": str(entry.get("licence", "")),
         }
     return index
 
@@ -119,9 +126,10 @@ def _population_provenance(ids: list[str]) -> list[dict[str, str]]:
     """Resolve population provenance ids to structured source records.
 
     Order-preserving (deterministic, golden-file friendly). A registered data
-    source (in ``sources.yml``) becomes ``{id, name, url, access_date, licence}``;
-    an unregistered id — the ``synth.*`` generation parameters, which are config
-    inputs, not external sources — stays ``{id}`` only (no URL to cite).
+    source (in ``sources.yml``) becomes ``{id, name, url, access_date, licence}``.
+    A ``synth.*`` id is a resolved generation-parameter VALUE (several are calibrated
+    from the registered ONS sources above, which carry the URL + access date) — it is
+    not itself an external source to cite, so it stays ``{id}`` only.
     """
     index = _source_index()
     out: list[dict[str, str]] = []
