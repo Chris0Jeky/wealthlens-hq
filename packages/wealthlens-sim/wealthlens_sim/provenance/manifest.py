@@ -43,6 +43,9 @@ class ResolvedAssumption(BaseModel):
     # recorded faithfully as their full nested/band/flat payload.
     resolved_value: float | StrictInt | StrictBool | dict[str, Any] | list[Any]
     source: str
+    # Canonical URLs (DOI/official) for the works named in `source`. A tuple keeps
+    # this frozen model fully immutable. Empty when the registry entry has no URLs.
+    source_urls: tuple[str, ...] = ()
 
 
 class ProvenanceEntry(BaseModel):

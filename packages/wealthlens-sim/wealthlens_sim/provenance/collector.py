@@ -83,6 +83,7 @@ class ProvenanceCollector:
             domain=assumption.domain,
             resolved_value=resolved,
             source=assumption.source,
+            source_urls=tuple(assumption.source_urls),
         )
         self._consumed[assumption_id] = entry
         return entry

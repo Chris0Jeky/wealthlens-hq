@@ -147,6 +147,7 @@ def _provenance(result: EngineResult) -> dict[str, Any]:
             "assumption_id": resolved.assumption_id,
             "domain": resolved.domain,
             "source": resolved.source,
+            "source_urls": list(resolved.source_urls),
             "resolved_value": resolved.resolved_value,
         }
         for _id, resolved in sorted(manifest.assumptions_consumed.items())
