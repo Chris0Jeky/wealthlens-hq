@@ -62,6 +62,15 @@ CHECKS: list[dict] = [
         "file": "productivity_pay_gap.csv",
         "columns": {"year", "productivity_index", "pay_index", "gap_pct"},
         "min_rows": 20,
+        "dtypes": {"year": "int", "productivity_index": "float", "pay_index": "float", "gap_pct": "float"},
+        # gap_pct can be slightly negative (pay outran productivity in some years).
+        "ranges": {
+            "year": (1900, date.today().year + 5),
+            "productivity_index": (0.0, 1_000.0),
+            "pay_index": (0.0, 1_000.0),
+            "gap_pct": (-50.0, 100.0),
+        },
+        "unique_keys": ["year"],
     },
     {
         "file": "ons_gdhi_by_region.csv",
@@ -90,6 +99,10 @@ CHECKS: list[dict] = [
         "file": "boe_rates.csv",
         "columns": {"date", "bank_rate"},
         "min_rows": 10,
+        # cpi_annual is also emitted; guard it too (can be negative in deflation).
+        "dtypes": {"bank_rate": "float", "cpi_annual": "float"},
+        "ranges": {"bank_rate": (0.0, 50.0), "cpi_annual": (-10.0, 50.0)},
+        "unique_keys": ["date"],
     },
     {
         "file": "wage_stagnation.csv",
@@ -166,7 +179,10 @@ def validate_all() -> list[str]:
         # genuine NaN cancels in the COERCE diff, a NaN column is still float dtype
         # (DTYPE), and NULLS only flags fully-null ROWS. So a single blank source cell
         # could publish a NaN unnoticed. Flag any non-finite value in a declared-numeric
-        # column (those with a range or an int/float/numeric dtype).
+        # column (those with a range or an int/float/numeric dtype). CONTRACT: a numeric
+        # column is only covered if its CHECK declares a range or numeric dtype — every
+        # numeric output column above does. A *literal* "NaN"/"inf" string in an object
+        # column is handled by the COERCE check, not here (blank counts raw NaN only).
         numeric_cols = set(check.get("ranges", {})) | {
             col for col, kind in check.get("dtypes", {}).items() if kind in ("int", "float", "numeric")
         }
