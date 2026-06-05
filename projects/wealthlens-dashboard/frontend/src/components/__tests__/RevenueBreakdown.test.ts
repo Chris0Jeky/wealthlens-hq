@@ -101,4 +101,28 @@ describe('RevenueBreakdown', () => {
     expect(wrapper.text()).toContain('—')
     expect(wrapper.text()).not.toContain('NaN')
   })
+
+  it('does not throw on null nation entries (malformed payload)', () => {
+    const byNation = {
+      england: iv(1, 2, 3),
+      scotland: null,
+    } as unknown as Record<string, Interval>
+    const wrapper = mount(RevenueBreakdown, { props: { byNation } })
+    expect(wrapper.text()).toContain('England')
+    expect(wrapper.findAll('tbody th[scope="row"]')).toHaveLength(1)
+  })
+
+  it('drops null decile elements and clamps a negative bar to 0%', () => {
+    const byDecile = [
+      null,
+      iv(-5, -5, -5), // negative central -> bar clamped to 0%, value shown
+      iv(0, 4, 8),
+    ] as unknown as Interval[]
+    const wrapper = mount(RevenueBreakdown, { props: { byDecile } })
+    const bars = wrapper.findAll('span[aria-hidden="true"]')
+    expect(bars).toHaveLength(2) // the null element is dropped
+    expect(bars.every((b) => !(b.attributes('style') ?? '').includes('width: -'))).toBe(
+      true,
+    )
+  })
 })

@@ -44,9 +44,12 @@ const NATION_NAMES: Record<string, string> = {
   northern_ireland: 'Northern Ireland',
 }
 
-// Nations sorted by central revenue, largest first.
+// Nations sorted by central revenue, largest first. Null/undefined entries are
+// filtered out first so the sort can't throw on a malformed payload (the value
+// crosses an unvalidated JSON boundary).
 const nations = computed(() =>
   Object.entries(props.byNation ?? {})
+    .filter((e): e is [string, Interval] => e[1] != null)
     .map(([key, iv]) => ({ key, name: NATION_NAMES[key] ?? key, iv }))
     .sort((a, b) => b.iv.central - a.iv.central),
 )
@@ -55,8 +58,10 @@ const nations = computed(() =>
 // largest decile's central value) so the concentration in the top deciles is visible.
 // The least/most-wealthy qualifiers are only added for a full 10-decile set (the
 // contract); a partial payload just shows "Decile N" rather than mislabelling.
+// Null elements are dropped and the bar width is clamped to [0, 100] so a malformed
+// or negative value can't throw or produce a negative-width bar.
 const deciles = computed(() => {
-  const arr = props.byDecile ?? []
+  const arr = (props.byDecile ?? []).filter((d): d is Interval => d != null)
   const max = Math.max(0, ...arr.map((d) => d.central))
   const full = arr.length === 10
   return arr.map((iv, i) => ({
@@ -68,7 +73,7 @@ const deciles = computed(() => {
           ? `Decile ${arr.length} (wealthiest)`
           : `Decile ${i + 1}`,
     iv,
-    pct: max > 0 ? Math.round((iv.central / max) * 100) : 0,
+    pct: max > 0 ? Math.max(0, Math.min(100, Math.round((iv.central / max) * 100))) : 0,
   }))
 })
 </script>
