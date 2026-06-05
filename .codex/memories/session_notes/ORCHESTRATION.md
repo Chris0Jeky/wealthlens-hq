@@ -5,16 +5,42 @@
 >
 > **CRITICAL**: Update this file BEFORE every compaction risk (long tool calls, large diffs).
 
-Last updated: 2026-06-05 (session 3 — #358-#362 merged; #363 open/aging)
+Last updated: 2026-06-05 (session 3 — #358-#363 merged; #364→#365 stack open)
 
 # CURRENT HANDOFF - read this first (2026-06-05, session 3 — endless loop RESUMED)
 
 Chris re-started the endless loop (session 3). The session-2 "LOOP PAUSED" note
 below is superseded. Recovery: read this block, then `gh pr list --state open`.
 
+## 🔄 Live state (2026-06-05, session 3) — main `a402395`, 6 MERGED + 2 open (#364→#365 stack)
+
+**UPDATE (latest):** #358-#363 MERGED. Open: **#364** (consolidation) ← **#365** stacked.
+- **#363 MERGED** (`a402395`): validate.py NONFINITE guard + specs (all numeric output
+  columns guarded; 4 bot threads addressed incl. derived tax totals + cpi/data_source
+  required). NaN-leak now backstopped in the validator too.
+- **#364 OPEN** (`refactor/shared-cells-helper`): consolidate the 4 `_to_finite_float`
+  copies into shared `automation/data-pipelines/_cells.py` (`to_finite_float`) + a
+  numeric fast-path. 2 reviews APPROVE (equivalence byte-identical; import resolves in
+  mypy/pytest/real-run) + gemini fast-path thread resolved. **Stacked BASE of #365.**
+- **#365 OPEN** (`fix/pipeline-finite-cells-remaining`, base=#364, NEWEST): routes the
+  REMAINING raw-float cell parses through the shared helper — `fetch_hmrc_stats` (a
+  GENUINE leak: its count path didn't `continue` on NaN, now fixed + regression test),
+  `fetch_boe_rates`, `fetch_productivity_pay`, `fetch_wid_data`. mypy/ruff/tests green.
+  **Needs 2 reviews.** After this, the NaN-leak class is closed in EVERY pipeline.
+
+### ▶️ MERGE PLAN for the #364→#365 stack (next cycle)
+1. Merge **#364** with `gh pr merge 364 --merge` — **NO `--delete-branch`** (it is the
+   stacked base of #365; deleting it would close #365 — see
+   [[feedback_stacked_merge_delete_branch]]). It's approved + not-newest.
+2. `gh pr edit 365 --base main` (retarget #365 to main now that _cells is on main).
+3. Run 2 adversarial reviews on #365, address findings, merge once aged + green.
+4. THEN delete the merged refactor/shared-cells-helper branch.
+
+(historical session-3 detail below)
+
 ## 🔄 Live state (2026-06-05, session 3) — main `ef7acba`, 5 PRs MERGED + 1 open (#363)
 
-**UPDATE (latest):** #358/#359/#360/#361/#362 MERGED; **#363 OPEN** (newest, aging).
+**UPDATE:** #358/#359/#360/#361/#362 MERGED; **#363 OPEN** (newest, aging).
 - **#362 MERGED** (`ef7acba`): wealth/housing NaN-cell guard (`_to_finite_float`) +
   wealth e2e test + housing drop-warning. NaN-leak class now closed in all 4 pipelines.
 - **#363 OPEN** (`chore/validate-nonfinite`, NEWEST): adds a NONFINITE check to
@@ -82,25 +108,21 @@ pipelines. main also has: automation/ + tests/ mypy-gated, the Sobol module.
   → merge the OLDER one (never the newest). Bots re-review every push: re-check threads.
 
 ## 🔜 Next tasks (session 3 backlog, highest-leverage first)
-0. **Merge #363** once a PR sits above it (ready: 2 reviews, coverage gap closed,
-   real data clean). Build a PR above it first → then merge.
-1. **Consolidate `_to_finite_float`** (MED from #362 review): there are now 4
-   byte-identical copies (gdhi, tax, wealth, housing). Extract a shared
-   `automation/data-pipelines/_cells.py` (importable via the dir-on-sys.path mechanism
-   the pipelines already use for chart_html/http_retry); re-point the 4 callers + unit
-   tests. ALSO: refactor housing's inline ratio parse into a `_parse_*` function so a
-   housing end-to-end NaN-drop test (the gap #362 left) becomes possible. Good "PR
-   above #363" candidate (independent of validate.py).
-2. **Flagship: expand the simulation** — behavioural-response layer (cited
+0. **Drain the #364→#365 stack** per the MERGE PLAN above (merge #364 `--merge` no
+   delete → retarget #365 → review/merge #365). Closes the NaN-leak class in EVERY
+   pipeline. (Housing inline-ratio parse refactor for a housing e2e test is still a
+   small optional follow-up — #362 added a drop-warning but no parse-fn yet.)
+1. **Flagship: expand the simulation** — behavioural-response layer (cited
    elasticities from the 6 unused RangeValues, default OFF, caveated) → multi-param
    MC band → wire the NEW Sobol module over {alpha, elasticities}. A stacked arc.
-   Highest value (Chris emphasised expanding the sim). Sobol module is ready to
-   consume once the engine has >1 sampled parameter.
-4. **B1 assumption-source citation URLs** in sources.yml (data integrity; verify each
+   Highest value (Chris emphasised expanding the sim). Sobol module (`uncertainty/
+   sobol.py`, on main) is ready to consume once the engine has >1 sampled parameter.
+   START HERE once the stack is drained — this is the big remaining work.
+2. **B1 assumption-source citation URLs** in sources.yml (data integrity; verify each
    URL via web, no fabrication).
-5. **Frontend visibility**: surface decile/nation breakdown + provenance sources in
+3. **Frontend visibility**: surface decile/nation breakdown + provenance sources in
    SimulatorView/ConfidenceFanChart (currently fetched-but-discarded).
-6. Pre-existing config gap (out of scope, noted by review): backend-lint runs `mypy .`
+4. Pre-existing config gap (out of scope, noted by review): backend-lint runs `mypy .`
    from the backend dir on mypy DEFAULTS (no config there; mypy doesn't walk up), so
    it doesn't inherit root strictness flags. Consider a backend mypy config later.
 

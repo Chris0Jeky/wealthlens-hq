@@ -13,16 +13,16 @@ Last updated: 2026-06-05
 > control). This board is the short version.
 
 **Session 3 (loop resumed):** ran a 5-agent understanding sweep (bug-sweep = 4
-false positives; sim core solid). Merged **#358** (gate mypy on automation/ + fix
-26 errors), **#359** (new `uncertainty/sobol.py` — Sobol sensitivity indices,
-Saltelli/Jansen, no SALib, 801 sim tests), **#360** (gate mypy on root tests/ + fix
-14 errors), and **#361** (data-integrity: reject blank/NaN numeric cells in the GDHI
-+ tax-composition pipelines). **#362** open/aging (same NaN-leak fix for the wealth +
-housing pipelines, found by #361's review). Each PR: 2 independent adversarial reviews
-+ all bot threads resolved + CI green. automation/ AND tests/ are now mypy-gated; the
-NaN-leak class is fixed in all 4 vulnerable pipelines once #362 lands. Seeded next:
-`validate.py` NaN-hardening + consolidating the 4 `_to_finite_float` copies into a
-shared module (see ORCHESTRATION "Next tasks").
+false positives; sim core solid). Merged **#358-#363** (6 PRs): mypy-gate automation/ + root tests/; new
+`uncertainty/sobol.py` (Sobol sensitivity, Saltelli/Jansen, no SALib); and the
+blank-cell→NaN data-integrity fix across GDHI/tax/wealth/housing pipelines + a
+`validate.py` NONFINITE backstop guarding every numeric output column. Open: the
+**#364→#365 stack** — #364 consolidates the 4 `_to_finite_float` copies into a shared
+`_cells.py` (approved); #365 (stacked) closes the same NaN-leak in the remaining
+pipelines (hmrc/boe/productivity/wid — hmrc had a genuine leak). Each PR: 2 independent
+adversarial reviews + all bot threads resolved + CI green. **Next:** drain the stack
+(see ORCHESTRATION merge plan), then the flagship simulation expansion
+(behavioural-response → multi-param MC → wire the Sobol module).
 
 - **Merged to main (2026-06-04 cycle):** #338–#348 (11 PRs) — uncertainty
   sampling (#338) + propagation (#345) + engine MC wiring (#346), the
