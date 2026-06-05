@@ -53,7 +53,13 @@ const DASHBOARD: SimulatorDashboardData = {
   interval_method: 'alpha_sweep',
   total_revenue_gbp_bn: { low: 14, central: 19, high: 27 },
   households_scored: 2000,
-  revenue_by_decile: [],
+  revenue_by_decile: Array.from({ length: 10 }, (_, i) =>
+    i === 9 ? { low: 10, central: 14, high: 20 } : { low: 0, central: 0, high: 0 },
+  ),
+  revenue_by_nation: {
+    england: { low: 12, central: 16, high: 24 },
+    scotland: { low: 0.4, central: 0.6, high: 0.8 },
+  },
   provenance: {
     complete: true,
     assumptions_consumed: [
@@ -140,6 +146,15 @@ describe('SimulatorView', () => {
     // The headline chart still renders; the whole sources panel is hidden.
     expect(wrapper.findComponent(ConfidenceFanChart).exists()).toBe(true)
     expect(wrapper.text()).not.toContain('Sources & assumptions')
+  })
+
+  it('surfaces the revenue breakdown (by nation + decile)', () => {
+    scenarioList.value = SCENARIOS
+    dashboard.value = DASHBOARD
+    const wrapper = mount(SimulatorView)
+    expect(wrapper.text()).toContain('Where the revenue comes from')
+    expect(wrapper.text()).toContain('England')
+    expect(wrapper.text()).toContain('Decile 10 (wealthiest)')
   })
 
   it('passes the contract caveats through to the chart', () => {
