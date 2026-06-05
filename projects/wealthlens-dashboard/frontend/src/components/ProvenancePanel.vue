@@ -12,8 +12,10 @@ import { computed, useId } from 'vue'
 import ExternalLink from '@/components/ExternalLink.vue'
 import type { ConsumedAssumption } from '@/types/simulator'
 
+// Optional: callers pass the (possibly absent) provenance.assumptions_consumed,
+// and the computed below guards undefined so a partial payload never throws.
 const props = defineProps<{
-  assumptions: ConsumedAssumption[]
+  assumptions?: ConsumedAssumption[]
 }>()
 
 // Stable, deterministic order by id. Robust to an absent/empty list so a partial
@@ -70,8 +72,8 @@ function citationLinks(urls: string[] | undefined): CitationLink[] {
       Sources &amp; assumptions
     </h2>
     <p class="mt-1 text-sm text-wl-ink-muted">
-      Every figure traces to the modelling assumptions below. Citations link to
-      the original source — a peer-reviewed paper or official statistics.
+      The modelling assumptions behind these figures, each linked to its original
+      source — a peer-reviewed paper or official statistics.
     </p>
     <ul class="mt-3 space-y-3">
       <li v-for="a in sorted" :key="a.assumption_id" class="text-sm">
