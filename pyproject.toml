@@ -9,7 +9,9 @@ readme = "README.md"
 [project.optional-dependencies]
 dev = [
     "ruff>=0.4",
-    "mypy>=1.10",
+    # Upper-capped at the next major for the same reason as the stub caps below: a
+    # mypy major can tighten checks and turn a gate red on an unrelated PR.
+    "mypy>=1.10,<2",
     "pytest>=9.0.3",
     "bandit>=1.7",
     # Upper-capped at the next major: a stub MAJOR can tighten annotations and turn
@@ -58,11 +60,12 @@ check_untyped_defs = true
 # to sys.path at runtime (mypy does not execute conftest). Anchor those dirs to the
 # config-file directory ($MYPY_CONFIG_FILE_DIR) so `mypy tests` resolves them
 # regardless of the invocation CWD. This is the same root config the `mypy automation`
-# gate reads (the extra search paths are harmless there — it imports none of these);
-# backend-lint runs `mypy .` from the backend dir, which now carries its own
-# projects/wealthlens-dashboard/backend/mypy.ini mirroring this strictness (mypy does
-# not walk up to this root config from a subdir), so the backend is no longer checked
-# on permissive defaults.
+# gate reads (the extra search paths are harmless there — it imports none of these).
+# ci-backend and `make backend-lint` both run `mypy projects/wealthlens-dashboard/backend`
+# from the repo root, so they read THIS config (mypy resolves config by CWD, not by the
+# target path) — the backend is checked at the same strictness as every other gate. Do
+# NOT run `mypy .` from inside the backend dir: mypy would find no config there and fall
+# back to permissive defaults (check_untyped_defs OFF).
 mypy_path = [
     "$MYPY_CONFIG_FILE_DIR/automation/data-pipelines",
     "$MYPY_CONFIG_FILE_DIR/automation/analysis",
