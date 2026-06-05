@@ -5,39 +5,33 @@
 > **POST-MERGE CLEANUP COMPLETE** (2026-05-16): All 192 PRs handled, 874 tests passing, CI green, 496 stale branches deleted.
 > Merge history: [MERGE_ORCHESTRATION.md](.codex/memories/session_notes/MERGE_ORCHESTRATION.md) | PR creation history: [ORCHESTRATION.md](.codex/memories/session_notes/ORCHESTRATION.md) (archived)
 
-Last updated: 2026-06-04
+Last updated: 2026-06-05
 
-## Latest status (2026-06-04 endless-cycle drain)
+## Latest status (2026-06-05 endless-cycle)
 
-- **Merged to main (2026-06-04):**
-  - **#339** `fix/iht-review-findings` at `6a5521c` — **reverted a data-integrity
-    regression**: the RNRB £2m taper is tested against the PRE-relief estate
-    (after liabilities, before APR/BPR + exemptions) per HMRC IHTM46023 (verified
-    0.98 confidence; the bots' IHTM46013 cite was actually wrong). Kept the
-    APR/BPR-on-net-value fix + dead-code cleanup. Two fresh adversarial reviews.
-  - **#340–#344** five Dependabot frontend bumps (echarts 6.1.0, vitest,
-    typescript-eslint, eslint, tsx) — merged after a risk-triage agent cleared
-    each (echarts 6.1 breaking changes don't reach this code).
-- **Open PRs (2):**
-  - **#338** `feat/uncertainty-sampling` -> `main` — Wave 13 sampling layer.
-    Hardened through **7 codex P2 rounds + 4 adversarial reviews**, all resolved:
-    record full marginal specs in provenance; exact round-tripping float repr;
-    injective charset validator; private matrix copy; reject non-finite bounds +
-    reserved source sentinel; validate ParameterSamples shape/metadata; reject
-    non-finite matrix values. CI green. The merge candidate (oldest open PR).
-  - **#345** `feat/uncertainty-propagation` -> `feat/uncertainty-sampling`
-    (stacked) — engine-free Monte-Carlo `propagate(samples, evaluate)` ->
-    `PropagationResult` (median/point-estimate central + quantile band + per-draw
-    outputs + provenance). Two adversarial reviews; HIGH (central from
-    `np.quantile(.,0.5)` not `np.median`), MEDIUM (optional point-estimate central
-    override for the engine), LOW/nits all fixed. Retarget to main after #338.
-- **Branch hygiene:** 8 merged stale branches pruned local+remote.
-- **Prior (2026-05-31):** #337 `feat/synth-generation-provenance` merged at
-  `94446e3`. #336 enforcement compliance model merged (schema `1.2`).
-- **Verification caveat:** `bash -lc "make ci-quick"` currently reports
-  dashboard backend pytest failures but exits 0 because the Makefile swallows
-  backend command failures. This is outside the simulator PRs and is seeded in
-  `tasks/inbox.md` as a reliability follow-up.
+> Full live detail in `.codex/memories/session_notes/ORCHESTRATION.md` (master
+> control). This board is the short version.
+
+- **Merged to main (2026-06-04 cycle):** #338–#348 (11 PRs) — uncertainty
+  sampling (#338) + propagation (#345) + engine MC wiring (#346), the
+  ConfidenceFanChart (#347), the `/api/simulator` bridge (#348), the #339
+  data-integrity revert, and 5 Dependabot bumps (#340–#344).
+- **Merged to main (2026-06-05 session 2):**
+  - **#349** (`8c17153`) — live `/simulator` scenario page. Review caught two real
+    `useFetch` stale-write races (post-`json()` boundary + cleared-URL
+    invalidation); both fixed with regression tests.
+  - **#350** (`5e3d7c3`) — CI hardening. `make ci-quick` no longer swallows
+    failures (runs real ruff+mypy+201 pytest); `requirements-dev.txt` pins
+    ruff/mypy/httpx/pandas-stubs for a clean install; Dependabot auto-merge
+    workflow + job timeouts.
+- **Open PRs (1):** **#351** `feat/simulator-static-publish` — publishes the
+  simulator JSON + `scenarios.json` statically and un-gates `/simulator` + nav
+  link (in the real `AppHeader`, not the dead `NavBar`). 2 gemini + 3 codex
+  findings all addressed; CI green. Aging, then merge first next cycle.
+- **ci-quick swallow: FIXED** in #350 (was the long-standing verification caveat).
+  Remaining reliability follow-up: the `automation/data-pipelines` suite is not in
+  CI and `test_validate` fails with 12 validation errors (dtype/dupes/range) — see
+  `tasks/inbox.md`.
 
 ## Current phase: Wave 13 calibration and extension
 

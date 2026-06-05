@@ -5,30 +5,69 @@
 >
 > **CRITICAL**: Update this file BEFORE every compaction risk (long tool calls, large diffs).
 
-Last updated: 2026-06-04
+Last updated: 2026-06-05
 
-# CURRENT HANDOFF - read this first (2026-06-05, wrap-up)
+# CURRENT HANDOFF - read this first (2026-06-05, session 2 — endless loop running)
 
 This section supersedes the older handoff snapshots below.
 
-## ⏸️ Wrap-up state (2026-06-05) — two open PRs, both fully reviewed/aged
+## ▶️ Live state (2026-06-05 PM) — #349 + #350 MERGED, #351 open & fully reviewed
 
-- **#349 OPEN** (live scenario page) — fully reviewed (2 lenses + 10 bot threads), up
-  to date with main, all green. **Not newest anymore (#350 is above it) → mergeable
-  first next session** (plain `gh pr merge 349 --merge --delete-branch` after a CI +
-  thread re-check).
-- **#350 OPEN** (CI hardening) — Makefile de-swallowed so `make ci-quick` fails
-  loudly (verified: runs real ruff+mypy+201 pytest); Dependabot auto-merge workflow;
-  job timeouts + concurrency. Its description lists **deferred CI follow-ups** (root/
-  automation test suites not in CI; mypy on automation/tests commented out; deploy
-  has no build gate; format/coverage not enforced; pin actions to SHAs) — each its
-  own next PR. Merge #350 AFTER #349 (keep one PR above it, or it's the last).
-- **Chris's repo-setting TODO** (for #350's Dependabot auto-merge to work): enable
-  Settings → General → "Allow auto-merge" + require CI checks in branch protection.
-- **BGV is LIVE, not overdue:** Autumn 2026 deadline **21 June 2026** (see
-  ACTION-REQUIRED.md) — for-profit-structure + solo-founder caveats noted.
-- Both deferred questions answered by Chris: Dependabot auto-merge = ENABLE (done in
-  #350); ci-quick fix = DO (done in #350).
+This session drained both aged PRs (each with the full adversarial gate: real
+findings of all severities fixed, every bot thread resolved, CI green) and opened
+one new reviewed PR. The loop is running per Chris's standing instruction.
+
+- **#349 MERGED** (`8c17153`): live `/simulator` scenario page. Review caught TWO
+  real `useFetch` stale-write races the prior handoff had wrongly called "fixed":
+  (1) no `isCurrent()` re-check after the `response.json()` await; (2) clearing the
+  URL didn't invalidate the in-flight controller. Both fixed with regression tests
+  proven to fail red without the guard.
+- **#350 MERGED** (`5e3d7c3`): CI hardening. Beyond the de-swallowed Makefile,
+  review added: `requirements-dev.txt` now pins ruff/mypy/**httpx/pandas-stubs** so
+  a clean `make install && make ci-quick` genuinely passes; `pipeline-test`
+  PYTHONPATH; `frontend-install` → `npm install`; and the dependabot-auto-merge
+  workflow now documents the 3rd prereq ("Allow GitHub Actions to create and approve
+  PRs").
+- **#351 OPEN** (`feat/simulator-static-publish`) — publishes the simulator JSON +
+  `scenarios.json` index statically (via `generate_static_api.py`, AST-reading the
+  backend registry so no drift) and un-gates `/simulator`. **Fully reviewed**: 2
+  gemini + 3 codex findings all addressed, incl. a real one — the nav link was on
+  **dead `NavBar.vue`**; moved to the actually-rendered `AppHeader` (desktop+mobile,
+  new `nav.simulator` i18n key). Also: build-time contract-key validation +
+  fail-on-missing-fixture + module-level-only AST scan. CI green, 0 unresolved
+  threads. **It is the newest PR → let it age, then merge FIRST next cycle** (then
+  open the next task PR above whatever follows).
+- **Simulator pipeline is now fully live end-to-end**: synth → engine (MC, default
+  OFF) → `to_dashboard_json` → `/api/simulator` → `/simulator` scenario page →
+  static publish + nav link.
+
+## 🔜 Seeded next tasks (highest-leverage first) — for the endless loop
+
+1. **Drain #351** once aged + still green + no new threads (`gh pr merge 351
+   --merge --delete-branch`).
+2. **Data-validation failures (data-integrity)** — `make pipeline-test`
+   (`test_validate.py::test_valid_file_passes`) fails with 12 errors: DTYPE
+   int64-vs-float (3 CSVs), DUPES 199 dup rows (5 CSVs), RANGE year-below-min (3
+   CSVs). Decide validator-vs-data and fix. See `tasks/inbox.md` Reliability.
+3. **`to_dashboard_json` caveat + provenance URLs** (upstream `packages/wealthlens-sim`):
+   surface the synthetic-population caveat in the contract itself; add URL +
+   access-date to provenance sources (currently ids/strings only).
+4. **IHT calibration**: synth IHT sums stock liability (~£1009bn) vs ~£7-8bn real;
+   IHT scenarios stay excluded until fixed.
+5. **Deferred CI hardening (from #350 desc)**: get root + automation suites into CI;
+   mypy on automation/tests; deploy build-gate; enforce format/coverage; SHA-pin
+   actions. Each its own PR.
+6. **Expand the simulation**: sample assumption RangeValues alongside top-tail
+   alpha; Sobol sensitivity (SALib); optional `?uncertainty=` API band.
+
+## 🧷 Chris's TODOs (see tasks/ACTION-REQUIRED.md — surface every wrap-up)
+
+- BGV Autumn 2026 decision by **2026-06-21** (memo: `tasks/bgv-go-no-go-2026.md`;
+  recommendation: restructure/skip → Spring 2027).
+- Repo settings (3) for Dependabot auto-merge: Allow auto-merge; require CI in
+  branch protection; **Allow GitHub Actions to create and approve PRs**.
+- LinkedIn launch; 4 outreach emails (due 2026-06-21); register wealthlens.uk;
+  mySociety interview prep.
 
 ---
 
