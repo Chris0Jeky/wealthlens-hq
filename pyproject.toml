@@ -50,6 +50,15 @@ check_untyped_defs = true
 module = ["plotly.*", "odf.*", "openpyxl.*", "requests.*"]
 ignore_missing_imports = true
 
+# wealthlens_sim is a separate, independently type-checked package (its own clean
+# `python -m mypy wealthlens_sim` runs in ci-sim). Consumed from the automation /
+# dashboard trees it is an opaque typed boundary: its py.typed marker isn't
+# reliably visible across the editable-install boundary, so treat its imports as
+# untyped here rather than failing this cross-package check on a packaging detail.
+[[tool.mypy.overrides]]
+module = ["wealthlens_sim.*"]
+ignore_missing_imports = true
+
 # automation/data-pipelines/ has a hyphen so it can't be a Python package;
 # list modules explicitly instead of using a glob pattern.
 [[tool.mypy.overrides]]
