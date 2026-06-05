@@ -39,6 +39,7 @@ describe('AppHeader', () => {
     const texts = navLinks.map((l) => l.text())
     expect(texts).toContain('Front page')
     expect(texts).toContain('The data')
+    expect(texts).toContain('Simulator')
     expect(texts).toContain('Methodology')
     expect(texts).toContain('About')
     expect(texts).toContain('Contribute')
