@@ -102,4 +102,87 @@ describe('useFetch', () => {
       expect(result.data.value).toEqual({ page: 2 })
     })
   })
+
+  it('a superseded (stale) fetch cannot clear loading or overwrite fresh data', async () => {
+    // First request hangs; the second resolves. When the first finally resolves it
+    // must not flip loading back on/off or clobber the second's data.
+    let resolveFirst!: (v: unknown) => void
+    const firstResponse = { ok: true, status: 200, json: () => Promise.resolve({ stale: true }) }
+    ;(fetch as ReturnType<typeof vi.fn>)
+      .mockReturnValueOnce(new Promise((r) => (resolveFirst = r)))
+      .mockResolvedValue({ ok: true, status: 200, json: () => Promise.resolve({ fresh: true }) })
+
+    const url = ref('/first')
+    const { result } = withSetup(() => useFetch(url))
+    await nextTick()
+    url.value = '/second' // supersede the first (still pending) request
+    await vi.waitFor(() => {
+      expect(result.data.value).toEqual({ fresh: true })
+      expect(result.loading.value).toBe(false)
+    })
+
+    resolveFirst(firstResponse) // the stale request finally resolves
+    await nextTick()
+    await nextTick()
+    expect(result.data.value).toEqual({ fresh: true }) // not clobbered
+    expect(result.loading.value).toBe(false) // not re-toggled
+  })
+
+  it('a superseded fetch cannot overwrite fresh data after its json() resolves late', async () => {
+    // Regression for the second async boundary: the first request's HEADERS arrive
+    // while it is still current (passing the post-fetch guard), then the user
+    // switches before its BODY parses. The freshness check must run again after
+    // json() resolves, or the stale body clobbers the fresh data.
+    let resolveFirstJson!: (v: unknown) => void
+    const firstResponse = {
+      ok: true,
+      status: 200,
+      json: () => new Promise((r) => (resolveFirstJson = r)),
+    }
+    ;(fetch as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce(firstResponse)
+      .mockResolvedValue({ ok: true, status: 200, json: () => Promise.resolve({ fresh: true }) })
+
+    const url = ref('/first')
+    const { result } = withSetup(() => useFetch(url))
+    // Let the first request get past `await fetch()` and park on `await json()`.
+    await nextTick()
+    await nextTick()
+
+    url.value = '/second' // supersede before the first body parses
+    await vi.waitFor(() => {
+      expect(result.data.value).toEqual({ fresh: true })
+    })
+
+    resolveFirstJson({ stale: true }) // the first body parses late
+    await nextTick()
+    await nextTick()
+    expect(result.data.value).toEqual({ fresh: true }) // not clobbered by stale body
+  })
+
+  it('clearing the URL invalidates an in-flight request so its late body cannot write', async () => {
+    // A reactive URL cleared to '' while a request is mid-parse must invalidate
+    // that request (it is no longer current) and clear data, so a stale body
+    // cannot land after the URL was cleared (e.g. simulator empty-scenario path).
+    let resolveJson!: (v: unknown) => void
+    ;(fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: () => new Promise((r) => (resolveJson = r)),
+    })
+
+    const url = ref('/a')
+    const { result } = withSetup(() => useFetch(url))
+    await nextTick() // past await fetch(), parked on await json()
+    await nextTick()
+
+    url.value = '' // clear the URL while /a is still parsing its body
+    await nextTick()
+
+    resolveJson({ stale: true }) // /a's body parses after the URL was cleared
+    await nextTick()
+    await nextTick()
+    expect(result.data.value).toBeNull() // nothing written for the cleared URL
+    expect(result.loading.value).toBe(false)
+  })
 })
