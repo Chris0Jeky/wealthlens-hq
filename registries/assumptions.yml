@@ -324,6 +324,25 @@ assumptions:
       Death-in-service benefits excluded per technical note. Major
       structural change to wealth-transfer taxation.
 
+  - assumption_id: model.iht.annual_mortality_rate.v1
+    domain: demography
+    value_or_distribution:
+      type: point
+      value: 0.0211
+    source: ONS Deaths registered E&W 2023 (581,363) / ~27.5m GB households; source id ons-deaths-registered (accessed 2026-06-05)
+    transferability_score: low
+    valid_range: "0.0-1.0"
+    applies_to: Family D aggregate (stock-to-flow conversion)
+    last_reviewed: "2026-06-05"
+    notes: >
+      Crude annual estate-crystallisation rate converting the at-death IHT STOCK
+      (summed as if every household died this year) into an annual FLOW. Exact value
+      581363 / 27_500_000 = 0.02114 (the code constant ANNUAL_MORTALITY_RATE_2026 is
+      the source of truth; this entry documents it). v0.1 simplification: E&W deaths
+      on the GB synth (understates GB ~10%), per-household not per-estate, uniform not
+      age-specific. IHT scenarios remain EXCLUDED (Tier A leaves a ~3x synth top-tail
+      over-concentration). See docs/IHT_CALIBRATION.md.
+
   - assumption_id: policy.fig_regime.residence_baseline.v1
     domain: residence
     legal_status: current_law
