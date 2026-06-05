@@ -12,6 +12,7 @@ const navLinks = [
   { to: '/charts/housing-affordability', label: 'Housing' },
   { to: '/charts/wealth-by-decile', label: 'Wealth by Decile' },
   { to: '/charts/cgt-concentration', label: 'CGT' },
+  { to: '/simulator', label: 'Simulator' },
 ]
 
 function isActive(to: string): boolean {

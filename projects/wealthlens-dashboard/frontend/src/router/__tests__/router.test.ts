@@ -28,12 +28,12 @@ describe("Router configuration", () => {
     // home, dataset-detail, chart, methodology, data-sources, about,
     // contribute, wealth-calculator, wealth-scale, faq,
     // wealth-tax-simulator, tax-calculator, simulator, not-found catch-all.
-    // The /simulator route is registered only when not in static mode
-    // (VITE_STATIC_DATA !== "true"); the test env is non-static, so it is present.
     expect(router.getRoutes()).toHaveLength(14);
   });
 
-  it('resolves /simulator to the "simulator" route (non-static build)', () => {
+  it('resolves /simulator to the "simulator" route', () => {
+    // Always registered now: dev reads /api/simulator, the static deploy reads
+    // the JSON published by scripts/generate_static_api.py.
     const resolved = router.resolve("/simulator");
     expect(resolved.name).toBe("simulator");
   });

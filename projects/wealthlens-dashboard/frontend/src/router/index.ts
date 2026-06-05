@@ -1,12 +1,9 @@
 import { createRouter, createWebHistory } from "vue-router";
 import { VALID_CHART_NAMES } from "@/constants/charts";
 
-// The deployed site builds in static mode (no backend). The /simulator scenario
-// page needs the live /api/simulator endpoint, and its data is not published
-// statically yet, so the route is registered only in API mode (dev) — a new
-// feature off-by-default in production until the static export lands.
-const SIMULATOR_ENABLED = import.meta.env.VITE_STATIC_DATA !== "true";
-
+// The /simulator scenario page is always registered. In dev it reads the live
+// /api/simulator endpoint; on the static deploy it reads the JSON published by
+// scripts/generate_static_api.py (useSimulatorDashboard switches on VITE_STATIC_DATA).
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   scrollBehavior(to, _from, savedPosition) {
@@ -80,15 +77,11 @@ const router = createRouter({
       name: "tax-calculator",
       component: () => import("@/views/TaxCalculatorView.vue"),
     },
-    ...(SIMULATOR_ENABLED
-      ? [
-          {
-            path: "/simulator",
-            name: "simulator",
-            component: () => import("@/views/SimulatorView.vue"),
-          },
-        ]
-      : []),
+    {
+      path: "/simulator",
+      name: "simulator",
+      component: () => import("@/views/SimulatorView.vue"),
+    },
     {
       path: "/:pathMatch(.*)*",
       name: "not-found",
