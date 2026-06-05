@@ -116,25 +116,25 @@ def process(paths: dict[str, Path]) -> pd.DataFrame:
         if gains is None:
             continue
 
-        # Parse the taxpayer count. Previously a blank (NaN) cell slipped through
-        # float() and was appended as NaN num_taxpayers (it set count=None only on
-        # a non-numeric cell, and did not skip). to_finite_float rejects NaN too,
-        # and we now drop the row so no NaN count reaches the published CSV.
+        # Parse the taxpayer count. HMRC suppresses some bands' counts for disclosure
+        # control while STILL publishing the band's gains, so a blank/suppressed count
+        # must NOT drop the row — that would discard valid gains data (codex review).
+        # Keep the row with count=None (None -> NaN in the float column, the honest
+        # representation of a suppressed count; share_of_taxpayers is then NaN for that
+        # band only). to_finite_float turns a blank/NaN cell into None rather than a
+        # fabricated number, so nothing spurious is published.
         count = to_finite_float(count_raw)
-        if count is None:
-            continue
 
         # Build readable band label
+        band_lower: float = 0.0
         if band_raw.lower() == "all":
             label = "All"
-            band_lower: float = 0.0
         else:
             band_lower_parsed = to_finite_float(band_raw)
             if band_lower_parsed is None:
                 # Non-numeric band label (e.g. a descriptive range): keep the raw
                 # text as the label and leave the lower bound at 0.
                 label = band_raw
-                band_lower = 0.0
             else:
                 band_lower = band_lower_parsed
                 label = f"£{int(band_lower):,}+"

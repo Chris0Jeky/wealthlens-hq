@@ -1,14 +1,17 @@
-"""Focused regression test for the HMRC CGT NaN-leak fix.
+"""Focused regression test for the HMRC CGT NaN handling.
 
-`fetch_hmrc_stats.process` previously parsed the taxpayer-count cell with raw
-``float()`` and, on a blank cell that pandas reads as NaN, appended
-``num_taxpayers_thousands = NaN`` *without skipping the row* — so a NaN leaked
-into the published CSV. Routing the parse through ``_cells.to_finite_float`` (which
-rejects NaN) plus skipping the row when the count is ``None`` closes that leak.
+``fetch_hmrc_stats.process`` parses the gains and taxpayer-count cells out of an
+HMRC table. Two distinct correctness requirements:
+
+* A blank/NaN **gains** cell must DROP the row — gains is the published metric, and
+  a NaN gains would leak into ``total_gains_millions`` / ``share_of_gains_pct``.
+* A blank/suppressed **taxpayer-count** cell must KEEP the row (HMRC suppresses some
+  bands' counts for disclosure control while still publishing the gains). Dropping it
+  would discard valid gains data; the count is recorded as NaN (the honest
+  "suppressed" representation) for that band only.
 
 The parse is inline inside ``process()``, so we exercise it by monkeypatching the
-two pandas Excel readers it calls (``pd.ExcelFile`` for sheet names and
-``pd.read_excel`` for the raw frame) and pointing ``PROCESSED_DIR`` at a tmp dir.
+two pandas Excel readers it calls and pointing ``PROCESSED_DIR`` at a tmp dir.
 """
 
 from __future__ import annotations
@@ -31,8 +34,8 @@ class _FakeExcelFile:
         self.sheet_names = ["Contents", "2_1a"]
 
 
-def _raw_frame_with_blank_count() -> pd.DataFrame:
-    """Build a raw HMRC-style sheet where one band has a blank (NaN) count cell.
+def _raw_frame() -> pd.DataFrame:
+    """Build a raw HMRC-style sheet exercising both NaN scenarios.
 
     Layout mirrors what ``process()`` expects:
       col 0 = band lower limit, col 1 = num individuals (thousands),
@@ -42,13 +45,14 @@ def _raw_frame_with_blank_count() -> pd.DataFrame:
     rows = [
         ["Notes", None, None, None],
         ["Range of gain", "Number of individuals", "Amounts of gains", "Amounts of tax"],
-        # Valid band — finite count.
+        # Valid band — finite count + gains.
         ["10000", "30", "10000", "1000"],
-        # Band with a SUPPRESSED/blank taxpayer count (pandas NaN). This is the
-        # row that used to leak a NaN num_taxpayers into the CSV; it must now be
-        # dropped instead of appended.
+        # SUPPRESSED taxpayer count (pandas NaN) but PUBLISHED gains: the row must be
+        # KEPT with its gains, count recorded as NaN (HMRC disclosure suppression).
         ["500000", float("nan"), "12000", "2400"],
-        # Another valid band so the frame is non-empty after the drop.
+        # Blank GAINS cell: the row must be DROPPED (gains is the published metric).
+        ["700000", "8", float("nan"), "1600"],
+        # Another valid band so the frame is non-empty.
         ["1000000", "5", "25000", "5000"],
         # Totals row.
         ["All", "35", "47000", "8400"],
@@ -56,27 +60,30 @@ def _raw_frame_with_blank_count() -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def test_blank_taxpayer_count_row_is_dropped_not_nan(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """A band with a blank (NaN) count must be dropped, never written as NaN."""
+@pytest.fixture()
+def _processed(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> pd.DataFrame:
     monkeypatch.setattr(fetch_hmrc_stats.pd, "ExcelFile", _FakeExcelFile)
-    monkeypatch.setattr(
-        fetch_hmrc_stats.pd,
-        "read_excel",
-        lambda *_a, **_k: _raw_frame_with_blank_count(),
-    )
+    monkeypatch.setattr(fetch_hmrc_stats.pd, "read_excel", lambda *_a, **_k: _raw_frame())
     monkeypatch.setattr(fetch_hmrc_stats, "PROCESSED_DIR", tmp_path)
+    return fetch_hmrc_stats.process({"table2": tmp_path / "fake.ods"})
 
-    df = fetch_hmrc_stats.process({"table2": tmp_path / "fake.ods"})
 
-    # The £500,000 band had a blank count — it must not appear in the output.
-    assert 500000 not in df["band_lower"].tolist(), (
-        "Row with a blank (NaN) taxpayer count should be dropped, not kept"
+def test_blank_gains_row_is_dropped(_processed: pd.DataFrame) -> None:
+    """A band with a blank (NaN) gains cell is dropped, never published as NaN gains."""
+    assert 700000 not in _processed["band_lower"].tolist(), "blank-gains band must be dropped"
+    assert not _processed["total_gains_millions"].isna().any(), (
+        "total_gains_millions (the published metric) must contain no NaN"
     )
-    # And no NaN must survive in the published taxpayer-count column.
-    assert not df["num_taxpayers_thousands"].isna().any(), (
-        "num_taxpayers_thousands must contain no NaN after the leak fix"
-    )
-    # The two valid bands (10k, 1m) remain.
-    assert set(df["band_lower"].tolist()) == {10000.0, 1000000.0}
+
+
+def test_suppressed_count_band_is_kept_with_gains(_processed: pd.DataFrame) -> None:
+    """A band with a suppressed (blank) taxpayer count keeps its published gains."""
+    band = _processed[_processed["band_lower"] == 500000.0]
+    assert len(band) == 1, "suppressed-count band must be KEPT (its gains are valid)"
+    assert band["total_gains_millions"].iloc[0] == pytest.approx(12000.0)
+    # The count itself is the honest 'suppressed' NaN for that band only.
+    assert pd.isna(band["num_taxpayers_thousands"].iloc[0])
+
+
+def test_valid_bands_survive(_processed: pd.DataFrame) -> None:
+    assert set(_processed["band_lower"].tolist()) == {10000.0, 500000.0, 1000000.0}
