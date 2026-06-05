@@ -54,6 +54,17 @@ const DASHBOARD: SimulatorDashboardData = {
   total_revenue_gbp_bn: { low: 14, central: 19, high: 27 },
   households_scored: 2000,
   revenue_by_decile: [],
+  provenance: {
+    complete: true,
+    assumptions_consumed: [
+      {
+        assumption_id: 'toptail.pareto_alpha.overall.v1',
+        domain: 'top-tail',
+        source: 'Vermeulen (2018); calibrated to UK WAS',
+        source_urls: ['https://doi.org/10.1111/roiw.12279'],
+      },
+    ],
+  },
 }
 
 describe('SimulatorView', () => {
@@ -90,6 +101,19 @@ describe('SimulatorView', () => {
     expect(chart.props('interval')).toEqual(DASHBOARD.total_revenue_gbp_bn)
     expect(chart.props('intervalMethod')).toBe('alpha_sweep')
     expect(wrapper.text()).toContain('synthetic households')
+  })
+
+  it('surfaces the consumed assumptions and their citation links', () => {
+    scenarioList.value = SCENARIOS
+    dashboard.value = DASHBOARD
+    const wrapper = mount(SimulatorView)
+    expect(wrapper.text()).toContain('Sources')
+    expect(wrapper.text()).toContain('Vermeulen (2018)')
+    const cite = wrapper
+      .findAll('a')
+      .find((a) => a.attributes('href') === 'https://doi.org/10.1111/roiw.12279')
+    expect(cite).toBeTruthy()
+    expect(cite?.attributes('rel')).toContain('noopener')
   })
 
   it('passes the contract caveats through to the chart', () => {
