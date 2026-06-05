@@ -5,12 +5,29 @@
 >
 > **CRITICAL**: Update this file BEFORE every compaction risk (long tool calls, large diffs).
 
-Last updated: 2026-06-05 (session 3 — #358 + #359 merged; #360 open/aging)
+Last updated: 2026-06-05 (session 3 — #358/#359/#360 merged; #361 open/aging)
 
 # CURRENT HANDOFF - read this first (2026-06-05, session 3 — endless loop RESUMED)
 
 Chris re-started the endless loop (session 3). The session-2 "LOOP PAUSED" note
 below is superseded. Recovery: read this block, then `gh pr list --state open`.
+
+## 🔄 Live state (2026-06-05, session 3) — main `74ed1a8`, 3 PRs MERGED + 1 open (#361)
+
+**UPDATE (later in session 3):** #360 MERGED (`74ed1a8`); #361 OPEN (the newest).
+- **#360 MERGED** (`chore/ci-mypy-tests`): gate mypy on root tests/ + fix all 14
+  errors. 2 reviews + 1 gemini thread resolved. CI green.
+- **#361 OPEN** (`fix/pipeline-finite-cells`, NEWEST): data-integrity fix — a blank
+  source cell (pandas NaN) leaked into the published GDHI/tax-composition datasets
+  (`str(nan)='nan'` → `float`→nan → `nan<=0` is False). Added `_to_finite_float`
+  helper (rejects non-finite) in both pipelines + unit tests + an end-to-end
+  NaN-drop test. 2 reviews: correctness CLEAN (behaviour-preserving modulo intended
+  NaN fix); data-integrity lens MERGEABLE but flagged 2 **out-of-scope HIGH**
+  follow-ups (see Next tasks 1-2). In-scope integration-test gap addressed. **Newest
+  → age, merge next cycle once a PR sits above it.**
+
+---
+(earlier session-3 detail below)
 
 ## 🔄 Live state (2026-06-05, session 3) — main `440b82b`, 2 PRs MERGED + 1 open
 
@@ -41,19 +58,30 @@ below is superseded. Recovery: read this block, then `gh pr list --state open`.
   → merge the OLDER one (never the newest). Bots re-review every push: re-check threads.
 
 ## 🔜 Next tasks (session 3 backlog, highest-leverage first)
-1. **Refill backlog above #360, then merge #360** (it's ready, just needs to not be
-   newest).
-2. **Flagship: expand the simulation** — behavioural-response layer (cited
+0. **Merge #361** once a PR sits above it (it's ready: 2 reviews, integration test,
+   green). Build task 1 first → then merge #361.
+1. **PR 5 (NEXT): same NaN-leak class in sibling pipelines** — confirmed live by the
+   #361 data-integrity review (HIGH, 97%): `fetch_ons_wealth.py:247,309,314` and
+   `fetch_ons_housing.py:88` do raw `float(cell)` so a blank (NaN) cell leaks into
+   `ons_wealth_by_decile.csv` / `ons_housing_affordability_by_region.csv`. Apply the
+   same `_to_finite_float` treatment (consider a shared `automation/data-pipelines/
+   _cells.py` now that 4 pipelines need it — but watch the hyphenated-dir import).
+   (Not vulnerable: fetch_boe_rates uses pd.notna before float; fetch_hmrc_stats
+   operates on string cells.) This refills the backlog above #361.
+2. **PR 6: harden `validate.py`** (HIGH, 95% from review): it does NOT catch a leaked
+   NaN (DTYPE passes; COERCE cancels to 0; RANGE `nan<lo`/`nan>hi` both False; NULLS
+   only flags fully-null rows). Add an explicit finite/non-null value check + add
+   `ranges`/`dtypes` specs for `tax_composition.csv` and `ons_gdhi_by_region.csv`
+   (currently have none).
+3. **Flagship: expand the simulation** — behavioural-response layer (cited
    elasticities from the 6 unused RangeValues, default OFF, caveated) → multi-param
    MC band → wire the NEW Sobol module over {alpha, elasticities}. A stacked arc.
-   Highest value (Chris emphasised expanding the sim). Sobol module is now ready to
+   Highest value (Chris emphasised expanding the sim). Sobol module is ready to
    consume once the engine has >1 sampled parameter.
-3. **B1 assumption-source citation URLs** in sources.yml (data integrity; verify each
+4. **B1 assumption-source citation URLs** in sources.yml (data integrity; verify each
    URL via web, no fabrication).
-4. **Frontend visibility**: surface decile/nation breakdown + provenance sources in
+5. **Frontend visibility**: surface decile/nation breakdown + provenance sources in
    SimulatorView/ConfidenceFanChart (currently fetched-but-discarded).
-5. Pre-existing minor: `fetch_ons_gdhi._parse_gdhi_per_head` + `fetch_tax_composition`
-   don't guard a NaN value cell (`nan <= 0` is False) — small data-integrity PR.
 6. Pre-existing config gap (out of scope, noted by review): backend-lint runs `mypy .`
    from the backend dir on mypy DEFAULTS (no config there; mypy doesn't walk up), so
    it doesn't inherit root strictness flags. Consider a backend mypy config later.

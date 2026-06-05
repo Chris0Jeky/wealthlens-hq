@@ -14,10 +14,13 @@ Last updated: 2026-06-05
 
 **Session 3 (loop resumed):** ran a 5-agent understanding sweep (bug-sweep = 4
 false positives; sim core solid). Merged **#358** (gate mypy on automation/ + fix
-26 errors) and **#359** (new `uncertainty/sobol.py` — Sobol sensitivity indices,
-Saltelli/Jansen, no SALib, 801 sim tests). **#360** open/aging (gate mypy on root
-tests/ + fix 14 errors). Each PR: 2 independent adversarial reviews + all bot
-threads resolved + CI green. automation/ AND tests/ are now mypy-gated in CI.
+26 errors), **#359** (new `uncertainty/sobol.py` — Sobol sensitivity indices,
+Saltelli/Jansen, no SALib, 801 sim tests), and **#360** (gate mypy on root tests/ +
+fix 14 errors). **#361** open/aging (data-integrity: reject blank/NaN numeric cells
+in the GDHI + tax-composition pipelines). Each PR: 2 independent adversarial reviews
++ all bot threads resolved + CI green. automation/ AND tests/ are now mypy-gated.
+The #361 review surfaced the same NaN-leak class in `fetch_ons_wealth`/`fetch_ons_housing`
++ a `validate.py` gap — seeded as the next PRs (see ORCHESTRATION "Next tasks").
 
 - **Merged to main (2026-06-04 cycle):** #338–#348 (11 PRs) — uncertainty
   sampling (#338) + propagation (#345) + engine MC wiring (#346), the
