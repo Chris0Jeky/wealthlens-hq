@@ -33,10 +33,20 @@ const sorted = computed(() =>
 // Only registered data sources are citable (they carry a URL); synthetic
 // generation parameters are id-only config inputs and are not listed. A blank-ish
 // URL (whitespace only) is dropped too — it would render as an inert "#" link.
+// Sorted by id for a stable, deterministic render order.
 const dataSources = computed(() =>
-  (props.populationSources ?? []).filter(
-    (s): s is PopulationProvenanceEntry & { url: string } => Boolean(s.url?.trim()),
-  ),
+  (props.populationSources ?? [])
+    .filter(
+      (s): s is PopulationProvenanceEntry & { url: string } => Boolean(s.url?.trim()),
+    )
+    .sort((a, b) => a.id.localeCompare(b.id)),
+)
+
+// Disambiguated link labels keyed by url: when two DIFFERENT data sources share a
+// host (e.g. two ons.gov.uk datasets) each link still gets a distinct accessible
+// name (WCAG 2.4.4), reusing the same host+path-segment scheme as the citations.
+const dataSourceLabels = computed(
+  () => new Map(citationLinks(dataSources.value.map((s) => s.url)).map((l) => [l.url, l.label])),
 )
 
 // Unique id so multiple panels on one page never collide on the heading id.
@@ -131,12 +141,14 @@ function hostLabel(url: string): string {
         <li v-for="s in dataSources" :key="s.url" class="text-sm">
           <p class="text-wl-ink">{{ s.name || s.id }}</p>
           <p class="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
-            <ExternalLink :href="s.url">{{ hostLabel(s.url) }}</ExternalLink>
+            <ExternalLink :href="s.url">
+              {{ dataSourceLabels.get(s.url) ?? hostLabel(s.url) }}
+            </ExternalLink>
             <span v-if="s.access_date" class="text-wl-ink-muted">
               accessed {{ s.access_date }}
             </span>
             <span v-if="s.licence" class="text-wl-ink-muted">
-              <span aria-hidden="true">·</span> {{ s.licence }}
+              <span v-if="s.access_date" aria-hidden="true">·</span> {{ s.licence }}
             </span>
           </p>
         </li>
