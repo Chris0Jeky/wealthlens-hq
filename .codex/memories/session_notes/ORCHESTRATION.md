@@ -28,11 +28,18 @@ all bot threads resolved + CI green. Summary:
 - Understanding sweep (5 agents) at session start confirmed the SIM CORE is solid
   (the bug-sweep's 4 findings were all false positives).
 
-### 🎯 NEXT = THE FLAGSHIP: expand the simulation (start here, fresh context)
-Behavioural-response → multi-parameter Monte-Carlo → wire the Sobol module. A stacked
-arc, default OFF, heavily caveated (Chris is data-integrity-first — NO fabricated
-economics; cite every parameter). Concrete plan:
-1. **PR A — behavioural-response layer** (`engine/` optional arg like enforcement/
+### 🎯 FLAGSHIP IN PROGRESS: expand the simulation (behavioural → MC → Sobol)
+**PR A IS OPEN as #366** (`feat/behavioural-response`): standalone `behavioural/
+response.py` — reduced-form `revenue_response_factor(channels, rate_change_pp)` =
+Π(1+e*dtau), clamped ≥0, from cited registry semi-elasticities; pure, tested (15),
+engine-free. **Next tick: 2 adversarial reviews on #366 (ECONOMICS lens — is the
+reduced form + unit contract defensible?), address findings, then build PR B.** Do
+NOT rebuild PR A. Arc: behavioural → multi-param MC → wire the Sobol module. Default
+OFF, heavily caveated (Chris is data-integrity-first — NO fabricated economics; every
+parameter cited; UK migration elasticities have transferability_score: low).
+Remaining plan:
+1. ~~**PR A — behavioural-response layer**~~ DONE → #366 open. (original design note:
+   `engine/` optional arg like enforcement/
    devolution, default OFF). Apply a cited, stylised reduced-form elasticity haircut to
    revenue using the 6 UNUSED cited RangeValues already in `registries/assumptions.yml`
    (migration non-dom + domestic emigration, CGT lock-in, wealth concealment,
