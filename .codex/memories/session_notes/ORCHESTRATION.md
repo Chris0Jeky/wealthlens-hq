@@ -11,14 +11,22 @@ Last updated: 2026-06-05
 
 This section supersedes the older handoff snapshots below.
 
-## ▶️ Live state (2026-06-05 PM) — #349–#353 MERGED, #354 open & reviewed
+## ▶️ Live state (2026-06-05 PM) — #349–#354 MERGED, no open PRs
 
-This session drained #349–#353 (each with the full adversarial gate: real findings
-of all severities fixed, every bot thread resolved, CI green), and opened one more
-reviewed PR (#354, synthetic-pop caveat in the contract). Loop is running per
-Chris's standing instruction. (Known local quirk: a stale `.claude/worktrees`
-editable install of wealthlens_sim — harness-managed, left as-is; CI unaffected,
-the generator already inserts packages/wealthlens-sim onto the path.)
+This session drained #349–#354 (each with the full adversarial gate: real findings
+of all severities fixed, every bot thread resolved, CI green). Loop is running per
+Chris's standing instruction. Next: provenance goal B2 (task #1 below).
+
+- **#354 MERGED** (`8377e72`): synthetic-population caveat emitted from
+  `to_dashboard_json` (was generator-only). Both bots + both subagent reviews flagged
+  the caveat keying off the `version_tag` string (fail-OPEN on a mistagged synth pop);
+  fixed properly by threading ground-truth `population_is_synthetic` through
+  EngineResult (fail-closed default) and gating on it. Goldens + served fixtures
+  byte-identical (drift-guard); 776 sim tests + mypy(45) green.
+
+(Known local quirk: a stale `.claude/worktrees` editable install of wealthlens_sim
+— harness-managed, left as-is; CI unaffected, the generator already inserts
+packages/wealthlens-sim onto the path.)
 
 - **#349 MERGED** (`8c17153`): live `/simulator` scenario page. Review caught TWO
   real `useFetch` stale-write races the prior handoff had wrongly called "fixed":
@@ -47,37 +55,29 @@ the generator already inserts packages/wealthlens-sim onto the path.)
   `automation/data-pipelines/tests/` validate 6) — closed the gap that let #352's
   fixture fail invisibly. 3 separate pytest invocations + weekly cron + run-whole-dir
   --ignore (so new pipeline test files can't slip the filter).
-- **#354 OPEN** (`feat/contract-synthetic-caveat`): emits the synthetic-population
-  caveat from `to_dashboard_json` itself (was generator-only), conditioned on
-  `version_tag.population_version` startswith `synth`; generator's duplicate prepend
-  removed. Served fixtures byte-identical (drift-guard confirms); goldens regenerated;
-  775 sim tests pass. Reviewed by 2 subagents — both flagged the caveat keys off a
-  version-string heuristic (fail-OPEN if a synth pop is mistagged) not ground-truth
-  `is_synthetic` (dropped at engine boundary); fix seeded in inbox (needs a
-  non-synth provider to test, coupled to the real WAS/FRS provider). Newest PR →
-  age, then merge first next cycle.
+  (#354's full detail is in the live-state summary above.)
 - **Simulator pipeline is now fully live end-to-end**: synth → engine (MC, default
   OFF) → `to_dashboard_json` → `/api/simulator` → `/simulator` scenario page →
   static publish + nav link (live on the deployed site).
 
 ## 🔜 Seeded next tasks (highest-leverage first) — for the endless loop
 
-1. **Drain #354** once aged + still green + no new bot threads (`gh pr merge 354
-   --merge --delete-branch`). (Caveat-in-contract done; goal A of the provenance task.)
-2. **Provenance URLs — goal B2 (doable now)**: in `to_dashboard_json`, resolve
+1. **Provenance URLs — goal B2 (doable now)**: in `to_dashboard_json`, resolve
    `population_provenance_ids` (e.g. `ons-was-wealth`, `ons-families-households-2022`)
    against `registries/sources.yml` (already holds real url+access_date via
    `find_registries_dir()`) and emit a structured `population_provenance` block
    {id,name,url,access_date,licence}; keep the id list for back-compat; synth.* config
    ids have no URL (not external sources). Additive → no schema bump needed. B1 (URLs
    for assumption citation strings) needs verified citations — separate, no fabrication.
-3. **IHT calibration**: synth IHT sums stock liability (~£1009bn) vs ~£7-8bn real;
+2. **IHT calibration**: synth IHT sums stock liability (~£1009bn) vs ~£7-8bn real;
    IHT scenarios stay excluded until fixed.
-4. **Remaining deferred CI hardening (from #350 desc)**: enable mypy on
+3. **Remaining deferred CI hardening (from #350 desc)**: enable mypy on
    automation/ + tests/ (pre-existing type errors); deploy build-gate; enforce
    format/coverage; SHA-pin actions. Each its own PR.
-5. **Expand the simulation**: sample assumption RangeValues alongside top-tail
+4. **Expand the simulation**: sample assumption RangeValues alongside top-tail
    alpha; Sobol sensitivity (SALib); optional `?uncertainty=` API band.
+5. **Real WAS/FRS population provider** behind the PopulationSource protocol (needs
+   a UKDS licence) — also unlocks testing the `is_synthetic=False` path end-to-end.
 
 ## 🧷 Chris's TODOs (see tasks/ACTION-REQUIRED.md — surface every wrap-up)
 
