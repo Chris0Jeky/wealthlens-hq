@@ -5,41 +5,51 @@
 >
 > **CRITICAL**: Update this file BEFORE every compaction risk (long tool calls, large diffs).
 
-Last updated: 2026-06-05 (session 4 — #369 MERGED; #370 open/aging; picking task 3)
+Last updated: 2026-06-05 (session 4 — #369/#370/#371 MERGED; #372 open/in-review)
 
-## ▶️ SESSION 4 (2026-06-05) — LOOP RESUMED. B1 merged (#369); #370 aging
+## ▶️ SESSION 4 (2026-06-05) — LOOP RESUMED. 3 PRs merged; #372 open
 
 Chris re-started the endless loop (session 4). Started from main `7e70a49`, 0 open PRs.
+Now main `7490f54`. Each PR: 2 independent adversarial reviews + all bot threads
+resolved + green CI before merge.
 
-- **✅ #369 MERGED (`c59082a`) — B1 assumption citation URLs.** Added web-VERIFIED
-  canonical URLs (DOI/official, no fabrication) to `registries/assumptions.yml` via an
-  optional `source_urls` field, threaded through `ResolvedAssumption` -> collector ->
-  dashboard JSON, plus the engine-injected enforcement assumption. A research workflow
-  (one researcher + one INDEPENDENT re-fetch verifier per ~21 works) confirmed 19/21
-  auto; the rest verified by hand. 2 adversarial reviews (citation-integrity +
-  code-regression) + 2 bot rounds (gemini/CodeQL, then codex P2) all addressed. The
-  reviews caught + fixed real issues: a mis-cited non-dom paper (now Advani/Burgherr/
-  Summers 2022), a stale APR/BPR URL (£1m vs the current £2.5m), the WAS-quality source
-  conflation, Agrawal year, validator hardening (urlparse host + case-insensitive +
-  control-char reject), and empty enforcement/alpha/pension URLs. Schema stayed 1.3
-  (source_urls is additive — documented decision, not a bump).
-- **🔶 #370 OPEN/aging — `test/pipeline-finite-cells-callsites` (worktree wt2).** #365
-  follow-up: call-site NaN-guard regression tests for boe/productivity/wid. 2 reviews
-  (guard-efficacy mutation-checked + coverage); fixed a real BoE **cpi** mutation gap
-  + vectorised the helper (gemini). CI green, gemini thread resolved. **Mergeable once
-  a newer PR sits above it** (task 3).
-- **SEEDED follow-up (from #370 coverage review):** the OTHER 4 `to_finite_float` call
-  sites — `fetch_tax_composition` (L180), `fetch_ons_gdhi` (L291), `fetch_ons_housing`
-  (L90), `fetch_ons_wealth` (L248/309/313) — are guarded but lack call-site regression
-  tests. A future PR should add them (mirror `test_pipeline_finite_cells` / the mutation
-  pattern). Noted honestly in that file's docstring.
+- **✅ #369 MERGED — B1 assumption citation URLs.** Web-VERIFIED canonical URLs
+  (DOI/official, no fabrication) added to `registries/assumptions.yml` via an optional
+  `source_urls` field, threaded through `ResolvedAssumption` -> collector -> dashboard
+  JSON + the engine-injected enforcement assumption. Research workflow (researcher +
+  INDEPENDENT re-fetch verifier per ~21 works). Reviews caught: a mis-cited non-dom
+  paper (now Advani/Burgherr/Summers 2022), a stale APR/BPR URL (£1m vs current £2.5m),
+  the WAS-quality source conflation, Agrawal year, validator hardening, empty
+  enforcement/alpha/pension URLs. Schema stayed 1.3 (source_urls is additive).
+- **✅ #370 MERGED — #365 follow-up: call-site NaN-guard tests** (boe/productivity/wid).
+  Fixed a real BoE **cpi** mutation gap + vectorised the helper. SEEDED follow-up: the
+  OTHER 4 `to_finite_float` sites (`fetch_tax_composition` L180, `fetch_ons_gdhi` L291,
+  `fetch_ons_housing` L90, `fetch_ons_wealth` L248/309/313) are guarded but lack
+  call-site tests — a future PR (noted in that file's docstring). [fiddly xlsx fakes]
+- **✅ #371 MERGED — surface citations in SimulatorView (`ProvenancePanel`).** The
+  payoff of B1: the scenario page now lists each consumed assumption + its citation
+  links. Reviews caught + fixed a genuine **WCAG AA contrast failure** (link colour
+  `text-blue-600` ~3.4:1 in dark theme -> new on-brand theme-aware `--wl-link` token),
+  a **crash-robustness gap** (provenance-less payload), backend `_REQUIRED_KEYS`
+  provenance guard, same-host link disambiguation (2.4.4), `<ul><li>` semantics, useId.
+  SEEDED follow-up: also surface `population_provenance` (the ONS data sources) in the
+  panel — the codex review noted the headline rests on those too, not just assumptions.
+- **🔶 #372 OPEN/in-review — `chore/backend-mypy-config` (worktree wt3).** Adds
+  `backend/mypy.ini` so `make backend-lint` (`mypy .` from the backend dir) runs at
+  root strictness (check_untyped_defs + warn_return_any) instead of permissive defaults
+  — mypy doesn't walk up like ruff. 0 new errors (34 files); mutation-checked it bites;
+  ruff unaffected (standalone .ini doesn't hijack the root [tool.ruff] walk-up). 2
+  reviews running (`wf_eba6c605-bd5`). Mergeable once reviewed + a newer PR above it.
 - **Merge discipline this loop** (solo, per deferred Q2): merge once 2 independent
   adversarial reviews + all bot threads resolved + green CI + aged + a newer PR above it.
   Never `--delete-branch` a stacked base ([[feedback_stacked_merge_delete_branch]]).
-- **Backlog / next:** task 3 candidates — (a) frontend visibility: surface the consumed
-  assumptions' provenance + the NEW source_urls as clickable citations in SimulatorView
-  ("make it visible", builds on B1); (b) the 4-fetcher coverage above; (c) base-share
-  research -> behavioural engine-apply (flagship, BLOCKED on cited base shares — DEFERRED Q1).
+- **Backlog / next (task 5 candidates):** (a) surface `population_provenance` in
+  ProvenancePanel (completes #371's sources story, high-value visibility, seeded above);
+  (b) decile/nation breakdown viz in SimulatorView (still fetched-but-discarded);
+  (c) the 4-fetcher coverage above; (d) base-share research -> behavioural engine-apply
+  (flagship, BLOCKED on cited base shares — DEFERRED Q1).
+- **Worktrees:** main tree on `main`; wt3 on `chore/backend-mypy-config` (#372).
+  (wt2 removed after #370 merged.)
 - **Deferred questions for Chris:** see "❓ DEFERRED QUESTIONS" near the end (Q1-Q4 from
   session 3 still stand; will add any new ones at wrap-up).
 
