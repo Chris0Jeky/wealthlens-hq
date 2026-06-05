@@ -59,8 +59,10 @@ check_untyped_defs = true
 # config-file directory ($MYPY_CONFIG_FILE_DIR) so `mypy tests` resolves them
 # regardless of the invocation CWD. This is the same root config the `mypy automation`
 # gate reads (the extra search paths are harmless there — it imports none of these);
-# backend-lint runs `mypy .` from the backend dir, where mypy finds no config and
-# uses its defaults, so it never reads this setting at all.
+# backend-lint runs `mypy .` from the backend dir, which now carries its own
+# projects/wealthlens-dashboard/backend/mypy.ini mirroring this strictness (mypy does
+# not walk up to this root config from a subdir), so the backend is no longer checked
+# on permissive defaults.
 mypy_path = [
     "$MYPY_CONFIG_FILE_DIR/automation/data-pipelines",
     "$MYPY_CONFIG_FILE_DIR/automation/analysis",
