@@ -14,7 +14,6 @@ These caveats are noted on the chart output.
 from __future__ import annotations
 
 import logging
-import math
 import re
 import zipfile
 from datetime import date
@@ -23,28 +22,12 @@ from pathlib import Path
 import pandas as pd
 import plotly.graph_objects as go
 import requests
+from _cells import to_finite_float
 from chart_html import write_accessible_chart
 from http_retry import fetch_with_retry
 
 logger = logging.getLogger(__name__)
 REQUEST_TIMEOUT_SECONDS = 60
-
-
-def _to_finite_float(value: object) -> float | None:
-    """Parse a spreadsheet cell to a *finite* float, or ``None`` if not numeric.
-
-    Coerces via ``str()`` so comma-grouped text ("14,200") parses and the
-    dynamically-typed pandas cell satisfies ``float()``. Returns ``None`` for a
-    genuinely non-numeric cell (``float()`` raises) **and** for a blank cell that
-    pandas reads as ``NaN``: ``str(nan)`` is ``"nan"``, which ``float()`` turns back
-    into a NaN that would otherwise slip past a downstream guard and corrupt the
-    published dataset. ``inf`` is rejected the same way.
-    """
-    try:
-        parsed = float(str(value).replace(",", "").strip())
-    except (ValueError, TypeError):
-        return None
-    return parsed if math.isfinite(parsed) else None
 
 
 try:
@@ -262,7 +245,7 @@ def _parse_table_2_2(df_raw: pd.DataFrame) -> pd.DataFrame | None:
             continue
 
         cell_val: object = df_raw.iloc[i, last_col]
-        wealth_m = _to_finite_float(cell_val)
+        wealth_m = to_finite_float(cell_val)
         if wealth_m is None:
             continue
 
@@ -323,11 +306,11 @@ def _parse_decile_data(df_raw: pd.DataFrame, header_row: int) -> pd.DataFrame:
             continue
 
         val: object = df_raw.iloc[i, 1] if len(df_raw.columns) > 1 else None
-        wealth_bn = _to_finite_float(val)
+        wealth_bn = to_finite_float(val)
         if wealth_bn is None:
             for col_idx in range(2, min(6, len(df_raw.columns))):
                 cell: object = df_raw.iloc[i, col_idx]
-                wealth_bn = _to_finite_float(cell)
+                wealth_bn = to_finite_float(cell)
                 if wealth_bn is not None:
                     break
             else:

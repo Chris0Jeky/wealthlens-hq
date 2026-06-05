@@ -29,34 +29,6 @@ EXPECTED_COLUMNS = {"region", "gdhi_per_head", "year"}
 
 
 # ---------------------------------------------------------------------------
-# Tests for the numeric-cell parser (comma-grouped text + NaN rejection)
-# ---------------------------------------------------------------------------
-
-
-class TestToFiniteFloat:
-    def test_plain_number(self) -> None:
-        assert fetch_ons_gdhi._to_finite_float(14200.0) == 14200.0
-
-    def test_comma_grouped_text(self) -> None:
-        # The data-integrity reason the helper exists: thousands-separated text parses.
-        assert fetch_ons_gdhi._to_finite_float("14,200") == 14200.0
-        assert fetch_ons_gdhi._to_finite_float(" 1,234.5 ") == 1234.5
-
-    def test_nan_cell_rejected(self) -> None:
-        # A blank Excel cell reads as NaN; str(nan)=="nan" parses to a float NaN that
-        # would slip past the downstream `<= 0` guard and write NaN into the dataset.
-        assert fetch_ons_gdhi._to_finite_float(float("nan")) is None
-
-    def test_infinity_rejected(self) -> None:
-        assert fetch_ons_gdhi._to_finite_float(float("inf")) is None
-
-    def test_non_numeric_rejected(self) -> None:
-        assert fetch_ons_gdhi._to_finite_float("Source: ONS") is None
-        assert fetch_ons_gdhi._to_finite_float("") is None
-        assert fetch_ons_gdhi._to_finite_float(None) is None
-
-
-# ---------------------------------------------------------------------------
 # Tests for fallback data generation
 # ---------------------------------------------------------------------------
 
@@ -236,7 +208,7 @@ def test_parse_extracts_regions() -> None:
 def test_parse_drops_nan_value_cell() -> None:
     """End-to-end: a blank (NaN) value cell is dropped, never written as NaN.
 
-    Locks the call site (not just the _to_finite_float helper): a region whose
+    Locks the call site (not just the to_finite_float helper): a region whose
     latest-year cell is blank must be absent from the output, and no NaN may reach
     the published gdhi_per_head column.
     """

@@ -7,12 +7,12 @@ Dataset: House price to workplace-based earnings ratio
 from __future__ import annotations
 
 import logging
-import math
 from datetime import date
 from pathlib import Path
 
 import pandas as pd
 import plotly.graph_objects as go
+from _cells import to_finite_float
 from chart_html import write_accessible_chart
 from http_retry import fetch_with_retry
 
@@ -32,23 +32,6 @@ ACCESS_DATE = date.today().isoformat()
 
 logger = logging.getLogger(__name__)
 REQUEST_TIMEOUT_SECONDS = 60
-
-
-def _to_finite_float(value: object) -> float | None:
-    """Parse a spreadsheet cell to a *finite* float, or ``None`` if not numeric.
-
-    Coerces via ``str()`` so comma-grouped text ("14,200") parses and the
-    dynamically-typed pandas cell satisfies ``float()``. Returns ``None`` for a
-    genuinely non-numeric cell (``float()`` raises) **and** for a blank cell that
-    pandas reads as ``NaN``: ``str(nan)`` is ``"nan"``, which ``float()`` turns back
-    into a NaN that would otherwise slip past a downstream guard and corrupt the
-    published dataset. ``inf`` is rejected the same way.
-    """
-    try:
-        parsed = float(str(value).replace(",", "").strip())
-    except (ValueError, TypeError):
-        return None
-    return parsed if math.isfinite(parsed) else None
 
 
 def fetch() -> Path:
@@ -104,7 +87,7 @@ def process(xlsx_path: Path) -> pd.DataFrame:
 
         for year, col_idx in zip(years, year_cols, strict=True):
             cell = df_raw.iloc[i, col_idx]
-            ratio = _to_finite_float(cell)
+            ratio = to_finite_float(cell)
             if ratio is None:
                 # Surface data loss: a cell that HAD content but did not parse to a
                 # finite number (text, footnote, NaN written as text). Genuinely-empty
