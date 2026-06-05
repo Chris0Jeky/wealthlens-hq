@@ -5,16 +5,31 @@
 >
 > **CRITICAL**: Update this file BEFORE every compaction risk (long tool calls, large diffs).
 
-Last updated: 2026-06-05 (session 3 — #358/#359/#360/#361 merged; #362 open/aging)
+Last updated: 2026-06-05 (session 3 — #358-#362 merged; #363 open/aging)
 
 # CURRENT HANDOFF - read this first (2026-06-05, session 3 — endless loop RESUMED)
 
 Chris re-started the endless loop (session 3). The session-2 "LOOP PAUSED" note
 below is superseded. Recovery: read this block, then `gh pr list --state open`.
 
+## 🔄 Live state (2026-06-05, session 3) — main `ef7acba`, 5 PRs MERGED + 1 open (#363)
+
+**UPDATE (latest):** #358/#359/#360/#361/#362 MERGED; **#363 OPEN** (newest, aging).
+- **#362 MERGED** (`ef7acba`): wealth/housing NaN-cell guard (`_to_finite_float`) +
+  wealth e2e test + housing drop-warning. NaN-leak class now closed in all 4 pipelines.
+- **#363 OPEN** (`chore/validate-nonfinite`, NEWEST): adds a NONFINITE check to
+  validate.py (a blank/inf in a numeric column slipped past RANGE/COERCE/DTYPE/NULLS) +
+  dtypes/ranges/unique_keys specs for the 4 previously-unguarded files (gdhi, tax,
+  productivity, boe). 2 reviews: false-positive lens SOUND (verified [] on real data,
+  value-by-value); completeness lens found a HIGH coverage gap (productivity + boe were
+  still unguarded) — **closed** (all numeric output columns now guarded). Real data
+  validates clean; both validate suites green. **Newest → age, merge next cycle.**
+
+(historical session-3 detail below)
+
 ## 🔄 Live state (2026-06-05, session 3) — main `c779dd1`, 4 PRs MERGED + 1 open (#362)
 
-**UPDATE (latest in session 3):** #360 + #361 MERGED; #362 OPEN (the newest).
+**UPDATE (earlier):** #360 + #361 MERGED; #362 OPEN (the newest).
 - **#360 MERGED** (`chore/ci-mypy-tests`): gate mypy on root tests/ + fix all 14
   errors. 2 reviews + 1 gemini thread resolved. CI green.
 - **#361 MERGED** (`c779dd1`, `fix/pipeline-finite-cells`): data-integrity — a blank
@@ -67,21 +82,16 @@ pipelines. main also has: automation/ + tests/ mypy-gated, the Sobol module.
   → merge the OLDER one (never the newest). Bots re-review every push: re-check threads.
 
 ## 🔜 Next tasks (session 3 backlog, highest-leverage first)
-0. **Merge #362** once a PR sits above it (ready: 2 reviews, wealth e2e test, housing
-   drop-warning, green). Build a PR above it first → then merge #362. After it lands,
-   the NaN-leak class is closed in all 4 pipelines.
-1. **PR 6: harden `validate.py`** (HIGH, 95% from #361 review): it does NOT catch a
-   leaked NaN (DTYPE passes; COERCE cancels to 0; RANGE `nan<lo`/`nan>hi` both False;
-   NULLS only flags fully-null rows). Add an explicit finite/non-null value check +
-   `ranges`/`dtypes` specs for `tax_composition.csv` and `ons_gdhi_by_region.csv`
-   (currently have none). Good "PR above #362" candidate (independent file).
-2. **Consolidate `_to_finite_float`** (MED from #362 review): after #362 merges there
-   are 4 byte-identical copies (gdhi, tax, wealth, housing). Extract a shared
+0. **Merge #363** once a PR sits above it (ready: 2 reviews, coverage gap closed,
+   real data clean). Build a PR above it first → then merge.
+1. **Consolidate `_to_finite_float`** (MED from #362 review): there are now 4
+   byte-identical copies (gdhi, tax, wealth, housing). Extract a shared
    `automation/data-pipelines/_cells.py` (importable via the dir-on-sys.path mechanism
    the pipelines already use for chart_html/http_retry); re-point the 4 callers + unit
    tests. ALSO: refactor housing's inline ratio parse into a `_parse_*` function so a
-   housing end-to-end NaN-drop test (the gap #362 left) becomes possible.
-3. **Flagship: expand the simulation** — behavioural-response layer (cited
+   housing end-to-end NaN-drop test (the gap #362 left) becomes possible. Good "PR
+   above #363" candidate (independent of validate.py).
+2. **Flagship: expand the simulation** — behavioural-response layer (cited
    elasticities from the 6 unused RangeValues, default OFF, caveated) → multi-param
    MC band → wire the NEW Sobol module over {alpha, elasticities}. A stacked arc.
    Highest value (Chris emphasised expanding the sim). Sobol module is ready to
