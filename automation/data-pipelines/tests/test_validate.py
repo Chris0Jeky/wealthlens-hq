@@ -48,10 +48,44 @@ class TestValidateAll:
     def test_valid_file_passes(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setattr("validate.DATA_DIR", tmp_path)
         for check in CHECKS:
-            header = ",".join(check["columns"])
-            row = ",".join(["1"] * len(check["columns"]))
-            rows = "\n".join([row] * max(check["min_rows"], 200))
             csv_file = tmp_path / check["file"]
-            csv_file.write_text(header + "\n" + rows + "\n")
+            csv_file.write_text(self._synth_valid_csv(check))
         errors = validate_all()
         assert errors == []
+
+    @staticmethod
+    def _synth_valid_csv(check: dict) -> str:
+        """Build a CSV that satisfies every rule in ``check``.
+
+        Unlike a naive "N identical rows of 1" fixture, this respects the
+        ``dtypes`` (int/float/numeric), ``ranges`` and ``unique_keys`` checks that
+        ``validate.py`` enforces. Each row is unique on the unique-key columns:
+        a ranged key uses ``lo + i`` while it fits the range (else it cycles to
+        stay in range), and an unranged column uses the row index ``i`` (always
+        distinct), so at least one key column varies per row and the key tuple is
+        unique. Generates exactly ``min_rows`` rows (the validator wants
+        ``>= min_rows``); narrow ranges such as year in (2000, 2031) make a fixed
+        200-row count impossible.
+        """
+        cols = sorted(check["columns"])
+        dtypes = check.get("dtypes", {})
+        ranges = check.get("ranges", {})
+        lines = [",".join(cols)]
+        for i in range(check["min_rows"]):
+            cells = []
+            for col in cols:
+                if col in ranges:
+                    lo, hi = ranges[col]
+                    width = hi - lo
+                    value = lo + i if i <= width else lo + (i % (int(width) + 1))
+                else:
+                    value = i  # distinct per row: covers unranged unique keys/strings
+                kind = dtypes.get(col)
+                if kind == "float":
+                    cells.append(str(float(value)))
+                elif kind == "int":
+                    cells.append(str(int(value)))
+                else:  # "numeric" or no dtype constraint
+                    cells.append(str(value))
+            lines.append(",".join(cells))
+        return "\n".join(lines) + "\n"
