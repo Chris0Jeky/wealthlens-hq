@@ -11,24 +11,27 @@ Last updated: 2026-06-05
 
 This section supersedes the older handoff snapshots below.
 
-## ▶️ Live state (2026-06-05 PM) — #349–#355 MERGED, #356 open & reviewed (IHT Tier A)
+## ▶️ Live state (2026-06-05 PM) — #349–#356 MERGED, #357 open & reviewed (SHA-pin)
 
-This session drained #349–#355 (full adversarial gate each), scoped IHT
-(`docs/IHT_CALIBRATION.md`), and opened **#356** (IHT Tier A). Loop running per
-Chris's standing instruction. Next: drain #356, then the queue.
+This session drained #349–#356 (full adversarial gate each); latest **#356 MERGED**
+(IHT Tier A: stock→flow mortality scalar, £1009bn→£21.3bn, IHT still excluded).
+Opened **#357** (SHA-pin all GitHub Actions). Loop running per Chris's standing
+instruction. Next: drain #357, then the CI-hardening queue.
 
-- **#356 OPEN** (`feat/iht-mortality-tier-a`): IHT Tier A — converts the at-death
-  STOCK to an annual FLOW via an ONS-sourced annual mortality scalar
-  (`ANNUAL_MORTALITY_RATE_2026 = 581363/27.5e6 ~= 0.0211`; `IHTConfig.annual_mortality_rate`),
-  applied consistently in `compute_aggregate_iht_revenue` AND
-  `engine/_attribution.household_liability` (keeps the engine decile-sum == total
-  invariant + enforcement baseline). Real synth: £1009.0bn → £21.3bn. Added
-  `ons-deaths-registered` source + `model.iht.annual_mortality_rate.v1` assumption.
-  2 subagent reviews (no fabrication; 581,363 WebFetch-verified; principled not
-  anchor-fudged) + 3 bot threads, all addressed (mean@rate=0 from pre-scale; field
-  semantics doc'd; per-household-rate-vs-per-person-liability grain mismatch ~1.7x
-  documented as a Tier A limitation; provenance-wiring deferred to Tier B). 785 sim +
-  mypy(45) + ruff green; drift-guard 3/3 (served fixtures unchanged — IHT excluded).
+- **#357 OPEN** (`chore/ci-sha-pin-actions`): SHA-pin all 10 workflows' GitHub
+  Actions to commit hashes (26 pins, `@<sha> # vN`) — supply-chain hardening (CI has
+  write scopes: dependabot-auto-merge + Pages deploy). SHAs resolved via
+  `gh api repos/<action>/commits/<vN>`; dependabot github-actions ecosystem already
+  configured to maintain them. **2 subagent reviews, BOTH clean APPROVE, zero
+  findings** (all 9 SHAs independently re-verified via gh api; 0 unpinned; no version
+  change). CI green (the pinned workflows run green); 0 bot threads. Newest PR → age,
+  then merge first next cycle.
+- **#356 MERGED** (IHT Tier A): see `docs/IHT_CALIBRATION.md`. Per-household-rate vs
+  per-person-liability grain (~1.7x) + provenance-wiring + Gate-3 baseline are
+  documented Tier B items. CI-hardening assessment (this iteration): ruff-format is
+  72-file churn (a repo-wide decision — defer/seed for Chris); mypy automation/+tests/
+  is 32 pre-existing errors across 13 files (incremental — do per-dir); a proper
+  deploy build-gate is a non-trivial CI/CD design choice (workflow_run vs in-job).
   **IHT scenarios remain EXCLUDED** (still ~3x real). Newest PR → age, then merge.
   Tier B (age-specific q_x + age-wealth correlation) is the path to a serveable
   headline. DEFERRED Q for Chris: how far to take IHT for v0.1.
@@ -77,11 +80,15 @@ packages/wealthlens-sim onto the path.)
 
 ## 🔜 Seeded next tasks (highest-leverage first) — for the endless loop
 
-1. **Drain #356** once aged + still green + no new bot threads (`gh pr merge 356
-   --merge --delete-branch`). On merge, mark the inbox IHT item Tier-A-done.
-2. **Remaining deferred CI hardening (from #350 desc)**: enable mypy on
-   automation/ + tests/ (pre-existing type errors); deploy build-gate; enforce
-   format/coverage; SHA-pin actions. Each its own PR.
+1. **Drain #357** once aged + still green + no new bot threads (`gh pr merge 357
+   --merge --delete-branch`). (SHA-pin done.)
+2. **Remaining CI hardening** (SHA-pin DONE in #357): (a) mypy on automation/ +
+   tests/ — 32 pre-existing errors across 13 files, do INCREMENTALLY per-dir, fix the
+   real ones (e.g. test_simulator_dashboards.py:47 object-minus-float; tests/ can't
+   find app.routers = a mypy path config issue); (b) deploy build-gate (decide
+   workflow_run vs in-job test/typecheck before deploy); (c) ruff format is 72-file
+   churn — needs a deliberate go/no-go from Chris before enforcing (seed as a
+   question, don't unilaterally reformat). Each its own PR.
 3. **Expand the simulation**: sample assumption RangeValues alongside top-tail
    alpha; Sobol sensitivity (SALib); optional `?uncertainty=` API band.
 4. **IHT Tier B** (serveable IHT): per-person age-specific mortality (ONS National

@@ -31,7 +31,7 @@ Every concrete action item extracted from research. Triage into active-sprint, b
   `registries/assumptions.yml` (do NOT fabricate); then surface them in the
   `assumptions_consumed` provenance. Upstream `wealthlens-sim`.
 - [~] **Calibrate synthetic IHT** before serving any IHT scenario. **Tier A DONE**
-  (PR pending, see `docs/IHT_CALIBRATION.md`): an ONS-sourced annual mortality scalar
+  (merged PR #356, see `docs/IHT_CALIBRATION.md`): an ONS-sourced annual mortality scalar
   now converts the at-death STOCK to an annual FLOW (£1,009bn → £21.3bn), fixing the
   ~40x stock-vs-flow error. **Remaining (Tier B):** ~£21bn is still ~3x the ~£7-8bn
   real because the synth over-states top wealth; needs age-specific mortality (ONS
