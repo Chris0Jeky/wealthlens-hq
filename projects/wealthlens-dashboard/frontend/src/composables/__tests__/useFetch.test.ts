@@ -159,4 +159,30 @@ describe('useFetch', () => {
     await nextTick()
     expect(result.data.value).toEqual({ fresh: true }) // not clobbered by stale body
   })
+
+  it('clearing the URL invalidates an in-flight request so its late body cannot write', async () => {
+    // A reactive URL cleared to '' while a request is mid-parse must invalidate
+    // that request (it is no longer current) and clear data, so a stale body
+    // cannot land after the URL was cleared (e.g. simulator empty-scenario path).
+    let resolveJson!: (v: unknown) => void
+    ;(fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: () => new Promise((r) => (resolveJson = r)),
+    })
+
+    const url = ref('/a')
+    const { result } = withSetup(() => useFetch(url))
+    await nextTick() // past await fetch(), parked on await json()
+    await nextTick()
+
+    url.value = '' // clear the URL while /a is still parsing its body
+    await nextTick()
+
+    resolveJson({ stale: true }) // /a's body parses after the URL was cleared
+    await nextTick()
+    await nextTick()
+    expect(result.data.value).toBeNull() // nothing written for the cleared URL
+    expect(result.loading.value).toBe(false)
+  })
 })

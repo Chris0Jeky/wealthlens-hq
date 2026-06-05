@@ -33,6 +33,14 @@ export function useFetch<T = unknown>(
       // No URL (e.g. a reactive id was cleared) — hold off rather than fetch('')
       // against the page origin, which returns the app's HTML with ok=true and then
       // throws on response.json(), leaving a spurious "Unexpected token <" error.
+      //
+      // Also INVALIDATE any in-flight request: we aborted it above, but a request
+      // already parsing response.json() may still resolve. Nulling abortController
+      // makes its isCurrent() check false so it cannot write data for the cleared
+      // URL. Clear stale data/error to match the "no URL → no data" state.
+      abortController = null
+      data.value = null
+      error.value = null
       loading.value = false
       return
     }
