@@ -17,6 +17,7 @@ from typing import Any
 
 import pandas as pd
 import plotly.graph_objects as go
+from _cells import to_finite_float
 from chart_html import write_accessible_chart
 from http_retry import fetch_with_retry
 
@@ -87,11 +88,16 @@ def process(raw_data: dict[str, Any]) -> pd.DataFrame:
         for entry in entries:
             for country, payload in entry.items():
                 for point in payload.get("values", []):
+                    # to_finite_float rejects a blank/NaN/inf value so a bad point
+                    # is dropped rather than written as a NaN wealth share.
+                    value = to_finite_float(point["v"])
+                    if value is None:
+                        continue
                     records.append({
                         "variable": variable,
                         "country": country,
                         "year": int(point["y"]),
-                        "value": float(point["v"]),
+                        "value": value,
                     })
 
     df = pd.DataFrame(records)
