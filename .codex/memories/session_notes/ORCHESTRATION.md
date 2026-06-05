@@ -5,7 +5,22 @@
 >
 > **CRITICAL**: Update this file BEFORE every compaction risk (long tool calls, large diffs).
 
-Last updated: 2026-06-05 (session 3 — #358-#366 merged (9 PRs); #367 open; behavioural engine-apply blocked on base-share data)
+Last updated: 2026-06-05 (session 3 — #358-#367 merged (10 PRs); #368 open (hardening); behavioural engine-apply blocked on base-share data)
+
+## ▶️ LATEST (session 3, after #367) — main `2e87c77`, #368 open
+- **#367 MERGED** (`2e87c77`): behavioural registry loader on main. Behavioural
+  groundwork (response module #366 + loader #367) COMPLETE on main; 837 sim tests.
+- **#368 OPEN** (`chore/pipeline-hardening-followups`): #365 review follow-ups —
+  fetch_wid_data `.get()` graceful missing-key + 4 process() call-site tests
+  (isolating PROCESSED_DIR); validate.py NaN-tolerant comment on hmrc num_taxpayers.
+  mypy/ruff clean; 162 root + 25 pipeline tests. **NEXT TICK: 2 reviews on #368 → merge.**
+- **Then DECIDE** (the recurring fork): (a) cited base-share research to unblock the
+  behavioural ENGINE-apply (the flagship payoff; research-heavy — HMRC non-dom stats /
+  Advani non-dom-wealth share / CGT realising-share; NO fabrication; deserves a focused
+  session), or (b) remaining backlog: boe/productivity call-site tests (last #365
+  follow-up), B1 assumption-source citation URLs in sources.yml, frontend visibility
+  (decile/nation/provenance surfacing). The behavioural module/loader stand as reviewed,
+  cited groundwork either way.
 
 # CURRENT HANDOFF - read this first (2026-06-05, session 3 — endless loop RESUMED)
 
