@@ -91,6 +91,23 @@ class TestGetScenario:
         finally:
             SIMULATOR_SCENARIOS.pop("malformed", None)
 
+    def test_503_when_provenance_missing(self, monkeypatch, tmp_path) -> None:
+        # provenance is a required key (the scenario page renders its citations);
+        # a payload that has the other keys but omits provenance must 503 rather
+        # than be served and crash the client render.
+        monkeypatch.setattr("app.routers.simulator.SIMULATOR_DIR", tmp_path)
+        monkeypatch.setitem(SIMULATOR_SCENARIOS, "noprov", {"name": "x", "description": "y"})
+        (tmp_path / "noprov.json").write_text(
+            '{"schema_version": "1.3", "total_revenue_gbp_bn": {"low": 1, "central": 2, '
+            '"high": 3}, "caveats": [], "interval_method": "alpha_sweep"}',
+            encoding="utf-8",
+        )
+        try:
+            response = client.get("/api/simulator/scenarios/noprov")
+            assert response.status_code == 503
+        finally:
+            SIMULATOR_SCENARIOS.pop("noprov", None)
+
 
 class TestRegistryDriftGuards:
     """The backend registry and the generator's fixtures must not diverge."""

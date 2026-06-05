@@ -16,7 +16,7 @@ const safeHref = computed(() => {
     :href="safeHref"
     target="_blank"
     rel="noopener noreferrer"
-    class="text-blue-600 hover:text-blue-800 underline focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 rounded"
+    class="underline rounded focus:outline-none focus:ring-2 focus:ring-offset-1 text-[color:var(--wl-link)] hover:text-[color:var(--wl-link-hover)] focus:ring-[color:var(--wl-link-hover)]"
   >
     <slot />
     <span class="sr-only"> (opens in new tab)</span>

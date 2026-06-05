@@ -31,9 +31,32 @@ export type IntervalMethod = 'alpha_sweep' | 'monte_carlo'
 export const DASHBOARD_SCHEMA_VERSION = '1.3'
 
 /**
+ * One modelling assumption consumed by a simulation run, as recorded in the
+ * dashboard JSON `provenance.assumptions_consumed[]`.
+ */
+export interface ConsumedAssumption {
+  assumption_id: string
+  domain: string
+  /** Human-readable source label (paper / dataset / guidance the value came from). */
+  source: string
+  /**
+   * Canonical citation URLs (DOI or official landing page) for the works named in
+   * `source`. May be empty for a source with no single public URL. Optional: the
+   * payload crosses an unvalidated JSON boundary, so consumers must guard access.
+   */
+  source_urls?: string[]
+}
+
+/** The provenance envelope (the subset the scenario page renders). */
+export interface SimulatorProvenance {
+  complete: boolean
+  assumptions_consumed: ConsumedAssumption[]
+}
+
+/**
  * The dashboard JSON contract served by `GET /api/simulator/scenarios/{id}` — the
  * full `to_dashboard_json` payload. Only the fields the scenario page reads are
- * modelled; the contract carries more (per-nation/decile intervals, provenance).
+ * modelled; the contract carries more (per-nation/decile intervals, version_tag).
  */
 export interface SimulatorDashboardData {
   schema_version: string
@@ -45,6 +68,12 @@ export interface SimulatorDashboardData {
   total_revenue_gbp_bn: Interval
   households_scored: number
   revenue_by_decile: Interval[]
+  /**
+   * Audit trail: the assumptions consumed and their citations. Always emitted by
+   * the contract, but marked optional so a stale/older payload that omits it
+   * degrades gracefully (the panel hides) instead of crashing the whole view.
+   */
+  provenance?: SimulatorProvenance
 }
 
 /** One scenario in the `GET /api/simulator/` listing. */

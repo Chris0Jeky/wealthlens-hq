@@ -51,6 +51,14 @@
   --wl-blue-ink:     #000000;
   --wl-blue-soft:    var(--wl-paper-deep);
 
+  /* Hyperlinks — on-brand (no blue) + WCAG AA. These alias the theme's ink and
+     red, so they inherit each theme's values automatically (var() resolves at
+     use-time): ink gives the maximum, always-AA text contrast, an underline
+     identifies the link without relying on colour (WCAG 1.4.1), and red is the
+     brand hover accent. Used by ExternalLink. */
+  --wl-link:         var(--wl-ink);
+  --wl-link-hover:   var(--wl-red);
+
   /* Categorical palette — used sparingly on multi-series charts */
   --wl-gold:         #B8861F;
   --wl-gold-soft:    #EFE2BE;

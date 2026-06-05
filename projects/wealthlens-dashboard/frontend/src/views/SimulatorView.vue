@@ -9,6 +9,7 @@
  */
 import { computed, ref, watch } from 'vue'
 import ConfidenceFanChart from '@/components/ConfidenceFanChart.vue'
+import ProvenancePanel from '@/components/ProvenancePanel.vue'
 import {
   useSimulatorDashboard,
   useSimulatorScenarios,
@@ -164,6 +165,9 @@ const liveSummary = computed(() => {
             {{ dashboard.households_scored.toLocaleString() }} synthetic
             households.
           </p>
+          <ProvenancePanel
+            :assumptions="dashboard.provenance?.assumptions_consumed ?? []"
+          />
         </div>
       </div>
     </template>
