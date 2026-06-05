@@ -49,6 +49,14 @@ NAO_WEALTHY_TAX_SOURCE = (
 )
 ENFORCEMENT_COMPLIANCE_ASSUMPTION_ID = "model.enforcement.compliance_rates.v0_1"
 ENFORCEMENT_COMPLIANCE_SOURCE = f"{HMRC_OVERALL_TAX_GAP_SOURCE}; {NAO_WEALTHY_TAX_SOURCE}"
+#: Machine-readable URLs for ENFORCEMENT_COMPLIANCE_SOURCE. The enforcement assumption
+#: is injected into provenance by the engine (not loaded via the registry), so it must
+#: carry its own source_urls to match the data-integrity guarantee for every other
+#: consumed assumption.
+ENFORCEMENT_COMPLIANCE_SOURCE_URLS = (
+    "https://www.gov.uk/government/statistics/measuring-tax-gaps/1-tax-gaps-summary",
+    "https://www.nao.org.uk/reports/collecting-the-right-tax-from-wealthy-individuals/",
+)
 
 
 class TaxFamily(StrEnum):

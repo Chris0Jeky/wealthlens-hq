@@ -86,7 +86,11 @@
         "assumption_id": "toptail.pareto_alpha.overall.v1",
         "domain": "top-tail",
         "resolved_value": 1.5,
-        "source": "Vermeulen (2018); calibrated to UK WAS + Sunday Times Rich List"
+        "source": "Vermeulen (2018); calibrated to UK WAS + Sunday Times Rich List",
+        "source_urls": [
+          "https://doi.org/10.1111/roiw.12279",
+          "https://www.ons.gov.uk/file?uri=/peoplepopulationandcommunity/personalandhouseholdfinances/incomeandwealth/datasets/totalwealthwealthingreatbritain/july2006tojune2016andapril2014tomarch2022/totalwealthtables.xlsx"
+        ]
       }
     ],
     "complete": true,

@@ -110,13 +110,21 @@
           ],
           "enforcement_cost_bn": 0.0
         },
-        "source": "HMRC, Measuring tax gaps 2025 edition: tax gaps summary, https://www.gov.uk/government/statistics/measuring-tax-gaps/1-tax-gaps-summary, accessed 2026-05-30; NAO, Collecting the right tax from wealthy individuals, https://www.nao.org.uk/reports/collecting-the-right-tax-from-wealthy-individuals/, accessed 2026-05-30"
+        "source": "HMRC, Measuring tax gaps 2025 edition: tax gaps summary, https://www.gov.uk/government/statistics/measuring-tax-gaps/1-tax-gaps-summary, accessed 2026-05-30; NAO, Collecting the right tax from wealthy individuals, https://www.nao.org.uk/reports/collecting-the-right-tax-from-wealthy-individuals/, accessed 2026-05-30",
+        "source_urls": [
+          "https://www.gov.uk/government/statistics/measuring-tax-gaps/1-tax-gaps-summary",
+          "https://www.nao.org.uk/reports/collecting-the-right-tax-from-wealthy-individuals/"
+        ]
       },
       {
         "assumption_id": "toptail.pareto_alpha.overall.v1",
         "domain": "top-tail",
         "resolved_value": 1.5,
-        "source": "Vermeulen (2018); calibrated to UK WAS + Sunday Times Rich List"
+        "source": "Vermeulen (2018); calibrated to UK WAS + Sunday Times Rich List",
+        "source_urls": [
+          "https://doi.org/10.1111/roiw.12279",
+          "https://www.ons.gov.uk/file?uri=/peoplepopulationandcommunity/personalandhouseholdfinances/incomeandwealth/datasets/totalwealthwealthingreatbritain/july2006tojune2016andapril2014tomarch2022/totalwealthtables.xlsx"
+        ]
       }
     ],
     "complete": true,

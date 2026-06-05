@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from urllib.parse import urlparse
 
 import pytest
 import yaml
@@ -172,6 +173,73 @@ class TestAssumption:
     def test_notes_default_empty(self):
         a = Assumption.model_validate(POINT_ENTRY)
         assert a.notes == ""
+
+
+class TestSourceUrls:
+    """The optional source_urls field (B1: every cited claim resolvable to a URL)."""
+
+    def test_default_empty(self):
+        # Backward compatibility: entries without source_urls still validate.
+        a = Assumption.model_validate(POINT_ENTRY)
+        assert a.source_urls == []
+
+    def test_accepts_https_and_http(self):
+        entry = {**RANGE_ENTRY, "source_urls": ["https://doi.org/10.1111/roiw.12279", "http://example.org/x"]}
+        a = Assumption.model_validate(entry)
+        assert a.source_urls == ["https://doi.org/10.1111/roiw.12279", "http://example.org/x"]
+
+    def test_rejects_non_http_url(self):
+        entry = {**RANGE_ENTRY, "source_urls": ["ftp://example.org/x"]}
+        with pytest.raises(ValidationError, match="must be http"):
+            Assumption.model_validate(entry)
+
+    def test_rejects_empty_string(self):
+        entry = {**RANGE_ENTRY, "source_urls": ["https://ok.org", "  "]}
+        with pytest.raises(ValidationError, match="non-empty"):
+            Assumption.model_validate(entry)
+
+    def test_dedupes_preserving_order(self):
+        entry = {
+            **RANGE_ENTRY,
+            "source_urls": ["https://a.org", "https://b.org", "https://a.org"],
+        }
+        a = Assumption.model_validate(entry)
+        assert a.source_urls == ["https://a.org", "https://b.org"]
+
+    def test_strips_whitespace(self):
+        entry = {**RANGE_ENTRY, "source_urls": ["  https://doi.org/10.x  "]}
+        a = Assumption.model_validate(entry)
+        assert a.source_urls == ["https://doi.org/10.x"]
+
+    def test_rejects_bare_scheme_without_host(self):
+        # A truncated/typo'd URL with no host must not ship as a "source".
+        for bad in ("https://", "http://", "https:///path"):
+            with pytest.raises(ValidationError, match="with a host"):
+                Assumption.model_validate({**RANGE_ENTRY, "source_urls": [bad]})
+
+    def test_scheme_is_case_insensitive(self):
+        # RFC 3986: schemes are case-insensitive — a valid HTTPS:// must be accepted.
+        a = Assumption.model_validate({**RANGE_ENTRY, "source_urls": ["HTTPS://doi.org/10.x"]})
+        assert a.source_urls == ["HTTPS://doi.org/10.x"]
+
+    def test_rejects_embedded_whitespace_and_control_chars(self):
+        for bad in ("https://a b.org/x", "https://evil.org\n<script>", "https://a.org/\tx"):
+            with pytest.raises(ValidationError, match="whitespace/control"):
+                Assumption.model_validate({**RANGE_ENTRY, "source_urls": [bad]})
+
+    def test_real_registry_entries_carry_urls(self):
+        # The shipped registry must actually resolve its cited works to URLs.
+        reg = load_assumptions()
+        non_dom = reg.get("behaviour.migration.non_dom_stock_elasticity.v1")
+        assert non_dom is not None
+        # Host-exact check (not a substring) so the assertion can't be fooled by a
+        # lookalike domain, and to satisfy CodeQL's URL-substring rule.
+        assert any(urlparse(u).netloc == "warwick.ac.uk" for u in non_dom.source_urls)
+        # Every URL in the shipped registry is a well-formed http(s) URL with a host.
+        for a in reg.assumptions:
+            for url in a.source_urls:
+                parsed = urlparse(url)
+                assert parsed.scheme in ("https", "http") and parsed.netloc
 
 
 class TestAssumptionRegistry:

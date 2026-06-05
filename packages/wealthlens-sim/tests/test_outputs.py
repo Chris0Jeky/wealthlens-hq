@@ -182,6 +182,17 @@ class TestStructure:
         # Every consumed assumption carries a human-readable source.
         assert all(a["source"] for a in prov["assumptions_consumed"])
 
+    def test_consumed_assumptions_surface_source_urls(self):
+        # B1: a published number must trace to a resolvable URL. Every consumed
+        # assumption exposes source_urls (a list), and the registry-backed
+        # top-tail alpha carries its DOI.
+        result = to_dashboard_json(_golden_result())
+        consumed = {a["assumption_id"]: a for a in result["provenance"]["assumptions_consumed"]}
+        for a in consumed.values():
+            assert isinstance(a["source_urls"], list)
+        alpha = consumed["toptail.pareto_alpha.overall.v1"]
+        assert any("doi.org/10.1111/roiw.12279" in u for u in alpha["source_urls"])
+
     def test_devolution_scope_included_when_scoped(self):
         pop = generate_population(SynthConfig(n_households=500, seed=7))
         result = simulate(

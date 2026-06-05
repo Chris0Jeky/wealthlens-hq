@@ -4,12 +4,19 @@
 # NOTE: Use explicit e+ or e- in scientific notation (e.g. 2.3e+12, not 2.3e12).
 # PyYAML (YAML 1.1) may misparse bare-exponent forms as strings.
 # Schema per Blueprint v5 section 7.6:
-#   assumption_id, domain, value_or_distribution, source,
+#   assumption_id, domain, value_or_distribution, source, source_urls,
 #   transferability_score (high/medium/low/stress-test-only),
 #   valid_range, applies_to, last_reviewed, notes
 #
 # value_or_distribution types: point (numeric), range (low/central/high),
 #   schedule (named fields or bands), flag (0/1 boolean-like)
+#
+# source_urls: optional list of canonical URLs (DOI or official landing page)
+#   for the works named in `source`. The data-integrity rule wants every cited
+#   claim resolvable to a URL. Each URL was web-verified (DOI/official only; no
+#   fabrication). Some secondary cites (e.g. "HMRC internal estimates",
+#   "Sunday Times Rich List", "Zoopla/VOA estimates") have no single public URL
+#   and are intentionally left unlinked.
 #
 # Target: 50+ entries by v0.1 release.
 # This initial population covers foundational assumptions referenced in
@@ -34,6 +41,9 @@ assumptions:
       central: 1.5
       high: 1.8
     source: Vermeulen (2018); calibrated to UK WAS + Sunday Times Rich List
+    source_urls:
+      - https://doi.org/10.1111/roiw.12279
+      - https://www.ons.gov.uk/file?uri=/peoplepopulationandcommunity/personalandhouseholdfinances/incomeandwealth/datasets/totalwealthwealthingreatbritain/july2006tojune2016andapril2014tomarch2022/totalwealthtables.xlsx
     transferability_score: medium
     valid_range: "alpha in [1.1, 2.5]"
     applies_to: all families; top-tail correction layer
@@ -49,14 +59,17 @@ assumptions:
     value_or_distribution:
       type: point
       value: 0.41
-    source: ONS WAS quality report (June 2025)
+    source: ONS Wealth and Assets Survey guide (QMI), June 2025 (Round 8 response 41%; accreditation suspended per OSR Assessment Report 396)
+    source_urls:
+      - https://www.ons.gov.uk/peoplepopulationandcommunity/personalandhouseholdfinances/debt/methodologies/wealthandassetssurveyqmi
     transferability_score: high
     valid_range: "rate in [0.30, 0.60]"
     applies_to: all families; data quality layer
     last_reviewed: "2026-05-23"
     notes: >
-      WAS response rate declined to 41% by latest wave. Lost accredited
-      official statistics status June 2025. Declining response rates
+      WAS Round 8 (2020-2022) overall response rate 41% (down from 66% in
+      Wave 4). Accredited official statistics status suspended from Round 8
+      per OSR Assessment Report 396 (June 2025). Declining response rates
       disproportionately affect top-wealth capture.
 
   - assumption_id: toptail.methodology.db_pension_adjustment.v1
@@ -65,14 +78,19 @@ assumptions:
       type: point
       value: -2.3e+12
     source: ONS methodology change (December 2024)
+    source_urls:
+      - https://www.ons.gov.uk/peoplepopulationandcommunity/personalandhouseholdfinances/incomeandwealth/articles/estimatingdefinedbenefitpensionwealthingreatbritain/december2024
     transferability_score: high
     valid_range: "adjustment in [-3.0e12, -1.5e12]"
     applies_to: all families; wealth aggregation
     last_reviewed: "2026-05-23"
     notes: >
-      December 2024 DB pension methodology change reduced measured total
-      wealth by approximately £2.3 trillion. Must be applied consistently
-      across all baseline comparisons.
+      December 2024 DB pension methodology change (SCAPE-based discount rate). The
+      cited ONS article reports the change as percentage impacts (e.g. mean total
+      wealth ~-14% on Round 7 data); the ~-£2.3 trillion aggregate used here is
+      derived from those impacts applied to GB total wealth, not a figure stated
+      verbatim on the page. Must be applied consistently across all baseline
+      comparisons.
 
   # --- Behavioural: migration ---
 
@@ -83,16 +101,20 @@ assumptions:
       low: -0.01
       central: -0.04
       high: -0.10
-    source: Advani & Summers (2020); Kleven et al. (2014)
+    source: Advani, Burgherr & Summers (2022), Taxation and Migration by the Super-Rich (CAGE WP 630); Kleven et al. (2014)
+    source_urls:
+      - https://warwick.ac.uk/fac/soc/economics/research/centres/cage/publications/workingpapers/2022/taxation_and_migration_by_the_super_rich/
+      - https://doi.org/10.1093/qje/qjt033
     transferability_score: low
     valid_range: "elasticity in [-0.20, 0.0]"
     applies_to: Family A, Family B
     last_reviewed: "2026-05-23"
     notes: >
       Semi-elasticity of non-dom stock to wealth-tax rate. International
-      evidence varies widely. UK-specific evidence limited to income tax
-      migration studies. Transferability from Scandinavian/Swiss context
-      to UK is contested.
+      evidence varies widely. The UK-specific study (Advani, Burgherr &
+      Summers 2022, exploiting the 2017 non-dom reform) finds low migration
+      responses among the super-rich; transferability from Scandinavian/Swiss
+      wealth-tax settings to a UK wealth tax remains contested.
 
   - assumption_id: behaviour.migration.dom_emigration_elasticity.v1
     domain: migration
@@ -101,7 +123,10 @@ assumptions:
       low: -0.005
       central: -0.02
       high: -0.05
-    source: Brulhart et al. (2022); Agrawal et al. (2023)
+    source: Brulhart et al. (2022); Agrawal, Foremny & Martínez-Toledano (2025)
+    source_urls:
+      - https://doi.org/10.1257/pol.20200258
+      - https://doi.org/10.1257/app.20220615
     transferability_score: low
     valid_range: "elasticity in [-0.10, 0.0]"
     applies_to: Family A, Family B
@@ -122,6 +147,8 @@ assumptions:
       central: -0.5
       high: -0.8
     source: Agersnap & Zidar (2021); HMRC internal estimates
+    source_urls:
+      - https://doi.org/10.1257/aeri.20200535
     transferability_score: medium
     valid_range: "elasticity in [-1.0, 0.0]"
     applies_to: Family C
@@ -140,6 +167,8 @@ assumptions:
       central: 0.05
       high: 0.15
     source: Alstadsæter, Johannesen & Zucman (2019)
+    source_urls:
+      - https://doi.org/10.1257/aer.20172043
     transferability_score: medium
     valid_range: "fraction in [0.0, 0.30]"
     applies_to: Family A, Family B, Family F
@@ -160,6 +189,9 @@ assumptions:
       central: 0.25
       high: 0.40
     source: Saez & Zucman (2019); Wealth Tax Commission (2020)
+    source_urls:
+      - https://www.brookings.edu/articles/progressive-wealth-taxation/
+      - https://www.wealthandpolicy.com/wp/WealthTaxFinalReport.html
     transferability_score: medium
     valid_range: "discount in [0.0, 0.60]"
     applies_to: Family A, Family B, Family D
@@ -175,6 +207,9 @@ assumptions:
       type: point
       value: 0.75
     source: IFS (2020); MHCLG consultation (2026)
+    source_urls:
+      - https://ifs.org.uk/publications/revaluation-and-reform-bringing-council-tax-england-21st-century
+      - https://www.gov.uk/government/consultations/high-value-council-tax-surcharge/high-value-council-tax-surcharge
     transferability_score: high
     valid_range: "accuracy in [0.50, 0.95]"
     applies_to: Family E
@@ -195,6 +230,8 @@ assumptions:
       central: 0.04
       high: 0.08
     source: ONS WAS; Advani & Tarrant (2021)
+    source_urls:
+      - https://doi.org/10.1111/1475-5890.12283
     transferability_score: high
     valid_range: "ratio in [0.01, 0.15]"
     applies_to: Family A, Family B
@@ -219,6 +256,8 @@ assumptions:
         investors_relief: 18
         trustees: 24
     source: GOV.UK CGT rates page (accessed 2026-05-16)
+    source_urls:
+      - https://www.gov.uk/guidance/capital-gains-tax-rates-and-allowances
     transferability_score: high
     valid_range: "n/a"
     applies_to: Family C baseline
@@ -235,6 +274,8 @@ assumptions:
       nil_rate_band: 325000
       residence_nil_rate_band: 175000
     source: GOV.UK IHT thresholds (accessed 2026-05-16)
+    source_urls:
+      - https://www.gov.uk/government/publications/inheritance-tax-thresholds/inheritance-tax-thresholds
     transferability_score: high
     valid_range: "n/a"
     applies_to: Family D baseline
@@ -264,6 +305,9 @@ assumptions:
           high: null
           charge: 7500
     source: MHCLG consultation document (19 May 2026)
+    source_urls:
+      - https://www.gov.uk/government/consultations/high-value-council-tax-surcharge/high-value-council-tax-surcharge
+      - https://obr.uk/efo/economic-and-fiscal-outlook-november-2025/
     transferability_score: high
     valid_range: "n/a"
     applies_to: Family E (England only)
@@ -282,6 +326,8 @@ assumptions:
       central: 85000
       high: 100000
     source: OBR EFO November 2025; Zoopla/VOA estimates
+    source_urls:
+      - https://obr.uk/efo/economic-and-fiscal-outlook-november-2025/
     transferability_score: high
     valid_range: "count in [50000, 150000]"
     applies_to: Family E (England only)
@@ -299,14 +345,18 @@ assumptions:
     value_or_distribution:
       type: point
       value: 2500000
-    source: GOV.UK APR/BPR reform (accessed 2026-05-16)
+    source: GOV.UK APR/BPR reform (£1m allowance announced 2024; raised to £2.5m on 23 Dec 2025)
+    source_urls:
+      - https://www.gov.uk/government/publications/changes-to-agricultural-property-relief-and-business-property-relief/agricultural-property-relief-and-business-property-relief-changes
     transferability_score: high
     valid_range: "n/a"
     applies_to: Family D baseline
-    last_reviewed: "2026-05-23"
+    last_reviewed: "2026-06-05"
     notes: >
-      Combined APR/BPR cap for 100% relief. 50% relief on qualifying
-      value above £2.5m. From 6 April 2026.
+      Combined APR/BPR allowance for 100% relief; 50% relief on qualifying value
+      above the cap. From 6 April 2026. The allowance was raised from the originally
+      announced £1m to £2.5m on 23 December 2025 (the cited page records the change);
+      the earlier reforms page still shows the superseded £1m figure.
 
   - assumption_id: policy.iht.pension_inclusion_2027.v1
     domain: transfer-tax
@@ -315,6 +365,8 @@ assumptions:
       type: flag
       value: 1
     source: Finance Act 2026; GOV.UK technical note
+    source_urls:
+      - https://www.gov.uk/government/publications/inheritance-tax-on-pensions-technical-note/technical-note-inheritance-tax-on-pensions
     transferability_score: high
     valid_range: "n/a"
     applies_to: Family D baseline
@@ -329,7 +381,10 @@ assumptions:
     value_or_distribution:
       type: point
       value: 0.0211
-    source: ONS Deaths registered E&W 2023 (581,363) / ~27.5m GB households; source id ons-deaths-registered (accessed 2026-06-05)
+    source: ONS Deaths registered E&W 2023 (581,363) / ~27.5m GB households (ONS Families and households 2022); source id ons-deaths-registered (accessed 2026-06-05)
+    source_urls:
+      - https://www.ons.gov.uk/peoplepopulationandcommunity/birthsdeathsandmarriages/deaths/bulletins/deathsregistrationsummarytables/2023
+      - https://www.ons.gov.uk/peoplepopulationandcommunity/birthsdeathsandmarriages/families/datasets/householdsbytypeofhouseholdandfamilyregionsofenglandandgbconstituentcountries/2022
     transferability_score: low
     valid_range: "0.0-1.0"
     applies_to: Family D aggregate (stock-to-flow conversion)
@@ -350,6 +405,8 @@ assumptions:
       type: point
       value: 4
     source: GOV.UK non-dom replacement (accessed 2026-05-16)
+    source_urls:
+      - https://www.gov.uk/guidance/check-if-you-can-claim-the-4-year-foreign-income-and-gains-regime
     transferability_score: high
     valid_range: "n/a"
     applies_to: Family A, Family B (migration context)
@@ -369,6 +426,8 @@ assumptions:
       wealthy_tax_gap_gbp: 1.9e+9
       compliance_yield_gbp: 5.2e+9
     source: HMRC Measuring tax gaps 2025 edition
+    source_urls:
+      - https://www.gov.uk/government/statistics/measuring-tax-gaps
     transferability_score: high
     valid_range: "n/a"
     applies_to: Family F baseline

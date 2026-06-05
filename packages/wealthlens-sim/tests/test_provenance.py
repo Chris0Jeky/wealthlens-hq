@@ -142,6 +142,31 @@ class TestResolvedAssumption:
                 extra_field="bad",
             )
 
+    def test_source_urls_default_empty_tuple(self):
+        ra = ResolvedAssumption(assumption_id="t.v1", domain="t", resolved_value=1, source="s")
+        assert ra.source_urls == ()
+
+    def test_source_urls_list_coerced_to_tuple(self):
+        ra = ResolvedAssumption(
+            assumption_id="t.v1", domain="t", resolved_value=1, source="s",
+            source_urls=["https://doi.org/10.x", "https://a.org"],
+        )
+        assert ra.source_urls == ("https://doi.org/10.x", "https://a.org")
+        assert isinstance(ra.source_urls, tuple)
+
+    def test_frozen_blocks_mutation(self):
+        ra = ResolvedAssumption(assumption_id="t.v1", domain="t", resolved_value=1, source="s")
+        with pytest.raises(ValidationError):
+            ra.source_urls = ("https://x.org",)  # type: ignore[misc]
+
+    def test_source_urls_survive_json_round_trip(self):
+        ra = ResolvedAssumption(
+            assumption_id="t.v1", domain="t", resolved_value=1, source="s",
+            source_urls=["https://doi.org/10.x"],
+        )
+        restored = ResolvedAssumption.model_validate(ra.model_dump(mode="json"))
+        assert restored.source_urls == ("https://doi.org/10.x",)
+
 
 class TestProvenanceEntry:
     def test_basic_entry(self):

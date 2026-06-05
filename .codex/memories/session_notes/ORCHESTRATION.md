@@ -5,9 +5,36 @@
 >
 > **CRITICAL**: Update this file BEFORE every compaction risk (long tool calls, large diffs).
 
-Last updated: 2026-06-05 (session 3 — #358-#368 merged (11 PRs); 0 open PRs; **LOOP WRAPPED by Chris** — clean handoff)
+Last updated: 2026-06-05 (session 4 — loop RESUMED by Chris; B1 citation-URLs in progress)
 
-## ⏸️ LOOP WRAPPED (2026-06-05) — Chris asked to wrap up; everything spotless
+## ▶️ SESSION 4 (2026-06-05) — LOOP RESUMED. Working B1: assumption citation URLs
+
+Chris re-started the endless loop (session 4). Recovery: read this block, then
+`gh pr list --state open` (expect 0 at session start), then continue B1.
+
+- **Start state:** main `7e70a49`, 0 open PRs, 0 open issues, clean tree, only `main`.
+  837 sim tests green at start.
+- **TASK IN FLIGHT — B1 (assumption-source citation URLs):** branch
+  `feat/assumption-citation-urls`. Adds web-VERIFIED canonical URLs (DOI/official, no
+  fabrication) to `registries/assumptions.yml`, surfaced through provenance. Approach:
+  add optional `source_urls: list[str]` to the `Assumption` schema (mirrors the
+  existing `source_url` in `schema/baselines.py`; default-empty = back-compat), thread
+  through `ResolvedAssumption` -> `collector` -> dashboard-JSON `assumptions_consumed`.
+  A background workflow (`wf_a1fb0e6d-ff1`, "citation-url-research") fans out one
+  researcher per ~21 cited works + an INDEPENDENT adversarial re-fetch verifier per URL
+  (anti-fabrication). Only `verdict==confirmed` URLs land in the YAML; problems get a
+  manual follow-up or are left out + noted.
+- **Merge discipline this loop** (solo, per deferred Q2): a PR may merge once it has 2
+  independent adversarial reviews + all bot threads resolved + green CI + has aged a
+  bit (ideally a newer PR sits above it). Keep a small aging backlog; never `--delete-branch`
+  a stacked base ([[feedback_stacked_merge_delete_branch]]).
+- **Backlog after B1:** base-share research -> behavioural engine-apply (flagship,
+  BLOCKED on cited base shares — see DEFERRED Q1); frontend visibility
+  (decile/nation/provenance in SimulatorView); #365 call-site tests (boe/productivity/wid).
+- **Deferred questions for Chris:** see "❓ DEFERRED QUESTIONS" near the end (Q1-Q4 from
+  session 3 still stand; will add any new ones at wrap-up).
+
+## ⏸️ LOOP WRAPPED (2026-06-05, session 3) — superseded by SESSION 4 above
 
 The endless loop was intentionally stopped by Chris. State left clean for resume:
 - **main `c3712e3`** (+ this wrap commit), **0 open PRs**, working tree clean.

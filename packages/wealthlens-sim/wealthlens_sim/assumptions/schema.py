@@ -10,8 +10,9 @@ from __future__ import annotations
 from datetime import date
 from enum import StrEnum
 from typing import Annotated, Literal
+from urllib.parse import urlparse
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from wealthlens_sim.schema.policy import LegalStatus
 
@@ -102,11 +103,50 @@ class Assumption(BaseModel):
     legal_status: LegalStatus | None = None
     value_or_distribution: ValueDistribution
     source: str
+    source_urls: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Canonical URLs (DOI or official landing page) for the works named in "
+            "`source`. Optional and default-empty for backward compatibility; the "
+            "data-integrity rule wants every cited claim resolvable to a URL."
+        ),
+    )
     transferability_score: TransferabilityScore
     valid_range: str
     applies_to: str
     last_reviewed: date
     notes: str = ""
+
+    @field_validator("source_urls")
+    @classmethod
+    def _validate_source_urls(cls, urls: list[str]) -> list[str]:
+        """Require well-formed http(s) URLs and drop exact duplicates (order-preserving).
+
+        We deliberately do not fetch URLs here — that is the job of the
+        citation-research step that populates them. This guard only rejects
+        obviously-malformed entries so a typo cannot ship as a "source": each entry
+        must be an http/https URL (scheme case-insensitive per RFC 3986) that has a
+        host, and must carry no embedded whitespace or control characters (so a
+        truncated ``https://`` or a stray newline cannot pass).
+        """
+        seen: set[str] = set()
+        cleaned: list[str] = []
+        for raw in urls:
+            url = raw.strip()
+            if not url:
+                msg = "source_urls entries must be non-empty"
+                raise ValueError(msg)
+            if any(c.isspace() or ord(c) < 0x20 for c in url):
+                msg = f"source_urls must not contain whitespace/control chars: {url!r}"
+                raise ValueError(msg)
+            parsed = urlparse(url)
+            if parsed.scheme.lower() not in ("http", "https") or not parsed.netloc:
+                msg = f"source_urls must be http(s) URLs with a host, got: {url!r}"
+                raise ValueError(msg)
+            if url not in seen:
+                seen.add(url)
+                cleaned.append(url)
+        return cleaned
 
 
 class AssumptionRegistry(BaseModel):
