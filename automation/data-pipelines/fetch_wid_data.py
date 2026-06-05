@@ -88,15 +88,21 @@ def process(raw_data: dict[str, Any]) -> pd.DataFrame:
         for entry in entries:
             for country, payload in entry.items():
                 for point in payload.get("values", []):
-                    # to_finite_float rejects a blank/NaN/inf value so a bad point
-                    # is dropped rather than written as a NaN wealth share.
+                    # Drop a malformed point rather than crash or silently corrupt:
+                    #  - missing "v"/"y" key -> skip (avoids a KeyError),
+                    #  - non-numeric / blank / NaN / inf value or year -> skip,
+                    #  - non-integer year (e.g. "2000.9") -> skip, so a bad year can't be
+                    #    silently truncated by int() into a valid-looking row.
+                    if "v" not in point or "y" not in point:
+                        continue
                     value = to_finite_float(point["v"])
-                    if value is None:
+                    year = to_finite_float(point["y"])
+                    if value is None or year is None or year != int(year):
                         continue
                     records.append({
                         "variable": variable,
                         "country": country,
-                        "year": int(point["y"]),
+                        "year": int(year),
                         "value": value,
                     })
 
