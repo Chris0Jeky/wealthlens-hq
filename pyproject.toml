@@ -12,12 +12,18 @@ dev = [
     "mypy>=1.10",
     "pytest>=9.0.3",
     "bandit>=1.7",
-    "pandas-stubs>=2.1",
+    # Upper-capped at the next major: a stub MAJOR can tighten annotations and turn
+    # the automation mypy gate red on an unrelated PR. (A minor/patch tightening can
+    # too, but then the dependabot bump's OWN CI goes red and auto-merge is blocked,
+    # surfacing it — so only the major needs a hard cap.)
+    "pandas-stubs>=2.1,<4",
     "types-requests>=2.31",
     "httpx>=0.27",
     # Needed to type-check automation/og-images (it imports PIL); Pillow ships
-    # its own py.typed marker, so no separate stub package is required.
-    "Pillow>=10",
+    # its own py.typed marker, so no separate stub package is required. Capped at the
+    # next major so a Pillow major that reshapes ImageFont typing can't silently
+    # break the gate (the og-images fix relies on FreeTypeFont | ImageFont).
+    "Pillow>=10,<14",
 ]
 pipelines = [
     "requests>=2.31",
@@ -53,11 +59,18 @@ check_untyped_defs = true
 module = ["plotly.*", "odf.*", "openpyxl.*", "requests.*"]
 ignore_missing_imports = true
 
-# wealthlens_sim is a separate, independently type-checked package (its own clean
-# `python -m mypy wealthlens_sim` runs in ci-sim). Consumed from the automation /
-# dashboard trees it is an opaque typed boundary: its py.typed marker isn't
-# reliably visible across the editable-install boundary, so treat its imports as
-# untyped here rather than failing this cross-package check on a packaging detail.
+# wealthlens_sim is a separate package with its OWN clean `mypy wealthlens_sim`
+# run in ci-sim. Its py.typed marker is not reliably visible across the editable-
+# install boundary, so mypy run here reports import-untyped for every wealthlens_sim
+# import. This override silences that — but be explicit about the trade-off: it makes
+# the sim API resolve to `Any` here, so the ONE automation consumer of that API
+# (generate_simulator_dashboards.py) is NOT type-checked against the real sim
+# signatures at this seam. That cross-package correctness is instead covered at
+# RUNTIME by automation/data-pipelines/tests/test_simulator_dashboards.py, which
+# ci-sim runs against the editable sim (a wrong arg type there fails that test).
+# Deep cross-package type-checking is intentionally out of scope: pulling the sim
+# source onto mypy_path would also drag its transitive deps (scipy/pydantic/pyyaml)
+# into this gate's environment, which it does not provision.
 [[tool.mypy.overrides]]
 module = ["wealthlens_sim.*"]
 ignore_missing_imports = true

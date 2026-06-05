@@ -67,8 +67,10 @@ jobs:
 
       # Type-check automation/ (data pipelines, og-images, analysis, social-media).
       # ci-backend lints the backend and ci-sim type-checks the sim package, but
-      # nothing gated automation/ until now. wealthlens_sim imports are treated as
-      # an opaque typed boundary here (see the pyproject [tool.mypy] override).
+      # nothing gated automation/ until now. wealthlens_sim imports resolve to `Any`
+      # here (untyped boundary — see the pyproject [tool.mypy] override); the one
+      # automation sim consumer is covered at runtime by ci-sim's
+      # test_simulator_dashboards.py instead.
       - name: Type-check automation/
         run: python -m mypy automation
 

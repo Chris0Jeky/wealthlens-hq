@@ -27,7 +27,7 @@ ANALYSIS_DIR := automation/analysis
         ci-quick ci-full \
         frontend-install frontend-build frontend-dev frontend-lint frontend-test frontend-typecheck \
         backend-install backend-test backend-lint backend-format \
-        pipeline-test pipelines validate automation-lint test-hooks clean
+        pipeline-test pipelines validate automation-lint dev-tools-install test-hooks clean
 
 # ── Help ──────────────────────────────────────────────────────────────────
 help: ## Show all targets
@@ -90,7 +90,10 @@ pipelines: ## Run all working data pipelines (fetches live data)
 	$(PYTHON) $(PIPELINE_DIR)/fetch_hmrc_stats.py
 
 # ── Aggregate targets ─────────────────────────────────────────────────────
-install: backend-install frontend-install ## Install all dependencies
+dev-tools-install: ## Install root dev tools (mypy, ruff, pandas-stubs, Pillow, ...) used by lint/test
+	$(PYTHON) -m pip install ".[dev]"
+
+install: backend-install frontend-install dev-tools-install ## Install all dependencies
 
 lint: backend-lint frontend-lint automation-lint ## Run all linters
 format: backend-format ## Auto-format all code
@@ -103,7 +106,7 @@ dev-frontend: ## Alias for frontend dev server
 ci-quick: backend-lint backend-test ## Pre-push gate (~60s, no external deps)
 	@echo "ci-quick passed"
 
-ci-full: backend-lint backend-test frontend-lint frontend-typecheck frontend-test frontend-build ## Full CI (~3 min)
+ci-full: backend-lint automation-lint backend-test frontend-lint frontend-typecheck frontend-test frontend-build ## Full CI (~3 min)
 	@echo "ci-full passed"
 
 # ── Hooks ─────────────────────────────────────────────────────────────────

@@ -60,8 +60,10 @@ jobs:
       - name: Mypy
         run: |
           mypy projects/wealthlens-dashboard/backend/
-          # TODO: enable once pre-existing type errors in automation/ and tests/ are resolved
-          # mypy automation/
+          # automation/ is now type-checked in ci-pipelines.yml (it has the pipeline
+          # deps + .[dev] that automation imports need). Only root tests/ remains
+          # ungated — it needs an mypy_path config for the backend/pipeline modules
+          # its conftest wires onto sys.path at runtime (tracked in tasks/inbox.md).
           # mypy tests/
 
       - name: Bandit security scan
