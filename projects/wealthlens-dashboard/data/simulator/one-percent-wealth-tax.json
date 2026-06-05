@@ -20,6 +20,52 @@
   },
   "households_scored": 2000,
   "interval_method": "alpha_sweep",
+  "population_provenance": [
+    {
+      "access_date": "2026-05-30",
+      "id": "ons-was-wealth",
+      "licence": "OGL-3.0",
+      "name": "ONS Wealth and Assets Survey (WAS)",
+      "url": "https://www.ons.gov.uk/file?uri=/peoplepopulationandcommunity/personalandhouseholdfinances/incomeandwealth/datasets/totalwealthwealthingreatbritain/july2006tojune2016andapril2014tomarch2022/totalwealthtables.xlsx"
+    },
+    {
+      "access_date": "2026-05-30",
+      "id": "ons-families-households-2022",
+      "licence": "OGL-3.0",
+      "name": "ONS Families and households in Great Britain, 2022",
+      "url": "https://www.ons.gov.uk/peoplepopulationandcommunity/birthsdeathsandmarriages/families/datasets/householdsbytypeofhouseholdandfamilyregionsofenglandandgbconstituentcountries/2022"
+    },
+    {
+      "id": "synth.n_households:2000"
+    },
+    {
+      "id": "synth.seed:20"
+    },
+    {
+      "id": "synth.population_households:27500000"
+    },
+    {
+      "id": "synth.median_net_wealth:293700"
+    },
+    {
+      "id": "synth.lognormal_sigma:1.1"
+    },
+    {
+      "id": "synth.pareto_threshold:1200500"
+    },
+    {
+      "id": "synth.pareto_alpha:2.5"
+    },
+    {
+      "id": "synth.couple_share:0.55"
+    },
+    {
+      "id": "synth.nation_shares:england=0.859127272727;scotland=0.0924363636364;wales=0.0484363636364"
+    },
+    {
+      "id": "synth.asset_shares:dc_pension=0.3544;financial=0.1411;main_residence=0.4025;physical=0.1021"
+    }
+  ],
   "population_provenance_ids": [
     "ons-was-wealth",
     "ons-families-households-2022",
