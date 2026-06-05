@@ -30,10 +30,14 @@ Every concrete action item extracted from research. Triage into active-sprint, b
   — these have no `registries/sources.yml` entry. Add verified citations to
   `registries/assumptions.yml` (do NOT fabricate); then surface them in the
   `assumptions_consumed` provenance. Upstream `wealthlens-sim`.
-- [ ] **Calibrate synthetic IHT** before serving any IHT scenario: the synth IHT
-  sums each household's stock estate liability across the grossed-up population (not
-  an annual death/estate-flow cohort), giving ~£1,009bn vs ~£7-8bn real. IHT
-  scenarios were dropped from the served set until this is fixed.
+- [~] **Calibrate synthetic IHT** before serving any IHT scenario. **Tier A DONE**
+  (PR pending, see `docs/IHT_CALIBRATION.md`): an ONS-sourced annual mortality scalar
+  now converts the at-death STOCK to an annual FLOW (£1,009bn → £21.3bn), fixing the
+  ~40x stock-vs-flow error. **Remaining (Tier B):** ~£21bn is still ~3x the ~£7-8bn
+  real because the synth over-states top wealth; needs age-specific mortality (ONS
+  life tables q_x) + age-wealth correlation in the synth. **IHT stays EXCLUDED**
+  until then. Also: Gate-3 charitable 10% reduced-rate uses gross estate not the
+  post-relief baseline amount (refine with Tier B).
 - [ ] **Clean up the gitignored compiled `.js` shadows** in `frontend/src` (they
   shadow `.ts` locally because Vite resolves `.js` first — confused a local test
   run; CI is unaffected). Add a `git clean`/predev step or stop emitting them.

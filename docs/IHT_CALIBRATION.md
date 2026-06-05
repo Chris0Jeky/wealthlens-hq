@@ -1,6 +1,7 @@
 # IHT Calibration: stock-to-flow and the synth overshoot
 
-Status: DESIGN NOTE (scoping). Last updated: 2026-06-05.
+Status: Tier A IMPLEMENTED (stock-to-flow mortality conversion); Tier B/C pending.
+IHT scenarios remain EXCLUDED. Last updated: 2026-06-05.
 Owner area: `packages/wealthlens-sim` (Family D, inheritance tax).
 Related: `tasks/inbox.md` (IHT calibration item), Blueprint v5 section 3.3
 ("credible IHT modelling requires mortality and age structure").
@@ -68,14 +69,17 @@ high. That 3.2x is error (2), confirming the two are distinct.
 
 ## Tiered plan
 
-### Tier A (next PR) - annual mortality conversion. Small, principled, no schema change.
-Apply an ONS-sourced annual mortality/crystallisation rate to the aggregate:
-`annual_iht = mortality_rate * sum(at_death_liability * weight)`. Add
-`IHTConfig.annual_mortality_rate` (default sourced from ONS deaths / households),
-a `registries/sources.yml` entry for ONS deaths, and a
-`registries/assumptions.yml` entry `model.iht.annual_mortality_rate.v1`. The
-per-household calculation is unchanged (the at-death liability is a valid
-quantity). Expected headline ~£24bn.
+### Tier A - annual mortality conversion. DONE (2026-06-05).
+Applied an ONS-sourced annual mortality/crystallisation rate to the aggregate AND
+the decile/nation attribution (so the engine's decile-sum == total invariant and the
+enforcement baseline stay consistent): `annual_iht = mortality_rate *
+sum(at_death_liability * weight)`. Added `IHTConfig.annual_mortality_rate` (default
+`ANNUAL_MORTALITY_RATE_2026 = 581_363 / 27_500_000 ~= 0.0211`), the
+`registries/sources.yml` `ons-deaths-registered` entry, and the
+`registries/assumptions.yml` `model.iht.annual_mortality_rate.v1` assumption. The
+per-household at-death calculation is unchanged. **Measured result on the real synth
+(n=2000, seed=20): stock £1009.0bn -> flow £21.3bn** (a sanity-bound test pins this).
+Still ~3x the ~£7-8bn real, so IHT stays excluded.
 
 Tier A limitations to document in code: uniform mortality (does not yet use
 age-specific q_x), a deaths-per-household approximation (IHT crystallises per
