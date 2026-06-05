@@ -81,11 +81,14 @@ per-household at-death calculation is unchanged. **Measured result on the real s
 (n=2000, seed=20): stock £1009.0bn -> flow £21.3bn** (a sanity-bound test pins this).
 Still ~3x the ~£7-8bn real, so IHT stays excluded.
 
-Tier A limitations to document in code: uniform mortality (does not yet use
-age-specific q_x), a deaths-per-household approximation (IHT crystallises per
-estate, often on the second spouse death; not modelled in v0.1), and it does NOT
-fix error (2). **IHT scenarios stay excluded after Tier A** because ~£21bn is
-still not sanity-checkable against ~£7-8bn.
+Tier A limitations (documented in code): uniform mortality (does not yet use
+age-specific q_x); a deaths-per-household approximation (IHT crystallises per
+estate, often on the second spouse death; not modelled in v0.1); a DENOMINATOR
+GRAIN mismatch (a per-household death rate is applied to per-person-summed household
+liability, over-stating multi-person households by ~mean adults per household ~1.7x
+vs a per-person deaths/adults rate — the Tier B per-person q_x fixes this); and it
+does NOT fix error (2). **IHT scenarios stay excluded after Tier A** because ~£21bn
+is still not sanity-checkable against ~£7-8bn.
 
 ### Tier B - age-specific mortality + age-wealth correlation. Medium.
 Use ONS National Life Tables q_x per the head's age, and make the synth draw ages

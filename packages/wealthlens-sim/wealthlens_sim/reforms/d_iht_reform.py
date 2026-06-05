@@ -70,11 +70,17 @@ CHARITABLE_THRESHOLD: float = 0.10
 #: IHT liability (summed over the whole grossed-up population, as if everyone died
 #: this year) into an annual FLOW (only the estates that pass at death each year).
 #: ~ ONS Deaths registered in England and Wales 2023 (581,363) / ~27.5m GB
-#: households (the synth population base). This is a v0.1 simplification: E&W deaths
-#: applied to the GB-scoped synth (understates GB by ~10%); per-household not
-#: per-estate; uniform, not age-specific. The IHT headline is NOT served on Tier A
-#: (it remains ~3x high from synth top-tail over-concentration); see
-#: docs/IHT_CALIBRATION.md. Source: source id ``ons-deaths-registered``,
+#: households (the synth population base). v0.1 simplifications (all documented and
+#: acceptable ONLY because IHT is NOT served on Tier A):
+#:   - E&W deaths on the GB-scoped synth understates GB by ~10%;
+#:   - DENOMINATOR GRAIN: a per-HOUSEHOLD death rate is applied to per-person-summed
+#:     household liability, so multi-person households are over-stated by ~mean adults
+#:     per household (~1.7x) vs a true per-person rate (deaths/adults). The Tier B
+#:     refinement is a per-person age-specific q_x;
+#:   - per-household not per-estate (spousal second-death timing not modelled);
+#:   - uniform, not age-specific.
+#: The headline remains ~3x high from synth top-tail over-concentration regardless.
+#: See docs/IHT_CALIBRATION.md. Source: source id ``ons-deaths-registered``,
 #: assumption ``model.iht.annual_mortality_rate.v1``.
 ANNUAL_MORTALITY_RATE_2026: float = 581_363 / 27_500_000  # ~= 0.0211
 
