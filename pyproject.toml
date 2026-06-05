@@ -54,9 +54,23 @@ warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = false
 check_untyped_defs = true
+# root tests/ import the hyphenated pipeline + analysis dirs that conftest.py adds
+# to sys.path at runtime (mypy does not execute conftest). Anchor those dirs to the
+# config-file directory so `mypy tests` resolves them regardless of the invocation
+# CWD; backend-lint (run from the backend dir, with its own consistent root config)
+# is unaffected because it imports none of these modules.
+mypy_path = "$MYPY_CONFIG_FILE_DIR/automation/data-pipelines:$MYPY_CONFIG_FILE_DIR/automation/analysis"
 
 [[tool.mypy.overrides]]
 module = ["plotly.*", "odf.*", "openpyxl.*", "requests.*"]
+ignore_missing_imports = true
+
+# The dashboard backend (app.*) is type-checked on its own in ci-backend; from the
+# root tests/ it is an opaque boundary (tests import app.main / app.routers via the
+# sys.path wiring in conftest). Treat it as untyped here rather than pulling the
+# whole backend + its framework deps into this gate.
+[[tool.mypy.overrides]]
+module = ["app.*"]
 ignore_missing_imports = true
 
 # wealthlens_sim is a separate package with its OWN clean `mypy wealthlens_sim`
