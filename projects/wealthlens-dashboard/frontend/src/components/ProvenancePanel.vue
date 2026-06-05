@@ -31,10 +31,11 @@ const sorted = computed(() =>
 )
 
 // Only registered data sources are citable (they carry a URL); synthetic
-// generation parameters are id-only config inputs and are not listed.
+// generation parameters are id-only config inputs and are not listed. A blank-ish
+// URL (whitespace only) is dropped too — it would render as an inert "#" link.
 const dataSources = computed(() =>
   (props.populationSources ?? []).filter(
-    (s): s is PopulationProvenanceEntry & { url: string } => Boolean(s.url),
+    (s): s is PopulationProvenanceEntry & { url: string } => Boolean(s.url?.trim()),
   ),
 )
 
@@ -94,9 +95,10 @@ function hostLabel(url: string): string {
     </h2>
 
     <template v-if="sorted.length">
+      <h3 class="mt-4 text-sm font-semibold text-wl-ink">Modelling assumptions</h3>
       <p class="mt-1 text-sm text-wl-ink-muted">
-        The modelling assumptions behind these figures, each linked to its
-        original source — a peer-reviewed paper or official statistics.
+        Each linked to its original source — a peer-reviewed paper or official
+        statistics.
       </p>
       <ul class="mt-3 space-y-3">
         <li v-for="a in sorted" :key="a.assumption_id" class="text-sm">
@@ -111,7 +113,7 @@ function hostLabel(url: string): string {
               </ExternalLink>
             </li>
           </ul>
-          <p v-else class="mt-1 text-xs text-wl-ink-faint">
+          <p v-else class="mt-1 text-xs text-wl-ink-muted">
             No public link available for this source.
           </p>
         </li>
@@ -126,15 +128,15 @@ function hostLabel(url: string): string {
         The official datasets the synthetic population is calibrated to.
       </p>
       <ul class="mt-2 space-y-2">
-        <li v-for="s in dataSources" :key="s.id" class="text-sm">
-          <p class="text-wl-ink">{{ s.name ?? s.id }}</p>
+        <li v-for="s in dataSources" :key="s.url" class="text-sm">
+          <p class="text-wl-ink">{{ s.name || s.id }}</p>
           <p class="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
             <ExternalLink :href="s.url">{{ hostLabel(s.url) }}</ExternalLink>
-            <span v-if="s.access_date" class="text-wl-ink-faint">
+            <span v-if="s.access_date" class="text-wl-ink-muted">
               accessed {{ s.access_date }}
             </span>
-            <span v-if="s.licence" class="text-wl-ink-faint">
-              · {{ s.licence }}
+            <span v-if="s.licence" class="text-wl-ink-muted">
+              <span aria-hidden="true">·</span> {{ s.licence }}
             </span>
           </p>
         </li>

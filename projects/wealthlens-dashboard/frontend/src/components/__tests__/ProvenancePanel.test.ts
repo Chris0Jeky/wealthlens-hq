@@ -145,8 +145,17 @@ describe('ProvenancePanel', () => {
     })
     expect(wrapper.find('section').exists()).toBe(true)
     expect(wrapper.text()).toContain('Population data sources')
-    // No assumptions -> the modelling-assumptions intro is absent.
-    expect(wrapper.text()).not.toContain('modelling assumptions behind')
+    // No assumptions -> the "Modelling assumptions" subsection heading is absent.
+    expect(wrapper.text()).not.toContain('Modelling assumptions')
+  })
+
+  it('gives both subsections a symmetric h3 heading for a clean SR outline', () => {
+    const wrapper = mount(ProvenancePanel, {
+      props: { assumptions: [ALPHA], populationSources: POP_SOURCES },
+    })
+    const h3s = wrapper.findAll('h3').map((h) => h.text())
+    expect(h3s).toContain('Modelling assumptions')
+    expect(h3s).toContain('Population data sources')
   })
 
   it('hides the population subsection when no source carries a URL', () => {

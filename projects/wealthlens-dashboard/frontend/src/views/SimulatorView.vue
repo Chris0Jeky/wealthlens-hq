@@ -159,7 +159,7 @@ const liveSummary = computed(() => {
           />
           <p
             v-if="Number.isFinite(dashboard.households_scored)"
-            class="mt-2 text-xs text-wl-ink-faint"
+            class="mt-2 text-xs text-wl-ink-muted"
           >
             Scored over
             {{ dashboard.households_scored.toLocaleString() }} synthetic

@@ -36,8 +36,11 @@ BACKEND_SIMULATOR = (
 )
 # Mirrors backend app/routers/simulator.py _REQUIRED_KEYS: a fixture must carry
 # these or the build fails, rather than publishing a broken contract statically.
+# `provenance` is included so the statically-served payload carries the
+# assumptions_consumed citations the scenario page renders (kept in sync with the
+# backend guard, which also requires it).
 _SIM_REQUIRED_KEYS = frozenset(
-    {"schema_version", "total_revenue_gbp_bn", "caveats", "interval_method"}
+    {"schema_version", "total_revenue_gbp_bn", "caveats", "interval_method", "provenance"}
 )
 
 DATASETS: dict[str, str] = {
