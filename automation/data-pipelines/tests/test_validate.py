@@ -53,6 +53,17 @@ class TestValidateAll:
         errors = validate_all()
         assert errors == []
 
+    def test_duplicate_keys_reported(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        # Positively exercise the unique_keys path: take a valid file and repeat
+        # one data row so its unique-key tuple appears twice -> DUPES must fire.
+        monkeypatch.setattr("validate.DATA_DIR", tmp_path)
+        check = next(c for c in CHECKS if "unique_keys" in c)
+        lines = self._synth_valid_csv(check).splitlines()
+        lines.append(lines[1])  # duplicate the first data row
+        (tmp_path / check["file"]).write_text("\n".join(lines) + "\n")
+        errors = validate_all()
+        assert any("DUPES" in e for e in errors)
+
     @staticmethod
     def _synth_valid_csv(check: dict) -> str:
         """Build a CSV that satisfies every rule in ``check``.
