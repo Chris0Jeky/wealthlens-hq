@@ -174,6 +174,54 @@ class TestAssumption:
         assert a.notes == ""
 
 
+class TestSourceUrls:
+    """The optional source_urls field (B1: every cited claim resolvable to a URL)."""
+
+    def test_default_empty(self):
+        # Backward compatibility: entries without source_urls still validate.
+        a = Assumption.model_validate(POINT_ENTRY)
+        assert a.source_urls == []
+
+    def test_accepts_https_and_http(self):
+        entry = {**RANGE_ENTRY, "source_urls": ["https://doi.org/10.1111/roiw.12279", "http://example.org/x"]}
+        a = Assumption.model_validate(entry)
+        assert a.source_urls == ["https://doi.org/10.1111/roiw.12279", "http://example.org/x"]
+
+    def test_rejects_non_http_url(self):
+        entry = {**RANGE_ENTRY, "source_urls": ["ftp://example.org/x"]}
+        with pytest.raises(ValidationError, match="must be http"):
+            Assumption.model_validate(entry)
+
+    def test_rejects_empty_string(self):
+        entry = {**RANGE_ENTRY, "source_urls": ["https://ok.org", "  "]}
+        with pytest.raises(ValidationError, match="non-empty"):
+            Assumption.model_validate(entry)
+
+    def test_dedupes_preserving_order(self):
+        entry = {
+            **RANGE_ENTRY,
+            "source_urls": ["https://a.org", "https://b.org", "https://a.org"],
+        }
+        a = Assumption.model_validate(entry)
+        assert a.source_urls == ["https://a.org", "https://b.org"]
+
+    def test_strips_whitespace(self):
+        entry = {**RANGE_ENTRY, "source_urls": ["  https://doi.org/10.x  "]}
+        a = Assumption.model_validate(entry)
+        assert a.source_urls == ["https://doi.org/10.x"]
+
+    def test_real_registry_entries_carry_urls(self):
+        # The shipped registry must actually resolve its cited works to URLs.
+        reg = load_assumptions()
+        non_dom = reg.get("behaviour.migration.non_dom_stock_elasticity.v1")
+        assert non_dom is not None
+        assert any("warwick.ac.uk" in u for u in non_dom.source_urls)
+        # Every URL in the shipped registry is a well-formed http(s) URL.
+        for a in reg.assumptions:
+            for url in a.source_urls:
+                assert url.startswith(("https://", "http://"))
+
+
 class TestAssumptionRegistry:
     def test_empty_registry(self):
         reg = AssumptionRegistry(assumptions=[])
