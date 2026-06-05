@@ -61,7 +61,10 @@ check_untyped_defs = true
 # gate reads (the extra search paths are harmless there — it imports none of these);
 # backend-lint runs `mypy .` from the backend dir, where mypy finds no config and
 # uses its defaults, so it never reads this setting at all.
-mypy_path = "$MYPY_CONFIG_FILE_DIR/automation/data-pipelines:$MYPY_CONFIG_FILE_DIR/automation/analysis"
+mypy_path = [
+    "$MYPY_CONFIG_FILE_DIR/automation/data-pipelines",
+    "$MYPY_CONFIG_FILE_DIR/automation/analysis",
+]
 
 [[tool.mypy.overrides]]
 module = ["plotly.*", "odf.*", "openpyxl.*", "requests.*"]
