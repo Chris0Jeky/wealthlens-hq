@@ -34,6 +34,11 @@ SIM_OUT_DIR = OUT_DIR / "simulator"
 BACKEND_SIMULATOR = (
     ROOT / "projects" / "wealthlens-dashboard" / "backend" / "app" / "routers" / "simulator.py"
 )
+# Mirrors backend app/routers/simulator.py _REQUIRED_KEYS: a fixture must carry
+# these or the build fails, rather than publishing a broken contract statically.
+_SIM_REQUIRED_KEYS = frozenset(
+    {"schema_version", "total_revenue_gbp_bn", "caveats", "interval_method"}
+)
 
 DATASETS: dict[str, str] = {
     "wealth-shares": "wid_wealth_shares_gb.csv",
@@ -178,7 +183,12 @@ def _load_simulator_scenarios() -> dict[str, dict[str, str]]:
         elif isinstance(node, ast.Assign) and len(node.targets) == 1 and isinstance(node.targets[0], ast.Name):
             target, value = node.targets[0].id, node.value
         if target == "SIMULATOR_SCENARIOS" and value is not None:
-            return ast.literal_eval(value)
+            try:
+                return ast.literal_eval(value)
+            except ValueError as e:
+                raise RuntimeError(
+                    f"SIMULATOR_SCENARIOS in {BACKEND_SIMULATOR} is not a static literal: {e}"
+                ) from e
     raise RuntimeError(f"SIMULATOR_SCENARIOS not found in {BACKEND_SIMULATOR}")
 
 
@@ -198,8 +208,20 @@ def generate_simulator_static() -> int:
         if not src.exists():
             print(f"  SKIP simulator {scenario_id}: {src} not found")
             continue
-        # Round-trip through json to validate the fixture before publishing it.
-        payload = json.loads(src.read_text(encoding="utf-8"))
+        # Validate before publishing: a well-formed JSON object carrying the same
+        # required contract keys the backend enforces, so a malformed or incomplete
+        # fixture fails the build instead of being served statically as a broken
+        # contract.
+        try:
+            payload = json.loads(src.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Malformed JSON in simulator fixture '{scenario_id}': {e}") from e
+        if not isinstance(payload, dict) or not _SIM_REQUIRED_KEYS.issubset(payload):
+            present = set(payload) if isinstance(payload, dict) else set()
+            raise ValueError(
+                f"Simulator fixture '{scenario_id}' is missing required contract keys: "
+                f"{sorted(_SIM_REQUIRED_KEYS - present)}"
+            )
         (SIM_OUT_DIR / f"{scenario_id}.json").write_text(json.dumps(payload), encoding="utf-8")
         index.append({"id": scenario_id, "name": meta["name"], "description": meta["description"]})
         print(f"  OK simulator {scenario_id}")
