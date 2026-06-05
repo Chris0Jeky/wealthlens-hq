@@ -125,9 +125,14 @@ def _evaluate_matrix(
     Returns a 1-D float array row-aligned with ``matrix``. Raises ``ValueError`` if
     ``evaluate`` returns a non-finite value for any row (a silent NaN would corrupt
     every downstream index).
+
+    ``matrix.tolist()`` is materialised once so each row is a list of native Python
+    floats — iterating the 2-D array directly would build a fresh 1-D view per row
+    and hand ``evaluate`` ``np.float64`` scalars, both slower over the ``n_base*(d+2)``
+    rows this is called for.
     """
     outputs = np.fromiter(
-        (evaluate({name: float(value) for name, value in zip(names, row, strict=True)}) for row in matrix),
+        (evaluate(dict(zip(names, row, strict=True))) for row in matrix.tolist()),
         dtype=np.float64,
         count=matrix.shape[0],
     )
@@ -208,9 +213,13 @@ def sobol_indices(
     first_order: list[float] = []
     total_order: list[float] = []
     for i in range(d):
-        ab_i = a_mat.copy()
-        ab_i[:, i] = b_mat[:, i]
-        f_ab_i = _evaluate_matrix(ab_i, names, evaluate)
+        # AB_i = A with column i taken from B. Swap that one column in place and
+        # restore it afterwards rather than copying the whole (n_base x d) matrix
+        # d times — only the n_base-length column is duplicated per input.
+        original_col = a_mat[:, i].copy()
+        a_mat[:, i] = b_mat[:, i]
+        f_ab_i = _evaluate_matrix(a_mat, names, evaluate)
+        a_mat[:, i] = original_col
         with np.errstate(over="ignore", invalid="ignore"):
             # Saltelli et al. (2010): V_i = mean(f_B * (f_AB_i - f_A)).
             v_i = float(np.mean(f_b * (f_ab_i - f_a)))
