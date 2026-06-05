@@ -5,13 +5,33 @@
 >
 > **CRITICAL**: Update this file BEFORE every compaction risk (long tool calls, large diffs).
 
-Last updated: 2026-06-05 (session 4 — #369/#370/#371 MERGED; #372 open/in-review)
+Last updated: 2026-06-06 (session 4 — #369-#373 MERGED (5 PRs); #374 open/in-review)
 
-## ▶️ SESSION 4 (2026-06-05) — LOOP RESUMED. 3 PRs merged; #372 open
+## ▶️ SESSION 4 (2026-06-05/06) — LOOP RESUMED. 5 PRs merged; #374 open
 
 Chris re-started the endless loop (session 4). Started from main `7e70a49`, 0 open PRs.
-Now main `7490f54`. Each PR: 2 independent adversarial reviews + all bot threads
-resolved + green CI before merge.
+Now main `8cddf04`, **5 PRs merged (#369-#373)**, #374 open. Each PR: 2 independent
+adversarial reviews + all bot threads resolved + green CI before merge.
+
+- **✅ #372 MERGED — backend mypy at root strictness via `make backend-lint`.** The
+  CI-parity review found the original `mypy.ini` premise was WRONG: ci-backend runs
+  `mypy projects/.../backend` from the REPO ROOT (mypy resolves config by CWD), so CI
+  already checked the backend at root strictness — only LOCAL `backend-lint` (cd'd in)
+  used permissive defaults. Pivoted: backend-lint now runs mypy from the repo root
+  (single config source); deleted the mypy.ini; capped mypy `<2`. Mutation-checked.
+- **✅ #373 MERGED — surface population data sources in ProvenancePanel.** Completes
+  #371's sources story (the codex overclaim note). Reviews caught: a WCAG AA contrast
+  fail (`text-wl-ink-faint` ~3.2:1 -> ink-muted), an asymmetric heading outline (added
+  symmetric h3s), a dangling `·` separator, a static-generator `_SIM_REQUIRED_KEYS`
+  drift (added `provenance`). (public/data/simulator/*.json are GITIGNORED build
+  artifacts regenerated at deploy — the deployed site already serves fresh data.)
+- **🔶 #374 OPEN/in-review — `fix/data-freshness-flaky-test`.** Pre-existing flaky test:
+  DataFreshnessBadge relative-time tests mixed local getDate() with UTC toISOString(),
+  off-by-one in UTC+ TZ just after local midnight (failed locally on the 2026-06-06
+  rollover; CI is UTC so it passed there). Fix: setUTCDate helper + freeze clock at noon
+  UTC. 2 reviews running (background agents). Mergeable once reviewed + a newer PR above.
+
+### Earlier this session (condensed)
 
 - **✅ #369 MERGED — B1 assumption citation URLs.** Web-VERIFIED canonical URLs
   (DOI/official, no fabrication) added to `registries/assumptions.yml` via an optional
@@ -43,13 +63,15 @@ resolved + green CI before merge.
 - **Merge discipline this loop** (solo, per deferred Q2): merge once 2 independent
   adversarial reviews + all bot threads resolved + green CI + aged + a newer PR above it.
   Never `--delete-branch` a stacked base ([[feedback_stacked_merge_delete_branch]]).
-- **Backlog / next (task 5 candidates):** (a) surface `population_provenance` in
-  ProvenancePanel (completes #371's sources story, high-value visibility, seeded above);
-  (b) decile/nation breakdown viz in SimulatorView (still fetched-but-discarded);
-  (c) the 4-fetcher coverage above; (d) base-share research -> behavioural engine-apply
-  (flagship, BLOCKED on cited base shares — DEFERRED Q1).
-- **Worktrees:** main tree on `main`; wt3 on `chore/backend-mypy-config` (#372).
-  (wt2 removed after #370 merged.)
+- **Backlog / next (task 6 in flight = decile/nation breakdown):** (a) **decile +
+  nation revenue breakdown** in SimulatorView — `revenue_by_decile` (10) +
+  `revenue_by_nation` (eng/scot/wales) are served but discarded; surface as an
+  accessible table/chart [BUILDING NEXT, branch off main]; (b) the 4-fetcher NaN
+  coverage (seeded, fiddly xlsx fakes); (c) base-share research -> behavioural
+  engine-apply (flagship, BLOCKED on cited base shares — DEFERRED Q1).
+- **Worktrees:** main checkout on `fix/data-freshness-flaky-test` (#374, under review);
+  `../wlh-main` on `main` (for main/doc commits + basing the next task). (wt2/wt3 removed
+  after their PRs merged.)
 - **Deferred questions for Chris:** see "❓ DEFERRED QUESTIONS" near the end (Q1-Q4 from
   session 3 still stand; will add any new ones at wrap-up).
 
