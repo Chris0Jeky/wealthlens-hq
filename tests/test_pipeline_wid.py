@@ -91,7 +91,15 @@ def test_process_drops_points_missing_keys_without_crashing() -> None:
 
 
 @pytest.mark.usefixtures("_isolated")
+def test_process_drops_fractional_year() -> None:
+    # A non-integer year ("2000.9") must be dropped, not silently truncated to 2000.
+    df = fetch_wid_data.process(_raw([{"y": 2000, "v": 0.20}, {"y": "2000.9", "v": 0.21}]))
+    assert set(df["year"]) == {2000}
+
+
+@pytest.mark.usefixtures("_isolated")
 def test_process_empty_values_raises_loudly() -> None:
-    # All points bad -> empty -> the pipeline fails loud (sys.exit), not a silent empty CSV.
-    with pytest.raises(SystemExit):
+    # All points bad -> empty -> the pipeline fails loud (sys.exit 1), not a silent empty CSV.
+    with pytest.raises(SystemExit) as excinfo:
         fetch_wid_data.process(_raw([{"y": 2001, "v": float("nan")}]))
+    assert excinfo.value.code == 1
