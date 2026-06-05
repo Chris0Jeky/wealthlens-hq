@@ -53,8 +53,8 @@ dev-backend: ## Start backend dev server (uvicorn)
 	cd $(BACKEND_DIR) && $(PYTHON) -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 
 # ── Frontend ──────────────────────────────────────────────────────────────
-frontend-install: ## Install frontend npm dependencies
-	cd $(FRONTEND_DIR) && npm ci
+frontend-install: ## Install frontend npm dependencies (local dev; CI uses `npm ci`)
+	cd $(FRONTEND_DIR) && npm install
 
 frontend-build: ## Build frontend for production
 	cd $(FRONTEND_DIR) && npm run build
@@ -73,7 +73,9 @@ frontend-test: ## Run frontend vitest suite
 
 # ── Data pipelines ────────────────────────────────────────────────────────
 pipeline-test: ## Run data-pipeline unit tests (offline)
-	$(PYTHON) -m pytest $(PIPELINE_DIR)/tests/ -q
+	# PIPELINE_DIR has a hyphen so it is not an importable package; put it on
+	# PYTHONPATH so tests can import the pipeline modules without ModuleNotFoundError.
+	PYTHONPATH=$(PIPELINE_DIR) $(PYTHON) -m pytest $(PIPELINE_DIR)/tests/ -q
 
 validate: ## Validate all processed CSV datasets
 	$(PYTHON) $(PIPELINE_DIR)/validate.py
