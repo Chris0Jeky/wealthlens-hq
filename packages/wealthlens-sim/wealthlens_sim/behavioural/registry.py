@@ -61,6 +61,12 @@ def load_behavioural_channels(
     caller's responsibility — see the "When wiring this in" checklist in
     :mod:`~wealthlens_sim.behavioural.response`.
 
+    Passing a non-default ``domains`` (e.g. ``("compliance",)``/``("valuation",)``) IS
+    permitted but UNGUARDED: those are level fractions, not rate-elasticities (see the
+    module docstring), so composing them through ``revenue_response_factor`` is a category
+    error the caller owns. ``domains`` is order-preserving-deduplicated so a repeated
+    domain cannot emit a channel twice.
+
     Raises ``ValueError`` for an invalid ``point`` and ``TypeError`` if ``domains`` is a
     single string (a common gotcha — iterating a string yields characters) — validated
     up-front so an invalid call fails loudly even when no assumption matches.
@@ -73,7 +79,12 @@ def load_behavioural_channels(
         raise TypeError(msg)
 
     channels: list[BehaviouralChannel] = []
-    for domain in domains:
+    # Deduplicate domains (order-preserving) so a repeated/overlapping domain list cannot
+    # emit the same channel twice — composing it via revenue_response_factor would
+    # double-count that channel's erosion of the SAME base, violating the independence
+    # contract documented in `response.py`. (assumption_ids are globally unique, so once
+    # each domain is processed at most once, no channel can recur.)
+    for domain in dict.fromkeys(domains):
         for assumption in registry.by_domain(domain):
             value = assumption.value_or_distribution
             if isinstance(value, RangeValue):

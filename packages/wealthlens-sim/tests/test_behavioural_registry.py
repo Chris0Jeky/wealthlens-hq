@@ -92,6 +92,13 @@ class TestLoadBehaviouralChannels:
         with pytest.raises(TypeError, match="domains must be a sequence of strings"):
             load_behavioural_channels(_registry(), domains="migration")  # type: ignore[arg-type]
 
+    def test_duplicate_domains_do_not_duplicate_channels(self) -> None:
+        # A repeated/overlapping domain must NOT emit the same channel twice (that would
+        # double-count its erosion via revenue_response_factor's multiplicative compose).
+        once = load_behavioural_channels(_registry(), domains=("migration",))
+        twice = load_behavioural_channels(_registry(), domains=("migration", "migration"))
+        assert [c.name for c in once] == [c.name for c in twice]
+
 
 class TestRealRegistry:
     """Integration: the committed registry's cited elasticities load into channels."""
