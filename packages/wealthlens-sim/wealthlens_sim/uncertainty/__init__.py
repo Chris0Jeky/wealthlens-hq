@@ -7,11 +7,13 @@ Reference: Blueprint v5 sections 8.1 (layer 7), 13.5.
 
 Wave 13 groundwork: :mod:`~wealthlens_sim.uncertainty.sampling` provides the
 deterministic parameter-sampling layer (independent + Latin-hypercube draws over
-uniform/triangular marginals) and :mod:`~wealthlens_sim.uncertainty.propagation`
-propagates a sampled block through a scalar ``evaluate`` into a cited interval.
-Both are standalone and not yet wired into the engine; a later PR will supply the
-engine ``evaluate`` to replace the single multiplicative top-tail-alpha band with
-full Monte-Carlo propagation (default OFF).
+uniform/triangular marginals), :mod:`~wealthlens_sim.uncertainty.propagation`
+propagates a sampled block through a scalar ``evaluate`` into a cited interval, and
+:mod:`~wealthlens_sim.uncertainty.sobol` decomposes the output variance into
+first-order and total-order Sobol sensitivity indices (Saltelli sampling, no SALib
+dependency). All three are standalone and not yet wired into the engine; a later PR
+will supply the engine ``evaluate`` to replace the single multiplicative
+top-tail-alpha band with full Monte-Carlo propagation + sensitivity (default OFF).
 """
 
 from wealthlens_sim.uncertainty.propagation import (
@@ -26,6 +28,10 @@ from wealthlens_sim.uncertainty.sampling import (
     SamplingMethod,
     sample_parameters,
 )
+from wealthlens_sim.uncertainty.sobol import (
+    SobolResult,
+    sobol_indices,
+)
 
 __all__ = [
     "Distribution",
@@ -34,6 +40,8 @@ __all__ = [
     "PropagationResult",
     "SamplingConfig",
     "SamplingMethod",
+    "SobolResult",
     "propagate",
     "sample_parameters",
+    "sobol_indices",
 ]
