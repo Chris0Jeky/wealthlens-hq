@@ -32,12 +32,27 @@ Every concrete action item extracted from research. Triage into active-sprint, b
 
 ## Reliability follow-ups
 
-- [ ] Fix `make ci-quick` false-positive and dashboard backend failures observed
+- [~] Fix `make ci-quick` false-positive and dashboard backend failures observed
   2026-05-30. A valid POSIX-shell run reports 11 pytest failures + 2 errors but
   still exits 0 because backend commands are guarded with `|| echo ...`.
   Failures seen: missing `plotly` for productivity-pay pipeline tests,
   `cgt-concentration` emits non-finite JSON, and invalid dataset names return
   404 where tests expect 422.
+  **Update 2026-06-05:** the Makefile error-swallowing is fixed in **PR #350**
+  (`ci-quick` now runs real ruff + mypy + pytest and fails loudly; backend shows
+  201 passed; `requirements-dev.txt` pins ruff/mypy/httpx/pandas-stubs for a clean
+  install). The *backend* suite is green. The pipeline-side failures below remain.
+- [ ] **Get the `automation/data-pipelines` (and root) test suites into CI** —
+  deferred from #350. They run nowhere in CI today, so failures stay invisible.
+  Surfaced 2026-06-05 while verifying #350: `make pipeline-test`
+  (`automation/data-pipelines/tests/test_validate.py::test_valid_file_passes`)
+  **fails with 12 validation errors**: `DTYPE` int64-vs-float on
+  `wid_wealth_shares_gb.csv.value`, `ons_wealth_by_decile.csv.total_wealth_bn`,
+  `ons_housing_affordability_by_region.csv.ratio`; `DUPES` 199 duplicate rows in 5
+  CSVs (hmrc_cgt_concentration, ons_housing_affordability_by_region,
+  ons_wealth_by_decile, wage_stagnation, wid_wealth_shares_gb); `RANGE` 200
+  year-values below the minimum in 3 CSVs. Looks like drifted fixtures or a
+  validator/data mismatch — **data-integrity**, fix before relying on these CSVs.
 
 ---
 

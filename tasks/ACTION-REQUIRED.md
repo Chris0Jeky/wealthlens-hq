@@ -48,6 +48,7 @@ Last updated: 2026-06-05
    - **Why:** NOT overdue — researched 2026-06-05: the window is **OPEN now**, deadline **21 June 2026, 23:59 BST** (the ~31 May date was the *opening* month, not a deadline; Spring 2026 closed back in January). ~£60k for ~7% equity; ~12-week hybrid programme starting Sept 2026; interviews 8–15 July. Strong thematic fit — their "Inclusive Society" pillar explicitly covers *reducing inequality / poverty / civic participation*, which is exactly WealthLens.
    - **Two real blockers to weigh first:** (a) BGV invests **only in for-profit companies limited by shares** — they explicitly cannot invest in CICs / non-profits / charities, so the "open-source, non-profit-leaning" framing would need a for-profit company wrapper; (b) **solo founders are disfavoured** ("you can apply as an individual, but it's more likely we'll invest with a team") — a co-founder materially strengthens the application.
    - **How:** Apply at `bethnalgreenventures.com/apply` before 21 June. If the for-profit structure or solo-founder issue is a dealbreaker, decide instead to skip this round and target **Spring 2027** (expect a ~early-Jan 2027 deadline) — and either way, record the decision so this item can close.
+   - **Full sourced analysis:** `tasks/bgv-go-no-go-2026.md` (go/no-go memo, all facts cited to the official BGV pages). **Recommendation there: restructure-then-apply / lean skip Autumn 2026 → target Spring 2027**, because the for-profit-Ltd requirement (a real identity decision that forecloses the CIC/charity route) plus the solo-founder gate and absence of a commercial model would make a rushed 16-day application weak against ~3-4% odds. Apply now only if you already want a for-profit Ltd and can credibly name a co-founder this week.
    - **Done when:** applied, OR explicitly decided to skip with the next target window noted.
 
 ### 🚀 Unblocked & high-leverage (v0.1 is live — these were waiting on a public URL)
@@ -77,7 +78,11 @@ Last updated: 2026-06-05
 
 6. - [ ] **Merge the `make ci-quick` reliability fix (PR #350)** — **P2, authorized + done, pending merge**
    - **Status (2026-06-05):** you authorized this; **fixed in PR #350**. The Makefile no longer swallows failures (`|| echo …` removed), so `make ci-quick` now runs real ruff + mypy + pytest and fails loudly. The dashboard-backend failures it used to hide are already resolved — a real run now shows **201 passed**. PR #350 also installs dev deps in `backend-install`, adds job timeouts, and enables Dependabot auto-merge.
-   - **One repo-setting action for you:** for Dependabot auto-merge to work, enable **Settings → General → Allow auto-merge** and require the CI checks in branch protection on `main`.
+   - **Repo-setting actions for you (3, one-time)** — for Dependabot auto-merge to work end-to-end:
+     1. **Settings → General → Allow auto-merge** (ON), else `gh pr merge --auto` errors.
+     2. **Branch protection on `main`** requiring the CI checks (so auto-merge only completes on green).
+     3. **Settings → Actions → General → Allow GitHub Actions to create and approve pull requests** (ON) — personal repos default this OFF, and without it the workflow's `gh pr review --approve` step fails. (Surfaced by review on #350; the workflow now documents this prerequisite.)
+   - **Note:** #350 was hardened further during review this session — `requirements-dev.txt` now pins ruff/mypy/httpx/pandas-stubs so a clean `make install && make ci-quick` genuinely passes, and `pipeline-test`/`frontend-install` were fixed. All findings addressed; CI green.
    - **Done when:** PR #350 merges (then move this to Done).
 
 ---
