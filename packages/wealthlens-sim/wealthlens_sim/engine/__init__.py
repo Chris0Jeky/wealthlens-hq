@@ -53,6 +53,7 @@ from wealthlens_sim.provenance.manifest import (
 from wealthlens_sim.reforms.f_enforcement import (
     ENFORCEMENT_COMPLIANCE_ASSUMPTION_ID,
     ENFORCEMENT_COMPLIANCE_SOURCE,
+    ENFORCEMENT_COMPLIANCE_SOURCE_URLS,
     EnforcementConfig,
 )
 from wealthlens_sim.reforms.g_devolution import (
@@ -150,6 +151,7 @@ def _build_complete_provenance(
             "enforcement_cost_bn": enforcement.enforcement_cost_bn,
         },
         source=ENFORCEMENT_COMPLIANCE_SOURCE,
+        source_urls=ENFORCEMENT_COMPLIANCE_SOURCE_URLS,
     )
     assumptions = {
         **manifest.assumptions_consumed,

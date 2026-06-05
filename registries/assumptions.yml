@@ -43,6 +43,7 @@ assumptions:
     source: Vermeulen (2018); calibrated to UK WAS + Sunday Times Rich List
     source_urls:
       - https://doi.org/10.1111/roiw.12279
+      - https://www.ons.gov.uk/file?uri=/peoplepopulationandcommunity/personalandhouseholdfinances/incomeandwealth/datasets/totalwealthwealthingreatbritain/july2006tojune2016andapril2014tomarch2022/totalwealthtables.xlsx
     transferability_score: medium
     valid_range: "alpha in [1.1, 2.5]"
     applies_to: all families; top-tail correction layer
@@ -365,7 +366,7 @@ assumptions:
       value: 1
     source: Finance Act 2026; GOV.UK technical note
     source_urls:
-      - https://www.gov.uk/government/publications/reforming-inheritance-tax-unused-pension-funds-and-death-benefits/inheritance-tax-on-unused-pension-funds-and-death-benefits
+      - https://www.gov.uk/government/publications/inheritance-tax-on-pensions-technical-note/technical-note-inheritance-tax-on-pensions
     transferability_score: high
     valid_range: "n/a"
     applies_to: Family D baseline
