@@ -11,11 +11,12 @@ Last updated: 2026-06-05
 
 This section supersedes the older handoff snapshots below.
 
-## ▶️ Live state (2026-06-05 PM) — #349 + #350 MERGED, #351 open & fully reviewed
+## ▶️ Live state (2026-06-05 PM) — #349 + #350 + #351 MERGED, #352 open & reviewed
 
-This session drained both aged PRs (each with the full adversarial gate: real
-findings of all severities fixed, every bot thread resolved, CI green) and opened
-one new reviewed PR. The loop is running per Chris's standing instruction.
+This session drained the two aged PRs AND the new static-publish PR (each with the
+full adversarial gate: real findings of all severities fixed, every bot thread
+resolved, CI green), and opened one more reviewed PR (#352). Loop is running per
+Chris's standing instruction.
 
 - **#349 MERGED** (`8c17153`): live `/simulator` scenario page. Review caught TWO
   real `useFetch` stale-write races the prior handoff had wrongly called "fixed":
@@ -28,27 +29,31 @@ one new reviewed PR. The loop is running per Chris's standing instruction.
   PYTHONPATH; `frontend-install` → `npm install`; and the dependabot-auto-merge
   workflow now documents the 3rd prereq ("Allow GitHub Actions to create and approve
   PRs").
-- **#351 OPEN** (`feat/simulator-static-publish`) — publishes the simulator JSON +
-  `scenarios.json` index statically (via `generate_static_api.py`, AST-reading the
-  backend registry so no drift) and un-gates `/simulator`. **Fully reviewed**: 2
-  gemini + 3 codex findings all addressed, incl. a real one — the nav link was on
-  **dead `NavBar.vue`**; moved to the actually-rendered `AppHeader` (desktop+mobile,
-  new `nav.simulator` i18n key). Also: build-time contract-key validation +
-  fail-on-missing-fixture + module-level-only AST scan. CI green, 0 unresolved
-  threads. **It is the newest PR → let it age, then merge FIRST next cycle** (then
-  open the next task PR above whatever follows).
+- **#351 MERGED** (`8c17153`'s successor; static publish): publishes the simulator
+  JSON + `scenarios.json` index statically (via `generate_static_api.py`, AST-reading
+  the backend registry so no drift) and un-gates `/simulator`. Review caught a real
+  one — the nav link was on **dead `NavBar.vue`**; moved to the actually-rendered
+  `AppHeader` (desktop+mobile, new `nav.simulator` i18n key). Also: build-time
+  contract-key validation + fail-on-missing-fixture + module-level-only AST scan.
+- **#352 OPEN** (`fix/test-validate-fixtures`): fixes the stale `test_valid_file_passes`
+  fixture (it wrote 200 identical all-`1` rows, violating the later-added
+  dtype/range/unique-key CHECKS). New schema-aware `_synth_valid_csv` + a negative
+  `test_duplicate_keys_reported` (from adversarial review). **Real committed data was
+  already clean** — purely a stale test. 9/9 pipeline tests pass; CI green; 0
+  unresolved threads; reviewed (subagent + gemini/codex). Newest PR → age, then
+  merge first next cycle.
 - **Simulator pipeline is now fully live end-to-end**: synth → engine (MC, default
   OFF) → `to_dashboard_json` → `/api/simulator` → `/simulator` scenario page →
-  static publish + nav link.
+  static publish + nav link (live on the deployed site).
 
 ## 🔜 Seeded next tasks (highest-leverage first) — for the endless loop
 
-1. **Drain #351** once aged + still green + no new threads (`gh pr merge 351
+1. **Drain #352** once aged + still green + no new threads (`gh pr merge 352
    --merge --delete-branch`).
-2. **Data-validation failures (data-integrity)** — `make pipeline-test`
-   (`test_validate.py::test_valid_file_passes`) fails with 12 errors: DTYPE
-   int64-vs-float (3 CSVs), DUPES 199 dup rows (5 CSVs), RANGE year-below-min (3
-   CSVs). Decide validator-vs-data and fix. See `tasks/inbox.md` Reliability.
+2. **Get automation + root test suites into CI** (deferred from #350) — so failures
+   like the #352 one can't stay invisible. Add a CI job running `make pipeline-test`
+   (+ root tests). This is the natural next PR after #352 (it makes #352's fix
+   guarded).
 3. **`to_dashboard_json` caveat + provenance URLs** (upstream `packages/wealthlens-sim`):
    surface the synthetic-population caveat in the contract itself; add URL +
    access-date to provenance sources (currently ids/strings only).
