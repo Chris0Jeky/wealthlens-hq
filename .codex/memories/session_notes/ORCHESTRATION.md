@@ -11,12 +11,14 @@ Last updated: 2026-06-05
 
 This section supersedes the older handoff snapshots below.
 
-## ▶️ Live state (2026-06-05 PM) — #349–#352 MERGED, #353 open & reviewed
+## ▶️ Live state (2026-06-05 PM) — #349–#353 MERGED, #354 open & reviewed
 
-This session drained #349, #350, #351, #352 (each with the full adversarial gate:
-real findings of all severities fixed, every bot thread resolved, CI green), and
-opened one more reviewed PR (#353, CI suites). Loop is running per Chris's standing
-instruction.
+This session drained #349–#353 (each with the full adversarial gate: real findings
+of all severities fixed, every bot thread resolved, CI green), and opened one more
+reviewed PR (#354, synthetic-pop caveat in the contract). Loop is running per
+Chris's standing instruction. (Known local quirk: a stale `.claude/worktrees`
+editable install of wealthlens_sim — harness-managed, left as-is; CI unaffected,
+the generator already inserts packages/wealthlens-sim onto the path.)
 
 - **#349 MERGED** (`8c17153`): live `/simulator` scenario page. Review caught TWO
   real `useFetch` stale-write races the prior handoff had wrongly called "fixed":
@@ -40,14 +42,19 @@ instruction.
   later-added dtype/range/unique-key CHECKS). Schema-aware `_synth_valid_csv` + a
   negative `test_duplicate_keys_reported` (from review). Real committed data was
   always clean — purely a stale test.
-- **#353 OPEN** (`chore/ci-pipelines`): adds `ci-pipelines.yml` to EXECUTE the 3
+- **#353 MERGED** (`chore/ci-pipelines`): adds `ci-pipelines.yml` to EXECUTE the 3
   previously-unrun Python suites (root `tests/` 156, dashboard `tests/` 4,
-  `automation/data-pipelines/tests/` validate 6) — closes the gap that let #352's
-  fixture fail invisibly. 3 separate pytest invocations (two `test_validate.py`
-  files → import-mismatch if combined). Reviewed by 2 independent subagents (A: httpx
-  concern empirically refuted by the green CI run + ci-backend using the same
-  `.[dev]`; B: added a weekly cron + run-whole-dir-with-ignore so new pipeline test
-  files can't slip the filter). CI `test` job green on a clean runner. Newest PR →
+  `automation/data-pipelines/tests/` validate 6) — closed the gap that let #352's
+  fixture fail invisibly. 3 separate pytest invocations + weekly cron + run-whole-dir
+  --ignore (so new pipeline test files can't slip the filter).
+- **#354 OPEN** (`feat/contract-synthetic-caveat`): emits the synthetic-population
+  caveat from `to_dashboard_json` itself (was generator-only), conditioned on
+  `version_tag.population_version` startswith `synth`; generator's duplicate prepend
+  removed. Served fixtures byte-identical (drift-guard confirms); goldens regenerated;
+  775 sim tests pass. Reviewed by 2 subagents — both flagged the caveat keys off a
+  version-string heuristic (fail-OPEN if a synth pop is mistagged) not ground-truth
+  `is_synthetic` (dropped at engine boundary); fix seeded in inbox (needs a
+  non-synth provider to test, coupled to the real WAS/FRS provider). Newest PR →
   age, then merge first next cycle.
 - **Simulator pipeline is now fully live end-to-end**: synth → engine (MC, default
   OFF) → `to_dashboard_json` → `/api/simulator` → `/simulator` scenario page →
@@ -55,11 +62,15 @@ instruction.
 
 ## 🔜 Seeded next tasks (highest-leverage first) — for the endless loop
 
-1. **Drain #353** once aged + still green + no new bot threads (`gh pr merge 353
-   --merge --delete-branch`). (#352's CI-suites gap is now closed by it.)
-2. **`to_dashboard_json` caveat + provenance URLs** (upstream `packages/wealthlens-sim`):
-   surface the synthetic-population caveat in the contract itself; add URL +
-   access-date to provenance sources (currently ids/strings only).
+1. **Drain #354** once aged + still green + no new bot threads (`gh pr merge 354
+   --merge --delete-branch`). (Caveat-in-contract done; goal A of the provenance task.)
+2. **Provenance URLs — goal B2 (doable now)**: in `to_dashboard_json`, resolve
+   `population_provenance_ids` (e.g. `ons-was-wealth`, `ons-families-households-2022`)
+   against `registries/sources.yml` (already holds real url+access_date via
+   `find_registries_dir()`) and emit a structured `population_provenance` block
+   {id,name,url,access_date,licence}; keep the id list for back-compat; synth.* config
+   ids have no URL (not external sources). Additive → no schema bump needed. B1 (URLs
+   for assumption citation strings) needs verified citations — separate, no fabrication.
 3. **IHT calibration**: synth IHT sums stock liability (~£1009bn) vs ~£7-8bn real;
    IHT scenarios stay excluded until fixed.
 4. **Remaining deferred CI hardening (from #350 desc)**: enable mypy on
