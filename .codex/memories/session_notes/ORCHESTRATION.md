@@ -5,32 +5,41 @@
 >
 > **CRITICAL**: Update this file BEFORE every compaction risk (long tool calls, large diffs).
 
-Last updated: 2026-06-05 (session 4 — loop RESUMED by Chris; B1 citation-URLs in progress)
+Last updated: 2026-06-05 (session 4 — #369 MERGED; #370 open/aging; picking task 3)
 
-## ▶️ SESSION 4 (2026-06-05) — LOOP RESUMED. Working B1: assumption citation URLs
+## ▶️ SESSION 4 (2026-06-05) — LOOP RESUMED. B1 merged (#369); #370 aging
 
-Chris re-started the endless loop (session 4). Recovery: read this block, then
-`gh pr list --state open` (expect 0 at session start), then continue B1.
+Chris re-started the endless loop (session 4). Started from main `7e70a49`, 0 open PRs.
 
-- **Start state:** main `7e70a49`, 0 open PRs, 0 open issues, clean tree, only `main`.
-  837 sim tests green at start.
-- **TASK IN FLIGHT — B1 (assumption-source citation URLs):** branch
-  `feat/assumption-citation-urls`. Adds web-VERIFIED canonical URLs (DOI/official, no
-  fabrication) to `registries/assumptions.yml`, surfaced through provenance. Approach:
-  add optional `source_urls: list[str]` to the `Assumption` schema (mirrors the
-  existing `source_url` in `schema/baselines.py`; default-empty = back-compat), thread
-  through `ResolvedAssumption` -> `collector` -> dashboard-JSON `assumptions_consumed`.
-  A background workflow (`wf_a1fb0e6d-ff1`, "citation-url-research") fans out one
-  researcher per ~21 cited works + an INDEPENDENT adversarial re-fetch verifier per URL
-  (anti-fabrication). Only `verdict==confirmed` URLs land in the YAML; problems get a
-  manual follow-up or are left out + noted.
-- **Merge discipline this loop** (solo, per deferred Q2): a PR may merge once it has 2
-  independent adversarial reviews + all bot threads resolved + green CI + has aged a
-  bit (ideally a newer PR sits above it). Keep a small aging backlog; never `--delete-branch`
-  a stacked base ([[feedback_stacked_merge_delete_branch]]).
-- **Backlog after B1:** base-share research -> behavioural engine-apply (flagship,
-  BLOCKED on cited base shares — see DEFERRED Q1); frontend visibility
-  (decile/nation/provenance in SimulatorView); #365 call-site tests (boe/productivity/wid).
+- **✅ #369 MERGED (`c59082a`) — B1 assumption citation URLs.** Added web-VERIFIED
+  canonical URLs (DOI/official, no fabrication) to `registries/assumptions.yml` via an
+  optional `source_urls` field, threaded through `ResolvedAssumption` -> collector ->
+  dashboard JSON, plus the engine-injected enforcement assumption. A research workflow
+  (one researcher + one INDEPENDENT re-fetch verifier per ~21 works) confirmed 19/21
+  auto; the rest verified by hand. 2 adversarial reviews (citation-integrity +
+  code-regression) + 2 bot rounds (gemini/CodeQL, then codex P2) all addressed. The
+  reviews caught + fixed real issues: a mis-cited non-dom paper (now Advani/Burgherr/
+  Summers 2022), a stale APR/BPR URL (£1m vs the current £2.5m), the WAS-quality source
+  conflation, Agrawal year, validator hardening (urlparse host + case-insensitive +
+  control-char reject), and empty enforcement/alpha/pension URLs. Schema stayed 1.3
+  (source_urls is additive — documented decision, not a bump).
+- **🔶 #370 OPEN/aging — `test/pipeline-finite-cells-callsites` (worktree wt2).** #365
+  follow-up: call-site NaN-guard regression tests for boe/productivity/wid. 2 reviews
+  (guard-efficacy mutation-checked + coverage); fixed a real BoE **cpi** mutation gap
+  + vectorised the helper (gemini). CI green, gemini thread resolved. **Mergeable once
+  a newer PR sits above it** (task 3).
+- **SEEDED follow-up (from #370 coverage review):** the OTHER 4 `to_finite_float` call
+  sites — `fetch_tax_composition` (L180), `fetch_ons_gdhi` (L291), `fetch_ons_housing`
+  (L90), `fetch_ons_wealth` (L248/309/313) — are guarded but lack call-site regression
+  tests. A future PR should add them (mirror `test_pipeline_finite_cells` / the mutation
+  pattern). Noted honestly in that file's docstring.
+- **Merge discipline this loop** (solo, per deferred Q2): merge once 2 independent
+  adversarial reviews + all bot threads resolved + green CI + aged + a newer PR above it.
+  Never `--delete-branch` a stacked base ([[feedback_stacked_merge_delete_branch]]).
+- **Backlog / next:** task 3 candidates — (a) frontend visibility: surface the consumed
+  assumptions' provenance + the NEW source_urls as clickable citations in SimulatorView
+  ("make it visible", builds on B1); (b) the 4-fetcher coverage above; (c) base-share
+  research -> behavioural engine-apply (flagship, BLOCKED on cited base shares — DEFERRED Q1).
 - **Deferred questions for Chris:** see "❓ DEFERRED QUESTIONS" near the end (Q1-Q4 from
   session 3 still stand; will add any new ones at wrap-up).
 
