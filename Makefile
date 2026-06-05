@@ -27,7 +27,7 @@ ANALYSIS_DIR := automation/analysis
         ci-quick ci-full \
         frontend-install frontend-build frontend-dev frontend-lint frontend-test frontend-typecheck \
         backend-install backend-test backend-lint backend-format \
-        pipeline-test pipelines validate test-hooks clean
+        pipeline-test pipelines validate automation-lint test-hooks clean
 
 # ── Help ──────────────────────────────────────────────────────────────────
 help: ## Show all targets
@@ -77,6 +77,9 @@ pipeline-test: ## Run data-pipeline unit tests (offline)
 	# PYTHONPATH so tests can import the pipeline modules without ModuleNotFoundError.
 	PYTHONPATH=$(PIPELINE_DIR) $(PYTHON) -m pytest $(PIPELINE_DIR)/tests/ -q
 
+automation-lint: ## Type-check automation/ with mypy (fails loudly on any error)
+	$(PYTHON) -m mypy automation
+
 validate: ## Validate all processed CSV datasets
 	$(PYTHON) $(PIPELINE_DIR)/validate.py
 
@@ -89,7 +92,7 @@ pipelines: ## Run all working data pipelines (fetches live data)
 # ── Aggregate targets ─────────────────────────────────────────────────────
 install: backend-install frontend-install ## Install all dependencies
 
-lint: backend-lint frontend-lint ## Run all linters
+lint: backend-lint frontend-lint automation-lint ## Run all linters
 format: backend-format ## Auto-format all code
 test: backend-test frontend-test ## Run all tests
 

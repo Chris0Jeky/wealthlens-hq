@@ -15,6 +15,9 @@ dev = [
     "pandas-stubs>=2.1",
     "types-requests>=2.31",
     "httpx>=0.27",
+    # Needed to type-check automation/og-images (it imports PIL); Pillow ships
+    # its own py.typed marker, so no separate stub package is required.
+    "Pillow>=10",
 ]
 pipelines = [
     "requests>=2.31",
