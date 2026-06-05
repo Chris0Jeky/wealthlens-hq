@@ -11,21 +11,19 @@ Last updated: 2026-06-05
 
 This section supersedes the older handoff snapshots below.
 
-## ▶️ Live state (2026-06-05 PM) — #349–#356 MERGED, #357 open & reviewed (SHA-pin)
+## ⏸️ Live state (2026-06-05 PM) — #349–#357 MERGED, NO open PRs; LOOP PAUSED (Chris wrapped)
 
-This session drained #349–#356 (full adversarial gate each); latest **#356 MERGED**
-(IHT Tier A: stock→flow mortality scalar, £1009bn→£21.3bn, IHT still excluded).
-Opened **#357** (SHA-pin all GitHub Actions). Loop running per Chris's standing
-instruction. Next: drain #357, then the CI-hardening queue.
+Chris ended the autonomous loop on 2026-06-05; the scheduled wakeup was cancelled.
+Clean slate: **9 PRs merged this session (#349–#357)**, main green, no open PRs.
+Resume from the seeded task queue below when restarting. 3 decisions are pending
+Chris's answer (asked at wrap-up): IHT v0.1 depth (Tier A done+excluded vs Tier B),
+ruff-format enforcement (72-file reformat — go/no-go), BGV Autumn 2026 (his call by
+2026-06-21). #357 was merged at wrap-up (fully reviewed, both approvals clean).
 
-- **#357 OPEN** (`chore/ci-sha-pin-actions`): SHA-pin all 10 workflows' GitHub
-  Actions to commit hashes (26 pins, `@<sha> # vN`) — supply-chain hardening (CI has
-  write scopes: dependabot-auto-merge + Pages deploy). SHAs resolved via
-  `gh api repos/<action>/commits/<vN>`; dependabot github-actions ecosystem already
-  configured to maintain them. **2 subagent reviews, BOTH clean APPROVE, zero
-  findings** (all 9 SHAs independently re-verified via gh api; 0 unpinned; no version
-  change). CI green (the pinned workflows run green); 0 bot threads. Newest PR → age,
-  then merge first next cycle.
+- **#357 MERGED** (`chore/ci-sha-pin-actions`): SHA-pinned all 10 workflows' GitHub
+  Actions to commit hashes (26 pins, `@<sha> # vN`) — supply-chain hardening. 2
+  subagent reviews, both clean APPROVE (all 9 SHAs re-verified via gh api). dependabot
+  github-actions ecosystem maintains them.
 - **#356 MERGED** (IHT Tier A): see `docs/IHT_CALIBRATION.md`. Per-household-rate vs
   per-person-liability grain (~1.7x) + provenance-wiring + Gate-3 baseline are
   documented Tier B items. CI-hardening assessment (this iteration): ruff-format is
@@ -80,9 +78,7 @@ packages/wealthlens-sim onto the path.)
 
 ## 🔜 Seeded next tasks (highest-leverage first) — for the endless loop
 
-1. **Drain #357** once aged + still green + no new bot threads (`gh pr merge 357
-   --merge --delete-branch`). (SHA-pin done.)
-2. **Remaining CI hardening** (SHA-pin DONE in #357): (a) mypy on automation/ +
+1. **Remaining CI hardening** (SHA-pin DONE in #357): (a) mypy on automation/ +
    tests/ — 32 pre-existing errors across 13 files, do INCREMENTALLY per-dir, fix the
    real ones (e.g. test_simulator_dashboards.py:47 object-minus-float; tests/ can't
    find app.routers = a mypy path config issue); (b) deploy build-gate (decide
