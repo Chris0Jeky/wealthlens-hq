@@ -21,14 +21,15 @@ Every concrete action item extracted from research. Triage into active-sprint, b
   synthetic population can't fail open by being mistagged. Tested via a `model_copy`
   flip to `is_synthetic=False`. (A genuine real-microdata provider is still the
   separate WAS/FRS task below.)
-- [ ] **Add URL + access date to provenance sources.** The served provenance cites
-  source strings / opaque population source ids, not URLs — the repo data-integrity
-  rule wants URL + access date per source. Two parts: (B2, doable now) resolve
-  `population_provenance_ids` (e.g. `ons-was-wealth`) against `registries/sources.yml`
-  (which already holds real url+access_date) into a structured `population_provenance`
-  block; (B1, needs sourcing) the assumption `source` citation strings (e.g.
-  "Vermeulen 2018") have no registry URL — add verified citations to
-  `registries/assumptions.yml`, do NOT fabricate. Upstream `wealthlens-sim`.
+- [x] **Add URL + access date to population provenance sources (B2).**
+  [completed: 2026-06-05, PR #355] `to_dashboard_json` now emits a
+  `population_provenance` block resolving `population_provenance_ids` against
+  `registries/sources.yml` to {id,name,url,access_date,licence} (real URLs);
+  `synth.*` params id-only.
+- [ ] **B1: URLs for assumption `source` citation strings** (e.g. "Vermeulen 2018")
+  — these have no `registries/sources.yml` entry. Add verified citations to
+  `registries/assumptions.yml` (do NOT fabricate); then surface them in the
+  `assumptions_consumed` provenance. Upstream `wealthlens-sim`.
 - [ ] **Calibrate synthetic IHT** before serving any IHT scenario: the synth IHT
   sums each household's stock estate liability across the grossed-up population (not
   an annual death/estate-flow cohort), giving ~£1,009bn vs ~£7-8bn real. IHT
