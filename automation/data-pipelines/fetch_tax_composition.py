@@ -104,7 +104,7 @@ def _try_parse_live(xlsx_path: Path) -> pd.DataFrame | None:
     # Look for the annual totals sheet
     annual_sheet = None
     for name in xl.sheet_names:
-        lower = name.lower()
+        lower = str(name).lower()
         if "annual" in lower or "a1" in lower:
             annual_sheet = name
             break
@@ -175,8 +175,11 @@ def _try_parse_live(xlsx_path: Path) -> pd.DataFrame | None:
         for tax_key, row_idx in tax_rows.items():
             val = df_raw.iloc[row_idx, col_idx]
             try:
-                # Values are typically in £millions in the HMRC sheet
-                val_float = float(val)
+                # Values are typically in £millions in the HMRC sheet. Coerce via
+                # str() first so comma-grouped text ("1,234") parses, and so the
+                # dynamically-typed pandas cell satisfies float()'s signature; the
+                # except below still skips any genuinely non-numeric cell.
+                val_float = float(str(val).replace(",", "").strip())
                 # Convert from £m to £bn
                 row_data[tax_key] = round(val_float / 1000, 1)
             except (ValueError, TypeError):

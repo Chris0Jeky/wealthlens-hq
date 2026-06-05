@@ -65,6 +65,15 @@ jobs:
       - name: Install dev tools
         run: pip install ".[dev]"
 
+      # Type-check automation/ (data pipelines, og-images, analysis, social-media).
+      # ci-backend lints the backend and ci-sim type-checks the sim package, but
+      # nothing gated automation/ until now. wealthlens_sim imports resolve to `Any`
+      # here (untyped boundary — see the pyproject [tool.mypy] override); the one
+      # automation sim consumer is covered at runtime by ci-sim's
+      # test_simulator_dashboards.py instead.
+      - name: Type-check automation/
+        run: python -m mypy automation
+
       # Root tests/ (pipeline + API + analysis). conftest.py wires sys.path
       # (automation/analysis, backend, data-pipelines) and seeds CSV fixtures.
       - name: Root test suite

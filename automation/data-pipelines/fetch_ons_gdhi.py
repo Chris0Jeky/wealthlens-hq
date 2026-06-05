@@ -160,13 +160,13 @@ def process(xlsx_path: Path | None) -> tuple[pd.DataFrame, bool]:
         df = _build_fallback_data()
         return _save_and_return(df), True
 
-    df = _parse_gdhi_per_head(df_raw)
-    if df is None or df.empty:
+    parsed = _parse_gdhi_per_head(df_raw)
+    if parsed is None or parsed.empty:
         logger.warning("Could not parse GDHI per-head data. Falling back.")
         df = _build_fallback_data()
         return _save_and_return(df), True
 
-    return _save_and_return(df), False
+    return _save_and_return(parsed), False
 
 
 def _save_and_return(df: pd.DataFrame) -> pd.DataFrame:
@@ -186,8 +186,10 @@ def _find_per_head_sheet(xl: pd.ExcelFile) -> str | None:
     2. Look for any sheet with "per head" in the name.
     3. Scan the first few rows of each sheet for "per head" text.
     """
-    # Direct name match
-    for name in xl.sheet_names:
+    # Direct name match. Sheet names are typed int | str by the pandas stubs, so
+    # coerce to str before string ops / returning the declared str | None.
+    for raw_name in xl.sheet_names:
+        name = str(raw_name)
         stripped = name.strip()
         if stripped == "Table 3":
             return name
@@ -195,7 +197,8 @@ def _find_per_head_sheet(xl: pd.ExcelFile) -> str | None:
             return name
 
     # Content scan — read first 10 rows of each sheet
-    for name in xl.sheet_names:
+    for raw_name in xl.sheet_names:
+        name = str(raw_name)
         try:
             df_peek = pd.read_excel(
                 xl, sheet_name=name, header=None, nrows=10, engine="openpyxl",
@@ -283,7 +286,10 @@ def _parse_gdhi_per_head(df_raw: pd.DataFrame) -> pd.DataFrame | None:
 
         val = df_raw.iloc[i, latest_col]
         try:
-            gdhi = float(val)
+            # Coerce via str() first so comma-grouped text ("14,200") parses, and so
+            # the dynamically-typed pandas cell satisfies float(); the except below
+            # still skips any genuinely non-numeric cell.
+            gdhi = float(str(val).replace(",", "").strip())
         except (ValueError, TypeError):
             continue
 
