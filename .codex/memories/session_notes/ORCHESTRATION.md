@@ -33,11 +33,14 @@ all bot threads resolved + CI green. Summary:
   `revenue_response_factor(channels, rate_change_pp)` = Π max(0, 1+e*dtau) (per-channel
   clamped ≥0), pure, 25 tests, engine-free. 2 reviews (economics PASS; API 2 HIGH
   provenance-injectivity fixed) + 3 bot threads (incl. an even-over-eroding masking bug).
-- **PR B = #367 OPEN** (`feat/behavioural-registry-loader`, base=main after retarget):
+- **PR B = #367 OPEN, REVIEWED & READY** (`feat/behavioural-registry-loader`, base=main):
   `behavioural/registry.py` `load_behavioural_channels()` sources channels from the cited
-  registry (migration/avoidance only; excludes compliance/valuation LEVEL fractions). 8
-  tests incl. a real-registry integration test. 834 sim tests. **NEXT TICK: 2 reviews on
-  #367, then merge (needs a PR above it first).**
+  registry (migration/avoidance only; excludes compliance/valuation LEVEL fractions). 11
+  tests incl. real-registry integration. 2 adversarial reviews + 3 gemini threads resolved;
+  both reviews' HIGH (duplicate-domains double-count → dedup via dict.fromkeys) +
+  type-safety (Literal point, up-front validation) addressed. 837 sim tests.
+  **NEXT TICK: confirm CI green → merge #367 (--merge --delete-branch; nothing stacked).
+  Then DECIDE: base-share research (option a below) vs pivot to backlog.**
 
 ⚠️ **The engine REVENUE-APPLICATION step is BLOCKED on cited base-share data.** The #366
 economics review (I2) was clear: applying a sub-population elasticity (non-dom stock ~%
