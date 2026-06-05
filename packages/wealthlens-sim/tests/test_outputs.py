@@ -279,3 +279,39 @@ class TestDataIntegritySurfacing:
     def test_root_flag_mirrors_nested_provenance_complete(self):
         dash = to_dashboard_json(_golden_result())
         assert dash["provenance_complete"] == dash["provenance"]["complete"]
+
+
+class TestPopulationProvenance:
+    """population_provenance resolves registered data sources to URL + access date."""
+
+    def test_registered_source_resolved_with_url_and_access_date(self):
+        dash = to_dashboard_json(_golden_result())
+        by_id = {e["id"]: e for e in dash["population_provenance"]}
+        was = by_id["ons-was-wealth"]
+        assert was["url"].startswith("https://")
+        assert was["access_date"]  # non-empty (the data-integrity rule)
+        assert was["name"]
+        assert was["licence"]
+
+    def test_synth_params_are_id_only(self):
+        dash = to_dashboard_json(_golden_result())
+        synth = [e for e in dash["population_provenance"] if e["id"].startswith("synth.")]
+        assert synth, "expected synth.* generation-parameter ids"
+        # Generation parameters are config inputs, not external sources: id only.
+        assert all(set(e) == {"id"} for e in synth)
+
+    def test_order_matches_ids_and_covers_all(self):
+        # Order-preserving and 1:1 with the flat id list kept for back-compat.
+        dash = to_dashboard_json(_golden_result())
+        assert [e["id"] for e in dash["population_provenance"]] == dash["population_provenance_ids"]
+
+    def test_missing_registry_degrades_to_id_only(self, monkeypatch: pytest.MonkeyPatch):
+        # If the source index can't load, resolution degrades to id-only (no crash,
+        # no regression vs. the bare id list) rather than breaking the contract.
+        # Replacing the whole function sidesteps the lru_cache; monkeypatch restores it.
+        from wealthlens_sim import outputs
+
+        monkeypatch.setattr(outputs, "_source_index", lambda: {})
+        dash = to_dashboard_json(_golden_result())
+        assert all(set(e) == {"id"} for e in dash["population_provenance"])
+        assert [e["id"] for e in dash["population_provenance"]] == dash["population_provenance_ids"]
