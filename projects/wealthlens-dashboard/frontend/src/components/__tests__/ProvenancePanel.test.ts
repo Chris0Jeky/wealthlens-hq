@@ -1,7 +1,21 @@
 import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
 import ProvenancePanel from '@/components/ProvenancePanel.vue'
-import type { ConsumedAssumption } from '@/types/simulator'
+import type {
+  ConsumedAssumption,
+  PopulationProvenanceEntry,
+} from '@/types/simulator'
+
+const POP_SOURCES: PopulationProvenanceEntry[] = [
+  {
+    id: 'ons-was-wealth',
+    name: 'ONS Wealth and Assets Survey (WAS)',
+    url: 'https://www.ons.gov.uk/file?uri=/x/totalwealthtables.xlsx',
+    access_date: '2026-05-30',
+    licence: 'OGL-3.0',
+  },
+  { id: 'synth.pareto_alpha' }, // id-only generation parameter — not a citable source
+]
 
 const ALPHA: ConsumedAssumption = {
   assumption_id: 'toptail.pareto_alpha.overall.v1',
@@ -107,5 +121,79 @@ describe('ProvenancePanel', () => {
     const linkItems = wrapper.findAll('section > ul > li > ul > li')
     expect(linkItems.length).toBe(2)
     expect(linkItems.every((li) => li.find('a').exists())).toBe(true)
+  })
+
+  it('lists population data sources with a URL (and skips id-only synth params)', () => {
+    const wrapper = mount(ProvenancePanel, {
+      props: { assumptions: [ALPHA], populationSources: POP_SOURCES },
+    })
+    expect(wrapper.text()).toContain('Population data sources')
+    expect(wrapper.text()).toContain('ONS Wealth and Assets Survey')
+    expect(wrapper.text()).toContain('accessed 2026-05-30')
+    expect(wrapper.text()).toContain('OGL-3.0')
+    // The id-only synth generation parameter is not a citable source.
+    expect(wrapper.text()).not.toContain('synth.pareto_alpha')
+    // Host-exact match (not a substring) — avoids CodeQL's URL-substring rule.
+    const onsLink = wrapper.findAll('a').find((a) => {
+      const href = a.attributes('href')
+      return href ? new URL(href).hostname === 'www.ons.gov.uk' : false
+    })
+    expect(onsLink).toBeTruthy()
+  })
+
+  it('renders the section for population sources even with no assumptions', () => {
+    const wrapper = mount(ProvenancePanel, {
+      props: { assumptions: [], populationSources: POP_SOURCES },
+    })
+    expect(wrapper.find('section').exists()).toBe(true)
+    expect(wrapper.text()).toContain('Population data sources')
+    // No assumptions -> the "Modelling assumptions" subsection heading is absent.
+    expect(wrapper.text()).not.toContain('Modelling assumptions')
+  })
+
+  it('gives both subsections a symmetric h3 heading for a clean SR outline', () => {
+    const wrapper = mount(ProvenancePanel, {
+      props: { assumptions: [ALPHA], populationSources: POP_SOURCES },
+    })
+    const h3s = wrapper.findAll('h3').map((h) => h.text())
+    expect(h3s).toContain('Modelling assumptions')
+    expect(h3s).toContain('Population data sources')
+  })
+
+  it('hides the population subsection when no source carries a URL', () => {
+    const wrapper = mount(ProvenancePanel, {
+      props: { assumptions: [ALPHA], populationSources: [{ id: 'synth.x' }] },
+    })
+    expect(wrapper.text()).not.toContain('Population data sources')
+  })
+
+  it('does not render a dangling separator when a source has a licence but no access date', () => {
+    const wrapper = mount(ProvenancePanel, {
+      props: {
+        assumptions: [],
+        populationSources: [
+          { id: 'x', name: 'X', url: 'https://example.org/x', licence: 'OGL-3.0' },
+        ],
+      },
+    })
+    // The "·" separator only appears between an access date and a licence.
+    expect(wrapper.text()).toContain('OGL-3.0')
+    expect(wrapper.text()).not.toContain('·')
+  })
+
+  it('disambiguates two same-host population sources (WCAG 2.4.4)', () => {
+    const wrapper = mount(ProvenancePanel, {
+      props: {
+        assumptions: [],
+        populationSources: [
+          { id: 'a-was', name: 'WAS', url: 'https://www.ons.gov.uk/file/totalwealth.xlsx' },
+          { id: 'b-fam', name: 'Families', url: 'https://www.ons.gov.uk/file/households.xlsx' },
+        ],
+      },
+    })
+    const texts = wrapper.findAll('a').map((l) => l.text().trim())
+    expect(texts).toHaveLength(2)
+    expect(new Set(texts).size).toBe(2) // distinct labels despite the shared host
+    expect(texts.every((t) => t.startsWith('ons.gov.uk/'))).toBe(true)
   })
 })
