@@ -54,6 +54,19 @@ export interface SimulatorProvenance {
 }
 
 /**
+ * One population-provenance entry from `population_provenance[]`. A registered data
+ * source resolves to a URL + access date (a citable source); a synthetic generation
+ * parameter is `id`-only (a config input, not an external source to cite).
+ */
+export interface PopulationProvenanceEntry {
+  id: string
+  name?: string
+  url?: string
+  access_date?: string
+  licence?: string
+}
+
+/**
  * The dashboard JSON contract served by `GET /api/simulator/scenarios/{id}` — the
  * full `to_dashboard_json` payload. Only the fields the scenario page reads are
  * modelled; the contract carries more (per-nation/decile intervals, version_tag).
@@ -74,6 +87,12 @@ export interface SimulatorDashboardData {
    * degrades gracefully (the panel hides) instead of crashing the whole view.
    */
   provenance?: SimulatorProvenance
+  /**
+   * The data sources + generation parameters behind the synthetic population. Only
+   * registered sources carry a URL/access date; synth parameters are id-only.
+   * Optional for the same graceful-degradation reason as `provenance`.
+   */
+  population_provenance?: PopulationProvenanceEntry[]
 }
 
 /** One scenario in the `GET /api/simulator/` listing. */

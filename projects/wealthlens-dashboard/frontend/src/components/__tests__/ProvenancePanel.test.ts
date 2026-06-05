@@ -1,7 +1,21 @@
 import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
 import ProvenancePanel from '@/components/ProvenancePanel.vue'
-import type { ConsumedAssumption } from '@/types/simulator'
+import type {
+  ConsumedAssumption,
+  PopulationProvenanceEntry,
+} from '@/types/simulator'
+
+const POP_SOURCES: PopulationProvenanceEntry[] = [
+  {
+    id: 'ons-was-wealth',
+    name: 'ONS Wealth and Assets Survey (WAS)',
+    url: 'https://www.ons.gov.uk/file?uri=/x/totalwealthtables.xlsx',
+    access_date: '2026-05-30',
+    licence: 'OGL-3.0',
+  },
+  { id: 'synth.pareto_alpha' }, // id-only generation parameter — not a citable source
+]
 
 const ALPHA: ConsumedAssumption = {
   assumption_id: 'toptail.pareto_alpha.overall.v1',
@@ -107,5 +121,38 @@ describe('ProvenancePanel', () => {
     const linkItems = wrapper.findAll('section > ul > li > ul > li')
     expect(linkItems.length).toBe(2)
     expect(linkItems.every((li) => li.find('a').exists())).toBe(true)
+  })
+
+  it('lists population data sources with a URL (and skips id-only synth params)', () => {
+    const wrapper = mount(ProvenancePanel, {
+      props: { assumptions: [ALPHA], populationSources: POP_SOURCES },
+    })
+    expect(wrapper.text()).toContain('Population data sources')
+    expect(wrapper.text()).toContain('ONS Wealth and Assets Survey')
+    expect(wrapper.text()).toContain('accessed 2026-05-30')
+    expect(wrapper.text()).toContain('OGL-3.0')
+    // The id-only synth generation parameter is not a citable source.
+    expect(wrapper.text()).not.toContain('synth.pareto_alpha')
+    const onsLink = wrapper
+      .findAll('a')
+      .find((a) => a.attributes('href')?.includes('ons.gov.uk'))
+    expect(onsLink).toBeTruthy()
+  })
+
+  it('renders the section for population sources even with no assumptions', () => {
+    const wrapper = mount(ProvenancePanel, {
+      props: { assumptions: [], populationSources: POP_SOURCES },
+    })
+    expect(wrapper.find('section').exists()).toBe(true)
+    expect(wrapper.text()).toContain('Population data sources')
+    // No assumptions -> the modelling-assumptions intro is absent.
+    expect(wrapper.text()).not.toContain('modelling assumptions behind')
+  })
+
+  it('hides the population subsection when no source carries a URL', () => {
+    const wrapper = mount(ProvenancePanel, {
+      props: { assumptions: [ALPHA], populationSources: [{ id: 'synth.x' }] },
+    })
+    expect(wrapper.text()).not.toContain('Population data sources')
   })
 })

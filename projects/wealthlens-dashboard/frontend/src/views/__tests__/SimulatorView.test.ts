@@ -65,6 +65,16 @@ const DASHBOARD: SimulatorDashboardData = {
       },
     ],
   },
+  population_provenance: [
+    {
+      id: 'ons-was-wealth',
+      name: 'ONS Wealth and Assets Survey (WAS)',
+      url: 'https://www.ons.gov.uk/file?uri=/x/totalwealthtables.xlsx',
+      access_date: '2026-05-30',
+      licence: 'OGL-3.0',
+    },
+    { id: 'synth.pareto_alpha' },
+  ],
 }
 
 describe('SimulatorView', () => {
@@ -114,13 +124,20 @@ describe('SimulatorView', () => {
       .find((a) => a.attributes('href') === 'https://doi.org/10.1111/roiw.12279')
     expect(cite).toBeTruthy()
     expect(cite?.attributes('rel')).toContain('noopener')
+    // The population data source is surfaced too.
+    expect(wrapper.text()).toContain('Population data sources')
+    expect(wrapper.text()).toContain('ONS Wealth and Assets Survey')
   })
 
-  it('degrades gracefully (chart still renders, no sources panel) when provenance is absent', () => {
+  it('degrades gracefully (chart still renders, no sources panel) when all provenance is absent', () => {
     scenarioList.value = SCENARIOS
-    dashboard.value = { ...DASHBOARD, provenance: undefined }
+    dashboard.value = {
+      ...DASHBOARD,
+      provenance: undefined,
+      population_provenance: undefined,
+    }
     const wrapper = mount(SimulatorView)
-    // The headline chart still renders; only the sources panel is hidden.
+    // The headline chart still renders; the whole sources panel is hidden.
     expect(wrapper.findComponent(ConfidenceFanChart).exists()).toBe(true)
     expect(wrapper.text()).not.toContain('Sources & assumptions')
   })
