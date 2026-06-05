@@ -117,3 +117,27 @@ def test_fallback_data_matches_known_figures():
     assert latest["cgt_bn"] == 15.0
     assert latest["iht_bn"] == 7.5
     assert latest["sdlt_bn"] == 12.0
+
+
+class TestToFiniteFloat:
+    """The numeric-cell parser: comma-grouped text parses; non-numeric AND blank
+    (NaN) cells are rejected so a blank source cell can't write a NaN £bn figure."""
+
+    def test_plain_and_comma_grouped(self) -> None:
+        from fetch_tax_composition import _to_finite_float
+
+        assert _to_finite_float(270.0) == 270.0
+        assert _to_finite_float("1,234") == 1234.0
+
+    def test_nan_and_inf_rejected(self) -> None:
+        from fetch_tax_composition import _to_finite_float
+
+        assert _to_finite_float(float("nan")) is None
+        assert _to_finite_float(float("inf")) is None
+
+    def test_non_numeric_rejected(self) -> None:
+        from fetch_tax_composition import _to_finite_float
+
+        assert _to_finite_float("n/a") is None
+        assert _to_finite_float("") is None
+        assert _to_finite_float(None) is None

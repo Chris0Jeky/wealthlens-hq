@@ -19,6 +19,7 @@ marked as such.
 from __future__ import annotations
 
 import logging
+import math
 from datetime import date
 from pathlib import Path
 
@@ -26,6 +27,23 @@ import pandas as pd
 import plotly.graph_objects as go
 import requests
 from chart_html import write_accessible_chart
+
+
+def _to_finite_float(value: object) -> float | None:
+    """Parse a spreadsheet cell to a *finite* float, or ``None`` if not numeric.
+
+    Coerces via ``str()`` so comma-grouped text ("1,234") parses and the
+    dynamically-typed pandas cell satisfies ``float()``. Returns ``None`` for a
+    genuinely non-numeric cell (``float()`` raises) **and** for a blank cell that
+    pandas reads as ``NaN``: ``str(nan)`` is ``"nan"``, which ``float()`` turns back
+    into a NaN that would otherwise be written into the published series. ``inf`` is
+    rejected the same way.
+    """
+    try:
+        parsed = float(str(value).replace(",", "").strip())
+    except (ValueError, TypeError):
+        return None
+    return parsed if math.isfinite(parsed) else None
 
 ROOT = Path(__file__).resolve().parents[2]
 DATA_DIR = ROOT / "projects" / "wealthlens-dashboard" / "data"
@@ -173,18 +191,15 @@ def _try_parse_live(xlsx_path: Path) -> pd.DataFrame | None:
         row_data: dict[str, object] = {"year": year_label}
         all_valid = True
         for tax_key, row_idx in tax_rows.items():
-            val = df_raw.iloc[row_idx, col_idx]
-            try:
-                # Values are typically in £millions in the HMRC sheet. Coerce via
-                # str() first so comma-grouped text ("1,234") parses, and so the
-                # dynamically-typed pandas cell satisfies float()'s signature; the
-                # except below still skips any genuinely non-numeric cell.
-                val_float = float(str(val).replace(",", "").strip())
-                # Convert from £m to £bn
-                row_data[tax_key] = round(val_float / 1000, 1)
-            except (ValueError, TypeError):
+            # Values are typically in £millions in the HMRC sheet. _to_finite_float
+            # parses comma-grouped text and rejects non-numeric AND blank (NaN) cells,
+            # so a blank cell drops the whole year rather than writing a NaN £bn.
+            val_float = _to_finite_float(df_raw.iloc[row_idx, col_idx])
+            if val_float is None:
                 all_valid = False
                 break
+            # Convert from £m to £bn
+            row_data[tax_key] = round(val_float / 1000, 1)
         if all_valid:
             records.append(row_data)
 

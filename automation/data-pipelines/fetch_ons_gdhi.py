@@ -21,6 +21,7 @@ average for context.
 from __future__ import annotations
 
 import logging
+import math
 import zipfile
 from datetime import date
 from pathlib import Path
@@ -32,6 +33,23 @@ from chart_html import write_accessible_chart
 
 logger = logging.getLogger(__name__)
 REQUEST_TIMEOUT_SECONDS = 90
+
+
+def _to_finite_float(value: object) -> float | None:
+    """Parse a spreadsheet cell to a *finite* float, or ``None`` if not numeric.
+
+    Coerces via ``str()`` so comma-grouped text ("14,200") parses and the
+    dynamically-typed pandas cell satisfies ``float()``. Returns ``None`` for a
+    genuinely non-numeric cell (``float()`` raises) **and** for a blank cell that
+    pandas reads as ``NaN``: ``str(nan)`` is ``"nan"``, which ``float()`` happily
+    turns back into a NaN that would otherwise slip past a downstream ``<= 0`` guard
+    and write a NaN into the published dataset. ``inf`` is rejected the same way.
+    """
+    try:
+        parsed = float(str(value).replace(",", "").strip())
+    except (ValueError, TypeError):
+        return None
+    return parsed if math.isfinite(parsed) else None
 
 try:
     from openpyxl.utils.exceptions import InvalidFileException
@@ -284,17 +302,11 @@ def _parse_gdhi_per_head(df_raw: pd.DataFrame) -> pd.DataFrame | None:
         if not region or region == "nan" or region.startswith("Source"):
             continue
 
-        val = df_raw.iloc[i, latest_col]
-        try:
-            # Coerce via str() first so comma-grouped text ("14,200") parses, and so
-            # the dynamically-typed pandas cell satisfies float(); the except below
-            # still skips any genuinely non-numeric cell.
-            gdhi = float(str(val).replace(",", "").strip())
-        except (ValueError, TypeError):
-            continue
-
-        # Skip rows with non-positive values (section headers or footnotes)
-        if gdhi <= 0:
+        # Skip non-numeric / blank (NaN) cells and non-positive values (section
+        # headers or footnotes). _to_finite_float rejects NaN so a blank cell can't
+        # write a NaN GDHI into the published dataset.
+        gdhi = _to_finite_float(df_raw.iloc[i, latest_col])
+        if gdhi is None or gdhi <= 0:
             continue
 
         itl_code = ""
