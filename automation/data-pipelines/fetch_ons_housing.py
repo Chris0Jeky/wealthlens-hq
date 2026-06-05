@@ -96,17 +96,30 @@ def process(xlsx_path: Path) -> pd.DataFrame:
 
     # Rows 2+ have data: code, name, values
     records = []
+    dropped_present = 0  # present-but-unparseable cells (text/footnote/non-finite)
     for i in range(2, len(df_raw)):
         region = str(df_raw.iloc[i, 1]).strip()
         if not region or region == "nan":
             continue
 
         for year, col_idx in zip(years, year_cols, strict=True):
-            cell: object = df_raw.iloc[i, col_idx]
+            cell = df_raw.iloc[i, col_idx]
             ratio = _to_finite_float(cell)
             if ratio is None:
+                # Surface data loss: a cell that HAD content but did not parse to a
+                # finite number (text, footnote, NaN written as text). Genuinely-empty
+                # grid cells (NaN) are expected in this sparse region/year grid and are
+                # not counted, to keep the signal meaningful.
+                if pd.notna(cell) and str(cell).strip():
+                    dropped_present += 1
                 continue
             records.append({"region": region, "year": year, "ratio": ratio})
+
+    if dropped_present:
+        logger.warning(
+            "Dropped %d present-but-unparseable affordability cell(s); the source sheet "
+            "may have changed format.", dropped_present,
+        )
 
     df = pd.DataFrame(records)
     df = df.sort_values(["region", "year"])

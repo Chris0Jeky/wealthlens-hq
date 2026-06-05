@@ -183,6 +183,20 @@ def test_parse_table_2_2_extracts_10_deciles() -> None:
     assert len(result) == 10
 
 
+def test_parse_table_2_2_drops_nan_value_cell() -> None:
+    """End-to-end: a blank (NaN) decile cell must not leak into the output.
+
+    Locks the call site (not just _to_finite_float): with one decile's latest-column
+    value blank, the parser yields 9 valid rows, trips the 'expected 10 deciles'
+    guard, and returns None (→ caller falls back to the next parser / vetted
+    fallback) rather than emitting a 10-row frame containing a NaN total_wealth_bn.
+    """
+    df_raw = _build_mock_table_2_2()
+    df_raw.iloc[7, 3] = float("nan")  # blank Decile 5's latest-column value
+    result = fetch_ons_wealth._parse_table_2_2(df_raw)
+    assert result is None, "a NaN decile cell must not produce a NaN-containing result"
+
+
 def test_parse_table_2_2_uses_latest_column() -> None:
     """Parser should pick values from the last (most recent) column."""
     df_raw = _build_mock_table_2_2()
