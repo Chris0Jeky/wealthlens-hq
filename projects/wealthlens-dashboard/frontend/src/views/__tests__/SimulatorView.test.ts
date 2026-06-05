@@ -116,6 +116,15 @@ describe('SimulatorView', () => {
     expect(cite?.attributes('rel')).toContain('noopener')
   })
 
+  it('degrades gracefully (chart still renders, no sources panel) when provenance is absent', () => {
+    scenarioList.value = SCENARIOS
+    dashboard.value = { ...DASHBOARD, provenance: undefined }
+    const wrapper = mount(SimulatorView)
+    // The headline chart still renders; only the sources panel is hidden.
+    expect(wrapper.findComponent(ConfidenceFanChart).exists()).toBe(true)
+    expect(wrapper.text()).not.toContain('Sources & assumptions')
+  })
+
   it('passes the contract caveats through to the chart', () => {
     scenarioList.value = SCENARIOS
     dashboard.value = { ...DASHBOARD, caveats: ['Provenance incomplete'] }

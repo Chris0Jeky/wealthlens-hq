@@ -23,8 +23,11 @@ const NO_URL: ConsumedAssumption = {
 describe('ProvenancePanel', () => {
   it('renders each consumed source with its citation links', () => {
     const wrapper = mount(ProvenancePanel, { props: { assumptions: [ALPHA] } })
-    expect(wrapper.find('#provenance-heading').text()).toContain(
-      'Sources',
+    const h2 = wrapper.find('h2')
+    expect(h2.text()).toContain('Sources')
+    // The region is named by its heading via a unique (useId) id.
+    expect(wrapper.find('section').attributes('aria-labelledby')).toBe(
+      h2.attributes('id'),
     )
     expect(wrapper.text()).toContain('Vermeulen (2018)')
     const links = wrapper.findAll('a')
@@ -54,7 +57,8 @@ describe('ProvenancePanel', () => {
     const wrapper = mount(ProvenancePanel, {
       props: { assumptions: [ALPHA, NO_URL] },
     })
-    const items = wrapper.findAll('li')
+    // Top-level (assumption) list items only — not the nested citation-link items.
+    const items = wrapper.findAll('section > ul > li')
     expect(items).toHaveLength(2)
     // behaviour.* sorts before toptail.*
     expect(items[0].text()).toContain('Agersnap')
@@ -66,5 +70,42 @@ describe('ProvenancePanel', () => {
       props: { assumptions: undefined as unknown as ConsumedAssumption[] },
     })
     expect(wrapper.find('section').exists()).toBe(false)
+  })
+
+  it('does not throw when an assumption omits source_urls entirely', () => {
+    const missing = {
+      assumption_id: 'a.b.v1',
+      domain: 'd',
+      source: 'A source with no urls key',
+    } as ConsumedAssumption
+    const wrapper = mount(ProvenancePanel, { props: { assumptions: [missing] } })
+    expect(wrapper.findAll('a')).toHaveLength(0)
+    expect(wrapper.text()).toContain('No public link available')
+  })
+
+  it('disambiguates two same-host citation links (WCAG 2.4.4)', () => {
+    const sameHost: ConsumedAssumption = {
+      assumption_id: 'x.y.v1',
+      domain: 'migration',
+      source: 'Two same-host citations',
+      source_urls: [
+        'https://doi.org/10.1257/pol.20200258',
+        'https://doi.org/10.1257/app.20220615',
+      ],
+    }
+    const wrapper = mount(ProvenancePanel, { props: { assumptions: [sameHost] } })
+    const texts = wrapper.findAll('a').map((l) => l.text().trim())
+    expect(texts).toHaveLength(2)
+    // Same host -> distinct labels (host + last path segment), not two bare "doi.org".
+    expect(new Set(texts).size).toBe(2)
+    expect(texts.every((t) => t.startsWith('doi.org/'))).toBe(true)
+  })
+
+  it('renders citation links as a list for screen-reader item semantics', () => {
+    const wrapper = mount(ProvenancePanel, { props: { assumptions: [ALPHA] } })
+    // The links live in a nested <ul><li> (not a bare <p>) for list semantics.
+    const linkItems = wrapper.findAll('section > ul > li > ul > li')
+    expect(linkItems.length).toBe(2)
+    expect(linkItems.every((li) => li.find('a').exists())).toBe(true)
   })
 })

@@ -166,7 +166,7 @@ const liveSummary = computed(() => {
             households.
           </p>
           <ProvenancePanel
-            :assumptions="dashboard.provenance.assumptions_consumed"
+            :assumptions="dashboard.provenance?.assumptions_consumed ?? []"
           />
         </div>
       </div>

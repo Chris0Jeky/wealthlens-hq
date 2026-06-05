@@ -41,9 +41,10 @@ export interface ConsumedAssumption {
   source: string
   /**
    * Canonical citation URLs (DOI or official landing page) for the works named in
-   * `source`. May be empty for a source with no single public URL.
+   * `source`. May be empty for a source with no single public URL. Optional: the
+   * payload crosses an unvalidated JSON boundary, so consumers must guard access.
    */
-  source_urls: string[]
+  source_urls?: string[]
 }
 
 /** The provenance envelope (the subset the scenario page renders). */
@@ -67,8 +68,12 @@ export interface SimulatorDashboardData {
   total_revenue_gbp_bn: Interval
   households_scored: number
   revenue_by_decile: Interval[]
-  /** Audit trail: the assumptions consumed and their citations. */
-  provenance: SimulatorProvenance
+  /**
+   * Audit trail: the assumptions consumed and their citations. Always emitted by
+   * the contract, but marked optional so a stale/older payload that omits it
+   * degrades gracefully (the panel hides) instead of crashing the whole view.
+   */
+  provenance?: SimulatorProvenance
 }
 
 /** One scenario in the `GET /api/simulator/` listing. */
