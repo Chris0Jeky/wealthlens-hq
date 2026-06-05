@@ -76,3 +76,19 @@ def test_negative_number_is_preserved() -> None:
     """A genuine finite negative value is not rejected (callers apply their own
     ``<= 0`` guards downstream); the helper only filters non-finite/non-numeric."""
     assert to_finite_float("-3.5") == pytest.approx(-3.5)
+
+
+def test_numpy_float_fast_path() -> None:
+    """numpy float64 (a float subclass, the usual pandas numeric cell) takes the
+    fast path and is behaviour-identical: finite passes through, NaN/inf rejected."""
+    np = pytest.importorskip("numpy")
+    assert to_finite_float(np.float64(14200.0)) == 14200.0
+    assert to_finite_float(np.float64("nan")) is None
+    assert to_finite_float(np.float64("inf")) is None
+
+
+def test_bool_still_rejected() -> None:
+    """bool is an int subclass (not float) — it must NOT take the float fast path;
+    True/False are not numeric cells and must return None (unchanged behaviour)."""
+    assert to_finite_float(True) is None
+    assert to_finite_float(False) is None

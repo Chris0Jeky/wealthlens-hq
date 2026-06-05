@@ -22,6 +22,15 @@ def to_finite_float(value: object) -> float | None:
     turns back into a NaN that would otherwise slip past a downstream ``<= 0`` guard
     and write a NaN into the published dataset. ``inf`` is rejected the same way.
     """
+    # Fast path for the common case: a cell pandas already read as a float (incl.
+    # numpy float64, a float subclass). This skips the str()/replace()/float()
+    # round-trip and is behaviour-identical — a finite float round-trips through
+    # ``float(str(x))`` to itself, and NaN/inf are rejected here exactly as below.
+    # ``isinstance(value, float)`` deliberately excludes ``bool`` (an int subclass,
+    # not float) and ``int``/numpy-int, so those keep their existing str()-path
+    # handling (bool -> None, int -> value).
+    if isinstance(value, float):
+        return value if math.isfinite(value) else None
     try:
         parsed = float(str(value).replace(",", "").strip())
     except (ValueError, TypeError):
