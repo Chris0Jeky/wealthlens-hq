@@ -29,14 +29,25 @@ all bot threads resolved + CI green. Summary:
   (the bug-sweep's 4 findings were all false positives).
 
 ### 🎯 FLAGSHIP IN PROGRESS: expand the simulation (behavioural → MC → Sobol)
-**PR A IS OPEN as #366** (`feat/behavioural-response`): standalone `behavioural/
-response.py` — reduced-form `revenue_response_factor(channels, rate_change_pp)` =
-Π(1+e*dtau), clamped ≥0, from cited registry semi-elasticities; pure, tested (15),
-engine-free. **Next tick: 2 adversarial reviews on #366 (ECONOMICS lens — is the
-reduced form + unit contract defensible?), address findings, then build PR B.** Do
-NOT rebuild PR A. Arc: behavioural → multi-param MC → wire the Sobol module. Default
-OFF, heavily caveated (Chris is data-integrity-first — NO fabricated economics; every
-parameter cited; UK migration elasticities have transferability_score: low).
+**PR A = #366 OPEN, REVIEWED & READY** (`feat/behavioural-response`): standalone
+`behavioural/response.py` — reduced-form `revenue_response_factor(channels,
+rate_change_pp)` = Π max(0, 1+e*dtau) (per-channel clamped ≥0), from cited registry
+semi-elasticities; pure, 25 tests, engine-free. 2 adversarial reviews (economics PASS —
+pp unit contract + reduced form defensible/source-faithful; API 2 HIGH provenance-
+injectivity fixed) + 3 bot threads resolved (incl. a real even-over-eroding-channels
+masking bug → per-channel clamp). 826 sim tests; CI green.
+
+**NEXT TICK = PR B (engine wiring), STACKED on #366** (so #366 becomes not-newest →
+then merge #366 `--merge` NO --delete-branch → retarget PR B → main). PR B wires the
+factor into `engine.simulate(..., behavioural=...)`, **default OFF**, behind a
+`caveats[]` entry. ⚠️ READ THE "When wiring this in" CHECKLIST in `behavioural/
+response.py`'s module docstring before coding — it encodes the economics-review cautions:
+(1) engine rates are FRACTIONS → multiply the rate delta by 100 for `rate_change_pp`
+(~100x risk); (2) each elasticity is a SUB-population effect → apply per revenue-slice,
+not to total family revenue; (3) don't compose channels on overlapping bases; (4)
+surface `clamped=True` as a caveat; (5) `point="high"` is the more-eroding end for
+negative elasticities. Riskiest slice — 2 careful reviews on the wiring economics. Then
+PR C: multi-param MC + Sobol. Default OFF, heavily caveated (NO fabricated economics).
 Remaining plan:
 1. ~~**PR A — behavioural-response layer**~~ DONE → #366 open. (original design note:
    `engine/` optional arg like enforcement/
