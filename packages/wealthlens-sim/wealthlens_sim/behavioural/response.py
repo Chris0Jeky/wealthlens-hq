@@ -25,6 +25,24 @@ Design (mirrors the other Wave-13 layers):
   wealth tax is ``rate_change_pp = 1.0``), matching how the registry semi-elasticities
   are defined ("per percentage-point of the tax rate"). The caller owns supplying the
   correct rate change; this module only implements the cited reduced form.
+
+When wiring this into the engine (the deferred PR), read these carefully — they are
+where a wrong number would come from, NOT from this module's arithmetic:
+* **UNITS (highest risk):** engine tax rates are stored as FRACTIONS (``WealthTaxConfig.
+  rate = 0.01`` for 1%; ``CGTConfig`` rates like 0.24). ``rate_change_pp`` wants
+  PERCENTAGE POINTS, so multiply the fractional rate delta by 100. Passing the raw
+  fractional delta understates the response ~100x. The ``behavioural.rate_change_pp``
+  provenance tag makes such an error auditable.
+* **BASE SLICE:** each registry elasticity is estimated on a SUB-population (non-dom
+  stock; gains-realising taxpayers), not the whole family base. Apply each channel only
+  to the revenue slice its elasticity was estimated on, or scale the elasticity by that
+  slice's share — do NOT apply a sub-population elasticity to total family revenue.
+* **INDEPENDENCE:** the multiplicative compose assumes channels act on INDEPENDENT /
+  non-overlapping bases; do not compose two channels that erode the same revenue pool.
+* **CLAMP = OUT OF RANGE:** a ``clamped=True`` result means the linear approximation
+  left its valid region (large ``e*dtau``); surface it as a caveat, not a silent 0.
+* **UNCERTAINTY BANDS:** for a negative elasticity, the registry ``high`` value is the
+  MORE-eroding end — select ``point="high"`` for a high-response stress case, not ``low``.
 """
 
 from __future__ import annotations
@@ -64,6 +82,31 @@ class BehaviouralChannel(BaseModel):
     def _finite(self) -> BehaviouralChannel:
         if not math.isfinite(self.semi_elasticity):
             msg = f"BehaviouralChannel {self.name!r} semi_elasticity must be finite, got {self.semi_elasticity}"
+            raise ValueError(msg)
+        return self
+
+    @model_validator(mode="after")
+    def _identifiers_are_provenance_safe(self) -> BehaviouralChannel:
+        """Forbid the provenance-tag delimiters in name/source_id (mirrors ParameterSpec).
+
+        The channel tag is ``name=<eps>@source`` and tags are joined with ``;``. If
+        ``name``/``source_id`` could contain those delimiters (or whitespace), two
+        distinct channels could serialise to the same tag, defeating the injectivity the
+        provenance trail relies on (identical ids ⟹ identical run).
+        """
+        forbidden = set(";=@(),") | set(" \t\n\r\f\v")
+        for field, val in (("name", self.name), ("source_id", self.source_id)):
+            if val is not None and (set(val) & forbidden):
+                msg = (
+                    f"BehaviouralChannel {field}={val!r} must not contain whitespace or "
+                    "any of the provenance delimiters ; = @ ( ) ,"
+                )
+                raise ValueError(msg)
+        # ``-`` is the sentinel an *absent* source_id renders as (``@-``); an explicit
+        # ``-`` would be indistinguishable from None, so an evidence change could go
+        # unrecorded. Reserve it (mirrors ParameterSpec).
+        if self.source_id == "-":
+            msg = "BehaviouralChannel source_id must not be '-' (reserved as the absent-source sentinel in provenance tags)"
             raise ValueError(msg)
         return self
 

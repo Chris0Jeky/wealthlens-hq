@@ -111,6 +111,23 @@ class TestBehaviouralChannel:
         with pytest.raises(ValueError, match="point must be"):
             BehaviouralChannel.from_range_value("x", rv, point="median")
 
+    @pytest.mark.parametrize("bad_name", ["a;b", "mig@x", "a=b", "a b", "a,b", "a(b)"])
+    def test_name_with_provenance_delimiter_rejected(self, bad_name: str) -> None:
+        # The channel tag is name=<eps>@source joined with ';' — delimiters in name/
+        # source_id would make the provenance grammar non-injective (mirrors ParameterSpec).
+        with pytest.raises(ValueError, match="provenance delimiters"):
+            BehaviouralChannel(name=bad_name, semi_elasticity=-0.04)
+
+    def test_source_id_with_delimiter_rejected(self) -> None:
+        with pytest.raises(ValueError, match="provenance delimiters"):
+            BehaviouralChannel(name="ok", semi_elasticity=-0.04, source_id="x@y")
+
+    def test_source_id_dash_sentinel_rejected(self) -> None:
+        # '-' is the absent-source sentinel rendered as '@-'; an explicit '-' would be
+        # indistinguishable from None.
+        with pytest.raises(ValueError, match="absent-source sentinel"):
+            BehaviouralChannel(name="ok", semi_elasticity=-0.04, source_id="-")
+
 
 class TestProvenance:
     def test_provenance_ids_capture_run(self) -> None:
