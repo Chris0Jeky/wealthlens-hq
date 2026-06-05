@@ -19,6 +19,10 @@ name: Dependabot auto-merge
 #      errors.
 #   2. Branch protection on `main` should require the CI checks, otherwise
 #      auto-merge completes as soon as the PR is mergeable (no green-gate).
+#   3. Settings > Actions > General > "Allow GitHub Actions to create and approve
+#      pull requests" must be ON, or the `gh pr review --approve` step below fails
+#      (personal repos default this OFF). GITHUB_TOKEN performs the approval;
+#      alternatively, drop the approve step if `main` does not require a review.
 
 on:
   pull_request_target:
