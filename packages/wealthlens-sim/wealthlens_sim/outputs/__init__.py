@@ -41,7 +41,12 @@ __all__ = ["DASHBOARD_SCHEMA_VERSION", "to_dashboard_json"]
 #: ADDITIVE keys (a new optional field older consumers ignore) do NOT bump; e.g.
 #: ``population_provenance`` was added additively at 1.3.
 #: 1.3 adds ``interval_method`` + ``uncertainty_provenance_ids`` so a Monte-Carlo
-#: band is never published while labelled as the single alpha sweep.
+#: band is never published while labelled as the single alpha sweep. (Those two
+#: are load-bearing — a consumer that ignored them would misread the band — which
+#: is why 1.3 bumped; the additive ``population_provenance`` rode along without it.)
+#: ``source_urls`` on each consumed assumption (added later) is likewise purely
+#: additive metadata an older consumer ignores, so by the rule above it does NOT
+#: bump the version.
 DASHBOARD_SCHEMA_VERSION = "1.3"
 
 _INCOMPLETE_PROVENANCE_CAVEAT = (
