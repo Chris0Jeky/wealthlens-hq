@@ -56,7 +56,8 @@ CHECKS: list[dict] = [
         # bands' taxpayer counts for disclosure control while still publishing the gains,
         # so a NaN there is the honest "suppressed" value, NOT a leak. Do NOT add a
         # finite/range guard on those columns (it would falsely fail on legitimate
-        # suppression). The frontend renders those NaNs as "n/a" (see CgtConcentrationChart).
+        # suppression). The HMRC chart-builder renders those NaNs as "n/a"/"suppressed"
+        # (fetch_hmrc_stats.build_chart, guarded by pd.notna).
         "file": "hmrc_cgt_concentration.csv",
         "columns": {"band_lower"},
         "min_rows": 3,
