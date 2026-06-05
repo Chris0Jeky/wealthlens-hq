@@ -11,22 +11,24 @@ Last updated: 2026-06-05
 
 This section supersedes the older handoff snapshots below.
 
-## ▶️ Live state (2026-06-05 PM) — #349–#354 MERGED, #355 open & reviewed
+## ▶️ Live state (2026-06-05 PM) — #349–#355 MERGED, no open PRs; IHT scoped
 
-This session drained #349–#354 (full adversarial gate each) and opened #355
-(provenance goal B2). Loop is running per Chris's standing instruction.
+This session drained #349–#355 (full adversarial gate each). Latest: **#355 MERGED**
+(provenance B2 — `population_provenance` block with real source URLs from
+sources.yml; synth.* id-only; additive). Then **scoped IHT calibration** via a
+code-explorer and wrote the design note `docs/IHT_CALIBRATION.md`. Loop running per
+Chris's standing instruction. Next: implement IHT Tier A (task #1).
 
-- **#355 OPEN** (`feat/population-provenance-urls`): adds a structured
-  `population_provenance` block to `to_dashboard_json` — registered data sources
-  (`ons-was-wealth`, `ons-families-households-2022`) resolved against
-  `registries/sources.yml` to {id,name,url,access_date,licence} (real URLs, both
-  verified HTTP 200 by review, nothing fabricated); `synth.*` params id-only;
-  additive (no schema bump). 2 subagent reviews (no fabrication confirmed; flows to
-  the deployed site) + gemini bot — hardened: malformed-YAML degrades not crashes,
-  access_date isoformat-normalised, conftest cache-clear fixture, docstring nuance.
-  23 outputs + 780 sim + mypy(45) + ruff green; drift-guard 3/3. Newest PR → age,
-  then merge first next cycle. (B1 — URLs for assumption citation strings — deferred,
-  needs verified citations, no fabrication.)
+- **IHT bug confirmed** (design note `docs/IHT_CALIBRATION.md`):
+  `compute_aggregate_iht_revenue` (`reforms/d_iht_reform.py`) sums at-death liability
+  x weight across ALL households (stock, ~£1009bn) with no mortality factor, vs an
+  annual death-cohort flow (~£7-8bn real). Two compounding errors: stock-vs-flow
+  (~40x, missing mortality conversion) + synth top-tail over-concentration (~3x).
+  Tier A (next PR): apply ONS-sourced annual mortality scalar in the aggregate
+  (~£24bn result), add IHTConfig.annual_mortality_rate + ons-deaths source +
+  assumption; per-household calc unchanged; **IHT stays excluded** (still ~3x).
+  Tier B (age-specific q_x + age-wealth correlation) is the path to a serveable
+  headline. DEFERRED Q for Chris: how far to take IHT for v0.1.
 - **#354 MERGED** (`8377e72`): synthetic-population caveat emitted from
   `to_dashboard_json` (was generator-only). Both bots + both subagent reviews flagged
   the caveat keying off the `version_tag` string (fail-OPEN on a mistagged synth pop);
@@ -72,13 +74,13 @@ packages/wealthlens-sim onto the path.)
 
 ## 🔜 Seeded next tasks (highest-leverage first) — for the endless loop
 
-1. **Drain #355** once aged + still green + no new bot threads (`gh pr merge 355
-   --merge --delete-branch`). (Provenance goal B2 — population_provenance with real
-   URLs; mark the inbox B2 item done on merge.)
-2. **IHT calibration** (big, may be multi-PR / research-heavy): synth IHT sums each
-   household's stock estate liability across the grossed-up population (~£1009bn)
-   instead of an annual death/estate-flow cohort (~£7-8bn real). Fix the model
-   before re-enabling any IHT scenario (currently excluded). Scope carefully first.
+1. **IHT calibration Tier A** (scoped — see `docs/IHT_CALIBRATION.md`): in
+   `reforms/d_iht_reform.py` apply an ONS-sourced annual mortality scalar in
+   `compute_aggregate_iht_revenue` (stock→flow, ~£1009bn → ~£24bn); add
+   `IHTConfig.annual_mortality_rate`, a `registries/sources.yml` ONS-deaths entry, and
+   a `registries/assumptions.yml` `model.iht.annual_mortality_rate.v1`. Per-household
+   calc unchanged. Update `test_iht.py::TestAggregateIHTRevenue` + add a sanity-bound
+   test. Keep IHT scenarios EXCLUDED (still ~3x; document why). Own PR, 2 reviews.
 3. **Remaining deferred CI hardening (from #350 desc)**: enable mypy on
    automation/ + tests/ (pre-existing type errors); deploy build-gate; enforce
    format/coverage; SHA-pin actions. Each its own PR.
