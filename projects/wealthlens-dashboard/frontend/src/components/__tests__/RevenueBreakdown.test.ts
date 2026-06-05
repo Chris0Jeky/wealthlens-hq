@@ -68,4 +68,37 @@ describe('RevenueBreakdown', () => {
     const wrapper = mount(RevenueBreakdown, { props: {} })
     expect(wrapper.find('section').exists()).toBe(false)
   })
+
+  it('maps the engine northern_ireland key (underscore) to a friendly name', () => {
+    const wrapper = mount(RevenueBreakdown, {
+      props: { byNation: { northern_ireland: iv(0.1, 0.2, 0.3) } },
+    })
+    expect(wrapper.text()).toContain('Northern Ireland')
+    expect(wrapper.text()).not.toContain('northern_ireland')
+  })
+
+  it('shows a compact range (currency + unit once)', () => {
+    const wrapper = mount(RevenueBreakdown, {
+      props: { byNation: { england: iv(12.5, 16.66, 24.06) } },
+    })
+    expect(wrapper.text()).toContain('£12.50–24.06bn')
+  })
+
+  it('omits the least/most-wealthy qualifiers for a partial (non-10) decile set', () => {
+    const wrapper = mount(RevenueBreakdown, {
+      props: { byDecile: [iv(0, 1, 2), iv(0, 3, 4)] },
+    })
+    expect(wrapper.text()).not.toContain('wealthiest')
+    expect(wrapper.text()).not.toContain('least wealthy')
+    expect(wrapper.text()).toContain('Decile 1')
+    expect(wrapper.text()).toContain('Decile 2')
+  })
+
+  it('renders an em dash for a non-finite value rather than NaN', () => {
+    const wrapper = mount(RevenueBreakdown, {
+      props: { byNation: { england: iv(NaN, NaN, NaN) } },
+    })
+    expect(wrapper.text()).toContain('—')
+    expect(wrapper.text()).not.toContain('NaN')
+  })
 })

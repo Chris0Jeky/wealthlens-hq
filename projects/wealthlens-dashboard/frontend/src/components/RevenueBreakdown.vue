@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
  * RevenueBreakdown — shows where a scenario's headline revenue comes from: the
- * split by GB nation and across the 10 wealth deciles.
+ * split by UK nation and across the 10 wealth deciles.
  *
  * The dashboard JSON already carries `revenue_by_nation` and `revenue_by_decile`;
  * the scenario page previously discarded both. They are rendered here as accessible
@@ -22,17 +22,26 @@ const props = defineProps<{
 const cur = computed(() => props.currency ?? '£')
 const unit = computed(() => props.unit ?? 'bn')
 
+// Guard non-finite defensively: the value crosses an unvalidated JSON boundary, so
+// a malformed Interval renders an em dash rather than "£NaNbn".
 function fmt(n: number): string {
-  return `${cur.value}${n.toFixed(2)}${unit.value}`
+  return Number.isFinite(n) ? `${cur.value}${n.toFixed(2)}${unit.value}` : '—'
+}
+
+// Compact range, currency + unit shown once: "£12.50–24.06bn".
+function fmtRange(iv: Interval): string {
+  if (!Number.isFinite(iv.low) || !Number.isFinite(iv.high)) return '—'
+  return `${cur.value}${iv.low.toFixed(2)}–${iv.high.toFixed(2)}${unit.value}`
 }
 
 const headingId = useId()
 
+// Keys are the engine Nation enum values (underscored, e.g. "northern_ireland").
 const NATION_NAMES: Record<string, string> = {
   england: 'England',
   scotland: 'Scotland',
   wales: 'Wales',
-  'northern-ireland': 'Northern Ireland',
+  northern_ireland: 'Northern Ireland',
 }
 
 // Nations sorted by central revenue, largest first.
@@ -44,15 +53,18 @@ const nations = computed(() =>
 
 // Deciles labelled least→most wealthy, each with a decorative bar width (% of the
 // largest decile's central value) so the concentration in the top deciles is visible.
+// The least/most-wealthy qualifiers are only added for a full 10-decile set (the
+// contract); a partial payload just shows "Decile N" rather than mislabelling.
 const deciles = computed(() => {
   const arr = props.byDecile ?? []
   const max = Math.max(0, ...arr.map((d) => d.central))
+  const full = arr.length === 10
   return arr.map((iv, i) => ({
     key: i,
     label:
-      i === 0
+      full && i === 0
         ? 'Decile 1 (least wealthy)'
-        : i === arr.length - 1
+        : full && i === arr.length - 1
           ? `Decile ${arr.length} (wealthiest)`
           : `Decile ${i + 1}`,
     iv,
@@ -75,7 +87,7 @@ const deciles = computed(() => {
       <h3 class="mt-4 text-sm font-semibold text-wl-ink">By nation</h3>
       <table class="mt-2 w-full text-sm">
         <caption class="sr-only">
-          Estimated annual revenue by GB nation, central estimate and low–high range.
+          Estimated annual revenue by UK nation, central estimate and low–high range.
         </caption>
         <thead>
           <tr class="text-left text-wl-ink-muted">
@@ -89,7 +101,7 @@ const deciles = computed(() => {
             <th scope="row" class="py-1 font-normal text-wl-ink">{{ n.name }}</th>
             <td class="py-1 text-right tabular-nums text-wl-ink">{{ fmt(n.iv.central) }}</td>
             <td class="py-1 text-right tabular-nums text-wl-ink-muted">
-              {{ fmt(n.iv.low) }}–{{ fmt(n.iv.high) }}
+              {{ fmtRange(n.iv) }}
             </td>
           </tr>
         </tbody>

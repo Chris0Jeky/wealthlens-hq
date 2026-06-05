@@ -83,8 +83,9 @@ export interface SimulatorDashboardData {
   /** Revenue split across the 10 wealth deciles (index 0 = least wealthy). */
   revenue_by_decile: Interval[]
   /**
-   * Revenue split by GB nation (e.g. england/scotland/wales). Optional: a stale or
-   * partial payload may omit it, so consumers guard access.
+   * Revenue split by UK nation, keyed by the engine Nation enum value (underscored,
+   * e.g. england/scotland/wales/northern_ireland). Optional: a stale or partial
+   * payload may omit it, so consumers guard access.
    */
   revenue_by_nation?: Record<string, Interval>
   /**
