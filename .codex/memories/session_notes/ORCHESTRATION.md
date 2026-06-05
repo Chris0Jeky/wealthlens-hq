@@ -11,22 +11,25 @@ Last updated: 2026-06-05
 
 This section supersedes the older handoff snapshots below.
 
-## ▶️ Live state (2026-06-05 PM) — #349–#355 MERGED, no open PRs; IHT scoped
+## ▶️ Live state (2026-06-05 PM) — #349–#355 MERGED, #356 open & reviewed (IHT Tier A)
 
-This session drained #349–#355 (full adversarial gate each). Latest: **#355 MERGED**
-(provenance B2 — `population_provenance` block with real source URLs from
-sources.yml; synth.* id-only; additive). Then **scoped IHT calibration** via a
-code-explorer and wrote the design note `docs/IHT_CALIBRATION.md`. Loop running per
-Chris's standing instruction. Next: implement IHT Tier A (task #1).
+This session drained #349–#355 (full adversarial gate each), scoped IHT
+(`docs/IHT_CALIBRATION.md`), and opened **#356** (IHT Tier A). Loop running per
+Chris's standing instruction. Next: drain #356, then the queue.
 
-- **IHT bug confirmed** (design note `docs/IHT_CALIBRATION.md`):
-  `compute_aggregate_iht_revenue` (`reforms/d_iht_reform.py`) sums at-death liability
-  x weight across ALL households (stock, ~£1009bn) with no mortality factor, vs an
-  annual death-cohort flow (~£7-8bn real). Two compounding errors: stock-vs-flow
-  (~40x, missing mortality conversion) + synth top-tail over-concentration (~3x).
-  Tier A (next PR): apply ONS-sourced annual mortality scalar in the aggregate
-  (~£24bn result), add IHTConfig.annual_mortality_rate + ons-deaths source +
-  assumption; per-household calc unchanged; **IHT stays excluded** (still ~3x).
+- **#356 OPEN** (`feat/iht-mortality-tier-a`): IHT Tier A — converts the at-death
+  STOCK to an annual FLOW via an ONS-sourced annual mortality scalar
+  (`ANNUAL_MORTALITY_RATE_2026 = 581363/27.5e6 ~= 0.0211`; `IHTConfig.annual_mortality_rate`),
+  applied consistently in `compute_aggregate_iht_revenue` AND
+  `engine/_attribution.household_liability` (keeps the engine decile-sum == total
+  invariant + enforcement baseline). Real synth: £1009.0bn → £21.3bn. Added
+  `ons-deaths-registered` source + `model.iht.annual_mortality_rate.v1` assumption.
+  2 subagent reviews (no fabrication; 581,363 WebFetch-verified; principled not
+  anchor-fudged) + 3 bot threads, all addressed (mean@rate=0 from pre-scale; field
+  semantics doc'd; per-household-rate-vs-per-person-liability grain mismatch ~1.7x
+  documented as a Tier A limitation; provenance-wiring deferred to Tier B). 785 sim +
+  mypy(45) + ruff green; drift-guard 3/3 (served fixtures unchanged — IHT excluded).
+  **IHT scenarios remain EXCLUDED** (still ~3x real). Newest PR → age, then merge.
   Tier B (age-specific q_x + age-wealth correlation) is the path to a serveable
   headline. DEFERRED Q for Chris: how far to take IHT for v0.1.
 - **#354 MERGED** (`8377e72`): synthetic-population caveat emitted from
@@ -74,20 +77,21 @@ packages/wealthlens-sim onto the path.)
 
 ## 🔜 Seeded next tasks (highest-leverage first) — for the endless loop
 
-1. **IHT calibration Tier A** (scoped — see `docs/IHT_CALIBRATION.md`): in
-   `reforms/d_iht_reform.py` apply an ONS-sourced annual mortality scalar in
-   `compute_aggregate_iht_revenue` (stock→flow, ~£1009bn → ~£24bn); add
-   `IHTConfig.annual_mortality_rate`, a `registries/sources.yml` ONS-deaths entry, and
-   a `registries/assumptions.yml` `model.iht.annual_mortality_rate.v1`. Per-household
-   calc unchanged. Update `test_iht.py::TestAggregateIHTRevenue` + add a sanity-bound
-   test. Keep IHT scenarios EXCLUDED (still ~3x; document why). Own PR, 2 reviews.
-3. **Remaining deferred CI hardening (from #350 desc)**: enable mypy on
+1. **Drain #356** once aged + still green + no new bot threads (`gh pr merge 356
+   --merge --delete-branch`). On merge, mark the inbox IHT item Tier-A-done.
+2. **Remaining deferred CI hardening (from #350 desc)**: enable mypy on
    automation/ + tests/ (pre-existing type errors); deploy build-gate; enforce
    format/coverage; SHA-pin actions. Each its own PR.
-4. **Expand the simulation**: sample assumption RangeValues alongside top-tail
+3. **Expand the simulation**: sample assumption RangeValues alongside top-tail
    alpha; Sobol sensitivity (SALib); optional `?uncertainty=` API band.
+4. **IHT Tier B** (serveable IHT): per-person age-specific mortality (ONS National
+   Life Tables q_x) + age-wealth correlation in the synth; wire
+   `model.iht.annual_mortality_rate.v1` into provenance; fix the per-person grain +
+   Gate-3 charitable baseline-amount. See `docs/IHT_CALIBRATION.md`.
 5. **Real WAS/FRS population provider** behind the PopulationSource protocol (needs
    a UKDS licence) — also unlocks testing the `is_synthetic=False` path end-to-end.
+6. **B1: assumption-source citation URLs** in `registries/assumptions.yml` (verified,
+   no fabrication), then surface in `assumptions_consumed` provenance.
 
 ## 🧷 Chris's TODOs (see tasks/ACTION-REQUIRED.md — surface every wrap-up)
 
