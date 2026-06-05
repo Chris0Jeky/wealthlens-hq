@@ -57,11 +57,9 @@ import numpy as np
 from numpy.typing import NDArray
 
 from wealthlens_sim.uncertainty.sampling import (
-    Distribution,
     ParameterSpec,
     _format_float,
-    _to_triangular,
-    _to_uniform,
+    _map_unit_column,
 )
 
 __all__ = [
@@ -73,6 +71,14 @@ __all__ = [
 #: A power of two is conventional for Saltelli sampling; 1024 is a reasonable
 #: default for smooth models (raise it for noisy estimates).
 DEFAULT_N_BASE = 1024
+
+#: Hard floor on ``n_base``. Saltelli indices are an average over ``n_base`` rows;
+#: below this the estimate is noise, not signal — and at ``n_base == 1`` it is
+#: structurally meaningless (a single pair) yet the zero-variance guard cannot fire
+#: (a 2-point pool has non-zero variance). Reject the degenerate regime loudly
+#: rather than return confident-looking garbage. This is a sanity floor, NOT a
+#: sufficiency guarantee: a usable estimate typically needs hundreds-plus.
+MIN_N_BASE = 8
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -107,13 +113,6 @@ class SobolResult:
     def total_order_by_name(self) -> dict[str, float]:
         """``{input_name: S_Ti}`` total-order indices."""
         return dict(zip(self.names, self.total_order, strict=True))
-
-
-def _map_column(unit: NDArray[np.float64], spec: ParameterSpec) -> NDArray[np.float64]:
-    """Map a column of unit ``[0, 1)`` draws to ``spec``'s marginal."""
-    if spec.distribution is Distribution.UNIFORM:
-        return _to_uniform(unit, spec.low, spec.high)
-    return _to_triangular(unit, spec.low, spec.central, spec.high)
 
 
 def _evaluate_matrix(
@@ -156,12 +155,13 @@ def sobol_indices(
     Total model evaluations: ``n_base * (len(specs) + 2)``.
 
     Raises ``ValueError`` if ``specs`` is empty or has duplicate names, ``n_base`` is
-    not positive, ``evaluate`` returns a non-finite value, or the output has zero
-    (or non-finite) variance — in which case the indices are mathematically
-    undefined rather than silently returned as NaN/inf.
+    below :data:`MIN_N_BASE` (a single base row makes the estimate meaningless yet
+    cannot trip the zero-variance guard), ``evaluate`` returns a non-finite value, or
+    the output has zero (or non-finite) variance — in which case the indices are
+    mathematically undefined rather than silently returned as NaN/inf.
     """
-    if n_base <= 0:
-        msg = f"n_base must be positive, got {n_base}"
+    if n_base < MIN_N_BASE:
+        msg = f"n_base must be >= {MIN_N_BASE} for a usable Saltelli estimate, got {n_base}"
         raise ValueError(msg)
     if not specs:
         msg = "sobol_indices requires at least one ParameterSpec"
@@ -187,8 +187,8 @@ def sobol_indices(
     a_mat = np.empty((n_base, d), dtype=np.float64)
     b_mat = np.empty((n_base, d), dtype=np.float64)
     for j, spec in enumerate(ordered):
-        a_mat[:, j] = _map_column(a_unit[:, j], spec)
-        b_mat[:, j] = _map_column(b_unit[:, j], spec)
+        a_mat[:, j] = _map_unit_column(a_unit[:, j], spec)
+        b_mat[:, j] = _map_unit_column(b_unit[:, j], spec)
 
     f_a = _evaluate_matrix(a_mat, names, evaluate)
     f_b = _evaluate_matrix(b_mat, names, evaluate)

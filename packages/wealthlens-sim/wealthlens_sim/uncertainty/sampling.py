@@ -383,6 +383,18 @@ def _to_triangular(u: NDArray[np.float64], low: float, central: float, high: flo
     return out
 
 
+def _map_unit_column(unit: NDArray[np.float64], spec: ParameterSpec) -> NDArray[np.float64]:
+    """Map a column of unit ``[0, 1)`` draws to ``spec``'s marginal.
+
+    The single dispatch point over :class:`Distribution`, shared by
+    :func:`sample_parameters` and the Sobol layer so a new marginal kind cannot be
+    wired into one sampler and silently fall through to triangular in the other.
+    """
+    if spec.distribution is Distribution.UNIFORM:
+        return _to_uniform(unit, spec.low, spec.high)
+    return _to_triangular(unit, spec.low, spec.central, spec.high)
+
+
 def sample_parameters(specs: Sequence[ParameterSpec], config: SamplingConfig | None = None) -> ParameterSamples:
     """Draw ``config.n_samples`` joint samples of ``specs``.
 
@@ -410,11 +422,7 @@ def sample_parameters(specs: Sequence[ParameterSpec], config: SamplingConfig | N
 
     matrix = np.empty_like(unit)
     for j, spec in enumerate(ordered):
-        col = unit[:, j]
-        if spec.distribution is Distribution.UNIFORM:
-            matrix[:, j] = _to_uniform(col, spec.low, spec.high)
-        else:
-            matrix[:, j] = _to_triangular(col, spec.low, spec.central, spec.high)
+        matrix[:, j] = _map_unit_column(unit[:, j], spec)
 
     # ParameterSamples.__post_init__ locks ``matrix`` read-only. ``ordered`` is the
     # sorted-by-name spec list used to build each column, so it stays aligned with

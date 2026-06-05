@@ -20,7 +20,7 @@ from wealthlens_sim.uncertainty import (
     SobolResult,
     sobol_indices,
 )
-from wealthlens_sim.uncertainty.sobol import DEFAULT_N_BASE
+from wealthlens_sim.uncertainty.sobol import DEFAULT_N_BASE, MIN_N_BASE
 
 
 def _uniform(name: str, low: float, high: float) -> ParameterSpec:
@@ -146,8 +146,18 @@ class TestValidation:
             sobol_indices([_uniform("x", 0.0, 1.0), _uniform("x", 0.0, 2.0)], lambda p: p["x"])
 
     def test_non_positive_n_base_rejected(self):
-        with pytest.raises(ValueError, match="n_base must be positive"):
+        with pytest.raises(ValueError, match="n_base must be"):
             sobol_indices([_uniform("x", 0.0, 1.0)], lambda p: p["x"], n_base=0)
+
+    def test_tiny_n_base_rejected(self):
+        # n_base == 1 is structurally degenerate (a single Saltelli pair) yet the
+        # zero-variance guard cannot catch it (a 2-point pool has non-zero variance),
+        # so it would otherwise return confident-looking garbage. Reject it loudly.
+        with pytest.raises(ValueError, match="usable Saltelli estimate"):
+            sobol_indices([_uniform("x", 0.0, 1.0), _uniform("y", 0.0, 1.0)], lambda p: p["x"] + p["y"], n_base=1)
+        # The floor itself minus one is also rejected; the floor exactly is accepted.
+        with pytest.raises(ValueError, match="usable Saltelli estimate"):
+            sobol_indices([_uniform("x", 0.0, 1.0)], lambda p: p["x"], n_base=MIN_N_BASE - 1)
 
     def test_constant_output_rejected(self):
         # Zero output variance => indices undefined; must fail loud, not return NaN.
