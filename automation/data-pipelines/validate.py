@@ -51,6 +51,12 @@ CHECKS: list[dict] = [
         "unique_keys": ["decile"],
     },
     {
+        # Only band_lower is guarded ON PURPOSE: num_taxpayers_thousands /
+        # share_of_taxpayers_pct are intentionally NaN-tolerant — HMRC suppresses some
+        # bands' taxpayer counts for disclosure control while still publishing the gains,
+        # so a NaN there is the honest "suppressed" value, NOT a leak. Do NOT add a
+        # finite/range guard on those columns (it would falsely fail on legitimate
+        # suppression). The frontend renders those NaNs as "n/a" (see CgtConcentrationChart).
         "file": "hmrc_cgt_concentration.csv",
         "columns": {"band_lower"},
         "min_rows": 3,

@@ -89,14 +89,17 @@ def process(raw_data: dict[str, Any]) -> pd.DataFrame:
             for country, payload in entry.items():
                 for point in payload.get("values", []):
                     # to_finite_float rejects a blank/NaN/inf value so a bad point
-                    # is dropped rather than written as a NaN wealth share.
-                    value = to_finite_float(point["v"])
-                    if value is None:
+                    # is dropped rather than written as a NaN wealth share. Use .get()
+                    # for both fields so a malformed point MISSING "v"/"y" is dropped
+                    # gracefully instead of crashing process() with a KeyError.
+                    value = to_finite_float(point.get("v"))
+                    year = to_finite_float(point.get("y"))
+                    if value is None or year is None:
                         continue
                     records.append({
                         "variable": variable,
                         "country": country,
-                        "year": int(point["y"]),
+                        "year": int(year),
                         "value": value,
                     })
 
