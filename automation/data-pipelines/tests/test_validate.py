@@ -64,6 +64,46 @@ class TestValidateAll:
         errors = validate_all()
         assert any("DUPES" in e for e in errors)
 
+    def _write_all_valid_then_corrupt(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, bad_value: str
+    ) -> tuple[str, str, list[str]]:
+        """Write valid CSVs for every check, then poison one numeric cell.
+
+        Picks a ranged numeric column that is NOT a unique key, so the corruption
+        exercises the non-finite guard rather than the dupes/key path. Returns
+        (file, column, errors).
+        """
+        monkeypatch.setattr("validate.DATA_DIR", tmp_path)
+        for check in CHECKS:
+            (tmp_path / check["file"]).write_text(self._synth_valid_csv(check))
+        # Robust against CHECKS reordering: require a ranged column that is not also a
+        # unique key (so the corruption hits the non-finite guard, not the dupes path).
+        target = next(
+            c for c in CHECKS
+            if c.get("ranges") and any(col not in c.get("unique_keys", []) for col in c["ranges"])
+        )
+        keys = target.get("unique_keys", [])
+        numeric_col = next(c for c in target["ranges"] if c not in keys)
+        cols = sorted(target["columns"])
+        col_idx = cols.index(numeric_col)
+        lines = self._synth_valid_csv(target).splitlines()
+        cells = lines[1].split(",")
+        cells[col_idx] = bad_value  # "" -> NaN; "inf" -> +inf
+        lines[1] = ",".join(cells)
+        (tmp_path / target["file"]).write_text("\n".join(lines) + "\n")
+        return target["file"], numeric_col, validate_all()
+
+    def test_nonfinite_blank_value_reported(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        # A blank (NaN) numeric cell slips past RANGE (nan<lo / nan>hi both False),
+        # COERCE (a genuine NaN cancels in the diff), DTYPE (a NaN column is still
+        # float), and the fully-null-ROW NULLS check. The NONFINITE guard must catch it.
+        file, col, errors = self._write_all_valid_then_corrupt(tmp_path, monkeypatch, "")
+        assert any("NONFINITE" in e and file in e and col in e for e in errors), errors
+
+    def test_nonfinite_inf_value_reported(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        file, col, errors = self._write_all_valid_then_corrupt(tmp_path, monkeypatch, "inf")
+        assert any("NONFINITE" in e and file in e and col in e for e in errors), errors
+
     @staticmethod
     def _synth_valid_csv(check: dict) -> str:
         """Build a CSV that satisfies every rule in ``check``.
