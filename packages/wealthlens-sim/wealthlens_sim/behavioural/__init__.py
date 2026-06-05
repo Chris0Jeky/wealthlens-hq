@@ -8,6 +8,10 @@ later PR applies the factor to a scenario's revenue, default OFF and caveated.
 See :mod:`~wealthlens_sim.behavioural.response`.
 """
 
+from wealthlens_sim.behavioural.registry import (
+    RATE_RESPONSIVE_DOMAINS,
+    load_behavioural_channels,
+)
 from wealthlens_sim.behavioural.response import (
     BehaviouralChannel,
     BehaviouralResponse,
@@ -15,7 +19,9 @@ from wealthlens_sim.behavioural.response import (
 )
 
 __all__ = [
+    "RATE_RESPONSIVE_DOMAINS",
     "BehaviouralChannel",
     "BehaviouralResponse",
+    "load_behavioural_channels",
     "revenue_response_factor",
 ]
