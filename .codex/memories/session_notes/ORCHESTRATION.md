@@ -11,12 +11,12 @@ Last updated: 2026-06-05
 
 This section supersedes the older handoff snapshots below.
 
-## ▶️ Live state (2026-06-05 PM) — #349 + #350 + #351 MERGED, #352 open & reviewed
+## ▶️ Live state (2026-06-05 PM) — #349–#352 MERGED, #353 open & reviewed
 
-This session drained the two aged PRs AND the new static-publish PR (each with the
-full adversarial gate: real findings of all severities fixed, every bot thread
-resolved, CI green), and opened one more reviewed PR (#352). Loop is running per
-Chris's standing instruction.
+This session drained #349, #350, #351, #352 (each with the full adversarial gate:
+real findings of all severities fixed, every bot thread resolved, CI green), and
+opened one more reviewed PR (#353, CI suites). Loop is running per Chris's standing
+instruction.
 
 - **#349 MERGED** (`8c17153`): live `/simulator` scenario page. Review caught TWO
   real `useFetch` stale-write races the prior handoff had wrongly called "fixed":
@@ -35,34 +35,37 @@ Chris's standing instruction.
   one — the nav link was on **dead `NavBar.vue`**; moved to the actually-rendered
   `AppHeader` (desktop+mobile, new `nav.simulator` i18n key). Also: build-time
   contract-key validation + fail-on-missing-fixture + module-level-only AST scan.
-- **#352 OPEN** (`fix/test-validate-fixtures`): fixes the stale `test_valid_file_passes`
-  fixture (it wrote 200 identical all-`1` rows, violating the later-added
-  dtype/range/unique-key CHECKS). New schema-aware `_synth_valid_csv` + a negative
-  `test_duplicate_keys_reported` (from adversarial review). **Real committed data was
-  already clean** — purely a stale test. 9/9 pipeline tests pass; CI green; 0
-  unresolved threads; reviewed (subagent + gemini/codex). Newest PR → age, then
-  merge first next cycle.
+- **#352 MERGED** (`fix/test-validate-fixtures`): fixed the stale
+  `test_valid_file_passes` fixture (200 identical all-`1` rows violated the
+  later-added dtype/range/unique-key CHECKS). Schema-aware `_synth_valid_csv` + a
+  negative `test_duplicate_keys_reported` (from review). Real committed data was
+  always clean — purely a stale test.
+- **#353 OPEN** (`chore/ci-pipelines`): adds `ci-pipelines.yml` to EXECUTE the 3
+  previously-unrun Python suites (root `tests/` 156, dashboard `tests/` 4,
+  `automation/data-pipelines/tests/` validate 6) — closes the gap that let #352's
+  fixture fail invisibly. 3 separate pytest invocations (two `test_validate.py`
+  files → import-mismatch if combined). Reviewed by 2 independent subagents (A: httpx
+  concern empirically refuted by the green CI run + ci-backend using the same
+  `.[dev]`; B: added a weekly cron + run-whole-dir-with-ignore so new pipeline test
+  files can't slip the filter). CI `test` job green on a clean runner. Newest PR →
+  age, then merge first next cycle.
 - **Simulator pipeline is now fully live end-to-end**: synth → engine (MC, default
   OFF) → `to_dashboard_json` → `/api/simulator` → `/simulator` scenario page →
   static publish + nav link (live on the deployed site).
 
 ## 🔜 Seeded next tasks (highest-leverage first) — for the endless loop
 
-1. **Drain #352** once aged + still green + no new threads (`gh pr merge 352
-   --merge --delete-branch`).
-2. **Get automation + root test suites into CI** (deferred from #350) — so failures
-   like the #352 one can't stay invisible. Add a CI job running `make pipeline-test`
-   (+ root tests). This is the natural next PR after #352 (it makes #352's fix
-   guarded).
-3. **`to_dashboard_json` caveat + provenance URLs** (upstream `packages/wealthlens-sim`):
+1. **Drain #353** once aged + still green + no new bot threads (`gh pr merge 353
+   --merge --delete-branch`). (#352's CI-suites gap is now closed by it.)
+2. **`to_dashboard_json` caveat + provenance URLs** (upstream `packages/wealthlens-sim`):
    surface the synthetic-population caveat in the contract itself; add URL +
    access-date to provenance sources (currently ids/strings only).
-4. **IHT calibration**: synth IHT sums stock liability (~£1009bn) vs ~£7-8bn real;
+3. **IHT calibration**: synth IHT sums stock liability (~£1009bn) vs ~£7-8bn real;
    IHT scenarios stay excluded until fixed.
-5. **Deferred CI hardening (from #350 desc)**: get root + automation suites into CI;
-   mypy on automation/tests; deploy build-gate; enforce format/coverage; SHA-pin
-   actions. Each its own PR.
-6. **Expand the simulation**: sample assumption RangeValues alongside top-tail
+4. **Remaining deferred CI hardening (from #350 desc)**: enable mypy on
+   automation/ + tests/ (pre-existing type errors); deploy build-gate; enforce
+   format/coverage; SHA-pin actions. Each its own PR.
+5. **Expand the simulation**: sample assumption RangeValues alongside top-tail
    alpha; Sobol sensitivity (SALib); optional `?uncertainty=` API band.
 
 ## 🧷 Chris's TODOs (see tasks/ACTION-REQUIRED.md — surface every wrap-up)
