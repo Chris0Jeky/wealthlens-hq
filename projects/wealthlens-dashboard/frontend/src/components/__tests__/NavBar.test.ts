@@ -60,6 +60,7 @@ describe('NavBar', () => {
     expect(wrapper.text()).toContain('Wealth Shares')
     expect(wrapper.text()).toContain('Housing')
     expect(wrapper.text()).toContain('CGT')
+    expect(wrapper.text()).toContain('Simulator')
   })
 
   it('marks the current route with aria-current="page"', () => {

@@ -13,17 +13,32 @@ Usage: python scripts/generate_static_api.py
 
 from __future__ import annotations
 
+import ast
 import json
 import os
 import re
 import sys
+from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = ROOT / "projects" / "wealthlens-dashboard" / "data" / "processed"
 OUT_DIR = ROOT / "projects" / "wealthlens-dashboard" / "frontend" / "public" / "data"
+
+# Simulator scenario fixtures (the same files the backend /api/simulator serves)
+# are mirrored into the static build so /simulator works without a backend.
+SIM_SRC_DIR = ROOT / "projects" / "wealthlens-dashboard" / "data" / "simulator"
+SIM_OUT_DIR = OUT_DIR / "simulator"
+BACKEND_SIMULATOR = (
+    ROOT / "projects" / "wealthlens-dashboard" / "backend" / "app" / "routers" / "simulator.py"
+)
+# Mirrors backend app/routers/simulator.py _REQUIRED_KEYS: a fixture must carry
+# these or the build fails, rather than publishing a broken contract statically.
+_SIM_REQUIRED_KEYS = frozenset(
+    {"schema_version", "total_revenue_gbp_bn", "caveats", "interval_method"}
+)
 
 DATASETS: dict[str, str] = {
     "wealth-shares": "wid_wealth_shares_gb.csv",
@@ -123,7 +138,7 @@ def _postprocess_wealth_shares(records: list[dict]) -> list[dict]:
     without needing to parse variable names at runtime.
     """
     for row in records:
-        if "variable" in row and row["variable"]:
+        if row.get("variable"):
             row["percentile"] = _extract_percentile(row["variable"])
     return records
 
@@ -149,6 +164,85 @@ def _read_csv_as_records(path: Path, slug: str = "") -> list[dict]:
         records = _POSTPROCESSORS[slug](records)
 
     return records
+
+
+def _load_simulator_scenarios() -> dict[str, dict[str, str]]:
+    """Read the backend's SIMULATOR_SCENARIOS registry without importing it.
+
+    The registry (id -> {name, description}) is the single source of truth for
+    which scenarios the API exposes. We parse the module with ``ast`` and
+    ``literal_eval`` the dict literal so the static index cannot drift from the
+    API and so this script needs no FastAPI/backend dependency at build time.
+    """
+    tree = ast.parse(BACKEND_SIMULATOR.read_text(encoding="utf-8"))
+    # Module-level statements only (not ast.walk): the registry is a top-level
+    # binding, and scanning only tree.body avoids matching a same-named symbol in
+    # an inner scope (function/TYPE_CHECKING block) after a future refactor.
+    for node in tree.body:
+        target = None
+        value = None
+        if isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
+            target, value = node.target.id, node.value
+        elif (
+            isinstance(node, ast.Assign)
+            and len(node.targets) == 1
+            and isinstance(node.targets[0], ast.Name)
+        ):
+            target, value = node.targets[0].id, node.value
+        if target == "SIMULATOR_SCENARIOS" and value is not None:
+            try:
+                return ast.literal_eval(value)
+            except ValueError as e:
+                raise RuntimeError(
+                    f"SIMULATOR_SCENARIOS in {BACKEND_SIMULATOR} is not a static literal: {e}"
+                ) from e
+    raise RuntimeError(f"SIMULATOR_SCENARIOS not found in {BACKEND_SIMULATOR}")
+
+
+def generate_simulator_static() -> int:
+    """Mirror the registered simulator scenarios into the static build.
+
+    Writes ``{id}.json`` (the same dashboard contract the API serves) plus a
+    ``scenarios.json`` index matching ``GET /api/simulator/`` so the frontend's
+    static path is byte-for-byte equivalent to the API path. Returns the count
+    of scenarios published.
+    """
+    scenarios = _load_simulator_scenarios()
+    SIM_OUT_DIR.mkdir(parents=True, exist_ok=True)
+    index: list[dict[str, str]] = []
+    for scenario_id, meta in scenarios.items():
+        src = SIM_SRC_DIR / f"{scenario_id}.json"
+        if not src.exists():
+            # Fail loud: a registered scenario with no fixture would silently drop
+            # from scenarios.json, diverging from the API (list_scenarios lists every
+            # registered scenario; get_scenario 503s on a missing fixture). Failing
+            # the export beats a partial publish that hides a policy scenario.
+            raise FileNotFoundError(
+                f"Simulator fixture for registered scenario '{scenario_id}' not found at {src}. "
+                "Run automation/data-pipelines/generate_simulator_dashboards.py first."
+            )
+        # Validate before publishing: a well-formed JSON object carrying the same
+        # required contract keys the backend enforces, so a malformed or incomplete
+        # fixture fails the build instead of being served statically as a broken
+        # contract.
+        try:
+            payload = json.loads(src.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Malformed JSON in simulator fixture '{scenario_id}': {e}") from e
+        if not isinstance(payload, dict) or not _SIM_REQUIRED_KEYS.issubset(payload):
+            present = set(payload) if isinstance(payload, dict) else set()
+            raise ValueError(
+                f"Simulator fixture '{scenario_id}' is missing required contract keys: "
+                f"{sorted(_SIM_REQUIRED_KEYS - present)}"
+            )
+        (SIM_OUT_DIR / f"{scenario_id}.json").write_text(json.dumps(payload), encoding="utf-8")
+        index.append({"id": scenario_id, "name": meta["name"], "description": meta["description"]})
+        print(f"  OK simulator {scenario_id}")
+    (SIM_OUT_DIR / "scenarios.json").write_text(
+        json.dumps({"scenarios": index}), encoding="utf-8"
+    )
+    print(f"Generated {len(index)}/{len(scenarios)} simulator scenarios in {SIM_OUT_DIR}")
+    return len(index)
 
 
 def main() -> None:
@@ -237,6 +331,9 @@ def main() -> None:
     }
     freshness_path = OUT_DIR / "freshness.json"
     freshness_path.write_text(json.dumps(freshness_response), encoding="utf-8")
+
+    # Simulator scenarios (independent of the CSV datasets above).
+    generate_simulator_static()
 
     print(f"\nGenerated static API for {len(available)}/{len(DATASETS)} datasets in {OUT_DIR}")
     if errors:
