@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { mount, flushPromises } from "@vue/test-utils";
 import DataFreshnessBadge from "@/components/DataFreshnessBadge.vue";
 import { _resetCache } from "@/composables/useDataFreshness";
@@ -10,17 +10,38 @@ function mockFreshnessResponse(dateStr: string, source = "ONS Wealth and Assets 
   };
 }
 
-/** Returns an ISO date string for N days ago from today. */
+/**
+ * Returns a YYYY-MM-DD string for N days ago, formatted from LOCAL date components.
+ *
+ * The component computes "today" from local components (useDataFreshness daysAgo:
+ * Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())), so this helper must
+ * also use local components — then the entry date and the component's "today" agree
+ * in EVERY timezone. The original bug mixed local getDate() with toISOString() (UTC),
+ * which is off by one in UTC+ zones just after local midnight. (Building from UTC
+ * instead only papers over UTC-12..+11 and still fails UTC+12..+14.) The frozen clock
+ * below then just removes the wall-clock dependency for a stable absolute date.
+ */
 function daysAgoDate(days: number): string {
   const d = new Date();
   d.setDate(d.getDate() - days);
-  return d.toISOString().split("T")[0];
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
 describe("DataFreshnessBadge", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    // Freeze the clock so the absolute "today" is stable across runs (no midnight-tick
+    // race). Timezone-independence comes from daysAgoDate using LOCAL components to
+    // match the component, NOT from the frozen instant — so any runner timezone works.
+    // Only Date is faked, leaving promises/timers untouched (flushPromises still runs).
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-06-15T12:00:00Z"));
     _resetCache();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it("renders date for known dataset", async () => {
