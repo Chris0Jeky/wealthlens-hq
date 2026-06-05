@@ -1,5 +1,7 @@
 {
-  "caveats": [],
+  "caveats": [
+    "Illustrative estimate over a synthetic v0.1 population (household microdata statistically generated and calibrated to published aggregates), not an official forecast. Treat the figures as indicative, not as a costing."
+  ],
   "devolution_scope": null,
   "enforcement_cost_gbp_bn": {
     "central": 0.0,

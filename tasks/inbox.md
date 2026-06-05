@@ -10,16 +10,25 @@ Every concrete action item extracted from research. Triage into active-sprint, b
 
 ## Simulator dashboard follow-ups (from #348/#349 reviews — data integrity)
 
-- [ ] **Publish simulator JSON statically** so `/simulator` works on the deployed
-  (static) GitHub Pages build, then un-gate the route (currently registered only in
-  non-static mode). Copy `data/simulator/*.json` + add a `scenarios.json` index into
-  the frontend build (or a build step), and add a nav link. [why: the page is dev-only until then]
-- [ ] **Surface the synthetic-population caveat in `to_dashboard_json` itself** (not
-  only the generator that injects it into the served fixtures), so every consumer of
-  the contract gets it. Upstream `wealthlens-sim`.
+- [x] **Publish simulator JSON statically** so `/simulator` works on the deployed
+  (static) GitHub Pages build, un-gate the route + nav link. [completed: 2026-06-05, PR #351]
+- [x] **Surface the synthetic-population caveat in `to_dashboard_json` itself** (not
+  only the generator), so every consumer of the contract gets it. [completed: 2026-06-05, PR #354]
+- [x] **Make the synthetic caveat key off ground-truth `is_synthetic`, not the
+  `population_version` string.** [completed: 2026-06-05, PR #354] Threaded
+  `population_is_synthetic` through `EngineResult` (fail-closed default `True`,
+  from `getattr(population, "is_synthetic", True)`); `_caveats` now gates on it, so a
+  synthetic population can't fail open by being mistagged. Tested via a `model_copy`
+  flip to `is_synthetic=False`. (A genuine real-microdata provider is still the
+  separate WAS/FRS task below.)
 - [ ] **Add URL + access date to provenance sources.** The served provenance cites
   source strings / opaque population source ids, not URLs — the repo data-integrity
-  rule wants URL + access date per source. Upstream `wealthlens-sim`.
+  rule wants URL + access date per source. Two parts: (B2, doable now) resolve
+  `population_provenance_ids` (e.g. `ons-was-wealth`) against `registries/sources.yml`
+  (which already holds real url+access_date) into a structured `population_provenance`
+  block; (B1, needs sourcing) the assumption `source` citation strings (e.g.
+  "Vermeulen 2018") have no registry URL — add verified citations to
+  `registries/assumptions.yml`, do NOT fabricate. Upstream `wealthlens-sim`.
 - [ ] **Calibrate synthetic IHT** before serving any IHT scenario: the synth IHT
   sums each household's stock estate liability across the grossed-up population (not
   an annual death/estate-flow cohort), giving ~£1,009bn vs ~£7-8bn real. IHT

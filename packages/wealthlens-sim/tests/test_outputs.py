@@ -205,9 +205,27 @@ class TestStructure:
 
 
 class TestDataIntegritySurfacing:
-    def test_complete_sourced_run_has_no_caveats(self):
+    def test_complete_sourced_synth_run_carries_population_caveat(self):
+        # A fully-sourced run over the SYNTHETIC population carries exactly the
+        # synthetic-population caveat (emitted by the contract itself now) and NOT
+        # the incomplete-provenance caveat.
         dash = to_dashboard_json(_golden_result())
         assert dash["provenance_complete"] is True
+        assert any("synthetic v0.1 population" in c for c in dash["caveats"])
+        assert not any("Provenance incomplete" in c for c in dash["caveats"])
+
+    def test_real_population_omits_synthetic_caveat(self):
+        # GROUND TRUTH: a population whose is_synthetic flag is False must NOT carry
+        # the synthetic-population caveat. (No real-microdata provider exists yet, so
+        # flip the flag on a generated population via model_copy to exercise the
+        # is_synthetic gate directly — independent of the version_tag string.)
+        pop = generate_population(SynthConfig(n_households=500, seed=7)).model_copy(
+            update={"is_synthetic": False}
+        )
+        dash = to_dashboard_json(
+            simulate(pop, _golden_scenario(), registries=Registries(assumptions=load_assumptions()))
+        )
+        assert not any("synthetic v0.1 population" in c for c in dash["caveats"])
         assert dash["caveats"] == []
 
     def test_unsourced_run_flags_incomplete_provenance(self):
@@ -220,6 +238,16 @@ class TestDataIntegritySurfacing:
         # Degenerate intervals are still emitted, but the caveat is the guardrail.
         total = dash["total_revenue_gbp_bn"]
         assert total["low"] == total["central"] == total["high"]
+
+    def test_unsourced_synth_run_orders_synthetic_then_incomplete(self):
+        # An unsourced SYNTH run carries BOTH caveats; pin the order
+        # (synthetic-population first, incomplete-provenance second) so a future
+        # reorder can't silently change what the chart's banner leads with.
+        pop = generate_population(SynthConfig(n_households=500, seed=7))
+        dash = to_dashboard_json(simulate(pop, _golden_scenario()))
+        assert len(dash["caveats"]) == 2
+        assert "synthetic v0.1 population" in dash["caveats"][0]
+        assert "Provenance incomplete" in dash["caveats"][1]
 
     def test_enforcement_headline_has_no_overstatement_caveat(self):
         dash = to_dashboard_json(_devolution_enforcement_result())
