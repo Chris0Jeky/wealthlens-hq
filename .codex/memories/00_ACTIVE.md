@@ -7,22 +7,28 @@
 
 Last updated: 2026-06-05
 
-## Latest status (2026-06-05 endless-cycle)
+## Latest status (2026-06-05 endless-cycle — LOOP WRAPPED, clean handoff)
 
 > Full live detail in `.codex/memories/session_notes/ORCHESTRATION.md` (master
 > control). This board is the short version.
 
-**Session 3 (loop resumed) — 8 PRs merged (#358-#365), main `b09ac42`, 0 open PRs.**
-Ran a 5-agent understanding sweep (bug-sweep = 4 false positives; sim core solid),
-then: mypy-gate `automation/` (#358) + root `tests/` (#360); new `uncertainty/sobol.py`
-Sobol sensitivity module (#359); and a full data-integrity arc closing the
-blank-cell→NaN leak in EVERY data pipeline (gdhi/tax #361, wealth/housing #362,
-hmrc/boe/productivity/wid #365 — incl. a real hmrc count-suppression fix) via a shared
-`to_finite_float` helper (#364) + a `validate.py` NONFINITE backstop (#363). Each PR:
-2 independent adversarial reviews + all bot threads resolved + CI green. **NEXT: the
-flagship simulation expansion** — behavioural-response (cited elasticities, default
-OFF) → multi-param Monte-Carlo → wire the Sobol module. See ORCHESTRATION
-"NEXT = THE FLAGSHIP" for the PR plan + seeded follow-ups.
+**Session 3 (loop resumed, then wrapped by Chris) — 11 PRs merged (#358-#368),
+main `c3712e3`, 0 open PRs, 1025 tests green.** Each PR: 2 independent adversarial
+reviews + all bot threads resolved + CI green. Repo left spotless (only `main`;
+stale branches/worktrees pruned; scheduled loop wakeup cancelled). Delivered:
+- **CI hardening:** mypy now gated on `automation/` (#358) AND root `tests/` (#360).
+- **Sobol module:** new `uncertainty/sobol.py` — Sobol sensitivity indices (#359).
+- **Data-integrity arc:** closed the blank-cell→NaN leak in EVERY data pipeline
+  (gdhi/tax #361, wealth/housing #362, hmrc/boe/productivity/wid #365 — incl. a real
+  hmrc count-suppression fix) via a shared `to_finite_float` helper (#364) + a
+  `validate.py` NONFINITE backstop (#363); + wid parse hardening (#368).
+- **Flagship groundwork (behavioural layer):** `behavioural/response.py` reduced-form
+  revenue-response factor from cited elasticities (#366) + `behavioural/registry.py`
+  cited-registry channel loader (#367). Standalone / engine-free / default-OFF.
+- **BLOCKED (deferred to Chris):** wiring behavioural into the engine needs cited
+  base-share data the registry lacks (else a sub-population elasticity applied to total
+  revenue overstates ~10x). See ORCHESTRATION "❓ DEFERRED QUESTIONS" + "NEXT-TICK
+  DECISION" (recommended next: B1 assumption-source citation URLs).
 
 - **Merged to main (2026-06-04 cycle):** #338–#348 (11 PRs) — uncertainty
   sampling (#338) + propagation (#345) + engine MC wiring (#346), the

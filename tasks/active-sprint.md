@@ -1,15 +1,19 @@
 # Active Sprint
 
-Last updated: 2026-06-04
+Last updated: 2026-06-05
 
-> **LATEST (2026-06-04):** Full PR drain. Merged to main: **#339** (IHT RNRB
-> taper regression reverted, HMRC-verified), **#340–#344** (5 Dependabot), and
-> **#338** (uncertainty *sampling* layer, hardened over 7 codex rounds + 4
-> adversarial reviews). Open stack → main: **#345** uncertainty *propagation*
-> (reviewed, all findings fixed; merge-ready) and **#346** engine Monte-Carlo
-> *wiring* (default OFF; under 2-lens review). 751 sim tests; CI green.
-> Caveat: `make ci-quick` still hides dashboard backend pytest failures (exits 0);
-> tracked in `tasks/inbox.md`, gated on Chris (ACTION-REQUIRED #6).
+> **LATEST (2026-06-05 — session 3 loop wrapped):** 11 PRs merged (#358-#368), main
+> `c3712e3`, **0 open PRs, 1025 tests green**, repo spotless. Highlights: mypy gated on
+> `automation/` + root `tests/`; new `uncertainty/sobol.py`; the full blank-cell→NaN
+> data-integrity arc across every pipeline + a `validate.py` NONFINITE backstop + shared
+> `_cells.to_finite_float`; and the **flagship behavioural layer groundwork** —
+> `behavioural/response.py` (cited reduced-form revenue-response factor) + `registry.py`
+> (cited-channel loader), standalone/default-OFF. Each PR: 2 adversarial reviews + all bot
+> threads + green CI.
+>
+> **Behavioural engine-apply is BLOCKED on cited base-share data** (deferred to Chris — see
+> ORCHESTRATION "❓ DEFERRED QUESTIONS"). Recommended next when the loop resumes: **B1 —
+> assumption-source citation URLs**. Re-run `/loop keep going` to resume.
 
 > **⚑ See [`ACTION-REQUIRED.md`](ACTION-REQUIRED.md)** for Chris's outstanding
 > human action items (job application due today, LinkedIn launch, outreach emails,

@@ -2,6 +2,26 @@
 
 Completed tasks go here with completion date.
 
+## 2026-06-05 — Session 3 endless-loop (11 PRs merged, then wrapped)
+
+Autonomous end-to-end loop. Started + ended at 0 open PRs, main `c3712e3`, **1025 tests
+green** (837 sim + 163 root + 25 pipeline), ruff + mypy clean everywhere, `validate_all()`
+→ NONE. Every PR: 2 independent adversarial reviews + all bot threads resolved + green CI.
+Repo left spotless (only `main`; stale branches/worktrees pruned; loop wakeup cancelled).
+
+- [x] #358 — gate mypy on `automation/` (+ fix 26 errors)
+- [x] #359 — new `uncertainty/sobol.py` Sobol sensitivity module (Saltelli + Jansen, Ishigami benchmark)
+- [x] #360 — gate mypy on root `tests/`
+- [x] #361 — fix blank-cell→NaN leak in gdhi + tax-composition pipelines
+- [x] #362 — fix blank-cell→NaN leak in wealth + housing pipelines
+- [x] #363 — `validate.py` NONFINITE backstop + dtype/range/unique specs for all CSVs
+- [x] #364 — consolidate the cell parser into a shared `_cells.to_finite_float` helper
+- [x] #365 — fix NaN leak in hmrc/boe/productivity/wid (incl. a real HMRC count-suppression fix)
+- [x] #366 — **flagship:** `behavioural/response.py` reduced-form revenue-response factor from cited elasticities (standalone, default OFF)
+- [x] #367 — **flagship:** `behavioural/registry.py` cited-registry channel loader
+- [x] #368 — pipeline hardening: wid `.get()` + reject-fractional-year + 5 call-site tests; validate NaN-tolerant doc comment
+- [ ] **Deferred to Chris:** behavioural engine-apply is BLOCKED on cited base-share data (see ORCHESTRATION "❓ DEFERRED QUESTIONS"). Recommended next: B1 assumption-source citation URLs.
+
 ## 2026-05-29 — Merge cycle + Gate-1 simulator + Wave 12 start
 
 Autonomous end-to-end cycle. Started with 38 open PRs; ended with 0 open PRs, main
