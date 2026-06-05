@@ -1,20 +1,23 @@
 """Call-site regression tests for the shared ``_cells.to_finite_float`` NaN guard.
 
 #365 follow-up. ``fetch_hmrc_stats`` already has a focused test
-(``test_hmrc_finite_cells``). These lock in the OTHER three fetchers that route
-raw source cells through ``_cells.to_finite_float`` — ``fetch_boe_rates``,
-``fetch_productivity_pay`` and ``fetch_wid_data`` — so a future refactor that
-reintroduces a raw ``float()`` (which would let a blank / NaN / inf source cell
-leak into a published CSV) is caught here rather than in production data.
+(``test_hmrc_finite_cells``); this file locks in the three fetchers the #365 review
+named — ``fetch_boe_rates``, ``fetch_productivity_pay`` and ``fetch_wid_data`` — so a
+future refactor that reintroduces a bare ``float()`` (which would let a blank / NaN /
+inf source cell leak into a published CSV) is caught here rather than in production
+data. The remaining ``to_finite_float`` call sites (``fetch_tax_composition``,
+``fetch_ons_gdhi``, ``fetch_ons_housing``, ``fetch_ons_wealth``) are guarded the same
+way but not yet call-site-tested — tracked as a follow-up.
 
-Each test feeds a payload containing a value that bare ``float()`` WOULD accept
-but ``to_finite_float`` rejects (``"inf"`` / ``"nan"`` / blank / overflow), and
-asserts the published output never carries a non-finite number.
+Discriminating signal: a working ``to_finite_float`` never emits ``inf`` (it converts
+a bad cell to ``None`` — the row is dropped, or the value recorded as a missing
+``NaN``); only a bypassed bare ``float()`` lets an ``inf`` through. So for a KEPT row
+the test asserts the published column carries no ``inf``; for a DROP call site it
+asserts the bad row is gone and the column carries no non-finite value at all.
 """
 
 from __future__ import annotations
 
-import math
 import sys
 from pathlib import Path
 from typing import Any
@@ -29,9 +32,25 @@ import fetch_productivity_pay
 import fetch_wid_data
 
 
+def _has_inf(series: pd.Series) -> bool:
+    """True if any entry is +/-infinity.
+
+    Infinity is the unmistakable signature of a bypassed ``to_finite_float``: the
+    guard converts a non-finite cell to ``None`` (the row is dropped, or the value
+    recorded as a missing ``NaN``), so a published ``inf`` can only come from a bare
+    ``float()``. Vectorised; ``isin`` matches both ``np.inf`` and ``float('inf')``.
+    """
+    return bool(series.isin([float("inf"), float("-inf")]).any())
+
+
 def _has_nonfinite(series: pd.Series) -> bool:
-    """True if any non-None entry of ``series`` is NaN/inf."""
-    return bool(series.map(lambda x: x is not None and not math.isfinite(x)).any())
+    """True if any entry is NaN/None or +/-inf.
+
+    Use only where surviving rows carry no legitimate missing value (a DROP call
+    site, or a forward-filled column) — there a NaN can only be a leak. Vectorised
+    and safe on object dtype (``isna`` covers both ``None`` and ``NaN``).
+    """
+    return bool(series.isna().any() or _has_inf(series))
 
 
 # --- fetch_wid_data.process -------------------------------------------------
@@ -107,23 +126,30 @@ def test_boe_rejects_nonfinite_rate_cells(
 ) -> None:
     """A non-finite Bank Rate / CPI cell never reaches the published CSV.
 
-    ``inf`` would survive a bare ``float()`` — ``to_finite_float`` turns it into
-    ``None`` (skipped). A row whose values are all non-finite is dropped entirely.
+    ``inf`` would survive a bare ``float()``; ``to_finite_float`` turns it into
+    ``None``. bank_rate is forward-filled (so a rejected cell leaves no NaN), but cpi
+    is not — a rejected cpi cell is recorded as a missing NaN, so the test asserts
+    cpi carries no ``inf`` (the leak signal), not no-NaN. A row whose values are all
+    non-finite is dropped entirely. Both call sites (bank_rate L214, cpi L222) are
+    exercised with a value that bare ``float()`` would accept.
     """
     monkeypatch.setattr(fetch_boe_rates, "PROCESSED_DIR", tmp_path)
     raw = tmp_path / "boe_raw.csv"
     raw.write_text(
         "DATE,IUDBEDR,D7BT\n"
         "01 Jan 2000,5.5,2.1\n"  # valid
-        "02 Jan 2000,inf,3.0\n"  # bank_rate non-finite -> None (row kept via CPI)
+        "02 Jan 2000,inf,3.0\n"  # bank_rate non-finite -> None (row kept via CPI), ffilled
         "03 Jan 2000,nan,nan\n"  # all non-finite -> row dropped
-        "04 Jan 2000,4.0,1.5\n",  # valid
+        "04 Jan 2000,4.0,1.5\n"  # valid
+        "05 Jan 2000,4.5,inf\n",  # CPI non-finite, bank_rate valid -> row kept, cpi rejected
         encoding="utf-8",
     )
     df = fetch_boe_rates.process(raw)
-    assert not _has_nonfinite(df["bank_rate"])
-    assert not _has_nonfinite(df["cpi_annual"])
-    # The all-non-finite row carried no publishable value, so it is dropped.
+    assert not _has_nonfinite(df["bank_rate"])  # ffilled -> no NaN, no inf
+    assert not _has_inf(df["cpi_annual"])  # a rejected cpi is a missing NaN, never inf
+    # The all-non-finite row was dropped; valid + recoverable rows survive.
     assert "2000-01-03" not in df["date"].tolist()
-    # The valid dates survive.
-    assert {"2000-01-01", "2000-01-04"} <= set(df["date"].tolist())
+    assert {"2000-01-01", "2000-01-04", "2000-01-05"} <= set(df["date"].tolist())
+    # The row whose only bad cell was CPI survives with a missing (NaN) cpi, not inf.
+    cpi_05 = df.loc[df["date"] == "2000-01-05", "cpi_annual"].iloc[0]
+    assert pd.isna(cpi_05)
