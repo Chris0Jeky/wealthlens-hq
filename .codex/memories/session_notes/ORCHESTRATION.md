@@ -5,22 +5,29 @@
 >
 > **CRITICAL**: Update this file BEFORE every compaction risk (long tool calls, large diffs).
 
-Last updated: 2026-06-05 (session 3 — #358-#367 merged (10 PRs); #368 open (hardening); behavioural engine-apply blocked on base-share data)
+Last updated: 2026-06-05 (session 3 — #358-#368 merged (11 PRs); 0 open PRs; next = B1 citation URLs or base-share research)
 
-## ▶️ LATEST (session 3, after #367) — main `2e87c77`, #368 open
-- **#367 MERGED** (`2e87c77`): behavioural registry loader on main. Behavioural
-  groundwork (response module #366 + loader #367) COMPLETE on main; 837 sim tests.
-- **#368 OPEN** (`chore/pipeline-hardening-followups`): #365 review follow-ups —
-  fetch_wid_data `.get()` graceful missing-key + 4 process() call-site tests
-  (isolating PROCESSED_DIR); validate.py NaN-tolerant comment on hmrc num_taxpayers.
-  mypy/ruff clean; 162 root + 25 pipeline tests. **NEXT TICK: 2 reviews on #368 → merge.**
-- **Then DECIDE** (the recurring fork): (a) cited base-share research to unblock the
-  behavioural ENGINE-apply (the flagship payoff; research-heavy — HMRC non-dom stats /
-  Advani non-dom-wealth share / CGT realising-share; NO fabrication; deserves a focused
-  session), or (b) remaining backlog: boe/productivity call-site tests (last #365
-  follow-up), B1 assumption-source citation URLs in sources.yml, frontend visibility
-  (decile/nation/provenance surfacing). The behavioural module/loader stand as reviewed,
-  cited groundwork either way.
+## ▶️ LATEST (session 3, after #368) — main `d6e9df2`, 0 open PRs, 11 PRs merged
+
+- **#367 + #368 MERGED.** Behavioural groundwork (response #366 + loader #367) complete
+  on main; #368 = #365 hardening follow-ups (wid `.get()` + reject-fractional-year + 5
+  call-site tests; validate NaN-tolerant comment). 11 PRs this session (#358-#368), each
+  with 2 independent adversarial reviews + all bot threads resolved + green CI.
+
+### 🔀 NEXT-TICK DECISION (the recurring fork). Priority order:
+1. **B1: assumption-source citation URLs** (data-integrity, BOUNDED web research — good
+   next pick). `registries/sources.yml` / the assumptions' `source:` strings cite papers
+   (Advani & Summers 2020, Brülhart 2022, Agersnap & Zidar 2021, Vermeulen 2018, Saez &
+   Zucman 2019, Alstadsæter et al 2019, etc.) but lack URLs. Find each canonical URL via
+   WebSearch (VERIFY — no fabrication; prefer DOI/official), add to sources.yml, surface
+   in provenance. Mission-aligned (every claim cited) + unblocked + completable.
+2. **Base-share research → behavioural ENGINE-apply** (the flagship payoff; heavier
+   research): cited non-dom share of the £Nm+ wealth base / CGT realising-share, added to
+   the registry, THEN wire `engine.simulate(..., behavioural=...)` default OFF + caveated,
+   applying each elasticity per its base slice (see the PR-B checklist in
+   `behavioural/response.py`). Deserves a focused session; do NOT wire onto total revenue.
+3. Smaller backlog: boe/productivity call-site tests (last #365 follow-up); frontend
+   visibility (surface decile/nation/provenance in SimulatorView, currently discarded).
 
 # CURRENT HANDOFF - read this first (2026-06-05, session 3 — endless loop RESUMED)
 
