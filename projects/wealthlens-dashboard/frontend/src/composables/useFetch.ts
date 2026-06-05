@@ -54,7 +54,13 @@ export function useFetch<T = unknown>(
         error.value = `HTTP ${response.status}: ${response.statusText}`
         data.value = null
       } else {
-        data.value = (await response.json()) as T
+        // Parsing the body is a SECOND async boundary after the headers-level
+        // isCurrent() check above. Buffer the result and re-check freshness
+        // before assigning, so a superseded request (A) whose json() resolves
+        // after the user switched to B cannot overwrite B's data.
+        const parsed = (await response.json()) as T
+        if (!isCurrent()) return
+        data.value = parsed
       }
     } catch (e) {
       if (e instanceof DOMException && e.name === 'AbortError') return

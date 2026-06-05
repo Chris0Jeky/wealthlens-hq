@@ -127,4 +127,36 @@ describe('useFetch', () => {
     expect(result.data.value).toEqual({ fresh: true }) // not clobbered
     expect(result.loading.value).toBe(false) // not re-toggled
   })
+
+  it('a superseded fetch cannot overwrite fresh data after its json() resolves late', async () => {
+    // Regression for the second async boundary: the first request's HEADERS arrive
+    // while it is still current (passing the post-fetch guard), then the user
+    // switches before its BODY parses. The freshness check must run again after
+    // json() resolves, or the stale body clobbers the fresh data.
+    let resolveFirstJson!: (v: unknown) => void
+    const firstResponse = {
+      ok: true,
+      status: 200,
+      json: () => new Promise((r) => (resolveFirstJson = r)),
+    }
+    ;(fetch as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce(firstResponse)
+      .mockResolvedValue({ ok: true, status: 200, json: () => Promise.resolve({ fresh: true }) })
+
+    const url = ref('/first')
+    const { result } = withSetup(() => useFetch(url))
+    // Let the first request get past `await fetch()` and park on `await json()`.
+    await nextTick()
+    await nextTick()
+
+    url.value = '/second' // supersede before the first body parses
+    await vi.waitFor(() => {
+      expect(result.data.value).toEqual({ fresh: true })
+    })
+
+    resolveFirstJson({ stale: true }) // the first body parses late
+    await nextTick()
+    await nextTick()
+    expect(result.data.value).toEqual({ fresh: true }) // not clobbered by stale body
+  })
 })
