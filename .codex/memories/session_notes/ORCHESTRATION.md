@@ -5,26 +5,35 @@
 >
 > **CRITICAL**: Update this file BEFORE every compaction risk (long tool calls, large diffs).
 
-Last updated: 2026-06-05 (session 3 — #358/#359/#360 merged; #361 open/aging)
+Last updated: 2026-06-05 (session 3 — #358/#359/#360/#361 merged; #362 open/aging)
 
 # CURRENT HANDOFF - read this first (2026-06-05, session 3 — endless loop RESUMED)
 
 Chris re-started the endless loop (session 3). The session-2 "LOOP PAUSED" note
 below is superseded. Recovery: read this block, then `gh pr list --state open`.
 
-## 🔄 Live state (2026-06-05, session 3) — main `74ed1a8`, 3 PRs MERGED + 1 open (#361)
+## 🔄 Live state (2026-06-05, session 3) — main `c779dd1`, 4 PRs MERGED + 1 open (#362)
 
-**UPDATE (later in session 3):** #360 MERGED (`74ed1a8`); #361 OPEN (the newest).
+**UPDATE (latest in session 3):** #360 + #361 MERGED; #362 OPEN (the newest).
 - **#360 MERGED** (`chore/ci-mypy-tests`): gate mypy on root tests/ + fix all 14
   errors. 2 reviews + 1 gemini thread resolved. CI green.
-- **#361 OPEN** (`fix/pipeline-finite-cells`, NEWEST): data-integrity fix — a blank
-  source cell (pandas NaN) leaked into the published GDHI/tax-composition datasets
-  (`str(nan)='nan'` → `float`→nan → `nan<=0` is False). Added `_to_finite_float`
-  helper (rejects non-finite) in both pipelines + unit tests + an end-to-end
-  NaN-drop test. 2 reviews: correctness CLEAN (behaviour-preserving modulo intended
-  NaN fix); data-integrity lens MERGEABLE but flagged 2 **out-of-scope HIGH**
-  follow-ups (see Next tasks 1-2). In-scope integration-test gap addressed. **Newest
-  → age, merge next cycle once a PR sits above it.**
+- **#361 MERGED** (`c779dd1`, `fix/pipeline-finite-cells`): data-integrity — a blank
+  source cell (pandas NaN) leaked into the GDHI/tax-composition datasets
+  (`str(nan)='nan'`→float→nan, `nan<=0` is False). `_to_finite_float` helper rejects
+  non-finite; unit + end-to-end NaN-drop tests. 2 reviews + 2 gemini threads
+  (OverflowError concern reason-declined: str()-coercion means float() only sees
+  strings → huge magnitude returns inf, caught by isfinite; OverflowError needs an
+  int *object*, unreachable). CI green.
+- **#362 OPEN** (`fix/pipeline-finite-cells-wealth-housing`, NEWEST): the SAME
+  NaN-leak class in `fetch_ons_wealth.py` (3 sites) + `fetch_ons_housing.py` — found
+  by #361's review. Same `_to_finite_float` treatment + unit tests + wealth
+  end-to-end NaN-drop test + a housing drop-count WARNING. 2 reviews: correctness
+  CLEAN; completeness MERGEABLE (all leak sites closed) — flagged the housing
+  integration-test gap (needs a parse refactor) + the now-4-copies duplication, both
+  seeded below. **Newest → age, merge next cycle once a PR sits above it.**
+
+After #362 merges, the NaN-leak bug class is fully closed across all 4 vulnerable
+pipelines. main also has: automation/ + tests/ mypy-gated, the Sobol module.
 
 ---
 (earlier session-3 detail below)
@@ -58,21 +67,20 @@ below is superseded. Recovery: read this block, then `gh pr list --state open`.
   → merge the OLDER one (never the newest). Bots re-review every push: re-check threads.
 
 ## 🔜 Next tasks (session 3 backlog, highest-leverage first)
-0. **Merge #361** once a PR sits above it (it's ready: 2 reviews, integration test,
-   green). Build task 1 first → then merge #361.
-1. **PR 5 (NEXT): same NaN-leak class in sibling pipelines** — confirmed live by the
-   #361 data-integrity review (HIGH, 97%): `fetch_ons_wealth.py:247,309,314` and
-   `fetch_ons_housing.py:88` do raw `float(cell)` so a blank (NaN) cell leaks into
-   `ons_wealth_by_decile.csv` / `ons_housing_affordability_by_region.csv`. Apply the
-   same `_to_finite_float` treatment (consider a shared `automation/data-pipelines/
-   _cells.py` now that 4 pipelines need it — but watch the hyphenated-dir import).
-   (Not vulnerable: fetch_boe_rates uses pd.notna before float; fetch_hmrc_stats
-   operates on string cells.) This refills the backlog above #361.
-2. **PR 6: harden `validate.py`** (HIGH, 95% from review): it does NOT catch a leaked
-   NaN (DTYPE passes; COERCE cancels to 0; RANGE `nan<lo`/`nan>hi` both False; NULLS
-   only flags fully-null rows). Add an explicit finite/non-null value check + add
+0. **Merge #362** once a PR sits above it (ready: 2 reviews, wealth e2e test, housing
+   drop-warning, green). Build a PR above it first → then merge #362. After it lands,
+   the NaN-leak class is closed in all 4 pipelines.
+1. **PR 6: harden `validate.py`** (HIGH, 95% from #361 review): it does NOT catch a
+   leaked NaN (DTYPE passes; COERCE cancels to 0; RANGE `nan<lo`/`nan>hi` both False;
+   NULLS only flags fully-null rows). Add an explicit finite/non-null value check +
    `ranges`/`dtypes` specs for `tax_composition.csv` and `ons_gdhi_by_region.csv`
-   (currently have none).
+   (currently have none). Good "PR above #362" candidate (independent file).
+2. **Consolidate `_to_finite_float`** (MED from #362 review): after #362 merges there
+   are 4 byte-identical copies (gdhi, tax, wealth, housing). Extract a shared
+   `automation/data-pipelines/_cells.py` (importable via the dir-on-sys.path mechanism
+   the pipelines already use for chart_html/http_retry); re-point the 4 callers + unit
+   tests. ALSO: refactor housing's inline ratio parse into a `_parse_*` function so a
+   housing end-to-end NaN-drop test (the gap #362 left) becomes possible.
 3. **Flagship: expand the simulation** — behavioural-response layer (cited
    elasticities from the 6 unused RangeValues, default OFF, caveated) → multi-param
    MC band → wire the NEW Sobol module over {alpha, elasticities}. A stacked arc.
