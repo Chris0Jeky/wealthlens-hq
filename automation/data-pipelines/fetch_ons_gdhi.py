@@ -286,9 +286,10 @@ def _parse_gdhi_per_head(df_raw: pd.DataFrame) -> pd.DataFrame | None:
 
         val = df_raw.iloc[i, latest_col]
         try:
-            # pandas cell is dynamically typed (Scalar union); the except below
-            # handles any non-numeric cell, so the narrow arg-type complaint is moot.
-            gdhi = float(val)  # type: ignore[arg-type]
+            # Coerce via str() first so comma-grouped text ("14,200") parses, and so
+            # the dynamically-typed pandas cell satisfies float(); the except below
+            # still skips any genuinely non-numeric cell.
+            gdhi = float(str(val).replace(",", "").strip())
         except (ValueError, TypeError):
             continue
 
