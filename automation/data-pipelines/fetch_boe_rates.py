@@ -21,6 +21,7 @@ from pathlib import Path
 import pandas as pd
 import plotly.graph_objects as go
 import requests
+from _cells import to_finite_float
 from chart_html import write_accessible_chart
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -208,20 +209,20 @@ def process(raw_path: Path) -> pd.DataFrame:
         record: dict[str, object] = {"date": row[date_col].strftime("%Y-%m-%d")}
 
         if bank_rate_col and pd.notna(row.get(bank_rate_col)):
-            try:
-                record["bank_rate"] = float(row[bank_rate_col])
-            except (ValueError, TypeError):
+            # to_finite_float returns None for a non-numeric or NaN/inf cell so a
+            # bad value is counted as skipped rather than written into the CSV.
+            bank_rate = to_finite_float(row[bank_rate_col])
+            if bank_rate is None:
                 skipped += 1
-                record["bank_rate"] = None
+            record["bank_rate"] = bank_rate
         else:
             record["bank_rate"] = None
 
         if cpi_col and pd.notna(row.get(cpi_col)):
-            try:
-                record["cpi_annual"] = float(row[cpi_col])
-            except (ValueError, TypeError):
+            cpi_annual = to_finite_float(row[cpi_col])
+            if cpi_annual is None:
                 skipped += 1
-                record["cpi_annual"] = None
+            record["cpi_annual"] = cpi_annual
         else:
             record["cpi_annual"] = None
 

@@ -35,6 +35,7 @@ from pathlib import Path
 import pandas as pd
 import plotly.graph_objects as go
 import requests
+from _cells import to_finite_float
 from chart_html import write_accessible_chart
 
 logger = logging.getLogger(__name__)
@@ -102,10 +103,14 @@ def _fetch_ons_timeseries(url: str, label: str) -> pd.DataFrame | None:
     for entry in years_data:
         try:
             year = int(entry.get("year", entry.get("date", "")))
-            value = float(entry.get("value", ""))
-            records.append({"year": year, "value": value})
         except (ValueError, TypeError):
             continue
+        # to_finite_float rejects a blank/NaN/inf value so it can't slip into the
+        # index normalisation downstream as a NaN observation.
+        value = to_finite_float(entry.get("value", ""))
+        if value is None:
+            continue
+        records.append({"year": year, "value": value})
 
     if not records:
         logger.warning("Could not parse any annual records from %s.", label)

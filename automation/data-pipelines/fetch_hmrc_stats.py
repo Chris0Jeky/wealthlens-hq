@@ -13,6 +13,7 @@ from pathlib import Path
 
 import pandas as pd
 import plotly.graph_objects as go
+from _cells import to_finite_float
 from chart_html import write_accessible_chart
 from http_retry import fetch_with_retry
 
@@ -108,30 +109,39 @@ def process(paths: dict[str, Path]) -> pd.DataFrame:
         gains_raw: object = df_raw.iloc[i, 2]
         count_raw: object = df_raw.iloc[i, 1]
 
-        # Parse gains — skip rows with "[Less than 1]" or similar
-        try:
-            gains = float(gains_raw)  # type: ignore[arg-type]
-        except (ValueError, TypeError):
+        # Parse gains — skip rows with "[Less than 1]" or similar.
+        # to_finite_float also rejects a blank (NaN) cell so it can't leak past
+        # the share-of-gains division below.
+        gains = to_finite_float(gains_raw)
+        if gains is None:
             continue
 
-        try:
-            count: float | None = float(count_raw)  # type: ignore[arg-type]
-        except (ValueError, TypeError):
-            count = None
+        # Parse the taxpayer count. HMRC suppresses some bands' counts for disclosure
+        # control while STILL publishing the band's gains, so a blank/suppressed count
+        # must NOT drop the row — that would discard valid gains data (codex review).
+        # Keep the row with count=None (None -> NaN in the float column, the honest
+        # representation of a suppressed count; share_of_taxpayers is then NaN for that
+        # band only). to_finite_float turns a blank/NaN cell into None rather than a
+        # fabricated number, so nothing spurious is published.
+        count = to_finite_float(count_raw)
 
         # Build readable band label
+        band_lower: float = 0.0
         if band_raw.lower() == "all":
             label = "All"
         else:
-            try:
-                lower = int(float(band_raw.replace(",", "")))
-                label = f"£{lower:,}+"
-            except ValueError:
+            band_lower_parsed = to_finite_float(band_raw)
+            if band_lower_parsed is None:
+                # Non-numeric band label (e.g. a descriptive range): keep the raw
+                # text as the label and leave the lower bound at 0.
                 label = band_raw
+            else:
+                band_lower = band_lower_parsed
+                label = f"£{int(band_lower):,}+"
 
         records.append({
             "gain_band": label,
-            "band_lower": float(band_raw.replace(",", "")) if band_raw.lower() != "all" else 0,
+            "band_lower": band_lower,
             "num_taxpayers_thousands": count,
             "total_gains_millions": gains,
         })
