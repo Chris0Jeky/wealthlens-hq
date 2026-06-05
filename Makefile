@@ -44,7 +44,11 @@ backend-test: ## Run backend pytest suite
 
 backend-lint: ## Run ruff check + mypy on backend
 	cd $(BACKEND_DIR) && $(PYTHON) -m ruff check .
-	cd $(BACKEND_DIR) && $(PYTHON) -m mypy .
+	# Run mypy from the repo root targeting the backend dir, exactly as ci-backend
+	# does, so it reads the root [tool.mypy] config (single source of truth). Running
+	# `mypy .` from inside the backend dir would find no config and silently fall back
+	# to permissive defaults (check_untyped_defs OFF), diverging from CI.
+	$(PYTHON) -m mypy $(BACKEND_DIR)
 
 backend-format: ## Auto-format backend with ruff
 	cd $(BACKEND_DIR) && $(PYTHON) -m ruff format .
