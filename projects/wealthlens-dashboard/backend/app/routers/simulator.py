@@ -39,7 +39,16 @@ _CACHE = "public, max-age=86400"  # 24 hours
 
 # Required top-level keys every served payload must carry — guards against a
 # hand-edited or schema-drifted fixture being served as a valid contract.
-_REQUIRED_KEYS = ("schema_version", "total_revenue_gbp_bn", "caveats", "interval_method")
+# ``provenance`` is required because the scenario page renders its
+# assumptions_consumed citations; a provenance-less payload is rejected here
+# rather than crashing the client render.
+_REQUIRED_KEYS = (
+    "schema_version",
+    "total_revenue_gbp_bn",
+    "caveats",
+    "interval_method",
+    "provenance",
+)
 
 # Available scenarios. The ``name`` MUST equal the generator's scenario name (it
 # flows into the fixture's ``scenario_name``; a drift-guard test enforces this).
