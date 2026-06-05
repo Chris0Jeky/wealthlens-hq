@@ -24,6 +24,7 @@ module.
 from __future__ import annotations
 
 from collections.abc import Sequence
+from typing import Literal
 
 from wealthlens_sim.assumptions.schema import AssumptionRegistry, RangeValue
 from wealthlens_sim.behavioural.response import BehaviouralChannel
@@ -42,7 +43,7 @@ RATE_RESPONSIVE_DOMAINS = ("migration", "avoidance")
 def load_behavioural_channels(
     registry: AssumptionRegistry,
     *,
-    point: str = "central",
+    point: Literal["low", "central", "high"] = "central",
     domains: Sequence[str] = RATE_RESPONSIVE_DOMAINS,
 ) -> list[BehaviouralChannel]:
     """Build behavioural channels from the registry's cited rate-elasticity assumptions.
@@ -59,7 +60,18 @@ def load_behavioural_channels(
     correctly (per the affected base slice, with the right rate-change units) is the
     caller's responsibility — see the "When wiring this in" checklist in
     :mod:`~wealthlens_sim.behavioural.response`.
+
+    Raises ``ValueError`` for an invalid ``point`` and ``TypeError`` if ``domains`` is a
+    single string (a common gotcha — iterating a string yields characters) — validated
+    up-front so an invalid call fails loudly even when no assumption matches.
     """
+    if point not in ("low", "central", "high"):
+        msg = f"point must be 'low', 'central' or 'high', got {point!r}"
+        raise ValueError(msg)
+    if isinstance(domains, str):
+        msg = f"domains must be a sequence of strings, not a single string ({domains!r})"
+        raise TypeError(msg)
+
     channels: list[BehaviouralChannel] = []
     for domain in domains:
         for assumption in registry.by_domain(domain):

@@ -81,6 +81,17 @@ class TestLoadBehaviouralChannels:
     def test_unknown_domain_yields_empty(self) -> None:
         assert load_behavioural_channels(_registry(), domains=("does_not_exist",)) == []
 
+    def test_invalid_point_raises_even_with_no_matching_assumptions(self) -> None:
+        # Validated up-front, so an invalid point fails loudly even when nothing matches.
+        with pytest.raises(ValueError, match="point must be 'low', 'central' or 'high'"):
+            load_behavioural_channels(_registry(), point="invalid", domains=("does_not_exist",))  # type: ignore[arg-type]
+
+    def test_domains_as_string_raises_type_error(self) -> None:
+        # 'migration' as a bare string would iterate characters ('m','i',...) -> silently
+        # empty; guard against the gotcha.
+        with pytest.raises(TypeError, match="domains must be a sequence of strings"):
+            load_behavioural_channels(_registry(), domains="migration")  # type: ignore[arg-type]
+
 
 class TestRealRegistry:
     """Integration: the committed registry's cited elasticities load into channels."""
