@@ -210,6 +210,22 @@ class TestSourceUrls:
         a = Assumption.model_validate(entry)
         assert a.source_urls == ["https://doi.org/10.x"]
 
+    def test_rejects_bare_scheme_without_host(self):
+        # A truncated/typo'd URL with no host must not ship as a "source".
+        for bad in ("https://", "http://", "https:///path"):
+            with pytest.raises(ValidationError, match="with a host"):
+                Assumption.model_validate({**RANGE_ENTRY, "source_urls": [bad]})
+
+    def test_scheme_is_case_insensitive(self):
+        # RFC 3986: schemes are case-insensitive — a valid HTTPS:// must be accepted.
+        a = Assumption.model_validate({**RANGE_ENTRY, "source_urls": ["HTTPS://doi.org/10.x"]})
+        assert a.source_urls == ["HTTPS://doi.org/10.x"]
+
+    def test_rejects_embedded_whitespace_and_control_chars(self):
+        for bad in ("https://a b.org/x", "https://evil.org\n<script>", "https://a.org/\tx"):
+            with pytest.raises(ValidationError, match="whitespace/control"):
+                Assumption.model_validate({**RANGE_ENTRY, "source_urls": [bad]})
+
     def test_real_registry_entries_carry_urls(self):
         # The shipped registry must actually resolve its cited works to URLs.
         reg = load_assumptions()
