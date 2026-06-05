@@ -53,6 +53,8 @@ _SYNTHETIC_POPULATION_CAVEAT = (
     "statistically generated and calibrated to published aggregates), not an "
     "official forecast. Treat the figures as indicative, not as a costing."
 )
+
+
 def _interval(interval: Interval) -> dict[str, float]:
     return {"low": interval.low, "central": interval.central, "high": interval.high}
 
@@ -65,6 +67,12 @@ def _caveats(result: EngineResult) -> list[str]:
     ceiling, so it does not need a separate overstatement caveat.
     """
     caveats: list[str] = []
+    # NOTE: keyed off the version_tag string because EngineResult does not yet carry
+    # the population's ground-truth ``is_synthetic`` flag (dropped at the engine
+    # boundary). Correct for every current population (only ``synth-v0.1`` exists),
+    # but a synthetic population mistagged without a "synth" prefix would fail OPEN
+    # (no caveat). Follow-up: thread ``is_synthetic`` into the contract, fail-closed
+    # — tracked in tasks/inbox.md, coupled to the real WAS/FRS population provider.
     if result.provenance.version_tag.population_version.startswith("synth"):
         caveats.append(_SYNTHETIC_POPULATION_CAVEAT)
     if not result.provenance_complete:

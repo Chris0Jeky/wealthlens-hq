@@ -215,8 +215,10 @@ class TestDataIntegritySurfacing:
         assert not any("Provenance incomplete" in c for c in dash["caveats"])
 
     def test_non_synth_population_omits_synthetic_caveat(self):
-        # The synthetic-population caveat is conditioned on the population_version,
-        # so a (future) real-microdata population must not carry it.
+        # Exercises the version_tag STRING gate (not a real population: the data is
+        # still a SyntheticPopulation, only its version_tag is non-synth). Confirms a
+        # population_version not starting with "synth" omits the caveat — the
+        # ground-truth is_synthetic path is a tracked follow-up.
         scenario = Scenario(
             name="annual-wealth-1pct",
             version_tag=VersionTag(
@@ -247,6 +249,16 @@ class TestDataIntegritySurfacing:
         # Degenerate intervals are still emitted, but the caveat is the guardrail.
         total = dash["total_revenue_gbp_bn"]
         assert total["low"] == total["central"] == total["high"]
+
+    def test_unsourced_synth_run_orders_synthetic_then_incomplete(self):
+        # An unsourced SYNTH run carries BOTH caveats; pin the order
+        # (synthetic-population first, incomplete-provenance second) so a future
+        # reorder can't silently change what the chart's banner leads with.
+        pop = generate_population(SynthConfig(n_households=500, seed=7))
+        dash = to_dashboard_json(simulate(pop, _golden_scenario()))
+        assert len(dash["caveats"]) == 2
+        assert "synthetic v0.1 population" in dash["caveats"][0]
+        assert "Provenance incomplete" in dash["caveats"][1]
 
     def test_enforcement_headline_has_no_overstatement_caveat(self):
         dash = to_dashboard_json(_devolution_enforcement_result())
