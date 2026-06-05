@@ -84,9 +84,12 @@ assumptions:
     applies_to: all families; wealth aggregation
     last_reviewed: "2026-05-23"
     notes: >
-      December 2024 DB pension methodology change (SCAPE-based discount rate)
-      reduced measured total wealth by approximately £2.3 trillion. Must be
-      applied consistently across all baseline comparisons.
+      December 2024 DB pension methodology change (SCAPE-based discount rate). The
+      cited ONS article reports the change as percentage impacts (e.g. mean total
+      wealth ~-14% on Round 7 data); the ~-£2.3 trillion aggregate used here is
+      derived from those impacts applied to GB total wealth, not a figure stated
+      verbatim on the page. Must be applied consistently across all baseline
+      comparisons.
 
   # --- Behavioural: migration ---
 
@@ -119,7 +122,7 @@ assumptions:
       low: -0.005
       central: -0.02
       high: -0.05
-    source: Brulhart et al. (2022); Agrawal et al. (2023)
+    source: Brulhart et al. (2022); Agrawal, Foremny & Martínez-Toledano (2025)
     source_urls:
       - https://doi.org/10.1257/pol.20200258
       - https://doi.org/10.1257/app.20220615
@@ -341,16 +344,18 @@ assumptions:
     value_or_distribution:
       type: point
       value: 2500000
-    source: GOV.UK APR/BPR reform (accessed 2026-05-16)
+    source: GOV.UK APR/BPR reform (£1m allowance announced 2024; raised to £2.5m on 23 Dec 2025)
     source_urls:
-      - https://www.gov.uk/government/publications/reforms-to-agricultural-property-relief-and-business-property-relief
+      - https://www.gov.uk/government/publications/changes-to-agricultural-property-relief-and-business-property-relief/agricultural-property-relief-and-business-property-relief-changes
     transferability_score: high
     valid_range: "n/a"
     applies_to: Family D baseline
-    last_reviewed: "2026-05-23"
+    last_reviewed: "2026-06-05"
     notes: >
-      Combined APR/BPR cap for 100% relief. 50% relief on qualifying
-      value above £2.5m. From 6 April 2026.
+      Combined APR/BPR allowance for 100% relief; 50% relief on qualifying value
+      above the cap. From 6 April 2026. The allowance was raised from the originally
+      announced £1m to £2.5m on 23 December 2025 (the cited page records the change);
+      the earlier reforms page still shows the superseded £1m figure.
 
   - assumption_id: policy.iht.pension_inclusion_2027.v1
     domain: transfer-tax
@@ -375,9 +380,10 @@ assumptions:
     value_or_distribution:
       type: point
       value: 0.0211
-    source: ONS Deaths registered E&W 2023 (581,363) / ~27.5m GB households; source id ons-deaths-registered (accessed 2026-06-05)
+    source: ONS Deaths registered E&W 2023 (581,363) / ~27.5m GB households (ONS Families and households 2022); source id ons-deaths-registered (accessed 2026-06-05)
     source_urls:
       - https://www.ons.gov.uk/peoplepopulationandcommunity/birthsdeathsandmarriages/deaths/bulletins/deathsregistrationsummarytables/2023
+      - https://www.ons.gov.uk/peoplepopulationandcommunity/birthsdeathsandmarriages/families/datasets/householdsbytypeofhouseholdandfamilyregionsofenglandandgbconstituentcountries/2022
     transferability_score: low
     valid_range: "0.0-1.0"
     applies_to: Family D aggregate (stock-to-flow conversion)
