@@ -5,7 +5,7 @@
 >
 > **CRITICAL**: Update this file BEFORE every compaction risk (long tool calls, large diffs).
 
-Last updated: 2026-06-05 (session 3 — #358-#365 ALL MERGED; 0 open PRs; flagship next)
+Last updated: 2026-06-05 (session 3 — #358-#366 merged (9 PRs); #367 open; behavioural engine-apply blocked on base-share data)
 
 # CURRENT HANDOFF - read this first (2026-06-05, session 3 — endless loop RESUMED)
 
@@ -28,26 +28,30 @@ all bot threads resolved + CI green. Summary:
 - Understanding sweep (5 agents) at session start confirmed the SIM CORE is solid
   (the bug-sweep's 4 findings were all false positives).
 
-### 🎯 FLAGSHIP IN PROGRESS: expand the simulation (behavioural → MC → Sobol)
-**PR A = #366 OPEN, REVIEWED & READY** (`feat/behavioural-response`): standalone
-`behavioural/response.py` — reduced-form `revenue_response_factor(channels,
-rate_change_pp)` = Π max(0, 1+e*dtau) (per-channel clamped ≥0), from cited registry
-semi-elasticities; pure, 25 tests, engine-free. 2 adversarial reviews (economics PASS —
-pp unit contract + reduced form defensible/source-faithful; API 2 HIGH provenance-
-injectivity fixed) + 3 bot threads resolved (incl. a real even-over-eroding-channels
-masking bug → per-channel clamp). 826 sim tests; CI green.
+### 🎯 FLAGSHIP IN PROGRESS: behavioural layer (groundwork done; engine-apply BLOCKED)
+- **PR A = #366 MERGED** (`e6b3385`): `behavioural/response.py` — reduced-form
+  `revenue_response_factor(channels, rate_change_pp)` = Π max(0, 1+e*dtau) (per-channel
+  clamped ≥0), pure, 25 tests, engine-free. 2 reviews (economics PASS; API 2 HIGH
+  provenance-injectivity fixed) + 3 bot threads (incl. an even-over-eroding masking bug).
+- **PR B = #367 OPEN** (`feat/behavioural-registry-loader`, base=main after retarget):
+  `behavioural/registry.py` `load_behavioural_channels()` sources channels from the cited
+  registry (migration/avoidance only; excludes compliance/valuation LEVEL fractions). 8
+  tests incl. a real-registry integration test. 834 sim tests. **NEXT TICK: 2 reviews on
+  #367, then merge (needs a PR above it first).**
 
-**NEXT TICK = PR B (engine wiring), STACKED on #366** (so #366 becomes not-newest →
-then merge #366 `--merge` NO --delete-branch → retarget PR B → main). PR B wires the
-factor into `engine.simulate(..., behavioural=...)`, **default OFF**, behind a
-`caveats[]` entry. ⚠️ READ THE "When wiring this in" CHECKLIST in `behavioural/
-response.py`'s module docstring before coding — it encodes the economics-review cautions:
-(1) engine rates are FRACTIONS → multiply the rate delta by 100 for `rate_change_pp`
-(~100x risk); (2) each elasticity is a SUB-population effect → apply per revenue-slice,
-not to total family revenue; (3) don't compose channels on overlapping bases; (4)
-surface `clamped=True` as a caveat; (5) `point="high"` is the more-eroding end for
-negative elasticities. Riskiest slice — 2 careful reviews on the wiring economics. Then
-PR C: multi-param MC + Sobol. Default OFF, heavily caveated (NO fabricated economics).
+⚠️ **The engine REVENUE-APPLICATION step is BLOCKED on cited base-share data.** The #366
+economics review (I2) was clear: applying a sub-population elasticity (non-dom stock ~%
+of base; gains-realising subset) to TOTAL family revenue overstates the response (10x+),
+which violates data-integrity — so a defensible `engine.simulate(..., behavioural=...)`
+needs cited base-share assumptions (e.g. "non-doms hold X% of the £Nm+ wealth base",
+"realising taxpayers are Y% of CGT base") that the registry does NOT yet have. Options:
+  (a) **PR: research + add cited base-share assumptions** to `registries/assumptions.yml`
+      (sourced — HMRC non-dom stats, Advani non-dom-wealth work; NO fabrication), THEN
+      wire the engine apply per-slice (default OFF, caveated). This is the honest path.
+  (b) Defer engine-apply; the behavioural module + loader stand as reviewed groundwork.
+DO NOT wire a behavioural haircut onto total revenue without (a) — it would publish a
+misleading number even default-OFF. After #367 merges, either pursue (a) or pivot to the
+backlog below (3 small #365 follow-ups, B1 citation URLs, frontend visibility).
 Remaining plan:
 1. ~~**PR A — behavioural-response layer**~~ DONE → #366 open. (original design note:
    `engine/` optional arg like enforcement/
