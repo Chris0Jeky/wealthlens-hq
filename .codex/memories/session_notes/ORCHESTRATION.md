@@ -5,9 +5,50 @@
 >
 > **CRITICAL**: Update this file BEFORE every compaction risk (long tool calls, large diffs).
 
-Last updated: 2026-06-05
+Last updated: 2026-06-05 (session 3)
 
-# CURRENT HANDOFF - read this first (2026-06-05, session 2 — endless loop running)
+# CURRENT HANDOFF - read this first (2026-06-05, session 3 — endless loop RESUMED)
+
+Chris re-started the endless loop (session 3). The session-2 "LOOP PAUSED" note
+below is superseded. Recovery: read this block, then `gh pr list --state open`.
+
+## 🔄 Live state (2026-06-05, session 3)
+
+- Started from clean main `fac5633` (0 open PRs). Tidy-up: gitignored
+  `.claude/scheduled_tasks.lock` (committed to main).
+- **Ran an understanding workflow** (5 parallel agents) mapping the task menu:
+  bug-sweep (4 findings — ALL verified FALSE POSITIVES: variants.py tail-mean is
+  correctly decreasing in alpha; effective_rate denominators match documented
+  fields + tests; IHT NRB branches are internally consistent), mypy debt (26 real
+  errors in automation/), assumptions audit (6 unused cited RangeValues → path to
+  multi-param MC/behavioural layer/Sobol), API/static path (frontend discards
+  decile/nation/provenance — visibility backlog), and stubs (reconcile/
+  reconstruction are large Gate-2 design work).
+- **PR #358 OPEN** (`chore/ci-mypy-automation`): gate mypy on automation/ + fix all
+  26 pre-existing errors (8 wealthlens_sim import override + 18 real type fixes
+  across fetch_*/test helper/og-images). 4 incremental commits + 1 review-fix
+  commit. 2 independent adversarial reviews: behaviour-lens CLEAN; CI-lens found
+  HIGH (sim override → Any, mitigated: documented + ci-sim test backstop) + 2 MEDIUM
+  (make install now installs .[dev]; capped Pillow<14/pandas-stubs<4) + LOW (stale
+  TODO) — ALL addressed. CI green on first commit; awaiting ci-pipelines on the
+  review-fix commit. Newest PR → age before merge.
+
+## 🔜 Next tasks (session 3 backlog, highest-leverage first)
+1. **Flagship: expand the simulation** — behavioural-response layer (cited
+   elasticities, default OFF) → multi-parameter MC band → Sobol sensitivity. A
+   stacked arc. Highest value (Chris emphasised expanding the sim).
+2. **B1 assumption-source citation URLs** in sources.yml (data integrity; verify
+   each URL, no fabrication).
+3. **mypy on root tests/** (the other half of the seeded CI-hardening; needs
+   mypy_path for backend/pipeline modules conftest wires at runtime).
+4. **Frontend visibility**: surface decile/nation breakdown + provenance sources in
+   SimulatorView/ConfidenceFanChart (currently discarded).
+5. Pre-existing minor: `fetch_ons_gdhi._parse_gdhi_per_head` doesn't guard a NaN
+   value cell (`nan <= 0` is False) — seed a small data-integrity PR.
+
+---
+
+# CURRENT HANDOFF - (2026-06-05, session 2 — SUPERSEDED by session 3 above)
 
 This section supersedes the older handoff snapshots below.
 
