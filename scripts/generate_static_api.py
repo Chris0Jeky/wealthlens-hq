@@ -175,12 +175,19 @@ def _load_simulator_scenarios() -> dict[str, dict[str, str]]:
     API and so this script needs no FastAPI/backend dependency at build time.
     """
     tree = ast.parse(BACKEND_SIMULATOR.read_text(encoding="utf-8"))
-    for node in ast.walk(tree):
+    # Module-level statements only (not ast.walk): the registry is a top-level
+    # binding, and scanning only tree.body avoids matching a same-named symbol in
+    # an inner scope (function/TYPE_CHECKING block) after a future refactor.
+    for node in tree.body:
         target = None
         value = None
         if isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
             target, value = node.target.id, node.value
-        elif isinstance(node, ast.Assign) and len(node.targets) == 1 and isinstance(node.targets[0], ast.Name):
+        elif (
+            isinstance(node, ast.Assign)
+            and len(node.targets) == 1
+            and isinstance(node.targets[0], ast.Name)
+        ):
             target, value = node.targets[0].id, node.value
         if target == "SIMULATOR_SCENARIOS" and value is not None:
             try:
@@ -228,6 +235,15 @@ def generate_simulator_static() -> int:
     (SIM_OUT_DIR / "scenarios.json").write_text(
         json.dumps({"scenarios": index}), encoding="utf-8"
     )
+    if scenarios and not index:
+        # Registry has scenarios but no fixtures were found: the static site would
+        # serve an empty list. Warn loudly (the UI degrades gracefully, so this is
+        # not a hard build failure) — usually means the generator ran before
+        # generate_simulator_dashboards.py produced the fixtures.
+        print(
+            f"  WARNING: 0/{len(scenarios)} simulator fixtures found in {SIM_SRC_DIR}; "
+            "scenarios.json is empty."
+        )
     print(f"Generated {len(index)}/{len(scenarios)} simulator scenarios in {SIM_OUT_DIR}")
     return len(index)
 
