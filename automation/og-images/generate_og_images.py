@@ -28,7 +28,7 @@ MUTED = (90, 85, 80)
 RULE = (216, 209, 193)
 
 
-def _get_font(size: int, bold: bool = False) -> ImageFont.FreeTypeFont:
+def _get_font(size: int, bold: bool = False) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
     """Try system fonts, fall back to PIL default."""
     candidates = [
         "C:/Windows/Fonts/georgia.ttf" if not bold else "C:/Windows/Fonts/georgiab.ttf",
@@ -43,7 +43,7 @@ def _get_font(size: int, bold: bool = False) -> ImageFont.FreeTypeFont:
     return ImageFont.load_default()
 
 
-def _get_sans_font(size: int, bold: bool = False) -> ImageFont.FreeTypeFont:
+def _get_sans_font(size: int, bold: bool = False) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
     candidates = [
         "C:/Windows/Fonts/segoeui.ttf" if not bold else "C:/Windows/Fonts/segoeuib.ttf",
         "C:/Windows/Fonts/arial.ttf" if not bold else "C:/Windows/Fonts/arialbd.ttf",
@@ -57,7 +57,7 @@ def _get_sans_font(size: int, bold: bool = False) -> ImageFont.FreeTypeFont:
     return ImageFont.load_default()
 
 
-def _get_mono_font(size: int) -> ImageFont.FreeTypeFont:
+def _get_mono_font(size: int) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
     candidates = [
         "C:/Windows/Fonts/consola.ttf",
         "C:/Windows/Fonts/cour.ttf",

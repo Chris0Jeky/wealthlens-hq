@@ -35,15 +35,21 @@ def _assert_json_close(actual: object, expected: object, path: str = "") -> None
     flag a fresh-but-equivalent build as stale.
     """
     assert type(actual) is type(expected), f"type mismatch at {path}: {type(actual)} != {type(expected)}"
+    # The type-identity assert above guarantees actual matches expected at runtime;
+    # the per-branch isinstance asserts narrow `actual` (typed `object`) for mypy and
+    # are no-ops at runtime.
     if isinstance(expected, dict):
+        assert isinstance(actual, dict)
         assert actual.keys() == expected.keys(), f"key mismatch at {path}: {set(actual)} != {set(expected)}"
         for key in expected:
             _assert_json_close(actual[key], expected[key], f"{path}.{key}")
     elif isinstance(expected, list):
+        assert isinstance(actual, list)
         assert len(actual) == len(expected), f"length mismatch at {path}"
         for i, (a, e) in enumerate(zip(actual, expected, strict=True)):
             _assert_json_close(a, e, f"{path}[{i}]")
     elif isinstance(expected, float):
+        assert isinstance(actual, float)
         assert abs(actual - expected) <= 1e-9 * max(1.0, abs(expected)) + 1e-12, (
             f"float mismatch at {path}: {actual} != {expected}"
         )
