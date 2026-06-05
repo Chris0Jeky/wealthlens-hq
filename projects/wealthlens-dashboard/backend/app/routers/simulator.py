@@ -47,7 +47,9 @@ _REQUIRED_KEYS = ("schema_version", "total_revenue_gbp_bn", "caveats", "interval
 # automation/data-pipelines/generate_simulator_dashboards.py. These are
 # illustrative estimates over a SYNTHETIC v0.1 population, not official forecasts —
 # the description says so. IHT scenarios are excluded until the synth IHT
-# calibration lands (the synth IHT headline is a known ~100x overshoot).
+# calibration lands: Tier A fixed the stock-vs-flow error (~£1009bn -> ~£21bn) but
+# the headline is still ~3x the ~£7-8bn real figure (synth top-tail
+# over-concentration); needs Tier B. See docs/IHT_CALIBRATION.md.
 SIMULATOR_SCENARIOS: dict[str, dict[str, str]] = {
     "one-percent-wealth-tax": {
         "name": "1% annual wealth tax above £1m",

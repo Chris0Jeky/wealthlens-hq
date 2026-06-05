@@ -45,7 +45,7 @@ ages are drawn uniformly on [18, 90) and are uncorrelated with wealth.
    household crystallisation rate of roughly **0.024**. Multiplying the stock by
    this rate is the missing conversion.
 2. **Synth top-tail over-concentration (~3x residual).** Even after the mortality
-   conversion the headline is ~£24bn, still ~3x the ~£7-8bn real figure. The synth
+   conversion the headline is ~£21bn, still ~3x the ~£7-8bn real figure. The synth
    population over-states top wealth (lognormal body + Pareto tail, currently not
    calibrated tightly enough at the very top, and ages uncorrelated with wealth),
    so the taxable estate mass above the NRB is too large. This is a *separate*
@@ -84,7 +84,7 @@ Still ~3x the ~£7-8bn real, so IHT stays excluded.
 Tier A limitations to document in code: uniform mortality (does not yet use
 age-specific q_x), a deaths-per-household approximation (IHT crystallises per
 estate, often on the second spouse death; not modelled in v0.1), and it does NOT
-fix error (2). **IHT scenarios stay excluded after Tier A** because ~£24bn is
+fix error (2). **IHT scenarios stay excluded after Tier A** because ~£21bn is
 still not sanity-checkable against ~£7-8bn.
 
 ### Tier B - age-specific mortality + age-wealth correlation. Medium.
@@ -102,7 +102,7 @@ tables. Blocks on the UKDS licence (see `tasks/inbox.md` real-provider item).
 Do not re-enable any served IHT scenario until the headline is sanity-checkable
 against ~£7-8bn real (within a defensible band, with caveats). On current analysis
 that requires at least Tier B (plus a tighter synth top-tail). Tier A is a strict
-improvement (1,009bn -> ~24bn) and removes the most egregious (stock-vs-flow)
+improvement (1,009bn -> ~21bn) and removes the most egregious (stock-vs-flow)
 error, but is not sufficient on its own to serve.
 
 ## Open question for Chris (deferred)

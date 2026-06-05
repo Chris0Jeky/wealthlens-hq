@@ -36,8 +36,11 @@ Every concrete action item extracted from research. Triage into active-sprint, b
   ~40x stock-vs-flow error. **Remaining (Tier B):** ~£21bn is still ~3x the ~£7-8bn
   real because the synth over-states top wealth; needs age-specific mortality (ONS
   life tables q_x) + age-wealth correlation in the synth. **IHT stays EXCLUDED**
-  until then. Also: Gate-3 charitable 10% reduced-rate uses gross estate not the
-  post-relief baseline amount (refine with Tier B).
+  until then. Tier B should also wire `model.iht.annual_mortality_rate.v1` into the
+  engine's `assumptions_consumed` (currently documented in the registry but not in
+  any served scenario's provenance) so a served IHT caveat carries the source. Also:
+  Gate-3 charitable 10% reduced-rate uses gross estate not the post-relief baseline
+  amount (refine with Tier B).
 - [ ] **Clean up the gitignored compiled `.js` shadows** in `frontend/src` (they
   shadow `.ts` locally because Vite resolves `.js` first — confused a local test
   run; CI is unaffected). Add a `git clean`/predev step or stop emitting them.

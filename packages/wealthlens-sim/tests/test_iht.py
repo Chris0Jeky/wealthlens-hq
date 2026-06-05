@@ -454,10 +454,16 @@ class TestIHTMortalityFlow:
         stock = compute_aggregate_iht_revenue(pop, IHTConfig(annual_mortality_rate=1.0))
         assert flow.mean_liability == pytest.approx(stock.mean_liability)
 
-    def test_rate_one_recovers_raw_stock(self):
+    def test_zero_rate_zeros_flow_but_keeps_at_death_mean(self):
+        # rate=0 => zero annual flow, but mean_liability stays the at-death mean
+        # (computed before scaling, so the rate=0 boundary doesn't zero it).
         pop = self._make_population()
-        raw = compute_aggregate_iht_revenue(pop, IHTConfig(annual_mortality_rate=0.0))
-        assert raw.total_revenue_bn == 0.0  # zero rate => zero annual flow
+        zero = compute_aggregate_iht_revenue(pop, IHTConfig(annual_mortality_rate=0.0))
+        stock = compute_aggregate_iht_revenue(pop, IHTConfig(annual_mortality_rate=1.0))
+        assert zero.total_revenue_bn == 0.0
+        assert zero.taxpayer_count == 0.0
+        assert zero.mean_liability == pytest.approx(stock.mean_liability)
+        assert zero.mean_liability > 0
 
     def test_real_synth_headline_is_annual_flow_scale(self):
         # Sanity bound on the REAL served population (generator params): the headline
