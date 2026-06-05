@@ -164,8 +164,9 @@ def process(raw_path: Path) -> pd.DataFrame:
 
     df_raw = pd.read_csv(raw_path, delimiter=delimiter, skipinitialspace=True)
 
-    # Normalise column names to uppercase for matching
-    df_raw.columns = [c.strip().upper() for c in df_raw.columns]
+    # Normalise column names to uppercase for matching (wrap in pd.Index so the
+    # assignment matches the DataFrame.columns type, not a bare list[str]).
+    df_raw.columns = pd.Index([str(c).strip().upper() for c in df_raw.columns])
 
     # Find the date column
     date_col = None
