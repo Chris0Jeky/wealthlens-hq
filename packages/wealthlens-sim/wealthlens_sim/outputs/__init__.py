@@ -25,14 +25,21 @@ Reference: docs/WAVE12_SIMULATION_ENGINE_DESIGN.md §6.
 
 from __future__ import annotations
 
+from functools import lru_cache
 from typing import Any
 
+import yaml
+
+from wealthlens_sim._registry_path import find_registries_dir
 from wealthlens_sim.engine.result import EngineResult
 from wealthlens_sim.top_tail.types import Interval
 
 __all__ = ["DASHBOARD_SCHEMA_VERSION", "to_dashboard_json"]
 
-#: Bumped when the dashboard JSON shape changes so the frontend can guard on it.
+#: Bumped only for BREAKING shape changes (a removed/renamed/retyped key) — the
+#: frontend guards on EXACT equality, so bumping rejects older clients. Purely
+#: ADDITIVE keys (a new optional field older consumers ignore) do NOT bump; e.g.
+#: ``population_provenance`` was added additively at 1.3.
 #: 1.3 adds ``interval_method`` + ``uncertainty_provenance_ids`` so a Monte-Carlo
 #: band is never published while labelled as the single alpha sweep.
 DASHBOARD_SCHEMA_VERSION = "1.3"
@@ -77,6 +84,59 @@ def _caveats(result: EngineResult) -> list[str]:
     if not result.provenance_complete:
         caveats.append(_INCOMPLETE_PROVENANCE_CAVEAT)
     return caveats
+
+
+@lru_cache(maxsize=1)
+def _source_index() -> dict[str, dict[str, str]]:
+    """Map a registered source id -> {name, url, access_date, licence} from
+    ``registries/sources.yml``.
+
+    Used to resolve ``population_provenance_ids`` into cited sources carrying a URL
+    and access date (the repo data-integrity rule). Loaded once and cached. On any
+    failure the index is empty, so resolution degrades to id-only entries (no
+    regression vs. the bare id list) rather than breaking the contract.
+    """
+    try:
+        raw = yaml.safe_load((find_registries_dir() / "sources.yml").read_text(encoding="utf-8"))
+    except (FileNotFoundError, OSError, yaml.YAMLError):
+        return {}
+    entries = raw.get("sources", []) if isinstance(raw, dict) else []
+    if not isinstance(entries, list):  # malformed-but-parseable: degrade, do not crash
+        return {}
+    index: dict[str, dict[str, str]] = {}
+    for entry in entries:
+        if not isinstance(entry, dict):
+            continue
+        sid = entry.get("id")
+        if not sid:
+            continue
+        # access_date should be a quoted YYYY-MM-DD string; if a future entry omits
+        # the quotes YAML parses it as a date, so normalise via isoformat().
+        access = entry.get("access_date", "")
+        index[str(sid)] = {
+            "name": str(entry.get("name", "")),
+            "url": str(entry.get("url", "")),
+            "access_date": access.isoformat() if hasattr(access, "isoformat") else str(access),
+            "licence": str(entry.get("licence", "")),
+        }
+    return index
+
+
+def _population_provenance(ids: list[str]) -> list[dict[str, str]]:
+    """Resolve population provenance ids to structured source records.
+
+    Order-preserving (deterministic, golden-file friendly). A registered data
+    source (in ``sources.yml``) becomes ``{id, name, url, access_date, licence}``.
+    A ``synth.*`` id is a resolved generation-parameter VALUE (several are calibrated
+    from the registered ONS sources above, which carry the URL + access date) — it is
+    not itself an external source to cite, so it stays ``{id}`` only.
+    """
+    index = _source_index()
+    out: list[dict[str, str]] = []
+    for sid in ids:
+        meta = index.get(sid)
+        out.append({"id": sid, **meta} if meta else {"id": sid})
+    return out
 
 
 def _provenance(result: EngineResult) -> dict[str, Any]:
@@ -138,6 +198,11 @@ def to_dashboard_json(result: EngineResult) -> dict[str, Any]:
         "revenue_by_decile": [_interval(interval) for interval in result.revenue_by_decile],
         "devolution_scope": devolution,
         "population_provenance_ids": list(result.population_provenance_ids),
+        # Structured view of the population provenance: registered data sources
+        # resolved to {id,name,url,access_date,licence} from registries/sources.yml
+        # (the data-integrity URL+access-date rule); synth.* generation params stay
+        # id-only. Additive — the flat id list above is kept for back-compat.
+        "population_provenance": _population_provenance(list(result.population_provenance_ids)),
         # Monte-Carlo sampling/propagation trail (seed, method, draws, sampled
         # marginals, quantiles). Empty when ``interval_method == "alpha_sweep"``.
         "uncertainty_provenance_ids": list(result.uncertainty_provenance_ids),
