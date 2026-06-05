@@ -5,12 +5,58 @@
 >
 > **CRITICAL**: Update this file BEFORE every compaction risk (long tool calls, large diffs).
 
-Last updated: 2026-06-05 (session 3 — #358-#363 merged; #364→#365 stack open)
+Last updated: 2026-06-05 (session 3 — #358-#365 ALL MERGED; 0 open PRs; flagship next)
 
 # CURRENT HANDOFF - read this first (2026-06-05, session 3 — endless loop RESUMED)
 
 Chris re-started the endless loop (session 3). The session-2 "LOOP PAUSED" note
 below is superseded. Recovery: read this block, then `gh pr list --state open`.
+
+## ✅ CLEAN SLATE (2026-06-05, session 3 end) — main `b09ac42`, 0 open PRs, all green
+
+**8 PRs merged this session (#358-#365)**, each: 2 independent adversarial reviews +
+all bot threads resolved + CI green. Summary:
+- **CI hardening:** mypy now gated on `automation/` (#358) AND root `tests/` (#360).
+- **Simulator:** new `uncertainty/sobol.py` — Sobol sensitivity indices (Saltelli +
+  Jansen, no SALib, Ishigami-benchmarked, MIN_N_BASE floor) (#359). On main, ready to
+  consume once the engine samples >1 parameter.
+- **Data-integrity (the big arc):** the blank-cell→NaN leak is now CLOSED in EVERY
+  data pipeline — gdhi/tax (#361), wealth/housing (#362), hmrc/boe/productivity/wid
+  (#365, incl. a genuine hmrc count-suppression fix) — via a single shared
+  `automation/data-pipelines/_cells.py:to_finite_float` (#364, consolidation +
+  numeric fast-path), and backstopped by a NONFINITE check in `validate.py` (#363).
+- Understanding sweep (5 agents) at session start confirmed the SIM CORE is solid
+  (the bug-sweep's 4 findings were all false positives).
+
+### 🎯 NEXT = THE FLAGSHIP: expand the simulation (start here, fresh context)
+Behavioural-response → multi-parameter Monte-Carlo → wire the Sobol module. A stacked
+arc, default OFF, heavily caveated (Chris is data-integrity-first — NO fabricated
+economics; cite every parameter). Concrete plan:
+1. **PR A — behavioural-response layer** (`engine/` optional arg like enforcement/
+   devolution, default OFF). Apply a cited, stylised reduced-form elasticity haircut to
+   revenue using the 6 UNUSED cited RangeValues already in `registries/assumptions.yml`
+   (migration non-dom + domestic emigration, CGT lock-in, wealth concealment,
+   private-business discount, HVCTS affected-properties — see the session-start
+   assumptions-audit in this doc's history for ids/sources). Surface a `caveats[]`
+   entry; record the assumptions in provenance. Each mechanism must be defensible
+   (standard tax-literature reduced form) and clearly labelled illustrative.
+2. **PR B (stacked)** — sample the elasticity RangeValue(s) alongside the top-tail
+   alpha in the engine MC band (extend `engine/__init__.py`'s `uncertainty` path).
+3. **PR C (stacked)** — wire `uncertainty/sobol.py` over {alpha, elasticities} to report
+   which assumption dominates the revenue band; surface in the dashboard contract.
+   CAUTION: validate the behavioural model carefully (2 reviews on the economics).
+
+### 🔻 Seeded small follow-ups (from #365 review, non-blocking)
+- Add call-site regression tests for boe/productivity/wid (a future refactor could
+  reintroduce a raw `float()` and bypass `to_finite_float` unnoticed) — mirror
+  `tests/test_hmrc_finite_cells.py`'s monkeypatch pattern.
+- One-line comment in `validate.py` that `num_taxpayers_thousands`/`share_of_taxpayers_pct`
+  are intentionally NaN-tolerant (legitimate HMRC suppression) so nobody "tightens" it.
+- `fetch_wid_data`: use `point.get("v")`/`point.get("y")` so a malformed API point drops
+  gracefully instead of KeyError-crashing `process()`.
+- Other backlog (unchanged): B1 assumption-source citation URLs in sources.yml; frontend
+  visibility (decile/nation/provenance currently fetched-but-discarded); backend mypy
+  config gap (backend-lint runs on mypy defaults).
 
 ## 🔄 Live state (2026-06-05, session 3) — main `a402395`, 6 MERGED + 2 open (#364→#365 stack)
 

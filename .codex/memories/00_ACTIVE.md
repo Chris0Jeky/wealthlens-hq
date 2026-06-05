@@ -12,17 +12,17 @@ Last updated: 2026-06-05
 > Full live detail in `.codex/memories/session_notes/ORCHESTRATION.md` (master
 > control). This board is the short version.
 
-**Session 3 (loop resumed):** ran a 5-agent understanding sweep (bug-sweep = 4
-false positives; sim core solid). Merged **#358-#363** (6 PRs): mypy-gate automation/ + root tests/; new
-`uncertainty/sobol.py` (Sobol sensitivity, Saltelli/Jansen, no SALib); and the
-blank-cell→NaN data-integrity fix across GDHI/tax/wealth/housing pipelines + a
-`validate.py` NONFINITE backstop guarding every numeric output column. Open: the
-**#364→#365 stack** — #364 consolidates the 4 `_to_finite_float` copies into a shared
-`_cells.py` (approved); #365 (stacked) closes the same NaN-leak in the remaining
-pipelines (hmrc/boe/productivity/wid — hmrc had a genuine leak). Each PR: 2 independent
-adversarial reviews + all bot threads resolved + CI green. **Next:** drain the stack
-(see ORCHESTRATION merge plan), then the flagship simulation expansion
-(behavioural-response → multi-param MC → wire the Sobol module).
+**Session 3 (loop resumed) — 8 PRs merged (#358-#365), main `b09ac42`, 0 open PRs.**
+Ran a 5-agent understanding sweep (bug-sweep = 4 false positives; sim core solid),
+then: mypy-gate `automation/` (#358) + root `tests/` (#360); new `uncertainty/sobol.py`
+Sobol sensitivity module (#359); and a full data-integrity arc closing the
+blank-cell→NaN leak in EVERY data pipeline (gdhi/tax #361, wealth/housing #362,
+hmrc/boe/productivity/wid #365 — incl. a real hmrc count-suppression fix) via a shared
+`to_finite_float` helper (#364) + a `validate.py` NONFINITE backstop (#363). Each PR:
+2 independent adversarial reviews + all bot threads resolved + CI green. **NEXT: the
+flagship simulation expansion** — behavioural-response (cited elasticities, default
+OFF) → multi-param Monte-Carlo → wire the Sobol module. See ORCHESTRATION
+"NEXT = THE FLAGSHIP" for the PR plan + seeded follow-ups.
 
 - **Merged to main (2026-06-04 cycle):** #338–#348 (11 PRs) — uncertainty
   sampling (#338) + propagation (#345) + engine MC wiring (#346), the
