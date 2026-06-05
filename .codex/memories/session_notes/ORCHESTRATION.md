@@ -5,46 +5,58 @@
 >
 > **CRITICAL**: Update this file BEFORE every compaction risk (long tool calls, large diffs).
 
-Last updated: 2026-06-05 (session 3)
+Last updated: 2026-06-05 (session 3 — #358 + #359 merged; #360 open/aging)
 
 # CURRENT HANDOFF - read this first (2026-06-05, session 3 — endless loop RESUMED)
 
 Chris re-started the endless loop (session 3). The session-2 "LOOP PAUSED" note
 below is superseded. Recovery: read this block, then `gh pr list --state open`.
 
-## 🔄 Live state (2026-06-05, session 3)
+## 🔄 Live state (2026-06-05, session 3) — main `440b82b`, 2 PRs MERGED + 1 open
 
 - Started from clean main `fac5633` (0 open PRs). Tidy-up: gitignored
-  `.claude/scheduled_tasks.lock` (committed to main).
-- **Ran an understanding workflow** (5 parallel agents) mapping the task menu:
-  bug-sweep (4 findings — ALL verified FALSE POSITIVES: variants.py tail-mean is
-  correctly decreasing in alpha; effective_rate denominators match documented
-  fields + tests; IHT NRB branches are internally consistent), mypy debt (26 real
-  errors in automation/), assumptions audit (6 unused cited RangeValues → path to
-  multi-param MC/behavioural layer/Sobol), API/static path (frontend discards
-  decile/nation/provenance — visibility backlog), and stubs (reconcile/
-  reconstruction are large Gate-2 design work).
-- **PR #358 OPEN** (`chore/ci-mypy-automation`): gate mypy on automation/ + fix all
-  26 pre-existing errors (8 wealthlens_sim import override + 18 real type fixes
-  across fetch_*/test helper/og-images). 4 incremental commits + 1 review-fix
-  commit. 2 independent adversarial reviews: behaviour-lens CLEAN; CI-lens found
-  HIGH (sim override → Any, mitigated: documented + ci-sim test backstop) + 2 MEDIUM
-  (make install now installs .[dev]; capped Pillow<14/pandas-stubs<4) + LOW (stale
-  TODO) — ALL addressed. CI green on first commit; awaiting ci-pipelines on the
-  review-fix commit. Newest PR → age before merge.
+  `.claude/scheduled_tasks.lock`. **Ran an understanding workflow** (5 parallel
+  agents): bug-sweep (4 findings — ALL verified FALSE POSITIVES; sim core is solid),
+  mypy debt (26 automation/ + 14 tests/ errors), assumptions audit (6 unused cited
+  RangeValues → path to behavioural layer/MC/Sobol), API/static path, and stubs
+  (reconcile/reconstruction = large Gate-2 design work).
+- **#358 MERGED** (`0950cf1`, `chore/ci-mypy-automation`): gate mypy on automation/
+  + fix all 26 errors. 2 adversarial reviews (behaviour CLEAN; CI-lens HIGH+2MED+LOW
+  all addressed) + 2 gemini + 1 codex bot threads resolved. CI green.
+- **#359 MERGED** (`440b82b`, `feat/sobol-sensitivity`): Sobol sensitivity module
+  (`uncertainty/sobol.py`) — Saltelli sampling + first-order (Saltelli 2010) +
+  total-order (Jansen 1999) indices, pure NumPy, no SALib. Standalone groundwork
+  (not engine-wired). 2 reviews (numerical-correctness independently re-verified the
+  estimators; API-lens MED n_base=1 silent-garbage → MIN_N_BASE floor + 2 LOW all
+  addressed) + 2 gemini perf threads (tolist + in-place swap, bit-identical) resolved.
+  801 sim tests on main (Ishigami benchmark pinned).
+- **#360 OPEN** (`chore/ci-mypy-tests`, newest): gate mypy on root tests/ + fix all
+  14 errors (mypy_path via `$MYPY_CONFIG_FILE_DIR` TOML array + `app.*` opaque
+  override + 1 str() coercion). 2 reviews (config-lens SOUND, all gates verified
+  no-regression; behaviour-lens PASS, all 14 genuinely fixed) + 1 gemini thread
+  (colon→array form) resolved. CI green. **Newest → age, then merge next cycle once
+  a PR sits above it.**
+- Merge cadence this session: build PR → 2 independent adversarial reviews (distinct
+  lenses) → address ALL findings → reply+resolve ALL bot threads (GraphQL) → CI green
+  → merge the OLDER one (never the newest). Bots re-review every push: re-check threads.
 
 ## 🔜 Next tasks (session 3 backlog, highest-leverage first)
-1. **Flagship: expand the simulation** — behavioural-response layer (cited
-   elasticities, default OFF) → multi-parameter MC band → Sobol sensitivity. A
-   stacked arc. Highest value (Chris emphasised expanding the sim).
-2. **B1 assumption-source citation URLs** in sources.yml (data integrity; verify
-   each URL, no fabrication).
-3. **mypy on root tests/** (the other half of the seeded CI-hardening; needs
-   mypy_path for backend/pipeline modules conftest wires at runtime).
+1. **Refill backlog above #360, then merge #360** (it's ready, just needs to not be
+   newest).
+2. **Flagship: expand the simulation** — behavioural-response layer (cited
+   elasticities from the 6 unused RangeValues, default OFF, caveated) → multi-param
+   MC band → wire the NEW Sobol module over {alpha, elasticities}. A stacked arc.
+   Highest value (Chris emphasised expanding the sim). Sobol module is now ready to
+   consume once the engine has >1 sampled parameter.
+3. **B1 assumption-source citation URLs** in sources.yml (data integrity; verify each
+   URL via web, no fabrication).
 4. **Frontend visibility**: surface decile/nation breakdown + provenance sources in
-   SimulatorView/ConfidenceFanChart (currently discarded).
-5. Pre-existing minor: `fetch_ons_gdhi._parse_gdhi_per_head` doesn't guard a NaN
-   value cell (`nan <= 0` is False) — seed a small data-integrity PR.
+   SimulatorView/ConfidenceFanChart (currently fetched-but-discarded).
+5. Pre-existing minor: `fetch_ons_gdhi._parse_gdhi_per_head` + `fetch_tax_composition`
+   don't guard a NaN value cell (`nan <= 0` is False) — small data-integrity PR.
+6. Pre-existing config gap (out of scope, noted by review): backend-lint runs `mypy .`
+   from the backend dir on mypy DEFAULTS (no config there; mypy doesn't walk up), so
+   it doesn't inherit root strictness flags. Consider a backend mypy config later.
 
 ---
 

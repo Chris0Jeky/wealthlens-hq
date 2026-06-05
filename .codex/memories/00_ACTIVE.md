@@ -12,6 +12,13 @@ Last updated: 2026-06-05
 > Full live detail in `.codex/memories/session_notes/ORCHESTRATION.md` (master
 > control). This board is the short version.
 
+**Session 3 (loop resumed):** ran a 5-agent understanding sweep (bug-sweep = 4
+false positives; sim core solid). Merged **#358** (gate mypy on automation/ + fix
+26 errors) and **#359** (new `uncertainty/sobol.py` — Sobol sensitivity indices,
+Saltelli/Jansen, no SALib, 801 sim tests). **#360** open/aging (gate mypy on root
+tests/ + fix 14 errors). Each PR: 2 independent adversarial reviews + all bot
+threads resolved + CI green. automation/ AND tests/ are now mypy-gated in CI.
+
 - **Merged to main (2026-06-04 cycle):** #338–#348 (11 PRs) — uncertainty
   sampling (#338) + propagation (#345) + engine MC wiring (#346), the
   ConfidenceFanChart (#347), the `/api/simulator` bridge (#348), the #339
