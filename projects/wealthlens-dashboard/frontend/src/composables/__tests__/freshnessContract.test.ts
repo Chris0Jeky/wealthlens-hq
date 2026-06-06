@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
+import { VALID_CHART_NAMES } from "@/constants/charts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -39,5 +40,14 @@ describe("committed public/data/freshness.json contract", () => {
         source: expect.any(String),
       });
     }
+  });
+
+  it("has a freshness entry for every chart page (so no badge is missing)", () => {
+    const path = resolve(here, "../../../public/data/freshness.json");
+    const data = JSON.parse(readFileSync(path, "utf-8")) as Record<string, unknown>;
+    const missing = [...VALID_CHART_NAMES].filter((slug) => !(slug in data));
+    expect(missing, `chart pages without a freshness entry: ${missing.join(", ")}`).toEqual(
+      [],
+    );
   });
 });
