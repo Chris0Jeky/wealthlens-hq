@@ -29,14 +29,21 @@ async function loadFresh(domain: string): Promise<ReturnType<UseAnalytics>> {
 }
 
 describe("useAnalytics", () => {
-  beforeEach(() => {
+  function resetGlobals() {
     delete (window as unknown as PlausibleWindow).plausible;
     plausibleScripts().forEach((s) => s.remove());
-  });
+  }
+
+  beforeEach(resetGlobals);
 
   afterEach(() => {
     vi.unstubAllEnvs();
     vi.resetModules();
+    // Mirror the global/DOM cleanup in afterEach too, so the document + window
+    // are left pristine regardless of vitest isolation settings (defensive: if
+    // isolate:false is ever set, the final test's injected script/global would
+    // otherwise leak into another file).
+    resetGlobals();
   });
 
   it("is disabled and trackEvent is a no-op when the domain is unset", async () => {
