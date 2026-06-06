@@ -142,10 +142,14 @@ export const chartConfigs: Record<string, ChartConfig> = {
       title: "Share of net personal wealth",
       unit: "%",
       series: [
-        { label: "Top 10%", color: "var(--wl-red)", bold: true },
-        { label: "Top 1%", color: "var(--wl-ink)" },
-        { label: "Middle 40%", color: "var(--wl-ink-faint)" },
-        { label: "Bottom 50%", color: "var(--wl-ink-faint)" },
+        // Mirror the two lines WealthSharesChart.vue actually draws: it plots
+        // only the WID p90p100 (top 10%) and p99p100 (top 1%) series, using
+        // COLOR_TOP_10 (#1a56db) and COLOR_TOP_1 (#dc2626). "Middle 40%" and
+        // "Bottom 50%" are discussed in the prose + stat cards but are not
+        // plotted, so they must not appear as legend dots (and the two real
+        // colours must match the chart, not the broadsheet ink palette).
+        { label: "Top 10%", color: "#1a56db", bold: true },
+        { label: "Top 1%", color: "#dc2626" },
       ],
       ranges: ["200y", "100y", "50y", "25y"],
       defaultRange: "200y",
