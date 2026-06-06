@@ -130,6 +130,26 @@ function readJson(filename: string): unknown {
   return JSON.parse(content);
 }
 
+/**
+ * True only for a real YYYY-MM-DD calendar date. The regex /^\d{4}-\d{2}-\d{2}$/
+ * alone accepts impossible values like 2025-99-99 or 2026-00-00, which pass the
+ * string comparison too but are REJECTED by useDataFreshness's calendar parser
+ * (so the badge would render nothing). Round-trip through a UTC Date so the
+ * static guard matches what the badge actually accepts.
+ */
+function isRealCalendarDate(s: string): boolean {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+  if (!m) return false;
+  const [, y, mo, d] = m;
+  const dt = new Date(`${s}T00:00:00Z`);
+  return (
+    !Number.isNaN(dt.getTime()) &&
+    dt.getUTCFullYear() === Number(y) &&
+    dt.getUTCMonth() + 1 === Number(mo) &&
+    dt.getUTCDate() === Number(d)
+  );
+}
+
 /** The authoritative list of store-backed dataset slugs (from datasets.json). */
 function getDatasetSlugs(): string[] {
   if (!present("datasets.json")) return [];
@@ -249,6 +269,13 @@ describe("Static data validation", () => {
         expect(entry.last_updated, `freshness["${slug}"].last_updated`).toMatch(
           /^\d{4}-\d{2}-\d{2}$/,
         );
+        // Reject impossible-but-regex-passing dates (e.g. 2025-99-99); those
+        // would be dropped by useDataFreshness's calendar parser, blanking the
+        // badge. This guard matches what the badge actually accepts.
+        expect(
+          isRealCalendarDate(entry.last_updated as string),
+          `freshness["${slug}"].last_updated ${entry.last_updated} is not a real calendar date`,
+        ).toBe(true);
         // A future last_updated would render a perpetually "fresh" badge.
         expect(
           (entry.last_updated as string) <= todayUtc,
