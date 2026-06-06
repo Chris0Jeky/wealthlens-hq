@@ -3,7 +3,7 @@
  *
  * Validates the static JSON the SPA ships in `public/data/`. These files are
  * served verbatim by the GitHub Pages deploy, so a malformed or drifted file
- * reaches users directly — this test is the guard.
+ * reaches users directly.
  *
  * Why this exists / what it caught: the test previously pointed `DATA_DIR` one
  * directory too high (`../../../../public/data` -> the wealthlens-dashboard
@@ -13,17 +13,24 @@
  * regression fails loudly. Activating it surfaced a real bug: the generator
  * shipped `cgt-concentration.json` with literal `NaN` tokens (invalid JSON).
  *
- * Two environments to support:
- *  - A fresh CI checkout: `public/data/*` is gitignored except a small committed
- *    whitelist (wealth-shares[+meta], inheritance-tax, wage-stagnation[+meta],
- *    freshness). The other datasets, `datasets.json` and `all-metadata.json` are
- *    build artifacts produced by `scripts/generate_static_api.py` at deploy and
- *    are ABSENT in CI.
- *  - Local/deploy after running the generator: all datasets are present.
+ * SCOPE / what is and is NOT guarded in CI (be precise — do not overclaim):
+ *  - A fresh CI checkout only has the committed whitelist: wealth-shares[+meta],
+ *    wage-stagnation[+meta], inheritance-tax, freshness. The OTHER 8 datasets,
+ *    `datasets.json` and `all-metadata.json` are build artifacts produced by
+ *    `scripts/generate_static_api.py` and are ABSENT in CI. CI cannot run the
+ *    generator to materialise them either: its source `data/processed/*.csv`
+ *    are themselves gitignored (only wage_stagnation.csv is committed). So the
+ *    NaN/invalid-JSON sweep below covers ONLY the committed files in CI — the
+ *    cgt-concentration bug that motivated this test was in fact caught by a
+ *    developer running the generator + vitest LOCALLY, not by CI.
+ *  - Local/deploy after running the generator: all datasets are present, so the
+ *    full per-dataset contract block runs.
  *
- * So the committed-file checks (wealth-shares contract, freshness shape) always
- * run, the JSON-validity sweep covers whatever is present, and the full
- * per-dataset contract is asserted only when the generator output is present.
+ * Net: the committed-file checks (wealth-shares + wage-stagnation contracts,
+ * freshness shape) are the real CI guard; the JSON-validity sweep covers
+ * whatever is present; and the generated-output contract runs only locally / at
+ * deploy build. Validating the shipped generated artifacts inside the deploy
+ * pipeline is a separate, deferred ops task (see ORCHESTRATION).
  */
 import { describe, it, expect } from "vitest";
 import { readdirSync, readFileSync, existsSync } from "fs";
@@ -192,14 +199,33 @@ describe("Static data validation", () => {
     });
   });
 
-  // wealth-shares is committed (gitignore whitelist), so this contract check
-  // always runs, including in a fresh CI checkout.
-  describe("wealth-shares (committed dataset)", () => {
+  // wealth-shares is the only committed dataset that follows the data-store
+  // PAGINATED contract ({ data, page, limit, total, total_pages } + a matching
+  // {slug}-metadata.json), so it is the only one validateDataset() applies to.
+  // It is committed (gitignore whitelist), so this runs in a fresh CI checkout.
+  //
+  // The other committed JSON files are BESPOKE per-chart payloads with their own
+  // schemas, consumed directly by their components rather than via the store, so
+  // the paginated contract does NOT apply to them:
+  //   - wage-stagnation.json: { title, description, source, source_url,
+  //     access_date, data, notes }  (read by WageStagChart.vue)
+  //   - inheritance-tax.json:  { meta, summary, by_year, by_estate_size }
+  //     (read by the inheritance-tax chart)
+  // They are still covered by the JSON-validity sweep above; asserting the
+  // paginated shape on them would be wrong.
+  describe("wealth-shares (committed paginated dataset)", () => {
     it("data + metadata are valid and consistent", () => {
       validateDataset("wealth-shares");
     });
   });
 
+  // Shape-only check: last_updated format + non-future, and source is a
+  // non-empty string. It deliberately does NOT cross-check the source against
+  // each dataset's authoritative metadata — that source-DRIFT guard is owned by
+  // freshnessContract.test.ts (which pins wealth-shares to its metadata source).
+  // Splitting it that way keeps this sweep tolerant of the deliberately-brief
+  // freshness labels (e.g. "ONS", "HMRC") that legitimately differ from the
+  // longer metadata strings.
   describe("freshness.json (badge data)", () => {
     it("each entry has a valid, non-future last_updated and a source", () => {
       expect(present("freshness.json")).toBe(true);
@@ -240,10 +266,18 @@ describe("Static data validation", () => {
 
     if (slugs.length === 0) {
       it("datasets.json not generated in this checkout — full contract skipped", () => {
-        // Assert the REASON we skip, so this is not a silent no-op: the build
-        // artifact is genuinely absent (it is gitignored and regenerated at
-        // deploy). If it ever IS present, the it.each blocks below run instead.
-        expect(present("datasets.json")).toBe(false);
+        // Assert the REASON we skip, so this is not a silent no-op AND the skip
+        // reason cannot be satisfied by a broken DATA_DIR. The directory must
+        // exist (a path regression fails the top-level test loudly), and the
+        // build artifact must be genuinely absent (gitignored, regenerated at
+        // deploy). If datasets.json were present-but-malformed, getDatasetSlugs
+        // would still return [] — so fail clearly in that case rather than
+        // emitting the misleading "not generated" message.
+        expect(existsSync(DATA_DIR)).toBe(true);
+        expect(
+          present("datasets.json"),
+          "datasets.json is present but malformed/empty (getDatasetSlugs returned no slugs)",
+        ).toBe(false);
       });
       return;
     }
