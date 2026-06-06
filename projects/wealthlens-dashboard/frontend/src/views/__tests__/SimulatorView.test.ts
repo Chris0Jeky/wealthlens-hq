@@ -198,4 +198,16 @@ describe('SimulatorView', () => {
     expect(live.exists()).toBe(true)
     expect(live.text()).toContain('Now showing 1% wealth tax')
   })
+
+  it('the live summary says "unavailable" (never £NaNbn) for a non-finite interval', () => {
+    scenarioList.value = SCENARIOS
+    dashboard.value = {
+      ...DASHBOARD,
+      total_revenue_gbp_bn: { low: NaN, central: NaN, high: NaN },
+    }
+    const wrapper = mount(SimulatorView)
+    const live = wrapper.find('[aria-live="polite"]')
+    expect(live.text()).toContain('unavailable')
+    expect(live.text()).not.toContain('NaN')
+  })
 })

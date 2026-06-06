@@ -68,6 +68,12 @@ const liveSummary = computed(() => {
     return 'This scenario could not be displayed.'
   if (dashboard.value && selectedScenario.value) {
     const { low, central, high } = dashboard.value.total_revenue_gbp_bn
+    // Mirror ConfidenceFanChart's non-finite guard: a malformed (NaN/null) interval
+    // makes the chart show "Interval data unavailable", so the screen-reader summary
+    // must say the same — never read out "£NaNbn" or throw on .toFixed.
+    if (![low, central, high].every((n) => Number.isFinite(n))) {
+      return `Now showing ${selectedScenario.value.name}: revenue figures are unavailable for this scenario.`
+    }
     return `Now showing ${selectedScenario.value.name}: estimated annual revenue £${central.toFixed(1)}bn (range £${low.toFixed(1)}bn to £${high.toFixed(1)}bn).`
   }
   return ''
