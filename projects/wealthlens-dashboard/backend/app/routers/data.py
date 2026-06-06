@@ -323,7 +323,12 @@ def dataset_freshness(response: Response) -> dict[str, Any]:
         try:
             mtime = csv_path.stat().st_mtime
             last_updated_dt = datetime.fromtimestamp(mtime, tz=UTC)
-            age_hours = (now - last_updated_dt).total_seconds() / 3600
+            # Clamp at 0: a file mtime in the future (clock skew across build/deploy
+            # hosts, restore-from-backup, an image with future-dated files) would make
+            # age negative, which fails the response model's age_hours>=0 and 500s the
+            # WHOLE endpoint (blacking out every dataset). A future-dated file is simply
+            # treated as just-updated (fresh).
+            age_hours = max(0.0, (now - last_updated_dt).total_seconds() / 3600)
             datasets_freshness[name] = {
                 "last_updated": last_updated_dt.isoformat(),
                 "age_hours": round(age_hours, 1),

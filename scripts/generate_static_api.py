@@ -313,7 +313,9 @@ def main() -> None:
         csv_path = DATA_DIR / DATASETS[slug]
         mtime = os.path.getmtime(csv_path)
         last_updated = datetime.fromtimestamp(mtime, tz=UTC)
-        age_hours = (now - last_updated).total_seconds() / 3600
+        # Clamp at 0 (same as the live /api/data/freshness endpoint): a future file
+        # mtime would otherwise emit a negative age into the static freshness.json.
+        age_hours = max(0.0, (now - last_updated).total_seconds() / 3600)
         if age_hours <= freshness_threshold_fresh:
             status = "fresh"
         elif age_hours <= freshness_threshold_stale:

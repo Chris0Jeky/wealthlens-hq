@@ -130,6 +130,29 @@ class TestFreshnessEndpoint:
         entry = response.json()["datasets"]["wealth-shares"]
         assert entry["status"] == "expired"
 
+    def test_future_mtime_does_not_500(self, tmp_path: Path) -> None:
+        """A file with a FUTURE mtime must not 500 the whole endpoint.
+
+        Clock skew across build/deploy hosts (or a restore that preserves a future
+        timestamp) makes age_hours negative; the response model requires age_hours>=0,
+        so without the source clamp FastAPI's response validation 500s the entire
+        endpoint — blacking out every dataset. A future-dated file is treated as
+        just-updated (fresh, age 0).
+        """
+        csv_file = tmp_path / DATASETS["wealth-shares"]
+        csv_file.write_text("year,value\n2020,0.5\n")
+        import os
+
+        five_days_ahead = time.time() + (5 * 24 * 3600)
+        os.utime(csv_file, (five_days_ahead, five_days_ahead))
+
+        with patch("app.routers.data.DATA_DIR", tmp_path):
+            response = client.get("/api/data/freshness")
+        assert response.status_code == 200
+        entry = response.json()["datasets"]["wealth-shares"]
+        assert entry["age_hours"] == 0.0  # clamped, not negative
+        assert entry["status"] == "fresh"
+
     def test_has_cache_control_header(self) -> None:
         response = client.get("/api/data/freshness")
         assert "cache-control" in response.headers
