@@ -6,6 +6,13 @@ import { VALID_CHART_NAMES } from "@/constants/charts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
+// Resolve relative to THIS file (not process.cwd()) so the test passes regardless of
+// which directory the runner is invoked from (repo root vs frontend).
+function loadFreshness(): Record<string, unknown> {
+  const path = resolve(here, "../../../public/data/freshness.json");
+  return JSON.parse(readFileSync(path, "utf-8")) as Record<string, unknown>;
+}
+
 /**
  * Contract test for the committed static freshness.json.
  *
@@ -23,10 +30,7 @@ const here = dirname(fileURLToPath(import.meta.url));
  */
 describe("committed public/data/freshness.json contract", () => {
   it("is a flat slug map of { last_updated: YYYY-MM-DD, source }", () => {
-    // Resolve relative to THIS file (not process.cwd()) so the test passes regardless
-    // of which directory the runner is invoked from (repo root vs frontend).
-    const path = resolve(here, "../../../public/data/freshness.json");
-    const data = JSON.parse(readFileSync(path, "utf-8")) as Record<string, unknown>;
+    const data = loadFreshness();
 
     // Not the live-API nested shape.
     expect(data.datasets).toBeUndefined();
@@ -43,8 +47,7 @@ describe("committed public/data/freshness.json contract", () => {
   });
 
   it("has a freshness entry for every chart page (so no badge is missing)", () => {
-    const path = resolve(here, "../../../public/data/freshness.json");
-    const data = JSON.parse(readFileSync(path, "utf-8")) as Record<string, unknown>;
+    const data = loadFreshness();
     const missing = [...VALID_CHART_NAMES].filter((slug) => !(slug in data));
     expect(missing, `chart pages without a freshness entry: ${missing.join(", ")}`).toEqual(
       [],
