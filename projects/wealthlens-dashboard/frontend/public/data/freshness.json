@@ -1,5 +1,5 @@
 {
-  "wealth-shares": { "last_updated": "2026-05-16", "source": "ONS Wealth and Assets Survey" },
+  "wealth-shares": { "last_updated": "2026-05-16", "source": "World Inequality Database" },
   "housing-affordability": { "last_updated": "2026-05-14", "source": "ONS" },
   "wealth-by-decile": { "last_updated": "2026-05-16", "source": "ONS WAS Round 7" },
   "cgt-concentration": { "last_updated": "2026-05-15", "source": "HMRC" },

@@ -1,16 +1,26 @@
 import { describe, it, expect } from "vitest";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 import { VALID_CHART_NAMES } from "@/constants/charts";
 
 const here = dirname(fileURLToPath(import.meta.url));
+const DATA_DIR = resolve(here, "../../../public/data");
 
 // Resolve relative to THIS file (not process.cwd()) so the test passes regardless of
 // which directory the runner is invoked from (repo root vs frontend).
 function loadFreshness(): Record<string, unknown> {
-  const path = resolve(here, "../../../public/data/freshness.json");
-  return JSON.parse(readFileSync(path, "utf-8")) as Record<string, unknown>;
+  return JSON.parse(
+    readFileSync(resolve(DATA_DIR, "freshness.json"), "utf-8"),
+  ) as Record<string, unknown>;
+}
+
+/** Source string from a committed `{slug}-metadata.json`, or null if absent. */
+function metadataSource(slug: string): string | null {
+  const path = resolve(DATA_DIR, `${slug}-metadata.json`);
+  if (!existsSync(path)) return null;
+  const meta = JSON.parse(readFileSync(path, "utf-8")) as { source?: unknown };
+  return typeof meta.source === "string" ? meta.source : null;
 }
 
 /**
@@ -52,5 +62,19 @@ describe("committed public/data/freshness.json contract", () => {
     expect(missing, `chart pages without a freshness entry: ${missing.join(", ")}`).toEqual(
       [],
     );
+  });
+
+  // The badge tooltip renders freshness `source`, so it must not name the WRONG
+  // organisation. Most entries are deliberately brief labels (e.g. "Bank of
+  // England" vs the metadata's longer name), which is fine — but wealth-shares
+  // had drifted to a different source entirely ("ONS Wealth and Assets Survey"
+  // when its metadata + the WID pipeline cite the World Inequality Database).
+  // Lock that one to its committed, authoritative metadata source so the drift
+  // cannot recur. (wealth-shares is committed, so this runs in a fresh CI checkout.)
+  it("wealth-shares freshness source matches its authoritative metadata source", () => {
+    const data = loadFreshness();
+    const metaSource = metadataSource("wealth-shares");
+    expect(metaSource, "wealth-shares-metadata.json should be committed").not.toBeNull();
+    expect((data["wealth-shares"] as { source?: unknown }).source).toBe(metaSource);
   });
 });
