@@ -118,6 +118,11 @@ def test_legacy_parser_drops_nonfinite_value_cells(
     assert not _has_nonfinite(df["total_wealth_bn"]), (
         "total_wealth_bn (the published metric) must carry no NaN/inf"
     )
+    # Same guarantee on the published CSV (the real artifact), not just the frame.
+    published = pd.read_csv(tmp_path / "ons_wealth_by_decile.csv")
+    assert not _has_nonfinite(published["total_wealth_bn"])
+    for bad in ("2nd", "3rd", "4th"):
+        assert bad not in published["decile"].astype(str).tolist()
 
 
 def test_legacy_parser_recovery_loop_routes_siblings_through_guard(
@@ -148,6 +153,9 @@ def test_legacy_parser_recovery_loop_routes_siblings_through_guard(
     assert not _has_nonfinite(df["total_wealth_bn"]), (
         "no NaN/inf may reach the published metric via the recovery loop"
     )
+    published = pd.read_csv(tmp_path / "ons_wealth_by_decile.csv")
+    assert not _has_nonfinite(published["total_wealth_bn"])
+    assert "2nd" not in published["decile"].astype(str).tolist()
 
 
 # --- primary parser (_parse_table_2_2 value cell) ---------------------------

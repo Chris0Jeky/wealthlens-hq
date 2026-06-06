@@ -113,8 +113,9 @@ def _run_process(
     return fetch_tax_composition.process(tmp_path / "fake.xlsx")
 
 
-def _assert_clean_live(df: pd.DataFrame, dropped_year: str) -> None:
-    """Shared assertions: stayed on the live path, dropped the bad year, all finite."""
+def _assert_clean_live(df: pd.DataFrame, dropped_year: str, tmp_path: Path) -> None:
+    """Shared assertions: stayed on the live path, dropped the bad year, all finite —
+    on BOTH the returned frame and the published CSV on disk (the real artifact)."""
     # Prove we exercised the live parse, not the illustrative fallback (which would
     # always be finite and make the test pass vacuously).
     assert df["data_source"].iloc[0] == "live"
@@ -123,9 +124,13 @@ def _assert_clean_live(df: pd.DataFrame, dropped_year: str) -> None:
     assert set(df["year"].tolist()) == {"2021-22", "2022-23", "2023-24", "2024-25"} - {
         dropped_year
     }
-    # No published number is non-finite — the discriminating signal vs a bare float().
+    # No published number is non-finite — the discriminating signal vs a bare float() —
+    # verified on the returned frame AND the CSV that actually ships.
+    published = pd.read_csv(tmp_path / "tax_composition.csv")
+    assert dropped_year not in published["year"].astype(str).tolist()
     for col in _PUBLISHED_NUMERIC_COLS:
         assert not _has_nonfinite(df[col]), f"{col} carries a non-finite value"
+        assert not _has_nonfinite(published[col]), f"published {col} carries a non-finite value"
 
 
 def test_inf_cell_drops_its_year(
@@ -134,7 +139,7 @@ def test_inf_cell_drops_its_year(
     """An ``"inf"`` income-tax cell (bare ``float()`` would accept it) drops that year."""
     raw = _raw_frame("inf", bad_row=1, bad_col=4)  # Income Tax, 2024-25
     df = _run_process(tmp_path, monkeypatch, raw)
-    _assert_clean_live(df, dropped_year="2024-25")
+    _assert_clean_live(df, dropped_year="2024-25", tmp_path=tmp_path)
 
 
 def test_nan_text_cell_drops_its_year(
@@ -143,7 +148,7 @@ def test_nan_text_cell_drops_its_year(
     """A ``"nan"`` NICs cell (bare ``float()`` would accept it) drops that year."""
     raw = _raw_frame("nan", bad_row=2, bad_col=1)  # National Insurance, 2021-22
     df = _run_process(tmp_path, monkeypatch, raw)
-    _assert_clean_live(df, dropped_year="2021-22")
+    _assert_clean_live(df, dropped_year="2021-22", tmp_path=tmp_path)
 
 
 def test_blank_nan_cell_drops_its_year(
@@ -156,4 +161,4 @@ def test_blank_nan_cell_drops_its_year(
     """
     raw = _raw_frame(float("nan"), bad_row=3, bad_col=2)  # Capital Gains, 2022-23
     df = _run_process(tmp_path, monkeypatch, raw)
-    _assert_clean_live(df, dropped_year="2022-23")
+    _assert_clean_live(df, dropped_year="2022-23", tmp_path=tmp_path)
