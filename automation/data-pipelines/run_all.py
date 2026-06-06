@@ -16,16 +16,23 @@ logger = logging.getLogger(__name__)
 PIPELINE_DIR = Path(__file__).resolve().parent
 SCRIPT_TIMEOUT_SECONDS = 300
 
+# Every fetch_*.py pipeline in this directory must be listed here so `run_all.py`
+# runs the FULL set (matching deploy.yml, which globs `for script in fetch_*.py`).
+# This previously omitted child_poverty and generational_wealth, so `run_all.py`
+# silently skipped two shipped datasets while deploy regenerated them.
+# test_run_all.py guards this list against drift. Kept alphabetical for easy diff.
 SCRIPTS = [
-    "fetch_wid_data.py",
+    "fetch_boe_rates.py",
+    "fetch_child_poverty.py",
+    "fetch_generational_wealth.py",
+    "fetch_hmrc_stats.py",
+    "fetch_ons_gdhi.py",
     "fetch_ons_housing.py",
     "fetch_ons_wealth.py",
-    "fetch_hmrc_stats.py",
     "fetch_productivity_pay.py",
-    "fetch_ons_gdhi.py",
     "fetch_tax_composition.py",
-    "fetch_boe_rates.py",
     "fetch_wage_stagnation.py",
+    "fetch_wid_data.py",
 ]
 
 
