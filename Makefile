@@ -90,11 +90,20 @@ tests-typecheck: ## Type-check root tests/ with mypy (separate run: a shared `te
 validate: ## Validate all processed CSV datasets
 	$(PYTHON) $(PIPELINE_DIR)/validate.py
 
-pipelines: ## Run all working data pipelines (fetches live data)
-	$(PYTHON) $(PIPELINE_DIR)/fetch_wid_data.py
+# Keep this list in sync with run_all.py SCRIPTS and the deploy.yml fetch_*.py
+# glob — all three must run the same full set of pipelines.
+pipelines: ## Run all data pipelines (fetches live data)
+	$(PYTHON) $(PIPELINE_DIR)/fetch_boe_rates.py
+	$(PYTHON) $(PIPELINE_DIR)/fetch_child_poverty.py
+	$(PYTHON) $(PIPELINE_DIR)/fetch_generational_wealth.py
+	$(PYTHON) $(PIPELINE_DIR)/fetch_hmrc_stats.py
+	$(PYTHON) $(PIPELINE_DIR)/fetch_ons_gdhi.py
 	$(PYTHON) $(PIPELINE_DIR)/fetch_ons_housing.py
 	$(PYTHON) $(PIPELINE_DIR)/fetch_ons_wealth.py
-	$(PYTHON) $(PIPELINE_DIR)/fetch_hmrc_stats.py
+	$(PYTHON) $(PIPELINE_DIR)/fetch_productivity_pay.py
+	$(PYTHON) $(PIPELINE_DIR)/fetch_tax_composition.py
+	$(PYTHON) $(PIPELINE_DIR)/fetch_wage_stagnation.py
+	$(PYTHON) $(PIPELINE_DIR)/fetch_wid_data.py
 
 # ── Aggregate targets ─────────────────────────────────────────────────────
 dev-tools-install: ## Install root dev tools (mypy, ruff, pandas-stubs, Pillow, ...) used by lint/test
