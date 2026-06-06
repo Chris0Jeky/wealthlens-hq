@@ -15,7 +15,6 @@ from __future__ import annotations
 
 import ast
 import json
-import math
 import re
 import sys
 from collections.abc import Callable
@@ -160,21 +159,28 @@ def _read_csv_as_records(path: Path, slug: str = "") -> list[dict]:
 
     df = pd.read_csv(path)
     records = df.to_dict(orient="records")
-    # Convert NaN -> None at the record (dict) level. Doing it on the DataFrame
-    # (df.where(pd.notna(df), other=None)) is INEFFECTIVE for float columns:
-    # pandas re-coerces the None back to NaN, which then serialises to the
-    # invalid-JSON literal `NaN` (json.dumps allows NaN by default), so the
-    # browser's fetch().json() cannot parse it. Sanitising the plain-Python
-    # records avoids that trap. numpy floats subclass float, so isinstance also
-    # catches numpy NaN; a blank cell in a string/object column also arrives as
-    # np.nan (a float), which this handles. This generator never parses dates, so
-    # pandas NaT cannot occur here; if date parsing is ever added, NaT arrives as
-    # NaTType (NOT None and NOT a float) and would need explicit handling — but it
-    # would still fail safe, since the allow_nan=False writes below reject any
-    # non-finite/unserialisable value rather than shipping bad JSON.
+
+    def _is_missing(v: object) -> bool:
+        # Convert any pandas/numpy missing sentinel -> None. Doing it on the
+        # DataFrame (df.where(pd.notna(df), other=None)) is INEFFECTIVE for float
+        # columns: pandas re-coerces the None back to NaN, which then serialises
+        # to the invalid-JSON literal `NaN` (json.dumps allows NaN by default),
+        # so the browser's fetch().json() cannot parse it. Sanitising the
+        # plain-Python records avoids that trap. pd.isna covers every NA flavour
+        # (float NaN, None, pd.NA from nullable dtypes, pd.NaT) — broader than an
+        # isinstance(float)+isnan check. Values come from to_dict(orient="records")
+        # so they are always scalars (never array-like), which makes pd.isna safe;
+        # the try/except is belt-and-braces for a future non-scalar. Note inf is
+        # NOT missing (pd.isna(inf) is False), so a stray Infinity still trips the
+        # allow_nan=False writes below and fails the build loudly rather than
+        # shipping unparseable JSON.
+        try:
+            return bool(pd.isna(v))
+        except (TypeError, ValueError):
+            return False
+
     records = [
-        {k: (None if isinstance(v, float) and math.isnan(v) else v) for k, v in row.items()}
-        for row in records
+        {k: (None if _is_missing(v) else v) for k, v in row.items()} for row in records
     ]
 
     if slug in _POSTPROCESSORS:
