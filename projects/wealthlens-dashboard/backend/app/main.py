@@ -233,5 +233,6 @@ def version_debug() -> dict:
         "environment": os.environ.get("APP_ENV", "development"),
         "python_version": platform.python_version(),
         "datasets_available": len(data.DATASETS),
-        "uptime_seconds": round(time.time() - _started_at, 2),
+        # Clamp at 0: an NTP step-back could otherwise report a negative uptime.
+        "uptime_seconds": round(max(0.0, time.time() - _started_at), 2),
     }
