@@ -67,8 +67,16 @@ const liveSummary = computed(() => {
   if (error.value || schemaMismatch.value)
     return 'This scenario could not be displayed.'
   if (dashboard.value && selectedScenario.value) {
-    const { low, central, high } = dashboard.value.total_revenue_gbp_bn
-    return `Now showing ${selectedScenario.value.name}: estimated annual revenue £${central.toFixed(1)}bn (range £${low.toFixed(1)}bn to £${high.toFixed(1)}bn).`
+    // Fully mirror ConfidenceFanChart's isValid: guard the interval OBJECT (a null/
+    // missing total_revenue_gbp_bn would throw on destructure — reachable via a
+    // hand-edited/static fixture) AND its fields (NaN/Infinity). When malformed, the
+    // chart shows "Interval data unavailable", so the screen-reader summary says the
+    // same — never read out "£NaNbn" and never break the view render.
+    const iv = dashboard.value.total_revenue_gbp_bn
+    if (!iv || ![iv.low, iv.central, iv.high].every((n) => Number.isFinite(n))) {
+      return `Now showing ${selectedScenario.value.name}: revenue figures are unavailable for this scenario.`
+    }
+    return `Now showing ${selectedScenario.value.name}: estimated annual revenue £${iv.central.toFixed(1)}bn (range £${iv.low.toFixed(1)}bn to £${iv.high.toFixed(1)}bn).`
   }
   return ''
 })
