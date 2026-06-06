@@ -10,6 +10,7 @@
 import type { StatItem } from "@/components/StatStrip.vue";
 import type { SeriesLegendItem } from "@/components/ChartToolbar.vue";
 import type { RelatedChartItem } from "@/components/RelatedCharts.vue";
+import { COLOR_TOP_10, COLOR_TOP_1 } from "@/config/chartColors";
 
 /**
  * Full article configuration for a chart page. Charts without a full
@@ -143,13 +144,13 @@ export const chartConfigs: Record<string, ChartConfig> = {
       unit: "%",
       series: [
         // Mirror the two lines WealthSharesChart.vue actually draws: it plots
-        // only the WID p90p100 (top 10%) and p99p100 (top 1%) series, using
-        // COLOR_TOP_10 (#1a56db) and COLOR_TOP_1 (#dc2626). "Middle 40%" and
+        // only the WID p90p100 (top 10%) and p99p100 (top 1%) series, in the
+        // shared COLOR_TOP_10 / COLOR_TOP_1 (imported from the same source of
+        // truth as the chart, so they cannot drift apart). "Middle 40%" and
         // "Bottom 50%" are discussed in the prose + stat cards but are not
-        // plotted, so they must not appear as legend dots (and the two real
-        // colours must match the chart, not the broadsheet ink palette).
-        { label: "Top 10%", color: "#1a56db", bold: true },
-        { label: "Top 1%", color: "#dc2626" },
+        // plotted, so they must not appear as legend dots.
+        { label: "Top 10%", color: COLOR_TOP_10, bold: true },
+        { label: "Top 1%", color: COLOR_TOP_1 },
       ],
       ranges: ["200y", "100y", "50y", "25y"],
       defaultRange: "200y",
@@ -166,7 +167,7 @@ export const chartConfigs: Record<string, ChartConfig> = {
         {
           heading: "What this chart shows",
           paragraphs: [
-            'The share of <em>net personal wealth</em> held by four percentile groups in the United Kingdom, from 1820 to 2023. Net personal wealth is the sum of all financial assets (savings, investments, pensions) and non-financial assets (mainly housing) — minus debts.',
+            'The share of <em>net personal wealth</em> held by the top 10% and the top 1% in the United Kingdom, from 1820 to 2023. Net personal wealth is the sum of all financial assets (savings, investments, pensions) and non-financial assets (mainly housing) — minus debts.',
           ],
         },
         {
