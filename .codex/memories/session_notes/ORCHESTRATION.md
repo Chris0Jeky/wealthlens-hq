@@ -5,11 +5,40 @@
 >
 > **CRITICAL**: Update this file BEFORE every compaction risk (long tool calls, large diffs).
 
-Last updated: 2026-06-06 (session 5 — 6 PRs MERGED (#382-387); #388 open; building PR-5/PR-8)
+Last updated: 2026-06-06 (session 5 — 8 PRs MERGED (#382-389); 0 open; clean checkpoint)
 
-## ▶️ SESSION 5 (2026-06-06) — LOOP ACTIVE. 6 PRs merged; 1 open; more building.
+## ▶️ SESSION 5 (2026-06-06) — CLEAN CHECKPOINT. 8 PRs merged; 0 open.
 
-### ✅ LIVE PROGRESS (session 5, continued)
+### ✅ FINAL TALLY (session 5): 8 PRs MERGED (#382-389), 0 open, main green.
+Each PR: 2 independent adversarial-review lenses (workflow) + gemini/codex bot threads
+addressed & resolved + green CI + aged + a newer PR above before merge. main is clean
+(only `main` local+remote; worktrees removed; stale session-4 remotes pruned).
+- **#388** (PR-9) MERGED: run_all.py + `make pipelines` run the full 11-pipeline set
+  (were 9/11 and 4/11) + a drift-guard test. Review-driven: `make pipelines` now delegates
+  to `run_all.py --fetch-only` (one guarded source, not a third copy) + ci-full wiring.
+- **#389** (PR-8 frontend half) MERGED: replaced WealthScaleScroller tautological
+  `expect(true).toBe(true)` keydown tests with real defaultPrevented asserts; added 4
+  useAnalytics unit tests. Reviews mutation-verified the tests actually bite.
+
+### ⚠️ PROCESS SLIP (noted for honesty + future care)
+The session-5 PR-9 v1 (run_all.py 11-list + Makefile + test_run_all.py) was ACCIDENTALLY
+bundled into the docs commit `3ac9deb` pushed directly to main (instead of only via PR #388).
+The content was reviewed (the #388 adversarial reviews covered exactly it) and is sound, and
+#388 then carried only the v2 delta (the --fetch-only delegation). No broken/unreviewed
+behaviour reached main. LESSON: always `git status` / `git diff --cached` before committing on
+main — a stray staged file rode along. (Could not be cleanly unwound without force-pushing
+main, which was not worth it for reviewed content.)
+
+### 📌 REMAINING BUILDABLE WORK (next cycle — clean, unblocked)
+- **PR-5 (productivity illustrative caveat)** — the one substantive planned item not yet
+  built. ProductivityPayChart.vue shows no caveat even when the pipeline falls back to
+  illustrative data (it writes a `.meta.json data_type` sidecar that never reaches the
+  frontend). 4-layer change: sidecar -> generate_static_api metadata -> backend metadata ->
+  Vue conditional caveat. Deserves its own PR + reviews. Mission-relevant (data honesty).
+- **PR-8 backend half** — rate-limit overflow characterisation test (rate_limit.py once the
+  10k IP cap is hit, fail-open behaviour). Small.
+
+### 🧰 6 PRs from the FIRST batch (#382-387), each review-hardened:
 **6 PRs MERGED to main (#382-387)**, each with 2 independent adversarial-review lenses
 (workflow) + gemini/codex bot threads addressed & resolved + green CI + aged:
 - **#382** (PR-1) generator NaN->invalid-JSON fix. Review-driven: replaced a tautological
