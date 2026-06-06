@@ -5,12 +5,12 @@
 >
 > **CRITICAL**: Update this file BEFORE every compaction risk (long tool calls, large diffs).
 
-Last updated: 2026-06-06 (session 4 — #369-#379 MERGED (11 PRs); 0 open; unblocked backlog exhausted, awaiting Chris)
+Last updated: 2026-06-06 (session 4 — #369-#380 MERGED (12 PRs); 0 open; unblocked backlog exhausted, awaiting Chris)
 
-## ▶️ SESSION 4 (2026-06-05/06) — LOOP RESUMED. 11 PRs merged; 0 open; awaiting Chris
+## ▶️ SESSION 4 (2026-06-05/06) — LOOP RESUMED. 12 PRs merged; 0 open; awaiting Chris
 
 Chris re-started the endless loop (session 4). Started from main `7e70a49`, 0 open PRs.
-**11 PRs merged (#369-#379)**, 0 open. Each PR: 2 independent adversarial reviews + all
+**12 PRs merged (#369-#380)**, 0 open. Each PR: 2 independent adversarial reviews + all
 bot threads resolved + green CI before merge.
 
 ### 🐛 3 REAL bugs found+fixed via the bug-hunt (the loop's analyse-then-fix payoff)
@@ -23,11 +23,20 @@ bot threads resolved + green CI before merge.
   deploy. Stopped the generator writing it + made fetchFreshness adapt the flat file in
   static mode (both badge + home indicators now read ONE curated file) + .gitignore
   whitelist + contract test.
+- **#380** — closed the freshness arc: added the 2 missing chart-page freshness entries
+  (wage-stagnation, inheritance-tax — cited from their own metadata) + a coverage-guard
+  test (every VALID_CHART_NAMES slug must have an entry).
 
-### 📌 Minor pre-existing FOLLOW-UPS surfaced by the #379 reviews (seeded, low value)
-- 2 chart pages (`wage-stagnation`, `inheritance-tax`) have no `freshness.json` entry ->
-  no freshness badge. `inheritance-tax` also lacks a tracked `-metadata.json`. Needs
-  cited last_updated/source before adding (no fabrication).
+### ⚠️ DATA-INTEGRITY FOLLOW-UP (mission-relevant — surface to Chris)
+- **freshness.json `last_updated` values are ACCESS/BUILD dates, not source-PUBLICATION
+  dates.** Systemic across all 12 entries (e.g. inheritance-tax is 2021-22 vintage but the
+  badge shows "updated 3 weeks ago" / amber, not the honest stale/red). The badge label
+  "Last updated" therefore overstates freshness — a soft conflict with the "no misleading
+  claims / data first" value. #380 didn't introduce it (followed convention) but it should
+  be fixed properly: either source real source-publication dates per dataset (cited), or
+  relabel the badge "Last refreshed"/"Accessed". NOT a code bug; a data-honesty decision.
+
+### 📌 Minor pre-existing FOLLOW-UPS (seeded, low value)
 - `frontend/.../static-data-validation.test.ts` is a silent no-op (DATA_DIR path missing
   the `frontend/` segment -> dir absent -> all asserts skip). Fix the path (may surface
   pre-existing static-data shape issues).
