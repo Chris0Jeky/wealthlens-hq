@@ -5,13 +5,34 @@
 >
 > **CRITICAL**: Update this file BEFORE every compaction risk (long tool calls, large diffs).
 
-Last updated: 2026-06-06 (session 4 — #369-#377 MERGED (9 PRs); #378 open; backlog exhausted, awaiting Chris)
+Last updated: 2026-06-06 (session 4 — #369-#379 MERGED (11 PRs); 0 open; unblocked backlog exhausted, awaiting Chris)
 
-## ▶️ SESSION 4 (2026-06-05/06) — LOOP RESUMED. 9 PRs merged; #378 open; awaiting Chris
+## ▶️ SESSION 4 (2026-06-05/06) — LOOP RESUMED. 11 PRs merged; 0 open; awaiting Chris
 
 Chris re-started the endless loop (session 4). Started from main `7e70a49`, 0 open PRs.
-**9 PRs merged (#369-#377)**, #378 open/in-review. Each PR: 2 independent adversarial
-reviews + all bot threads resolved + green CI before merge.
+**11 PRs merged (#369-#379)**, 0 open. Each PR: 2 independent adversarial reviews + all
+bot threads resolved + green CI before merge.
+
+### 🐛 3 REAL bugs found+fixed via the bug-hunt (the loop's analyse-then-fix payoff)
+- **#377** — `/api/data/freshness` 500'd on a future CSV mtime (negative age vs response
+  model ge=0, blacking out all 11 datasets). Clamped age at 0.
+- **#378** — SimulatorView's screen-reader summary read out "£NaNbn" / threw on a
+  null interval (chart guarded it, the sr summary didn't). Mirrored ConfidenceFanChart.
+- **#379** — DEPLOYED freshness badges silently broken: generate_static_api.py overwrote
+  the curated flat freshness.json with the live-API {datasets,thresholds} schema on every
+  deploy. Stopped the generator writing it + made fetchFreshness adapt the flat file in
+  static mode (both badge + home indicators now read ONE curated file) + .gitignore
+  whitelist + contract test.
+
+### 📌 Minor pre-existing FOLLOW-UPS surfaced by the #379 reviews (seeded, low value)
+- 2 chart pages (`wage-stagnation`, `inheritance-tax`) have no `freshness.json` entry ->
+  no freshness badge. `inheritance-tax` also lacks a tracked `-metadata.json`. Needs
+  cited last_updated/source before adding (no fabrication).
+- `frontend/.../static-data-validation.test.ts` is a silent no-op (DATA_DIR path missing
+  the `frontend/` segment -> dir absent -> all asserts skip). Fix the path (may surface
+  pre-existing static-data shape issues).
+- Home FreshnessIndicator (UTC-hours, 3-tier) vs chart DataFreshnessBadge (local
+  calendar-day, boolean) can diverge at the ~30-day boundary. Optional: unify on one helper.
 
 ### 🔎 Bug-hunt (task-8 analysis, 2 agents) — codebase largely SOUND
 - **Sim + pipelines: NO genuine bugs.** Conservation invariants (sum decile == total -
