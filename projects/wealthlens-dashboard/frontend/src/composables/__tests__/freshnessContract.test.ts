@@ -71,6 +71,20 @@ describe("committed public/data/freshness.json contract", () => {
   // when its metadata + the WID pipeline cite the World Inequality Database).
   // Lock that one to its committed, authoritative metadata source so the drift
   // cannot recur. (wealth-shares is committed, so this runs in a fresh CI checkout.)
+  //
+  // Why this is NOT generalised to "every committed metadata slug": the only
+  // OTHER committed metadata file is wage-stagnation, whose freshness label
+  // ("ONS ASHE") is a deliberately brief form of its longer metadata source
+  // ("ONS Annual Survey of Hours and Earnings (ASHE), Table 1") — the same
+  // organisation, just abbreviated. An exact-equality loop would wrongly fail it.
+  // The bug class worth locking is a wrong-ORGANISATION drift, which only
+  // wealth-shares exhibited. This PR also corrects productivity-pay (ONS/EPI ->
+  // ONS, since the US Economic Policy Institute supplies no UK datapoint — the
+  // pipeline is pure ONS LZVD/AWE/CPIH). child-poverty's "DWP/HBAI" was left
+  // as-is: it matches the user-facing ChildPovertyChart.vue and the after-housing-
+  // costs measure, while the pipeline labels it CiLIF — an unresolved HBAI-vs-CiLIF
+  // source conflict deferred to a human (see ORCHESTRATION). Neither has a
+  // committed metadata file, so neither can be structurally locked here anyway.
   it("wealth-shares freshness source matches its authoritative metadata source", () => {
     const data = loadFreshness();
     const metaSource = metadataSource("wealth-shares");
