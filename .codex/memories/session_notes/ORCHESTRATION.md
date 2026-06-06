@@ -5,7 +5,59 @@
 >
 > **CRITICAL**: Update this file BEFORE every compaction risk (long tool calls, large diffs).
 
-Last updated: 2026-06-06 (session 4 — #369-#381 MERGED (13 PRs); 0 open; unblocked backlog exhausted, awaiting Chris)
+Last updated: 2026-06-06 (session 5 — LOOP RESUMED; analysis sweep done, building PRs)
+
+## ▶️ SESSION 5 (2026-06-06) — LOOP RESUMED. Fresh analysis, building PR batch.
+
+Chris re-started the endless loop (session 5). Started from main `137afa3`, 0 open PRs.
+Strategy: drain the seeded low-risk leftovers + a fresh 5-lens analysis sweep
+(`wf_41fd9590-23a`, 38 agents, find+adversarial-verify) which CONFIRMED 19 findings.
+Plus an INDEPENDENT real bug I found while activating the static-data test:
+
+### 🐛 REAL DEPLOYED BUG found (cgt-concentration ships invalid JSON)
+- `scripts/generate_static_api.py:_read_csv_as_records` does `df.where(pd.notna(df),
+  other=None)` to convert NaN->None — but for FLOAT columns pandas re-coerces None back
+  to NaN, then `json.dumps` (default `allow_nan=True`) writes the literal `NaN` token =
+  **invalid JSON**. `cgt-concentration.json` (the £3,000+ HMRC-suppressed band) ships 3
+  `NaN`s; `fetch().json()` / `JSON.parse` CANNOT parse it -> the deployed CGT chart is
+  broken. (`frontend/public/data/*` is gitignored except a 6-file whitelist; cgt is a
+  build artifact regenerated at deploy, so the FIX is the generator, not a committed file.)
+  FIX (PR-1): sanitise NaN->None at the record (dict) level + `allow_nan=False` on the JSON
+  writes (build-time guard; verified it would have caught this) + a Python regression test.
+
+### 📋 SESSION-5 PR PLAN (each: small commits, 2 independent adversarial reviews, green CI, age, merge)
+- **PR-1** `fix(pipeline)`: generator NaN->invalid-JSON fix + regression test. [building]
+- **PR-2** `test(frontend)`: activate the static-data validation guard (was a silent no-op —
+  DATA_DIR pointed 4 dirs up -> validated nothing). Redesigned for the gitignore reality
+  (validates committed files + JSON-validity sweep; full contract only when generated) +
+  freshness future-date/coverage checks (finding #13). [building]
+- **PR-3** `fix(chart)`: WealthShares toolbar legend lists 4 series but the chart plots 2,
+  with mismatched colours (finding: medium). Trim+align to the 2 actually drawn.
+- **PR-4** `fix(data)`: freshness.json wealth-shares source drift — says "ONS WAS", true
+  source is WID (finding: medium, data-integrity). Sync to "World Inequality Database".
+- **PR-5** `fix(data)`: productivity-pay ships ILLUSTRATIVE fallback with no flag/caveat
+  (finding: medium, mission "don't present fabricated stats as fact"). Propagate a
+  data_type flag sidecar->metadata + render an "Illustrative" caveat like WageStagChart.
+- **PR-6** `chore`: delete dead components Modal.vue (a11y-broken, unused) + EmptyState.vue
+  (unused, v-html lint foot-gun) + their tests.
+- **PR-7** `fix(backend)`: data.py:186 leaks raw exception (paths) in HTTP detail -> generic
+  message, keep server-side log (low security).
+- **PR-8** `test`: replace WealthScaleScroller tautological `expect(true).toBe(true)` keydown
+  tests w/ defaultPrevented asserts; + useAnalytics unit tests; + rate-limit overflow
+  characterisation test (low test-quality cluster).
+- **PR-9** `chore`: config hygiene — delete emitted vite/vitest `.js` that shadow canonical
+  `.ts`; complete run_all.py + Makefile pipelines lists (child_poverty, generational_wealth).
+
+### ⏭️ DEFERRED to Chris (policy/ops — NOT unilaterally safe; verified by the sweep)
+- deploy.yml swallows pipeline failures (`|| echo`) -> a crashed pipeline silently drops a
+  chart with green CI. Fail-loud vs graceful-degradation is an ops call (run_all.py already
+  fails loud + validates — could swap, but it omits 2 scripts).
+- Known-deferred (unchanged): hardcoded public WID key; /api/version/debug fail-open;
+  rate-limiter idle-IP eviction (NOT a memory leak — hard-capped at 10k, but fail-open for
+  new IPs once full); missing HSTS (no TLS edge in-repo); freshness last_updated = build/
+  access dates not source-publication dates; dark-theme red-on-white AA.
+- Prettier CI gate: Chris previously DECLINED ruff-format churn — treat the analogous
+  prettier gate as needing his OK (only safe if the tree is already format-clean).
 
 ## ▶️ SESSION 4 (2026-06-05/06) — LOOP RESUMED. 13 PRs merged; 0 open; awaiting Chris
 
