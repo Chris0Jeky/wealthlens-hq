@@ -238,6 +238,10 @@ describe("Static data validation", () => {
       // matches chronological order for that format, so this is timezone-safe.
       const todayUtc = new Date().toISOString().slice(0, 10);
       for (const [slug, value] of entries) {
+        // typeof null === "object", so guard null explicitly — otherwise the
+        // entry.last_updated access below would throw an opaque TypeError instead
+        // of a clear assertion failure.
+        expect(value, `freshness["${slug}"] must not be null`).not.toBeNull();
         expect(typeof value, `freshness["${slug}"] should be an object`).toBe(
           "object",
         );
