@@ -5,13 +5,42 @@
 >
 > **CRITICAL**: Update this file BEFORE every compaction risk (long tool calls, large diffs).
 
-Last updated: 2026-06-06 (session 4 — #369-#375 MERGED (7 PRs); #376 open/in-review)
+Last updated: 2026-06-06 (session 4 — #369-#377 MERGED (9 PRs); #378 open; backlog exhausted, awaiting Chris)
 
-## ▶️ SESSION 4 (2026-06-05/06) — LOOP RESUMED. 7 PRs merged; #376 open
+## ▶️ SESSION 4 (2026-06-05/06) — LOOP RESUMED. 9 PRs merged; #378 open; awaiting Chris
 
 Chris re-started the endless loop (session 4). Started from main `7e70a49`, 0 open PRs.
-**7 PRs merged (#369-#375)**, #376 open. Each PR: 2 independent adversarial reviews +
-all bot threads resolved + green CI before merge.
+**9 PRs merged (#369-#377)**, #378 open/in-review. Each PR: 2 independent adversarial
+reviews + all bot threads resolved + green CI before merge.
+
+### 🔎 Bug-hunt (task-8 analysis, 2 agents) — codebase largely SOUND
+- **Sim + pipelines: NO genuine bugs.** Conservation invariants (sum decile == total -
+  enforcement == sum nation at all 3 bounds), tax-law constants, intervals, behavioural
+  clamp, uncertainty estimators all independently verified; 852 sim tests pass.
+- **Backend/frontend: found + FIXED the freshness-500 (#377)** + the liveSummary
+  non-finite a11y gap (#378). Plus deferred items below.
+
+### ⏭️ DEFERRED for Chris (partly-by-design — NOT changed unilaterally; decide direction)
+1. **Hard-coded WID API key** `fetch_wid_data.py:35` — a *documented public read-only*
+   CC-BY key with an env override. Not a real secret, but trips CLAUDE.md's "never commit
+   API keys" guardrail. Move to env-only (with the public key in a comment/README)? 
+2. **`/api/version/debug` fail-open** `main.py:219` — exposed unless `APP_ENV` is exactly
+   "production" (leaks version/commit/uptime). Conflicts with "config defaults OFF". Make
+   it explicit opt-in (e.g. only dev/local or a DEBUG flag)?
+3. **Rate-limiter never evicts idle IPs** `rate_limit.py:46-78` — after 10k distinct IPs
+   the table stays full and new IPs bypass limiting (fail-open). Documented as "swap for
+   Redis"; add an LRU/periodic sweep?
+4. **`generate_static_api.py` freshness.json schema drift** — it writes
+   `{last_updated: ISO, age_hours, status}` but the frontend reads a hand-maintained
+   `{last_updated: date-only, source}`; the generator's freshness.json is effectively
+   unused/drifted. Reconcile or drop?
+   (Also still: the #376 conftest DRY-up of the per-file `_has_nonfinite`/`_FakeExcelFile`
+   helpers — low-value, optional.)
+
+### 🚦 LOOP STATE: unblocked high-value work is EXHAUSTED.
+The flagship (base-share research -> behavioural engine-apply) is BLOCKED on **DEFERRED
+Q1**. The items above are config/policy/deliberate-choice decisions for Chris. Next
+high-value step needs Chris's Q1 answer; otherwise only low-value polish remains.
 
 - **✅ #374 MERGED** — de-flaked the timezone-dependent DataFreshnessBadge tests
   (local-component dates + frozen clock; true TZ-independence incl. UTC+12..+14).
@@ -20,16 +49,17 @@ all bot threads resolved + green CI before merge.
   accessible tables (decorative proportional bars). Reviews caught: NI nation key
   mismatch (hyphen vs engine underscore), GB->UK terminology, null-entry/negative-width
   guards; decile ordering review-verified correct.
-- **🔶 #376 OPEN/in-review — `test/remaining-finite-cells` (worktree wt7).** Closes the
-  seeded #365 follow-up: NaN-guard call-site tests for the LAST 4 to_finite_float
-  fetchers (tax_composition/gdhi/housing/wealth), written by a 4-agent workflow, each
-  mutation-verified. EVERY to_finite_float seam in the pipelines is now test-locked.
-  2 reviews running (background agents). 41 pipeline tests pass.
-- **⚑ Backlog now THIN (unblocked work nearly exhausted):** the flagship base-share ->
-  behavioural engine-apply is BLOCKED on Chris's DEFERRED Q1. After #376, task 8 should
-  be a fresh ANALYSIS sweep (pre-existing bug hunt + high-value scan) to seed new work,
-  per the "if you run out of tasks, analyse/iterate/create" directive — OR pause for
-  Chris's Q1 answer to unblock the flagship. Remaining small nits are low-value.
+- **✅ #376 MERGED — NaN-guard call-site tests for the LAST 4 to_finite_float fetchers**
+  (tax_composition/gdhi/housing/wealth), written by a 4-agent workflow, each mutation-
+  verified. EVERY to_finite_float seam in the pipelines is now test-locked (14/14 sites;
+  review caught + closed the ons_wealth recovery-loop L313 gap + added CSV-on-disk asserts).
+- **✅ #377 MERGED — freshness endpoint 500 fix.** A future CSV mtime made age_hours
+  negative -> failed the response model's ge=0 -> 500'd the WHOLE /api/data/freshness
+  endpoint. Clamped age at 0 (+ the same clamp in generate_static_api.py + main.py uptime).
+- **🔶 #378 OPEN/in-review — `fix/simulator-livesummary-guard`.** SimulatorView's aria-live
+  screen-reader summary now guards a non-finite interval (says "unavailable" not "£NaNbn"),
+  matching ConfidenceFanChart. 2 reviews running. Merge once reviewed + green (last PR of
+  the wind-down; merge once fully reviewed rather than holding for a newer PR).
 
 - **✅ #372 MERGED — backend mypy at root strictness via `make backend-lint`.** The
   CI-parity review found the original `mypy.ini` premise was WRONG: ci-backend runs
