@@ -180,15 +180,16 @@ def _read_csv(dataset_name: str) -> pd.DataFrame:
         OSError,
         UnicodeDecodeError,
     ) as e:
-        # Log the underlying exception (which can include the filesystem path,
-        # e.g. OSError "[Errno 13] ... '/abs/path.csv'") server-side only.
-        # Defence-in-depth: the registered 5xx handler already replaces the
-        # detail of any >=500 response with a generic message, so this `e` is
-        # not currently client-visible — but don't BUILD a detail string out of
-        # a raw exception regardless, and stay consistent with simulator.py's
-        # scenario reader. dataset_name is a validated DATASETS allowlist slug,
-        # so it is safe to echo back.
-        logger.error("Failed to read dataset '%s': %s", dataset_name, e)
+        # Log the full traceback server-side (logger.exception, in an except
+        # block) — the underlying exception can include the filesystem path
+        # (e.g. OSError "[Errno 13] ... '/abs/path.csv'"), which is exactly the
+        # diagnostic detail we want in logs, never in the response. Defence-in-
+        # depth: the registered 5xx handler already replaces the detail of any
+        # >=500 response with a generic message, so the exception was not
+        # client-visible — but don't BUILD a detail string out of a raw
+        # exception regardless. dataset_name is a validated DATASETS allowlist
+        # slug, so it is safe to echo back in the (generic) detail.
+        logger.exception("Failed to read dataset '%s'", dataset_name)
         raise HTTPException(
             status_code=503,
             detail=f"Failed to read dataset '{dataset_name}'",
