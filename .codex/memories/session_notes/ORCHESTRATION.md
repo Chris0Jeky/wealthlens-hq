@@ -5,13 +5,29 @@
 >
 > **CRITICAL**: Update this file BEFORE every compaction risk (long tool calls, large diffs).
 
-Last updated: 2026-06-06 (session 4 — #369-#380 MERGED (12 PRs); 0 open; unblocked backlog exhausted, awaiting Chris)
+Last updated: 2026-06-06 (session 4 — #369-#381 MERGED (13 PRs); 0 open; unblocked backlog exhausted, awaiting Chris)
 
-## ▶️ SESSION 4 (2026-06-05/06) — LOOP RESUMED. 12 PRs merged; 0 open; awaiting Chris
+## ▶️ SESSION 4 (2026-06-05/06) — LOOP RESUMED. 13 PRs merged; 0 open; awaiting Chris
 
 Chris re-started the endless loop (session 4). Started from main `7e70a49`, 0 open PRs.
-**12 PRs merged (#369-#380)**, 0 open. Each PR: 2 independent adversarial reviews + all
+**13 PRs merged (#369-#381)**, 0 open. Each PR: 2 independent adversarial reviews + all
 bot threads resolved + green CI before merge.
+
+### ♿ a11y audit (3rd analysis angle) — 1 AA fix shipped (#381), 3 seeded
+- **#381 MERGED** — `--wl-ink-faint` informative text failed WCAG AA contrast (1.4.3) in
+  all 3 themes (2.5-3.5:1); darkened to verified >=4.5:1 on every paper surface + synced
+  the source-of-truth tokens. Audit otherwise found the frontend a11y-conscious (charts
+  role=img + tables, focus ring, skip link, status dots paired with text).
+- **SEEDED (need a brand/design decision — not changed unilaterally):**
+  - Dark-theme **white-on-red buttons** fail AA (#ef4444 + white = 3.76:1) + red small-text
+    on dark cards (4.13:1). Needs a brand-red token SPLIT (darker red for white-text bg vs
+    lighter red for accent text); affects skip link, error buttons, 404, filter chips.
+  - `Modal.vue` lacks focus management — but it's UNUSED (only its own test imports it; the
+    in-use ConfirmDialog is correct). Delete or fix before adoption.
+  - `chartArticles.ts:147-148` assigns `--wl-ink-faint` to BOTH "Middle 40%" + "Bottom 50%"
+    legend swatches -> indistinguishable (pre-existing; cosmetic).
+  - `docs/redesign/tokens.css` dark theme has DIVERGED from the shipped frontend (warm
+    cream-on-dark vs grey-on-dark) — reconcile or correct the "source of truth" header.
 
 ### 🐛 3 REAL bugs found+fixed via the bug-hunt (the loop's analyse-then-fix payoff)
 - **#377** — `/api/data/freshness` 500'd on a future CSV mtime (negative age vs response
