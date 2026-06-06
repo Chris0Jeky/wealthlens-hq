@@ -120,6 +120,36 @@ def test_legacy_parser_drops_nonfinite_value_cells(
     )
 
 
+def test_legacy_parser_recovery_loop_routes_siblings_through_guard(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The col-2..5 sibling-recovery loop also routes cells through ``to_finite_float``.
+
+    When the col-1 value is non-finite, ``_parse_decile_data`` scans the sibling columns
+    for a finite value. A non-finite sibling (``inf``/``nan``) is rejected — with no other
+    finite sibling the decile is dropped; a finite sibling is recovered. A bare ``float()``
+    in that loop would instead leak the sibling ``inf`` into the published table. (This
+    exercises the 3rd ons_wealth call site, ``fetch_ons_wealth.py:313``.)
+    """
+    rows: list[list[object]] = [
+        ["Decile", "Total net wealth (£bn)", "Alt"],  # 3-col header so the loop runs
+        ["1st (poorest)", 13.9, None],  # valid via col-1
+        ["2nd", float("nan"), "inf"],  # col-1 missing, only sibling is inf -> dropped
+        ["3rd", float("nan"), 42.0],  # col-1 missing, finite sibling -> recovered as 42.0
+        ["4th", 652.0, None],  # valid via col-1
+    ]
+    df = _drive_legacy_process(pd.DataFrame(rows), tmp_path, monkeypatch)
+
+    assert "2nd" not in df["decile"].tolist(), "inf-only-sibling decile must be dropped"
+    recovered = df[df["decile"] == "3rd"]
+    assert len(recovered) == 1, "a finite sibling must recover the decile"
+    assert recovered["total_wealth_bn"].iloc[0] == pytest.approx(42.0)
+    assert set(df["decile"].tolist()) == {"1st (poorest)", "3rd", "4th"}
+    assert not _has_nonfinite(df["total_wealth_bn"]), (
+        "no NaN/inf may reach the published metric via the recovery loop"
+    )
+
+
 # --- primary parser (_parse_table_2_2 value cell) ---------------------------
 
 

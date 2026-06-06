@@ -5,9 +5,10 @@
 named — ``fetch_boe_rates``, ``fetch_productivity_pay`` and ``fetch_wid_data`` — so a
 future refactor that reintroduces a bare ``float()`` (which would let a blank / NaN /
 inf source cell leak into a published CSV) is caught here rather than in production
-data. The remaining ``to_finite_float`` call sites (``fetch_tax_composition``,
-``fetch_ons_gdhi``, ``fetch_ons_housing``, ``fetch_ons_wealth``) are guarded the same
-way but not yet call-site-tested — tracked as a follow-up.
+data. The remaining ``to_finite_float`` call sites are now covered too —
+``fetch_tax_composition``, ``fetch_ons_gdhi``, ``fetch_ons_housing`` and
+``fetch_ons_wealth`` each have a sibling ``test_<fetcher>_finite_cells.py`` — so every
+guarded seam across the pipelines is mutation-tested.
 
 Discriminating signal: a working ``to_finite_float`` never emits ``inf`` (it converts
 a bad cell to ``None`` — the row is dropped, or the value recorded as a missing
