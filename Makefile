@@ -90,20 +90,12 @@ tests-typecheck: ## Type-check root tests/ with mypy (separate run: a shared `te
 validate: ## Validate all processed CSV datasets
 	$(PYTHON) $(PIPELINE_DIR)/validate.py
 
-# Keep this list in sync with run_all.py SCRIPTS and the deploy.yml fetch_*.py
-# glob — all three must run the same full set of pipelines.
+# Delegates to run_all.py --fetch-only so there is a SINGLE pipeline list
+# (run_all.SCRIPTS, guarded by test_run_all.py) rather than a second copy here.
+# This also gets run_all's continue-on-failure semantics (one failing pipeline
+# doesn't abort the rest), matching the deploy.yml fetch_*.py glob.
 pipelines: ## Run all data pipelines (fetches live data)
-	$(PYTHON) $(PIPELINE_DIR)/fetch_boe_rates.py
-	$(PYTHON) $(PIPELINE_DIR)/fetch_child_poverty.py
-	$(PYTHON) $(PIPELINE_DIR)/fetch_generational_wealth.py
-	$(PYTHON) $(PIPELINE_DIR)/fetch_hmrc_stats.py
-	$(PYTHON) $(PIPELINE_DIR)/fetch_ons_gdhi.py
-	$(PYTHON) $(PIPELINE_DIR)/fetch_ons_housing.py
-	$(PYTHON) $(PIPELINE_DIR)/fetch_ons_wealth.py
-	$(PYTHON) $(PIPELINE_DIR)/fetch_productivity_pay.py
-	$(PYTHON) $(PIPELINE_DIR)/fetch_tax_composition.py
-	$(PYTHON) $(PIPELINE_DIR)/fetch_wage_stagnation.py
-	$(PYTHON) $(PIPELINE_DIR)/fetch_wid_data.py
+	$(PYTHON) $(PIPELINE_DIR)/run_all.py --fetch-only
 
 # ── Aggregate targets ─────────────────────────────────────────────────────
 dev-tools-install: ## Install root dev tools (mypy, ruff, pandas-stubs, Pillow, ...) used by lint/test
@@ -122,7 +114,7 @@ dev-frontend: ## Alias for frontend dev server
 ci-quick: backend-lint backend-test ## Pre-push gate (~60s, no external deps)
 	@echo "ci-quick passed"
 
-ci-full: backend-lint automation-lint tests-typecheck backend-test frontend-lint frontend-typecheck frontend-test frontend-build ## Full CI (~3 min)
+ci-full: backend-lint automation-lint tests-typecheck backend-test pipeline-test frontend-lint frontend-typecheck frontend-test frontend-build ## Full CI (~3 min)
 	@echo "ci-full passed"
 
 # ── Hooks ─────────────────────────────────────────────────────────────────
