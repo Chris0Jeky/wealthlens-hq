@@ -10,6 +10,7 @@
 import type { StatItem } from "@/components/StatStrip.vue";
 import type { SeriesLegendItem } from "@/components/ChartToolbar.vue";
 import type { RelatedChartItem } from "@/components/RelatedCharts.vue";
+import { COLOR_TOP_10, COLOR_TOP_1 } from "@/config/chartColors";
 
 /**
  * Full article configuration for a chart page. Charts without a full
@@ -142,10 +143,14 @@ export const chartConfigs: Record<string, ChartConfig> = {
       title: "Share of net personal wealth",
       unit: "%",
       series: [
-        { label: "Top 10%", color: "var(--wl-red)", bold: true },
-        { label: "Top 1%", color: "var(--wl-ink)" },
-        { label: "Middle 40%", color: "var(--wl-ink-faint)" },
-        { label: "Bottom 50%", color: "var(--wl-ink-faint)" },
+        // Mirror the two lines WealthSharesChart.vue actually draws: it plots
+        // only the WID p90p100 (top 10%) and p99p100 (top 1%) series, in the
+        // shared COLOR_TOP_10 / COLOR_TOP_1 (imported from the same source of
+        // truth as the chart, so they cannot drift apart). "Middle 40%" and
+        // "Bottom 50%" are discussed in the prose + stat cards but are not
+        // plotted, so they must not appear as legend dots.
+        { label: "Top 10%", color: COLOR_TOP_10, bold: true },
+        { label: "Top 1%", color: COLOR_TOP_1 },
       ],
       ranges: ["200y", "100y", "50y", "25y"],
       defaultRange: "200y",
@@ -162,7 +167,7 @@ export const chartConfigs: Record<string, ChartConfig> = {
         {
           heading: "What this chart shows",
           paragraphs: [
-            'The share of <em>net personal wealth</em> held by four percentile groups in the United Kingdom, from 1820 to 2023. Net personal wealth is the sum of all financial assets (savings, investments, pensions) and non-financial assets (mainly housing) — minus debts.',
+            'The share of <em>net personal wealth</em> held by the top 10% and the top 1% in the United Kingdom, from 1820 to 2023. Net personal wealth is the sum of all financial assets (savings, investments, pensions) and non-financial assets (mainly housing) — minus debts.',
           ],
         },
         {

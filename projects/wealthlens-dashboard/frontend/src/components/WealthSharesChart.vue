@@ -23,6 +23,7 @@ import VChart from "vue-echarts";
 import { useChartData } from "@/composables/useChartData";
 import type { EChartsExportable } from "@/composables/useChartExport";
 import { escapeHtml, safeMinMax, warnIfSignificantDataLoss } from "@/utils/chart";
+import { COLOR_TOP_10, COLOR_TOP_1 } from "@/config/chartColors";
 
 // Register only the ECharts modules we need (tree-shaking)
 use([
@@ -67,11 +68,9 @@ function seriesFor(percentile: string): { years: number[]; values: number[] } {
   };
 }
 
-// WCAG AA high-contrast colors against white background
-// #1a56db (blue) contrast ratio ~7.2:1 — top 10%
-// #dc2626 (red)  contrast ratio ~4.6:1 — top 1%
-const COLOR_TOP_10 = "#1a56db";
-const COLOR_TOP_1 = "#dc2626";
+// Series colours come from the shared single source of truth so the toolbar
+// legend (chartArticles.ts) and the guard test cannot drift from these lines.
+// COLOR_TOP_10 = #1a56db (blue, top 10%), COLOR_TOP_1 = #dc2626 (red, top 1%).
 
 /** Pre-computed series data for top 1% and top 10%. */
 const top1Data = computed(() => seriesFor("p99p100"));
