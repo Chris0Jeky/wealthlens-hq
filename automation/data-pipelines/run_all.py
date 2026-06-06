@@ -19,8 +19,10 @@ SCRIPT_TIMEOUT_SECONDS = 300
 # Every fetch_*.py pipeline in this directory must be listed here so `run_all.py`
 # runs the FULL set (matching deploy.yml, which globs `for script in fetch_*.py`).
 # This previously omitted child_poverty and generational_wealth, so `run_all.py`
-# silently skipped two shipped datasets while deploy regenerated them.
-# test_run_all.py guards this list against drift. Kept alphabetical for easy diff.
+# silently skipped two shipped datasets. deploy.yml regenerates them at build time
+# via its glob, BUT the scheduled weekly-data-update.yml runs run_all.py and then
+# commits data/processed/ — so those two committed CSVs were never refreshed by the
+# weekly job. test_run_all.py guards this list against drift. Alphabetical for diff.
 SCRIPTS = [
     "fetch_boe_rates.py",
     "fetch_child_poverty.py",
@@ -74,16 +76,26 @@ def run_validation() -> bool:
 
 def main() -> None:
     validate_only = "--validate-only" in sys.argv
+    # --fetch-only runs the pipelines without the trailing validation pass.
+    # `make pipelines` delegates here so there is ONE pipeline list (SCRIPTS,
+    # guarded by test_run_all.py) instead of a second copy in the Makefile.
+    fetch_only = "--fetch-only" in sys.argv
+    if validate_only and fetch_only:
+        logger.error("--validate-only and --fetch-only are mutually exclusive")
+        sys.exit(2)
 
+    failed: list[str] = []
     if not validate_only:
         failed = run_pipelines()
         logger.info("Ran %d pipelines, %d failed", len(SCRIPTS), len(failed))
         if failed:
             logger.error("Failed: %s", ", ".join(failed))
 
-    ok = run_validation()
+    ok = True
+    if not fetch_only:
+        ok = run_validation()
 
-    if not validate_only and failed:
+    if failed:
         sys.exit(1)
     if not ok:
         sys.exit(1)
