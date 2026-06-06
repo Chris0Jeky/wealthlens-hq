@@ -25,7 +25,9 @@
   --wl-ink:          #111111;  /* near-black ink — headings */
   --wl-ink-body:     #1A1A1A;  /* body text */
   --wl-ink-muted:    #5A5550;  /* secondary text */
-  --wl-ink-faint:    #615C54;  /* tertiary — WCAG AA (>=4.5:1) on all paper surfaces */
+  /* tertiary text — WCAG AA (>=4.5:1) on the paper surfaces ONLY (paper/tint/deep/card).
+     Do NOT use on --wl-bg-dark/--wl-card-dark (inverted dark surfaces) — it fails there. */
+  --wl-ink-faint:    #615C54;
 
   /* Rules — horizontal dividers */
   --wl-rule:         #D8D1C1;
