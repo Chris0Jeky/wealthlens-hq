@@ -5,9 +5,61 @@
 >
 > **CRITICAL**: Update this file BEFORE every compaction risk (long tool calls, large diffs).
 
-Last updated: 2026-06-06 (session 5 — LOOP RESUMED; analysis sweep done, building PRs)
+Last updated: 2026-06-06 (session 5 — 6 PRs MERGED (#382-387); #388 open; building PR-5/PR-8)
 
-## ▶️ SESSION 5 (2026-06-06) — LOOP RESUMED. Fresh analysis, building PR batch.
+## ▶️ SESSION 5 (2026-06-06) — LOOP ACTIVE. 6 PRs merged; 1 open; more building.
+
+### ✅ LIVE PROGRESS (session 5, continued)
+**6 PRs MERGED to main (#382-387)**, each with 2 independent adversarial-review lenses
+(workflow) + gemini/codex bot threads addressed & resolved + green CI + aged:
+- **#382** (PR-1) generator NaN->invalid-JSON fix. Review-driven: replaced a tautological
+  stdlib-only test with 2 end-to-end tests driving main()'s real write path; broadened the
+  sanitiser to `pd.isna` (covers pd.NA/NaT, gemini HIGH); fixed the NaT comment.
+- **#383** (PR-2) activate static-data validation. Review-driven: scoped the docstring
+  honestly (CI only covers the 6 committed files — it CANNOT run the generator since the
+  source data/processed CSVs are gitignored; the cgt bug was caught locally); added a real
+  calendar-date check (codex P2: regex accepted 2025-99-99); null guards. Verified
+  wage-stagnation/inheritance-tax are BESPOKE per-chart JSON (not the paginated contract).
+- **#384** (PR-3) wealth-shares toolbar legend trim. Review-driven: fixed the prose ("four
+  percentile groups" -> two plotted); extracted COLOR_TOP_10/COLOR_TOP_1 into shared
+  `config/chartColors.ts` (single source of truth, imported by chart+config+test).
+- **#385** (PR-4) freshness wealth-shares source ONS->WID. Also fixed productivity-pay
+  ONS/EPI->ONS (EPI supplies no UK datapoint). child-poverty drift DEFERRED (see below).
+- **#387** (PR-6) deleted dead Modal.vue + EmptyState.vue (+tests). ConfirmDialog NOT
+  deleted — see deferred below.
+- **#386** (PR-7) data.py 503 detail no longer built from raw exception (defence-in-depth:
+  the global 5xx handler ALREADY sanitises — verified — so it was NOT a live leak; reframed
+  honestly) + logger.exception for tracebacks (gemini).
+- **#388** (PR-9) OPEN/in-review: run_all.py + `make pipelines` complete the pipeline set
+  (were 9/11 and 4/11; deploy globs fetch_*.py so it was a local-tooling drift, not a deploy
+  bug) + a drift-guard test. 2 reviews running (`wf_966467c6-ac3`).
+
+### ⏭️ NEW deferred / seeded items (found via review verification this session)
+- **child-poverty source conflict (data-integrity, needs a human/source call):** freshness +
+  ChildPovertyChart.vue cite **DWP/HBAI**, but the pipeline (fetch_child_poverty.py
+  SOURCE_URL + meta + chart) cites **CiLIF** (Children in Low Income Families local-area
+  stats). The measure is "relative low income AFTER housing costs", which HBAI publishes and
+  CiLIF does NOT — so the labels genuinely disagree and the data may be mislabelled. Left
+  freshness as DWP/HBAI (matches the user-facing chart) rather than pick a side. Needs source
+  verification: are the numbers HBAI AHC or CiLIF? Then align all three artifacts.
+- **ConfirmDialog.vue is unused too:** the session-4 audit called it "the in-use dialog" but
+  it is referenced ONLY by its own test (no view wires it). It is a11y-CORRECT (unlike the
+  deleted Modal.vue), so it's the plausible canonical dialog to ADOPT. Decision for Chris:
+  wire it into a view, or delete it as well. (#387 left it in place.)
+- **PR-5 (productivity illustrative caveat) — still TODO, scoped:** ProductivityPayChart.vue
+  shows no "illustrative" caveat even when the pipeline falls back to illustrative data (it
+  writes a `.meta.json data_type` sidecar that never reaches the frontend). Real 4-layer
+  change: sidecar -> generate_static_api metadata -> backend metadata -> Vue conditional
+  caveat. Deserves its own PR + reviews.
+- **PR-8 (test-quality cluster) — still TODO:** WealthScaleScroller tautological
+  `expect(true).toBe(true)` keydown tests -> defaultPrevented asserts; + useAnalytics unit
+  tests; + rate-limit overflow characterisation test.
+- **deploy-side static validation:** the static-data vitest only runs in CI on committed
+  files; the GENERATED artifacts that actually ship are never validated by an automated gate
+  (deploy.yml runs the generator + build but no vitest). Wiring a post-generate validation
+  into deploy is an ops task (relates to the deferred deploy.yml fail-loud item).
+
+### 📋 SESSION-5 PR PLAN — STATUS: PR-1..PR-4,PR-6,PR-7 MERGED; PR-9 open; PR-5,PR-8 TODO.
 
 Chris re-started the endless loop (session 5). Started from main `137afa3`, 0 open PRs.
 Strategy: drain the seeded low-risk leftovers + a fresh 5-lens analysis sweep
