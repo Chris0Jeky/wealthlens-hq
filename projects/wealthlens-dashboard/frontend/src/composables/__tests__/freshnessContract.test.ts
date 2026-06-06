@@ -1,6 +1,9 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { dirname, resolve } from "node:path";
+
+const here = dirname(fileURLToPath(import.meta.url));
 
 /**
  * Contract test for the committed static freshness.json.
@@ -19,7 +22,9 @@ import { resolve } from "node:path";
  */
 describe("committed public/data/freshness.json contract", () => {
   it("is a flat slug map of { last_updated: YYYY-MM-DD, source }", () => {
-    const path = resolve(process.cwd(), "public/data/freshness.json");
+    // Resolve relative to THIS file (not process.cwd()) so the test passes regardless
+    // of which directory the runner is invoked from (repo root vs frontend).
+    const path = resolve(here, "../../../public/data/freshness.json");
     const data = JSON.parse(readFileSync(path, "utf-8")) as Record<string, unknown>;
 
     // Not the live-API nested shape.
