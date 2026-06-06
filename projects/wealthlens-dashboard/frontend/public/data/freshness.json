@@ -1,9 +1,9 @@
 {
-  "wealth-shares": { "last_updated": "2026-05-16", "source": "ONS Wealth and Assets Survey" },
+  "wealth-shares": { "last_updated": "2026-05-16", "source": "World Inequality Database" },
   "housing-affordability": { "last_updated": "2026-05-14", "source": "ONS" },
   "wealth-by-decile": { "last_updated": "2026-05-16", "source": "ONS WAS Round 7" },
   "cgt-concentration": { "last_updated": "2026-05-15", "source": "HMRC" },
-  "productivity-pay": { "last_updated": "2026-04-10", "source": "ONS/EPI" },
+  "productivity-pay": { "last_updated": "2026-04-10", "source": "ONS" },
   "gdhi-by-region": { "last_updated": "2026-05-16", "source": "ONS/Nomis" },
   "tax-composition": { "last_updated": "2026-05-16", "source": "HMRC" },
   "boe-rates": { "last_updated": "2026-05-16", "source": "Bank of England" },
