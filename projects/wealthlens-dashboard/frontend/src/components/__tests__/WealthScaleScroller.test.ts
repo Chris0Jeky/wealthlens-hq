@@ -152,21 +152,37 @@ describe("WealthScaleScroller", () => {
     expect(srOnly.text()).toContain("wealth scale");
   });
 
-  it("responds to ArrowRight keydown on the container", async () => {
-    const wrapper = mount(WealthScaleScroller);
-    const container = wrapper.find(".wealth-scroller__container");
-    // Simulate keydown — the actual scroll won't fire in jsdom, but we
-    // verify no error is thrown and the event is handled.
-    await container.trigger("keydown", { key: "ArrowRight" });
-    // No error thrown is a pass — scroll in jsdom is a no-op
-    expect(true).toBe(true);
-  });
+  // jsdom does no layout, so the actual scrollLeft mutation is unobservable.
+  // Assert the meaningful, deterministic contract instead: the handler claims
+  // each arrow/Home/End key by calling event.preventDefault() (so the page does
+  // not also scroll), and leaves unrelated keys alone. Dispatch a real,
+  // cancelable KeyboardEvent and read event.defaultPrevented.
+  it.each(["ArrowRight", "ArrowLeft", "Home", "End"])(
+    "calls preventDefault for the handled key %s",
+    (key) => {
+      const wrapper = mount(WealthScaleScroller);
+      const el = wrapper.find(".wealth-scroller__container").element;
+      const event = new KeyboardEvent("keydown", {
+        key,
+        cancelable: true,
+        bubbles: true,
+      });
+      el.dispatchEvent(event);
+      expect(event.defaultPrevented, `${key} should be handled`).toBe(true);
+    },
+  );
 
-  it("responds to ArrowLeft keydown on the container", async () => {
+  it("does NOT preventDefault for an unrelated key (e.g. Tab)", () => {
     const wrapper = mount(WealthScaleScroller);
-    const container = wrapper.find(".wealth-scroller__container");
-    await container.trigger("keydown", { key: "ArrowLeft" });
-    expect(true).toBe(true);
+    const el = wrapper.find(".wealth-scroller__container").element;
+    const event = new KeyboardEvent("keydown", {
+      key: "Tab",
+      cancelable: true,
+      bubbles: true,
+    });
+    el.dispatchEvent(event);
+    // Tab must remain available for keyboard navigation — the handler ignores it.
+    expect(event.defaultPrevented).toBe(false);
   });
 
   it("renders marker aria-labels with full description", () => {
