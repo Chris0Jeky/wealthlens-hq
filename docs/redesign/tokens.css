@@ -10,7 +10,7 @@
   --wl-ink:          #111111;  /* near-black ink */
   --wl-ink-body:     #1A1A1A;
   --wl-ink-muted:    #5A5550;
-  --wl-ink-faint:    #8A847C;
+  --wl-ink-faint:    #615C54;  /* WCAG AA on paper surfaces; kept in sync with the frontend */
   --wl-rule:         #D8D1C1;
   --wl-rule-strong:  #B8B0A0;
 
@@ -74,7 +74,10 @@
   --wl-ink:          #F4EFE6;
   --wl-ink-body:     #ECE6DA;
   --wl-ink-muted:    #A39A8B;
-  --wl-ink-faint:    #6B6359;
+  /* NOTE: this redesign-reference dark theme has diverged from the shipped frontend
+     (which uses a grey-on-dark palette); reconcile separately. ink-faint mirrors the
+     frontend's AA-fixed value for re-port safety. */
+  --wl-ink-faint:    #929292;
   --wl-rule:         #2A261F;
   --wl-rule-strong:  #3D372D;
   --wl-red:          #E63946;
@@ -100,7 +103,7 @@
   --wl-ink:          #000000;
   --wl-ink-body:     #0A0A0A;
   --wl-ink-muted:    #555555;
-  --wl-ink-faint:    #8A8A8A;
+  --wl-ink-faint:    #656565;  /* WCAG AA on stark surfaces; kept in sync with the frontend */
   --wl-rule:         #E0E0E0;
   --wl-rule-strong:  #BBBBBB;
   --wl-red:          #DA0000;

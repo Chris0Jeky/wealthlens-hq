@@ -25,7 +25,9 @@
   --wl-ink:          #111111;  /* near-black ink — headings */
   --wl-ink-body:     #1A1A1A;  /* body text */
   --wl-ink-muted:    #5A5550;  /* secondary text */
-  --wl-ink-faint:    #8A847C;  /* tertiary / disabled */
+  /* tertiary text — WCAG AA (>=4.5:1) on the paper surfaces ONLY (paper/tint/deep/card).
+     Do NOT use on --wl-bg-dark/--wl-card-dark (inverted dark surfaces) — it fails there. */
+  --wl-ink-faint:    #615C54;
 
   /* Rules — horizontal dividers */
   --wl-rule:         #D8D1C1;
@@ -100,7 +102,7 @@
   --wl-ink:          #e8e8e8;
   --wl-ink-body:     #ccc;
   --wl-ink-muted:    #999;
-  --wl-ink-faint:    #666;
+  --wl-ink-faint:    #929292;  /* WCAG AA (>=4.5:1) on all dark surfaces */
   --wl-rule:         #333;
   --wl-rule-strong:  #444;
   --wl-red:          #ef4444;
@@ -127,7 +129,7 @@
   --wl-ink:          #000000;
   --wl-ink-body:     #0A0A0A;
   --wl-ink-muted:    #555555;
-  --wl-ink-faint:    #8A8A8A;
+  --wl-ink-faint:    #656565;  /* WCAG AA (>=4.5:1) on all stark surfaces */
   --wl-rule:         #E0E0E0;
   --wl-rule-strong:  #BBBBBB;
   --wl-red:          #DA0000;
