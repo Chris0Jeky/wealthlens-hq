@@ -14,6 +14,8 @@ import json
 import sys
 from pathlib import Path
 
+import pytest
+
 SCRIPTS_DIR = Path(__file__).resolve().parents[1] / "scripts"
 if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
@@ -62,13 +64,57 @@ def test_records_serialise_as_strict_valid_json(tmp_path: Path) -> None:
     assert json.loads(out) == {"data": records}
 
 
-def test_allow_nan_false_would_catch_an_unsanitised_leak() -> None:
-    """The guard is real: a raw NaN trips allow_nan=False (no silent NaN ship)."""
-    import math
+def _run_generator_on(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, csv_text: str
+) -> Path:
+    """Drive the generator's REAL main() write path over a single tmp dataset.
 
-    try:
-        json.dumps({"x": math.nan}, allow_nan=False)
-    except ValueError:
-        pass
-    else:  # pragma: no cover - the guard must raise
-        raise AssertionError("allow_nan=False should reject a NaN value")
+    Points DATA_DIR (input CSVs) and OUT_DIR (output JSON) at tmp dirs, restricts
+    DATASETS to one slug, and no-ops the simulator step (independent of CSV data
+    and needs the registry/fixtures). Returns the output dir.
+    """
+    in_dir = tmp_path / "in"
+    in_dir.mkdir()
+    out_dir = tmp_path / "out"
+    (in_dir / "t.csv").write_text(csv_text, encoding="utf-8")
+    monkeypatch.setattr(gsa, "DATA_DIR", in_dir)
+    monkeypatch.setattr(gsa, "OUT_DIR", out_dir)
+    monkeypatch.setattr(gsa, "DATASETS", {"t": "t.csv"})
+    monkeypatch.setattr(gsa, "generate_simulator_static", lambda: 0)
+    gsa.main()
+    return out_dir
+
+
+def test_generator_write_path_emits_valid_json_for_blank_cells(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """End-to-end: main()'s real write produces strict-valid JSON (null, not NaN).
+
+    Unlike the unit tests above (which call a local json.dumps), this exercises
+    the generator's ACTUAL data_path.write_text(json.dumps(..., allow_nan=False))
+    so the record-sanitisation half is locked through the real seam, on the exact
+    cgt-concentration failure shape (a blank/suppressed float cell).
+    """
+    out_dir = _run_generator_on(
+        tmp_path, monkeypatch, "band,count\nA,2.0\nB,\n"
+    )
+    raw = (out_dir / "t.json").read_text(encoding="utf-8")
+    assert "NaN" not in raw
+    parsed = json.loads(raw)  # strict parse — what the browser's fetch().json() does
+    assert parsed["data"][1]["count"] is None
+    assert parsed["data"][0]["count"] == 2.0
+
+
+def test_generator_write_path_fails_loud_on_a_nonfinite_leak(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """End-to-end: the allow_nan=False guard half actually bites.
+
+    An ``inf`` cell survives _read_csv_as_records (it only nulls NaN), so it
+    reaches main()'s write and must trip allow_nan=False. If a future edit drops
+    allow_nan=False from the generator's writes, this test fails (the file would
+    instead be written with the invalid `Infinity` token) — which the earlier
+    unit tests, using a local json.dumps, would NOT catch.
+    """
+    with pytest.raises(ValueError):
+        _run_generator_on(tmp_path, monkeypatch, "a,b\n1.0,inf\n")

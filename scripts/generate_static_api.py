@@ -166,7 +166,12 @@ def _read_csv_as_records(path: Path, slug: str = "") -> list[dict]:
     # invalid-JSON literal `NaN` (json.dumps allows NaN by default), so the
     # browser's fetch().json() cannot parse it. Sanitising the plain-Python
     # records avoids that trap. numpy floats subclass float, so isinstance also
-    # catches numpy NaN; pd.NaT in object columns already arrives as None.
+    # catches numpy NaN; a blank cell in a string/object column also arrives as
+    # np.nan (a float), which this handles. This generator never parses dates, so
+    # pandas NaT cannot occur here; if date parsing is ever added, NaT arrives as
+    # NaTType (NOT None and NOT a float) and would need explicit handling — but it
+    # would still fail safe, since the allow_nan=False writes below reject any
+    # non-finite/unserialisable value rather than shipping bad JSON.
     records = [
         {k: (None if isinstance(v, float) and math.isnan(v) else v) for k, v in row.items()}
         for row in records
