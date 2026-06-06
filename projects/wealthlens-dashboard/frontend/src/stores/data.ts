@@ -63,6 +63,46 @@ function toStaticUrl(apiPath: string): string {
   return `${STATIC_BASE}${apiPath}`
 }
 
+/** The flat, hand-curated static freshness.json: {slug: {last_updated, source}}. */
+type StaticFreshnessFile = Record<string, { last_updated?: string; source?: string }>
+
+// Match the backend /api/data/freshness thresholds so the static-mode indicator
+// classifies identically to the live endpoint.
+const FRESH_MAX_HOURS = 168 // 7 days
+const STALE_MAX_HOURS = 720 // 30 days
+
+/**
+ * Adapt the flat static freshness.json into the {last_updated, age_hours, status}
+ * entries FreshnessIndicator expects, deriving age + status from the curated date
+ * (clamped at 0 so a future date can't go negative). A missing/unparseable date
+ * degrades to "unknown" rather than throwing.
+ *
+ * Classification matches the live backend exactly (UTC-anchored hours, 168/720
+ * thresholds). Note the chart-page DataFreshnessBadge uses its own local-calendar-day
+ * heuristic, so the two freshness UIs are not bit-identical right at the ~30-day
+ * boundary; both are sound, they just round differently.
+ */
+export function adaptStaticFreshness(
+  flat: StaticFreshnessFile,
+): Record<string, DatasetFreshnessEntry> {
+  const out: Record<string, DatasetFreshnessEntry> = {}
+  const now = Date.now()
+  for (const [slug, entry] of Object.entries(flat ?? {})) {
+    const ts = entry?.last_updated ? Date.parse(entry.last_updated) : NaN
+    if (Number.isNaN(ts)) {
+      out[slug] = { last_updated: entry?.last_updated ?? null, age_hours: null, status: 'unknown' }
+      continue
+    }
+    const ageHours = Math.max(0, (now - ts) / 3_600_000)
+    out[slug] = {
+      last_updated: entry.last_updated ?? null,
+      age_hours: Math.round(ageHours * 10) / 10,
+      status: ageHours <= FRESH_MAX_HOURS ? 'fresh' : ageHours <= STALE_MAX_HOURS ? 'stale' : 'expired',
+    }
+  }
+  return out
+}
+
 export const useDataStore = defineStore('data', () => {
   const datasets = ref<string[]>([])
   const metadata = ref<Map<string, DatasetMetadata>>(new Map())
@@ -112,6 +152,17 @@ export const useDataStore = defineStore('data', () => {
 
   async function fetchFreshness(): Promise<Record<string, DatasetFreshnessEntry>> {
     try {
+      // Live API returns {datasets, thresholds}; the static build serves the flat
+      // curated freshness.json ({slug: {last_updated, source}}) — the same file the
+      // chart-page badges read. Adapt the flat shape here so the home-page indicators
+      // and the badges work off ONE curated file (otherwise static mode regresses the
+      // indicators: a flat file has no `.datasets` key).
+      if (STATIC_MODE) {
+        const flat = await request<StaticFreshnessFile>('/freshness')
+        const adapted = adaptStaticFreshness(flat)
+        freshness.value = adapted
+        return adapted
+      }
       const json = await request<FreshnessResponse>('/freshness')
       freshness.value = json.datasets
       return json.datasets

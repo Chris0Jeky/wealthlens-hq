@@ -15,11 +15,9 @@ from __future__ import annotations
 
 import ast
 import json
-import os
 import re
 import sys
 from collections.abc import Callable
-from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -304,38 +302,15 @@ def main() -> None:
     all_meta_path = OUT_DIR / "all-metadata.json"
     all_meta_path.write_text(json.dumps(all_meta), encoding="utf-8")
 
-    # Freshness data — uses CSV file modification times
-    freshness_threshold_fresh = 168  # 7 days in hours
-    freshness_threshold_stale = 720  # 30 days in hours
-    now = datetime.now(tz=UTC)
-    datasets_freshness: dict[str, dict] = {}
-    for slug in available:
-        csv_path = DATA_DIR / DATASETS[slug]
-        mtime = os.path.getmtime(csv_path)
-        last_updated = datetime.fromtimestamp(mtime, tz=UTC)
-        # Clamp at 0 (same as the live /api/data/freshness endpoint): a future file
-        # mtime would otherwise emit a negative age into the static freshness.json.
-        age_hours = max(0.0, (now - last_updated).total_seconds() / 3600)
-        if age_hours <= freshness_threshold_fresh:
-            status = "fresh"
-        elif age_hours <= freshness_threshold_stale:
-            status = "stale"
-        else:
-            status = "expired"
-        datasets_freshness[slug] = {
-            "last_updated": last_updated.isoformat(),
-            "age_hours": round(age_hours, 1),
-            "status": status,
-        }
-    freshness_response = {
-        "datasets": datasets_freshness,
-        "thresholds": {
-            "fresh_hours": freshness_threshold_fresh,
-            "stale_hours": freshness_threshold_stale,
-        },
-    }
-    freshness_path = OUT_DIR / "freshness.json"
-    freshness_path.write_text(json.dumps(freshness_response), encoding="utf-8")
+    # NOTE: this generator deliberately does NOT write freshness.json. The committed
+    # frontend/public/data/freshness.json is HAND-MAINTAINED with the schema the
+    # DataFreshnessBadge actually consumes — a flat map of
+    # {slug: {last_updated: "YYYY-MM-DD", source: "..."}} (curated source dates).
+    # An earlier version emitted an mtime-derived {datasets, thresholds} blob here
+    # (the LIVE /api/data/freshness schema), which both mismatched the badge's flat
+    # date-only/source schema AND overwrote the curated file on every deploy, silently
+    # breaking the static-mode freshness badges. The live age/status view is served by
+    # the /api/data/freshness endpoint; the static badge uses the curated file as-is.
 
     # Simulator scenarios (independent of the CSV datasets above).
     generate_simulator_static()

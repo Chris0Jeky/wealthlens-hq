@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { mount, RouterLinkStub } from "@vue/test-utils";
 import DatasetCard from "@/components/DatasetCard.vue";
+import FreshnessIndicator from "@/components/FreshnessIndicator.vue";
 
 describe('DatasetCard', () => {
   const defaultProps = {
@@ -90,5 +91,24 @@ describe('DatasetCard', () => {
     const wrapper = factory();
     expect(wrapper.text()).toContain("Details");
     expect(wrapper.html()).toContain('/datasets/wealth-shares');
+  });
+
+  it("renders a FreshnessIndicator when a freshness entry is provided", () => {
+    // Guards the seam the static-freshness fix depends on: a populated store entry
+    // (from adaptStaticFreshness in static mode, or the live API) must reach the badge.
+    const wrapper = mount(DatasetCard, {
+      props: {
+        ...defaultProps,
+        freshness: { last_updated: "2026-06-14", age_hours: 30, status: "fresh" },
+      },
+      global: { stubs: { 'router-link': routerLinkStub } },
+    });
+    expect(wrapper.findComponent(FreshnessIndicator).exists()).toBe(true);
+    expect(wrapper.text()).toContain("Fresh");
+  });
+
+  it("omits the FreshnessIndicator when no freshness entry is provided", () => {
+    const wrapper = factory();
+    expect(wrapper.findComponent(FreshnessIndicator).exists()).toBe(false);
   });
 });
