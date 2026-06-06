@@ -5,13 +5,31 @@
 >
 > **CRITICAL**: Update this file BEFORE every compaction risk (long tool calls, large diffs).
 
-Last updated: 2026-06-06 (session 4 — #369-#373 MERGED (5 PRs); #374 open/in-review)
+Last updated: 2026-06-06 (session 4 — #369-#375 MERGED (7 PRs); #376 open/in-review)
 
-## ▶️ SESSION 4 (2026-06-05/06) — LOOP RESUMED. 5 PRs merged; #374 open
+## ▶️ SESSION 4 (2026-06-05/06) — LOOP RESUMED. 7 PRs merged; #376 open
 
 Chris re-started the endless loop (session 4). Started from main `7e70a49`, 0 open PRs.
-Now main `8cddf04`, **5 PRs merged (#369-#373)**, #374 open. Each PR: 2 independent
-adversarial reviews + all bot threads resolved + green CI before merge.
+**7 PRs merged (#369-#375)**, #376 open. Each PR: 2 independent adversarial reviews +
+all bot threads resolved + green CI before merge.
+
+- **✅ #374 MERGED** — de-flaked the timezone-dependent DataFreshnessBadge tests
+  (local-component dates + frozen clock; true TZ-independence incl. UTC+12..+14).
+- **✅ #375 MERGED — revenue breakdown by nation + wealth decile** (`RevenueBreakdown.vue`).
+  Surfaces the previously-discarded `revenue_by_nation` + `revenue_by_decile` as
+  accessible tables (decorative proportional bars). Reviews caught: NI nation key
+  mismatch (hyphen vs engine underscore), GB->UK terminology, null-entry/negative-width
+  guards; decile ordering review-verified correct.
+- **🔶 #376 OPEN/in-review — `test/remaining-finite-cells` (worktree wt7).** Closes the
+  seeded #365 follow-up: NaN-guard call-site tests for the LAST 4 to_finite_float
+  fetchers (tax_composition/gdhi/housing/wealth), written by a 4-agent workflow, each
+  mutation-verified. EVERY to_finite_float seam in the pipelines is now test-locked.
+  2 reviews running (background agents). 41 pipeline tests pass.
+- **⚑ Backlog now THIN (unblocked work nearly exhausted):** the flagship base-share ->
+  behavioural engine-apply is BLOCKED on Chris's DEFERRED Q1. After #376, task 8 should
+  be a fresh ANALYSIS sweep (pre-existing bug hunt + high-value scan) to seed new work,
+  per the "if you run out of tasks, analyse/iterate/create" directive — OR pause for
+  Chris's Q1 answer to unblock the flagship. Remaining small nits are low-value.
 
 - **✅ #372 MERGED — backend mypy at root strictness via `make backend-lint`.** The
   CI-parity review found the original `mypy.ini` premise was WRONG: ci-backend runs
