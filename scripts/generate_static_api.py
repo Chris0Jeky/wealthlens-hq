@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import ast
 import json
+import math
 import re
 import sys
 from collections.abc import Callable
@@ -158,8 +159,18 @@ def _read_csv_as_records(path: Path, slug: str = "") -> list[dict]:
     import pandas as pd
 
     df = pd.read_csv(path)
-    df = df.where(pd.notna(df), other=None)
     records = df.to_dict(orient="records")
+    # Convert NaN -> None at the record (dict) level. Doing it on the DataFrame
+    # (df.where(pd.notna(df), other=None)) is INEFFECTIVE for float columns:
+    # pandas re-coerces the None back to NaN, which then serialises to the
+    # invalid-JSON literal `NaN` (json.dumps allows NaN by default), so the
+    # browser's fetch().json() cannot parse it. Sanitising the plain-Python
+    # records avoids that trap. numpy floats subclass float, so isinstance also
+    # catches numpy NaN; pd.NaT in object columns already arrives as None.
+    records = [
+        {k: (None if isinstance(v, float) and math.isnan(v) else v) for k, v in row.items()}
+        for row in records
+    ]
 
     if slug in _POSTPROCESSORS:
         records = _POSTPROCESSORS[slug](records)
@@ -236,11 +247,13 @@ def generate_simulator_static() -> int:
                 f"Simulator fixture '{scenario_id}' is missing required contract keys: "
                 f"{sorted(_SIM_REQUIRED_KEYS - present)}"
             )
-        (SIM_OUT_DIR / f"{scenario_id}.json").write_text(json.dumps(payload), encoding="utf-8")
+        (SIM_OUT_DIR / f"{scenario_id}.json").write_text(
+            json.dumps(payload, allow_nan=False), encoding="utf-8"
+        )
         index.append({"id": scenario_id, "name": meta["name"], "description": meta["description"]})
         print(f"  OK simulator {scenario_id}")
     (SIM_OUT_DIR / "scenarios.json").write_text(
-        json.dumps({"scenarios": index}), encoding="utf-8"
+        json.dumps({"scenarios": index}, allow_nan=False), encoding="utf-8"
     )
     print(f"Generated {len(index)}/{len(scenarios)} simulator scenarios in {SIM_OUT_DIR}")
     return len(index)
@@ -270,7 +283,12 @@ def main() -> None:
             "total_pages": 1,
         }
         data_path = OUT_DIR / f"{slug}.json"
-        data_path.write_text(json.dumps(data_response), encoding="utf-8")
+        # allow_nan=False: NaN/Infinity are not valid JSON; fail the build loudly
+        # rather than ship an unparseable file (records are sanitised above, so
+        # this only fires on a genuinely new non-finite leak).
+        data_path.write_text(
+            json.dumps(data_response, allow_nan=False), encoding="utf-8"
+        )
 
         # Metadata response
         meta = DATASET_META.get(slug, {})
@@ -285,14 +303,16 @@ def main() -> None:
             "columns": columns,
         }
         meta_path = OUT_DIR / f"{slug}-metadata.json"
-        meta_path.write_text(json.dumps(meta_response), encoding="utf-8")
+        meta_path.write_text(
+            json.dumps(meta_response, allow_nan=False), encoding="utf-8"
+        )
 
         print(f"  OK {slug}: {len(records)} rows")
 
     # Dataset listing
     listing = {"datasets": available}
     listing_path = OUT_DIR / "datasets.json"
-    listing_path.write_text(json.dumps(listing), encoding="utf-8")
+    listing_path.write_text(json.dumps(listing, allow_nan=False), encoding="utf-8")
 
     # All metadata combined
     all_meta = {"datasets": []}
@@ -300,7 +320,7 @@ def main() -> None:
         meta_path = OUT_DIR / f"{slug}-metadata.json"
         all_meta["datasets"].append(json.loads(meta_path.read_text(encoding="utf-8")))
     all_meta_path = OUT_DIR / "all-metadata.json"
-    all_meta_path.write_text(json.dumps(all_meta), encoding="utf-8")
+    all_meta_path.write_text(json.dumps(all_meta, allow_nan=False), encoding="utf-8")
 
     # NOTE: this generator deliberately does NOT write freshness.json. The committed
     # frontend/public/data/freshness.json is HAND-MAINTAINED with the schema the
