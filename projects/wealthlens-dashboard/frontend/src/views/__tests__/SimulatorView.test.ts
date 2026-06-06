@@ -206,8 +206,22 @@ describe('SimulatorView', () => {
       total_revenue_gbp_bn: { low: NaN, central: NaN, high: NaN },
     }
     const wrapper = mount(SimulatorView)
-    const live = wrapper.find('[aria-live="polite"]')
-    expect(live.text()).toContain('unavailable')
-    expect(live.text()).not.toContain('NaN')
+    // Scope to the sr-only summary span (the unit under test) — the chart's own
+    // "Interval data unavailable" also sits in the aria-live region.
+    const summary = wrapper.find('.sr-only')
+    expect(summary.text()).toContain('revenue figures are unavailable')
+    expect(summary.text()).not.toContain('NaN')
+  })
+
+  it('the live summary degrades (no throw) when the interval object is null/missing', () => {
+    scenarioList.value = SCENARIOS
+    dashboard.value = {
+      ...DASHBOARD,
+      // A hand-edited/static fixture could omit the object entirely; the destructure
+      // must not throw and break the whole view render.
+      total_revenue_gbp_bn: null as unknown as { low: number; central: number; high: number },
+    }
+    const wrapper = mount(SimulatorView)
+    expect(wrapper.find('.sr-only').text()).toContain('revenue figures are unavailable')
   })
 })
