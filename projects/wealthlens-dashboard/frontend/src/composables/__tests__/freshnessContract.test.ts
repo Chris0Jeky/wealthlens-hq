@@ -19,8 +19,12 @@ function loadFreshness(): Record<string, unknown> {
 function metadataSource(slug: string): string | null {
   const path = resolve(DATA_DIR, `${slug}-metadata.json`);
   if (!existsSync(path)) return null;
-  const meta = JSON.parse(readFileSync(path, "utf-8")) as { source?: unknown };
-  return typeof meta.source === "string" ? meta.source : null;
+  // A metadata file that is empty or literally `null` parses to a non-object;
+  // guard so `.source` cannot throw a TypeError (just treat it as no source).
+  const meta = JSON.parse(readFileSync(path, "utf-8")) as unknown;
+  if (typeof meta !== "object" || meta === null) return null;
+  const source = (meta as { source?: unknown }).source;
+  return typeof source === "string" ? source : null;
 }
 
 /**
@@ -89,6 +93,11 @@ describe("committed public/data/freshness.json contract", () => {
     const data = loadFreshness();
     const metaSource = metadataSource("wealth-shares");
     expect(metaSource, "wealth-shares-metadata.json should be committed").not.toBeNull();
-    expect((data["wealth-shares"] as { source?: unknown }).source).toBe(metaSource);
+    // Guard the entry shape before reading .source, so a missing/null/non-object
+    // wealth-shares entry fails as a clear assertion, not an opaque TypeError.
+    const entry = data["wealth-shares"];
+    expect(entry, "freshness.json should have a wealth-shares entry").toBeTruthy();
+    expect(typeof entry).toBe("object");
+    expect((entry as { source?: unknown }).source).toBe(metaSource);
   });
 });
