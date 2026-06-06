@@ -83,6 +83,15 @@ ignore_missing_imports = true
 module = ["app.*"]
 ignore_missing_imports = true
 
+# scripts/generate_static_api.py is imported by tests/test_generate_static_api.py
+# via sys.path (like the backend above). scripts/ is not on mypy_path and is not
+# its own gate, so treat it as an opaque boundary here rather than pulling it into
+# this run. (Follow-up seeded: add a dedicated `mypy scripts` gate + fix its 4
+# pre-existing type errors, then drop this override.)
+[[tool.mypy.overrides]]
+module = ["generate_static_api"]
+ignore_missing_imports = true
+
 # wealthlens_sim is a separate package with its OWN clean `mypy wealthlens_sim`
 # run in ci-sim. Its py.typed marker is not reliably visible across the editable-
 # install boundary, so mypy run here reports import-untyped for every wealthlens_sim
