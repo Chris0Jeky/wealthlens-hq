@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 
 /**
@@ -10,7 +10,7 @@ vi.mock('@/utils/fetchWithRetry', () => ({
   fetchWithRetry: (url: string) => globalThis.fetch(url),
 }))
 
-import { useDataStore } from '@/stores/data'
+import { useDataStore, adaptStaticFreshness } from '@/stores/data'
 
 describe('useDataStore', () => {
   beforeEach(() => {
@@ -262,6 +262,44 @@ describe('useDataStore', () => {
 
       store.clearMetadata()
       expect(store.metadata.size).toBe(0)
+    })
+  })
+
+  describe('adaptStaticFreshness (static-mode flat freshness.json)', () => {
+    // Freeze "now" so the derived age/status is deterministic regardless of run date.
+    beforeEach(() => {
+      vi.useFakeTimers({ toFake: ['Date'] })
+      vi.setSystemTime(new Date('2026-06-15T12:00:00Z'))
+    })
+    afterEach(() => {
+      vi.useRealTimers()
+    })
+
+    it('derives age_hours + status from the curated date for FreshnessIndicator', () => {
+      const out = adaptStaticFreshness({
+        'wealth-shares': { last_updated: '2026-06-14', source: 'ONS' }, // ~1 day -> fresh
+        'tax-composition': { last_updated: '2026-06-01', source: 'HMRC' }, // 14 days -> stale
+        'boe-rates': { last_updated: '2026-01-01', source: 'BoE' }, // >30 days -> expired
+      })
+      expect(out['wealth-shares']).toMatchObject({ last_updated: '2026-06-14', status: 'fresh' })
+      expect(out['wealth-shares'].age_hours).toBeGreaterThanOrEqual(0)
+      expect(out['tax-composition'].status).toBe('stale')
+      expect(out['boe-rates'].status).toBe('expired')
+    })
+
+    it('degrades a missing/unparseable date to unknown (no throw)', () => {
+      const out = adaptStaticFreshness({
+        'a': { source: 'no date' },
+        'b': { last_updated: 'not-a-date', source: 'bad' },
+      })
+      expect(out['a']).toEqual({ last_updated: null, age_hours: null, status: 'unknown' })
+      expect(out['b'].status).toBe('unknown')
+    })
+
+    it('clamps a future date to age 0 / fresh (never negative)', () => {
+      const out = adaptStaticFreshness({ x: { last_updated: '2026-12-31', source: 's' } })
+      expect(out['x'].age_hours).toBe(0)
+      expect(out['x'].status).toBe('fresh')
     })
   })
 })

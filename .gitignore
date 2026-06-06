@@ -41,8 +41,15 @@ projects/wealthlens-dashboard/frontend/src/**/*.js
 # Generated static API data (built by scripts/generate_static_api.py)
 # Ignore generated files but whitelist committed static fallbacks.
 projects/wealthlens-dashboard/frontend/public/data/*
+# Committed static fallbacks that MUST ship (they back the static/GitHub-Pages build).
+# freshness.json especially: the deploy serves it to the freshness badges + indicators,
+# so an explicit negation keeps it tracked even if the data dir is cleared/regenerated.
+!projects/wealthlens-dashboard/frontend/public/data/freshness.json
 !projects/wealthlens-dashboard/frontend/public/data/wealth-shares.json
 !projects/wealthlens-dashboard/frontend/public/data/wealth-shares-metadata.json
+!projects/wealthlens-dashboard/frontend/public/data/inheritance-tax.json
+!projects/wealthlens-dashboard/frontend/public/data/wage-stagnation.json
+!projects/wealthlens-dashboard/frontend/public/data/wage-stagnation-metadata.json
 
 # Data and generated artefacts
 *.parquet
