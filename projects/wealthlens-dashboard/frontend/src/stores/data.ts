@@ -76,6 +76,11 @@ const STALE_MAX_HOURS = 720 // 30 days
  * entries FreshnessIndicator expects, deriving age + status from the curated date
  * (clamped at 0 so a future date can't go negative). A missing/unparseable date
  * degrades to "unknown" rather than throwing.
+ *
+ * Classification matches the live backend exactly (UTC-anchored hours, 168/720
+ * thresholds). Note the chart-page DataFreshnessBadge uses its own local-calendar-day
+ * heuristic, so the two freshness UIs are not bit-identical right at the ~30-day
+ * boundary; both are sound, they just round differently.
  */
 export function adaptStaticFreshness(
   flat: StaticFreshnessFile,
