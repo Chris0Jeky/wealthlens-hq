@@ -1,21 +1,37 @@
 /**
  * Integration tests: static data validation.
  *
- * Validates that ALL static JSON files in public/data/ (when they exist)
- * conform to the expected structure for the data store:
- * - Dataset files: { data: DatasetRow[], page, limit, total, total_pages }
- * - Metadata files: { name, description, source, source_url, access_date, row_count, columns }
- * - datasets.json: { datasets: string[] }
- * - all-metadata.json: { datasets: DatasetMetadata[] }
+ * Validates the static JSON the SPA ships in `public/data/`. These files are
+ * served verbatim by the GitHub Pages deploy, so a malformed or drifted file
+ * reaches users directly — this test is the guard.
  *
- * Also validates that column names in metadata match the actual data keys.
+ * Why this exists / what it caught: the test previously pointed `DATA_DIR` one
+ * directory too high (`../../../../public/data` -> the wealthlens-dashboard
+ * root, which has no `public/`), so `existsSync(DATA_DIR)` was false and every
+ * assertion silently skipped — it validated nothing. The path is now correct
+ * AND the directory's presence is asserted (not skipped), so a future mis-path
+ * regression fails loudly. Activating it surfaced a real bug: the generator
+ * shipped `cgt-concentration.json` with literal `NaN` tokens (invalid JSON).
+ *
+ * Two environments to support:
+ *  - A fresh CI checkout: `public/data/*` is gitignored except a small committed
+ *    whitelist (wealth-shares[+meta], inheritance-tax, wage-stagnation[+meta],
+ *    freshness). The other datasets, `datasets.json` and `all-metadata.json` are
+ *    build artifacts produced by `scripts/generate_static_api.py` at deploy and
+ *    are ABSENT in CI.
+ *  - Local/deploy after running the generator: all datasets are present.
+ *
+ * So the committed-file checks (wealth-shares contract, freshness shape) always
+ * run, the JSON-validity sweep covers whatever is present, and the full
+ * per-dataset contract is asserted only when the generator output is present.
  */
 import { describe, it, expect } from "vitest";
 import { readdirSync, readFileSync, existsSync } from "fs";
 import { resolve } from "path";
 
-// Path to the public/data directory (relative to project root)
-const DATA_DIR = resolve(__dirname, "../../../../public/data");
+// Path to the SPA's static data directory.
+// __dirname = frontend/src/__tests__/integration  ->  ../../../ = frontend.
+const DATA_DIR = resolve(__dirname, "../../../public/data");
 
 // ---------------------------------------------------------------------------
 // Schema validators
@@ -70,9 +86,7 @@ function isValidMetadata(obj: unknown): obj is DatasetMetadata {
   );
 }
 
-function isValidDatasetList(
-  obj: unknown,
-): obj is { datasets: string[] } {
+function isValidDatasetList(obj: unknown): obj is { datasets: string[] } {
   if (typeof obj !== "object" || obj === null) return false;
   const o = obj as Record<string, unknown>;
   return (
@@ -97,8 +111,11 @@ function isValidAllMetadata(
 // ---------------------------------------------------------------------------
 
 function getJsonFiles(): string[] {
-  if (!existsSync(DATA_DIR)) return [];
   return readdirSync(DATA_DIR).filter((f) => f.endsWith(".json"));
+}
+
+function present(filename: string): boolean {
+  return existsSync(resolve(DATA_DIR, filename));
 }
 
 function readJson(filename: string): unknown {
@@ -106,200 +123,153 @@ function readJson(filename: string): unknown {
   return JSON.parse(content);
 }
 
+/** The authoritative list of store-backed dataset slugs (from datasets.json). */
+function getDatasetSlugs(): string[] {
+  if (!present("datasets.json")) return [];
+  const parsed = readJson("datasets.json");
+  return isValidDatasetList(parsed) ? parsed.datasets : [];
+}
+
+/** Validate one dataset slug's data + metadata + their consistency. */
+function validateDataset(slug: string): void {
+  const dataFile = `${slug}.json`;
+  const metaFile = `${slug}-metadata.json`;
+  expect(present(dataFile), `missing ${dataFile}`).toBe(true);
+  expect(present(metaFile), `missing ${metaFile}`).toBe(true);
+
+  const data = readJson(dataFile);
+  expect(isValidPaginatedResponse(data)).toBe(true);
+  const paginated = data as PaginatedResponse;
+  expect(paginated.data.length).toBeGreaterThan(0);
+  for (const row of paginated.data) {
+    expect(typeof row).toBe("object");
+    expect(row).not.toBeNull();
+  }
+
+  const meta = readJson(metaFile);
+  expect(isValidMetadata(meta)).toBe(true);
+  const metadata = meta as DatasetMetadata;
+  expect(metadata.source.length).toBeGreaterThan(0);
+  expect(metadata.source_url.length).toBeGreaterThan(0);
+  expect(() => new URL(metadata.source_url)).not.toThrow();
+  expect(metadata.access_date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+
+  // Metadata columns must appear in the data rows.
+  const firstRowKeys = Object.keys(paginated.data[0]);
+  for (const col of metadata.columns) {
+    expect(
+      firstRowKeys,
+      `Column "${col}" from ${metaFile} not in data row keys: [${firstRowKeys.join(", ")}]`,
+    ).toContain(col);
+  }
+  // row_count must match the paginated total.
+  expect(metadata.row_count).toBe(paginated.total);
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 
 describe("Static data validation", () => {
-  const jsonFiles = getJsonFiles();
-
-  it("public/data directory exists or test gracefully skips", () => {
-    // This test documents whether static data files are present.
-    // When no files exist, remaining tests are skipped via it.skipIf.
-    if (!existsSync(DATA_DIR)) {
-      // Not a failure — static data is optional in dev
-      expect(true).toBe(true);
-    } else {
-      expect(existsSync(DATA_DIR)).toBe(true);
-    }
+  // The data directory is committed (gitignore whitelists wealth-shares,
+  // inheritance-tax, wage-stagnation and freshness) and shipped verbatim, so it
+  // MUST exist. Asserting (not skipping) keeps a future path regression from
+  // silently disabling every check below — the original failure mode.
+  it("public/data directory exists and contains JSON", () => {
+    expect(existsSync(DATA_DIR), `expected static data at ${DATA_DIR}`).toBe(
+      true,
+    );
+    expect(getJsonFiles().length).toBeGreaterThan(0);
   });
 
-  describe("JSON validity", () => {
-    if (jsonFiles.length === 0) {
-      it("no static data files present (skipped)", () => {
-        expect(true).toBe(true);
-      });
-      return;
-    }
+  const jsonFiles = getJsonFiles();
 
+  describe("JSON validity (all present files parse)", () => {
     it.each(jsonFiles)("%s is valid JSON", (filename) => {
+      // Catches invalid-JSON literals like NaN/Infinity that Python's json.dump
+      // emits by default — these are unparseable by the browser's fetch().json().
       expect(() => readJson(filename)).not.toThrow();
     });
   });
 
-  describe("Dataset files structure", () => {
-    const datasetFiles = jsonFiles.filter(
-      (f) =>
-        !f.endsWith("-metadata.json") &&
-        f !== "datasets.json" &&
-        f !== "all-metadata.json",
-    );
-
-    if (datasetFiles.length === 0) {
-      it("no dataset files present (skipped)", () => {
-        expect(true).toBe(true);
-      });
-      return;
-    }
-
-    it.each(datasetFiles)(
-      "%s has valid paginated response structure",
-      (filename) => {
-        const data = readJson(filename);
-        expect(isValidPaginatedResponse(data)).toBe(true);
-      },
-    );
-
-    it.each(datasetFiles)(
-      "%s has non-empty data array with objects",
-      (filename) => {
-        const data = readJson(filename) as PaginatedResponse;
-        expect(data.data.length).toBeGreaterThan(0);
-        for (const row of data.data) {
-          expect(typeof row).toBe("object");
-          expect(row).not.toBeNull();
-        }
-      },
-    );
-  });
-
-  describe("Metadata files structure", () => {
-    const metadataFiles = jsonFiles.filter(
-      (f) => f.endsWith("-metadata.json") && f !== "all-metadata.json",
-    );
-
-    if (metadataFiles.length === 0) {
-      it("no metadata files present (skipped)", () => {
-        expect(true).toBe(true);
-      });
-      return;
-    }
-
-    it.each(metadataFiles)(
-      "%s has required metadata fields",
-      (filename) => {
-        const data = readJson(filename);
-        expect(isValidMetadata(data)).toBe(true);
-      },
-    );
-
-    it.each(metadataFiles)(
-      "%s has non-empty source and source_url",
-      (filename) => {
-        const data = readJson(filename) as DatasetMetadata;
-        expect(data.source.length).toBeGreaterThan(0);
-        expect(data.source_url.length).toBeGreaterThan(0);
-        // source_url should be a valid URL
-        expect(() => new URL(data.source_url)).not.toThrow();
-      },
-    );
-
-    it.each(metadataFiles)(
-      "%s has valid access_date (YYYY-MM-DD)",
-      (filename) => {
-        const data = readJson(filename) as DatasetMetadata;
-        expect(data.access_date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-      },
-    );
-  });
-
-  describe("datasets.json", () => {
-    const hasDatasetsJson = jsonFiles.includes("datasets.json");
-
-    if (!hasDatasetsJson) {
-      it("datasets.json not present (skipped)", () => {
-        expect(true).toBe(true);
-      });
-      return;
-    }
-
-    it("has valid dataset list structure", () => {
-      const data = readJson("datasets.json");
-      expect(isValidDatasetList(data)).toBe(true);
-    });
-
-    it("contains at least one dataset name", () => {
-      const data = readJson("datasets.json") as { datasets: string[] };
-      expect(data.datasets.length).toBeGreaterThan(0);
+  // wealth-shares is committed (gitignore whitelist), so this contract check
+  // always runs, including in a fresh CI checkout.
+  describe("wealth-shares (committed dataset)", () => {
+    it("data + metadata are valid and consistent", () => {
+      validateDataset("wealth-shares");
     });
   });
 
-  describe("all-metadata.json", () => {
-    const hasAllMetadata = jsonFiles.includes("all-metadata.json");
-
-    if (!hasAllMetadata) {
-      it("all-metadata.json not present (skipped)", () => {
-        expect(true).toBe(true);
-      });
-      return;
-    }
-
-    it("has valid all-metadata structure", () => {
-      const data = readJson("all-metadata.json");
-      expect(isValidAllMetadata(data)).toBe(true);
+  describe("freshness.json (badge data)", () => {
+    it("each entry has a valid, non-future last_updated and a source", () => {
+      expect(present("freshness.json")).toBe(true);
+      const fresh = readJson("freshness.json") as Record<string, unknown>;
+      expect(typeof fresh).toBe("object");
+      expect(fresh).not.toBeNull();
+      const entries = Object.entries(fresh);
+      expect(entries.length).toBeGreaterThan(0);
+      // Compare against today's UTC date as a YYYY-MM-DD string. String order
+      // matches chronological order for that format, so this is timezone-safe.
+      const todayUtc = new Date().toISOString().slice(0, 10);
+      for (const [slug, value] of entries) {
+        expect(typeof value, `freshness["${slug}"] should be an object`).toBe(
+          "object",
+        );
+        const entry = value as Record<string, unknown>;
+        expect(entry.last_updated, `freshness["${slug}"].last_updated`).toMatch(
+          /^\d{4}-\d{2}-\d{2}$/,
+        );
+        // A future last_updated would render a perpetually "fresh" badge.
+        expect(
+          (entry.last_updated as string) <= todayUtc,
+          `freshness["${slug}"].last_updated ${entry.last_updated} is in the future (today ${todayUtc})`,
+        ).toBe(true);
+        expect(typeof entry.source, `freshness["${slug}"].source`).toBe(
+          "string",
+        );
+        expect((entry.source as string).length).toBeGreaterThan(0);
+      }
     });
   });
 
-  describe("Metadata-data consistency", () => {
-    const metadataFiles = jsonFiles.filter(
-      (f) => f.endsWith("-metadata.json") && f !== "all-metadata.json",
-    );
+  // Full per-dataset contract — only present after the generator has run
+  // (local dev / the deploy build). Absent in a fresh CI checkout, where the
+  // committed-file checks above are the active guard.
+  describe("Generated dataset contract (when datasets.json is present)", () => {
+    const slugs = getDatasetSlugs();
 
-    if (metadataFiles.length === 0) {
-      it("no metadata files to cross-validate (skipped)", () => {
-        expect(true).toBe(true);
+    if (slugs.length === 0) {
+      it("datasets.json not generated in this checkout — full contract skipped", () => {
+        // Assert the REASON we skip, so this is not a silent no-op: the build
+        // artifact is genuinely absent (it is gitignored and regenerated at
+        // deploy). If it ever IS present, the it.each blocks below run instead.
+        expect(present("datasets.json")).toBe(false);
       });
       return;
     }
 
-    it.each(metadataFiles)(
-      "%s columns match actual data keys",
-      (metaFilename) => {
-        const dataFilename = metaFilename.replace("-metadata.json", ".json");
-        if (!jsonFiles.includes(dataFilename)) {
-          // Skip if corresponding data file doesn't exist
-          return;
-        }
+    it.each(slugs)("%s data + metadata are valid and consistent", (slug) => {
+      validateDataset(slug);
+    });
 
-        const meta = readJson(metaFilename) as DatasetMetadata;
-        const dataset = readJson(dataFilename) as PaginatedResponse;
+    it("all-metadata.json covers exactly the datasets.json slugs", () => {
+      expect(present("all-metadata.json")).toBe(true);
+      const all = readJson("all-metadata.json");
+      expect(isValidAllMetadata(all)).toBe(true);
+      const covered = (all as { datasets: DatasetMetadata[] }).datasets
+        .map((d) => d.name)
+        .sort();
+      expect(covered).toEqual([...slugs].sort());
+    });
 
-        if (dataset.data.length === 0) return;
-
-        // All column names from metadata should appear as keys in at least
-        // the first row of data
-        const firstRowKeys = Object.keys(dataset.data[0]);
-        for (const col of meta.columns) {
-          expect(
-            firstRowKeys,
-            `Column "${col}" from metadata not found in data row keys: [${firstRowKeys.join(", ")}]`,
-          ).toContain(col);
-        }
-      },
-    );
-
-    it.each(metadataFiles)(
-      "%s row_count matches actual data length",
-      (metaFilename) => {
-        const dataFilename = metaFilename.replace("-metadata.json", ".json");
-        if (!jsonFiles.includes(dataFilename)) return;
-
-        const meta = readJson(metaFilename) as DatasetMetadata;
-        const dataset = readJson(dataFilename) as PaginatedResponse;
-
-        // row_count in metadata should match total in paginated response
-        expect(meta.row_count).toBe(dataset.total);
-      },
-    );
+    it("every dataset slug has a freshness.json entry", () => {
+      const fresh = readJson("freshness.json") as Record<string, unknown>;
+      for (const slug of slugs) {
+        expect(
+          Object.prototype.hasOwnProperty.call(fresh, slug),
+          `freshness.json is missing an entry for dataset "${slug}"`,
+        ).toBe(true);
+      }
+    });
   });
 });
