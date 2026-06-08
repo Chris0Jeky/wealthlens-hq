@@ -8,7 +8,7 @@ pytest-cov>=7.1.0
 ruff>=0.4
 # Upper-cap mypy (like the stub pins below) so a future major can't newly fail the
 # now-stricter backend gate without a deliberate bump.
-mypy>=1.10,<2
+mypy>=2.1.0,<3
 # pandas-stubs: backend modules import pandas and it is NOT in the mypy
 # ignore-missing-imports overrides, so `mypy .` needs the stubs to pass.
 pandas-stubs>=2.1
