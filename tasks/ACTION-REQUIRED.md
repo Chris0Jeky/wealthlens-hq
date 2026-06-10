@@ -1,6 +1,6 @@
 # ⚑ ACTION REQUIRED — Chris's outstanding tasks
 
-Last updated: 2026-06-05
+Last updated: 2026-06-11
 
 > **This file is the single curated list of things that need _Chris_ (a human),
 > not the autonomous agent.** It exists so high-leverage actions never get lost in
@@ -34,15 +34,14 @@ Last updated: 2026-06-05
 
 ### ⏰ Time-sensitive (act this week)
 
-1. - [ ] **Prepare for mySociety interview (if shortlisted)** `[due: mid-June 2026]` -- **P1**
-   - **Why:** Application submitted 2026-05-31. Shortlist notification expected mid-June. Interview via video conference in following weeks.
+1. - [ ] **Split sensitive/organisational material into a private repo** — **P1**
+   - **Why:** The repo is PUBLIC and currently exposes personal material: `identity/` (CVs, cover letters, personal story), `tasks/applications/` (job applications), `tasks/outreach/` (contact lists, email logs), `strategy/career-strategy.md`, `.codex/memories/` (session notes), `journal/`, `meetings/`, `people/`. Chris confirmed (2026-06-11) the private-hq split is planned. The Hero #1 product subtree (`projects/wealthlens-analyst/`) is being built extraction-clean, so the split is independent of product work.
    - **How:**
-     1. Start daily Python coding practice WITHOUT AI (30-60 min/day). See `tasks/applications/interview-prep-general.md`.
-     2. Explore mySociety codebases: FixMyStreet, Alaveteli, TheyWorkForYou on GitHub.
-     3. Do first 10 Exercism Perl exercises.
-     4. Use FixMyStreet and WhatDoTheyKnow for real.
-     5. Prepare STAR stories (see `tasks/applications/mysociety-societyworks-2026.md`).
-   - **Done when:** interview completed (or not shortlisted -- record which).
+     1. Create a private repo (e.g. `wealthlens-private-hq`).
+     2. Move the directories above (git history caveat: moving does NOT scrub them from public history — decide whether `git filter-repo`/BFG history purge is worth it for the CV PDFs and contacts, or accept history exposure).
+     3. Update CLAUDE.md / AGENTS.md authority-order paths that point at `.codex/memories/`.
+     4. The agent can do the mechanical split on your go-ahead; the history-purge decision is yours.
+   - **Done when:** sensitive dirs live in the private repo and (decision recorded) public history is purged or accepted.
 
 2. - [ ] **BGV: prep for Spring 2027** (Autumn 2026 SKIPPED — decided 2026-06-05) — **P2 (no longer this-week-urgent)**
    - **Decision (2026-06-05):** skip the BGV Autumn 2026 round (deadline was 21 June) and target **Spring 2027** (~early-Jan 2027 deadline), to clear the two blockers first rather than rush a weak 16-day application against ~3-4% odds. Full rationale: `tasks/bgv-go-no-go-2026.md`.
@@ -88,3 +87,5 @@ Last updated: 2026-06-05
 ## Done
 
 _(Cleared items move here with `[completed: YYYY-MM-DD]` once Chris confirms.)_
+
+- [x] **Prepare for mySociety interview (if shortlisted)** — **not shortlisted: application rejected** (Chris confirmed 2026-06-11). Recorded per the item's done-when. Interview-prep habits (daily no-AI Python practice, Exercism) remain useful for future applications — see `tasks/applications/interview-prep-general.md`. [completed: 2026-06-11]
