@@ -1,0 +1,57 @@
+"""Runtime configuration, read from environment variables.
+
+Everything tunable lives here so behaviour is visible in one place.
+Defaults are conservative: the reranker is OFF (repo rule: new features
+default OFF) and the budget is fail-closed (no cap configured -> no spend).
+See `.env.example` for the full variable list.
+"""
+
+from __future__ import annotations
+
+import os
+from dataclasses import dataclass
+
+
+def _env_bool(name: str, default: bool = False) -> bool:
+    """Parse a boolean env var ("true"/"1"/"yes", case-insensitive)."""
+    raw = os.environ.get(name)
+    if raw is None:
+        return default
+    return raw.strip().lower() in {"1", "true", "yes", "on"}
+
+
+@dataclass(frozen=True)
+class Settings:
+    """Immutable snapshot of the service configuration."""
+
+    database_url: str
+    anthropic_api_key: str
+    analyst_model: str
+    embedding_model: str
+    rerank_enabled: bool
+    cohere_api_key: str
+    langfuse_host: str
+    langfuse_public_key: str
+    langfuse_secret_key: str
+    # Hard monthly spend cap in GBP (ADR 0002). None means NOT configured,
+    # which the budget middleware treats as "block all spend" (fail-closed).
+    budget_monthly_cap_gbp: float | None
+    app_env: str
+
+
+def load_settings() -> Settings:
+    """Build Settings from the process environment."""
+    cap_raw = os.environ.get("BUDGET_MONTHLY_CAP_GBP")
+    return Settings(
+        database_url=os.environ.get("DATABASE_URL", ""),
+        anthropic_api_key=os.environ.get("ANTHROPIC_API_KEY", ""),
+        analyst_model=os.environ.get("ANALYST_MODEL", ""),
+        embedding_model=os.environ.get("EMBEDDING_MODEL", ""),
+        rerank_enabled=_env_bool("RERANK_ENABLED", default=False),
+        cohere_api_key=os.environ.get("COHERE_API_KEY", ""),
+        langfuse_host=os.environ.get("LANGFUSE_HOST", ""),
+        langfuse_public_key=os.environ.get("LANGFUSE_PUBLIC_KEY", ""),
+        langfuse_secret_key=os.environ.get("LANGFUSE_SECRET_KEY", ""),
+        budget_monthly_cap_gbp=float(cap_raw) if cap_raw else None,
+        app_env=os.environ.get("APP_ENV", "development"),
+    )
