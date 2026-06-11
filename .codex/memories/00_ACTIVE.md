@@ -5,9 +5,20 @@
 > **POST-MERGE CLEANUP COMPLETE** (2026-05-16): All 192 PRs handled, 874 tests passing, CI green, 496 stale branches deleted.
 > Merge history: [MERGE_ORCHESTRATION.md](.codex/memories/session_notes/MERGE_ORCHESTRATION.md) | PR creation history: [ORCHESTRATION.md](.codex/memories/session_notes/ORCHESTRATION.md) (archived)
 
-Last updated: 2026-06-05
+Last updated: 2026-06-11
 
-## Latest status (2026-06-05 endless-cycle — LOOP WRAPPED, clean handoff)
+## Latest status (2026-06-11 — HERO #1 LAUNCHED, clean checkpoint)
+
+**Session 6: Hero #1 (WealthLens Analyst — evidence-backed RAG over UK wealth stats)
+kicked off and DB layer shipped. PRs #403 + #404 merged (2 adversarial reviews + bots +
+green CI each); 0 open.** New subtree `projects/wealthlens-analyst/` (own CLAUDE.md),
+locked plan `docs/plan/HERO1_PLAN.md`, 32-task backlog `tasks/hero1-backlog.md`, ADRs
+`docs/adr/0001-0003` (D1/D2/D4 adopted by delegation; **D3 hosting awaits Chris**).
+Postgres+pgvector live locally (compose `analyst-db`, port 15432) with verified Alembic
+migrations. Next: H1-01 (name+tag IFS/RF reports), H1-02 (@Chris: golden questions),
+H1-12 (RRF). The dashboard work below is unchanged.
+
+## Prior status (2026-06-05 endless-cycle — LOOP WRAPPED, clean handoff)
 
 > Full live detail in `.codex/memories/session_notes/ORCHESTRATION.md` (master
 > control). This board is the short version.

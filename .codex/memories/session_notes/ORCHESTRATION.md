@@ -5,7 +5,54 @@
 >
 > **CRITICAL**: Update this file BEFORE every compaction risk (long tool calls, large diffs).
 
-Last updated: 2026-06-06 (session 5 — 8 PRs MERGED (#382-389); 0 open; clean checkpoint)
+Last updated: 2026-06-11 (session 6 — HERO #1 LAUNCHED: 2 PRs merged (#403-404); 0 open; clean checkpoint)
+
+## ▶️ SESSION 6 (2026-06-11) — HERO #1 (WealthLens Analyst) kickoff + DB layer. 2 PRs MERGED.
+
+**NEW WORKSTREAM**: Hero #1 = WealthLens v2, an evidence-backed RAG analyst over official
+UK wealth statistics (locked external plan; Chris pasted the brief). This coexists with the
+dashboard loop below — different subtree, no overlap. **Orientation for future sessions:**
+read `projects/wealthlens-analyst/CLAUDE.md` + `tasks/hero1-backlog.md` (32 ordered tasks)
++ `docs/plan/HERO1_PLAN.md` (M0-M6, LOCKED — do not re-plan) + `docs/adr/0001-0003`.
+
+### ✅ MERGED (each: 2 independent adversarial reviews + gemini threads addressed/resolved + green CI)
+- **#403** Hero #1 kickoff: ADRs 0001-0003, plan, 32-task backlog, full scaffolding
+  (`projects/wealthlens-analyst/`, own pyproject, strict mypy, stubs fail loud), eval
+  skeleton (golden schema + 20 DRAFT questions: 15 in-corpus + 5 refusal probes),
+  Makefile targets (dev/ingest-slice/eval-*), SHA-pinned `ci-analyst.yml`. Reviews caught:
+  budget-cap parse crash -> loud startup error; one-directional golden schema constraint
+  (in_corpus+refuse escaped) -> symmetric allOf, mutation-verified; ADR 0003 citation gaps.
+- **#404** DB layer (H1-04+H1-05): `analyst-db` compose service (pgvector/pgvector:pg17,
+  host port **15432** — 5305-5504 is a Windows-excluded TCP range on this box) + Alembic
+  wired + 4 hand-written revisions (chunks w/ provenance NOT NULLs + STORED tsvector + GIN;
+  embeddings VECTOR(1536) + HNSW; budgets one-active partial unique; query_log w/ decision
+  CHECK). **Verified LIVE**: upgrade/downgrade/re-upgrade, FTS websearch hit, cosine ops,
+  all constraints bite, %-encoded DATABASE_URL works (env.py escape fix from review),
+  Identity(always=True) rejects explicit ids. Reviews also drove: cost_gbp Numeric(12,8)
+  (micro-pound rounding would understate the hard cap's summed spend), docs sweep
+  propagating ADR 0003 decisions.
+
+### 📌 DECISIONS (Chris gave explicit blanket delegation this session: "make all the
+reasonable decisions that you can make on your own... I give you my trust")
+- ADR 0003 D1/D2/D4 ADOPTED by delegation (recorded in the ADR's decision record):
+  Cohere Rerank 4 Fast · OpenAI text-embedding-3-small (1536, baked into migration 0002)
+  · fused-RRF-threshold abstention. **D3 hosting stays OPEN for Chris** (needs his
+  account/payment; memo recommends Hetzner CAX11/CAX21 + Docker Compose, ~£4-8/mo).
+- Alembic adopted as the migration tool (repo had none; ADR 0001 §5).
+- mySociety: Chris confirmed REJECTED (2026-06-11) -> moved to ACTION-REQUIRED Done.
+- NEW P1 reminder: private-repo split of sensitive dirs (identity/, applications/,
+  outreach/, .codex/memories/ etc. — repo is PUBLIC).
+
+### ⏭️ NEXT (hero1 backlog, top of queue)
+1. **H1-01** tag corpus slice in `registries/sources.yml` — needs the 3-5 IFS/RF reports
+   NAMED (suggest: pick with Chris or web-verify canonical ones; licence + access date).
+2. **H1-02 (@Chris)** review the 20 DRAFT golden questions — his highest-leverage hour.
+3. **H1-12** pure RRF fusion (no deps) · then H1-06/07 (document fetch + tabular chunking).
+- Dashboard-loop leftovers unchanged from session 5: PR-5 (productivity caveat),
+  PR-8 backend half (rate-limit overflow test), child-poverty source conflict (needs Chris).
+- Local env note: `make` resolves python3 to the WindowsApps stub — use
+  `make PYTHON=python ...`. The analyst-db container is left RUNNING (data disposable).
+
 
 ## ▶️ SESSION 5 (2026-06-06) — CLEAN CHECKPOINT. 8 PRs merged; 0 open.
 

@@ -1,8 +1,13 @@
 # Active Sprint
 
-Last updated: 2026-06-05
+Last updated: 2026-06-11
 
-> **LATEST (2026-06-05 — session 3 loop wrapped):** 11 PRs merged (#358-#368), main
+> **LATEST (2026-06-11 — Hero #1 launched):** PRs #403 (kickoff: plan/backlog/ADRs/
+> scaffolding/evals) + #404 (Postgres+pgvector + Alembic, live-verified) MERGED. Next
+> unblocked: H1-01 (tag corpus slice), H1-02 (@Chris: review 20 golden questions),
+> H1-12 (RRF). See `tasks/hero1-backlog.md` + `docs/plan/HERO1_PLAN.md` (LOCKED).
+>
+> **Prior (2026-06-05 — session 3 loop wrapped):** 11 PRs merged (#358-#368), main
 > `c3712e3`, **0 open PRs, 1025 tests green**, repo spotless. Highlights: mypy gated on
 > `automation/` + root `tests/`; new `uncertainty/sobol.py`; the full blank-cell→NaN
 > data-integrity arc across every pipeline + a `validate.py` NONFINITE backstop + shared
