@@ -23,7 +23,7 @@ Last updated: 2026-06-11
 - [ ] H1-08 (M1) Implement PDF extraction + chunking for the report documents (page-aware, ~500-token chunks, heading-anchored sections) — done when every chunk row has non-null page + span and a sampled chunk visually matches the source PDF page. [deps: H1-05, H1-06]
 - [ ] H1-09 (M1) Ingestion integrity gate: reject any chunk with null provenance; `make ingest-slice` runs fetch→chunk→write end-to-end — done when a deliberately provenance-stripped fixture chunk fails ingestion in a test. [deps: H1-07, H1-08]
 - [ ] H1-10 (M1) Build the FTS path: `tsvector` column + GIN index migration + `retrieval/fts.py` query — done when a fixture query returns ranked chunks and the index is used (EXPLAIN). [deps: H1-09]
-- [ ] H1-11 (M1) Embed the corpus: `retrieval/dense.py` + batch embedding script through the `llm/client.py` seam (model per ADR 0003), writing pgvector rows + index — done when every chunk has an embedding and cosine query returns sane neighbours on 3 spot checks. [deps: H1-09, H1-03]
+- [ ] H1-11 (M1) Embed the corpus: `retrieval/dense.py` + batch embedding script through the `llm/client.py` seam (model per ADR 0003), writing pgvector rows + index — done when every chunk has an embedding and cosine query returns sane neighbours on 3 spot checks. [deps: H1-09]
 
 ## M2 — hybrid retrieval behind /ask
 
@@ -34,7 +34,7 @@ Last updated: 2026-06-11
 
 ## M3 — reranker + citations
 
-- [ ] H1-16 (M3) Implement `retrieval/rerank.py` per the ADR 0003 choice behind `RERANK_ENABLED` (default OFF) — done when flag-off is byte-identical to M2 behaviour and flag-on reorders a fixture case. [deps: H1-03, H1-13]
+- [ ] H1-16 (M3) Implement `retrieval/rerank.py` (ADR 0003 D1: Cohere Rerank 4 Fast) behind `RERANK_ENABLED` (default OFF) — done when flag-off is byte-identical to M2 behaviour and flag-on reorders a fixture case. [deps: H1-13]
 - [ ] H1-17 (M3) A/B recall: re-run H1-14 with rerank on; record both columns in the same report — done when the report shows flag-on vs flag-off side by side. [deps: H1-14, H1-16]
 - [ ] H1-18 (M3) Implement `answer/compose.py`: generation through the client seam, prompt forces claims to cite retrieved chunk ids — done when a live local query returns an answer whose citations are all in the retrieved set. [deps: H1-13]
 - [ ] H1-19 (M3) Implement `answer/citations.py`: resolve cited chunk_ids to {source, document, section/page} from the DB; strip/flag unresolvable citations — done when a fabricated chunk_id in a fixture answer is caught and the response carries resolved citations only. [deps: H1-18]
@@ -42,7 +42,7 @@ Last updated: 2026-06-11
 
 ## M4 — abstention
 
-- [ ] H1-21 (M4) Implement `answer/abstain.py`: the confidence gate per ADR 0003 (threshold or judge), returning the structured refusal — done when weak-evidence fixture queries refuse and strong ones don't, under unit test. [deps: H1-03, H1-13]
+- [ ] H1-21 (M4) Implement `answer/abstain.py`: the confidence gate (ADR 0003 D4: fused-RRF threshold + min-hits), returning the structured refusal — done when weak-evidence fixture queries refuse and strong ones don't, under unit test. [deps: H1-13]
 - [ ] H1-22 (M4) Wire the gate into /ask ahead of generation; refusal logged as decision=refused with zero generation cost — done when the 5 out-of-corpus golden questions all refuse against the live local corpus. [deps: H1-20, H1-21]
 - [ ] H1-23 (M4) Flesh out `evals/checks/deterministic.py`: citation presence + resolvability, schema validity, correct refusal set, latency/cost bound stubs — done when `make eval-deterministic` passes locally and in the ci-analyst job. [deps: H1-20, H1-22]
 

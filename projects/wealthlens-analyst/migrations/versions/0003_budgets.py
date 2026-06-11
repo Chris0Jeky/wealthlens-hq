@@ -23,7 +23,7 @@ depends_on = None
 def upgrade() -> None:
     op.create_table(
         "budgets",
-        sa.Column("budget_id", sa.Integer(), sa.Identity(), primary_key=True),
+        sa.Column("budget_id", sa.Integer(), sa.Identity(always=True), primary_key=True),
         sa.Column("period_start", sa.Date(), nullable=False),
         sa.Column("period_end", sa.Date(), nullable=False),
         sa.Column("cap_gbp", sa.Numeric(8, 2), nullable=False),

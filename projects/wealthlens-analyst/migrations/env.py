@@ -21,7 +21,9 @@ if config.config_file_name is not None:
 
 database_url = os.environ.get("DATABASE_URL")
 if database_url:
-    config.set_main_option("sqlalchemy.url", database_url)
+    # configparser interpolation: a literal % in the URL (e.g. percent-encoded
+    # password) must be escaped or set_main_option raises ValueError.
+    config.set_main_option("sqlalchemy.url", database_url.replace("%", "%%"))
 
 # Hand-written migrations: no model metadata to diff against.
 target_metadata = None

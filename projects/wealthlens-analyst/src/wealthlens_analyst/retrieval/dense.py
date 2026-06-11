@@ -3,10 +3,11 @@
 Embeds the query through the LLM client seam (llm/client.py — the ONLY module
 allowed to touch provider SDKs, ADR 0002) and runs cosine-similarity search
 against the `embeddings` table (HNSW index; see
-migrations/drafts/0002_embeddings.py).
+migrations/versions/0002_embeddings.py).
 
-Embedding model choice is an ADR 0003 open decision; this module reads it
-from configuration and must not hard-code a provider.
+Embedding model: ADR 0003 D2 = OpenAI text-embedding-3-small (1536 dims,
+matching migration 0002). This module reads it from configuration and must
+not hard-code a provider.
 
 Pending: task H1-11 in tasks/hero1-backlog.md.
 """

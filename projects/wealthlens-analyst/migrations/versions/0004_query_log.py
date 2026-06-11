@@ -26,7 +26,7 @@ depends_on = None
 def upgrade() -> None:
     op.create_table(
         "query_log",
-        sa.Column("query_id", sa.BigInteger(), sa.Identity(), primary_key=True),
+        sa.Column("query_id", sa.BigInteger(), sa.Identity(always=True), primary_key=True),
         sa.Column(
             "asked_at",
             sa.TIMESTAMP(timezone=True),

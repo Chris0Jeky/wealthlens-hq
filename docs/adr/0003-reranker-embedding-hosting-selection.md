@@ -111,7 +111,7 @@ Convention notes: mypy 2.1.0 is current but the monorepo caps `<2` — the
 analyst matches the repo (`mypy>=1.10,<2`). Langfuse SDK is now v4
 (OTel-based since v3); self-hosted platform requirements above.
 
-## Decision record (Chris fills in)
+## Decision record (D1/D2/D4 recorded under delegation; D3 for Chris)
 
 - [x] D1 reranker: **Cohere Rerank 4 Fast** (per recommendation; adopted by
       delegation 2026-06-11; bge-reranker-v2-m3 documented as exit ramp)

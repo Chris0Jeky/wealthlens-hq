@@ -29,7 +29,7 @@ depends_on = None
 def upgrade() -> None:
     op.create_table(
         "chunks",
-        sa.Column("chunk_id", sa.BigInteger(), sa.Identity(), primary_key=True),
+        sa.Column("chunk_id", sa.BigInteger(), sa.Identity(always=True), primary_key=True),
         # registries/sources.yml id — the citation root
         sa.Column("source_id", sa.Text(), nullable=False),
         sa.Column("document_id", sa.Text(), nullable=False),

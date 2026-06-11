@@ -2,9 +2,10 @@
 
 Sits behind the RERANK_ENABLED feature flag, default OFF: with the flag off,
 the fused RRF order passes through untouched (byte-identical behaviour, locked
-by a test in H1-16). Which reranker (Cohere Rerank API vs self-hosted BGE) is
-an ADR 0003 open decision — this module must keep the choice behind one
-function so the decision is a config/implementation swap, not a refactor.
+by a test in H1-16). Reranker: ADR 0003 D1 = Cohere Rerank 4 Fast, with
+self-hosted bge-reranker-v2-m3 as the documented exit ramp — this module keeps
+the choice behind one function so a swap is config/implementation, not a
+refactor.
 
 If the reranker is API-based, its calls are metered through the budget
 middleware like every other model call (ADR 0002).
@@ -23,4 +24,4 @@ def rerank(query: str, candidates: list[ChunkHit], *, top_k: int = 8) -> list[Ch
     Callers must check Settings.rerank_enabled BEFORE calling — flag-off
     means this function is never invoked.
     """
-    raise NotImplementedError("H1-16: reranker pending ADR 0003 decision")
+    raise NotImplementedError("H1-16: reranker not yet implemented (ADR 0003 D1: Cohere Rerank 4 Fast)")

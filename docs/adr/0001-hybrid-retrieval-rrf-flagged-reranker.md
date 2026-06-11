@@ -31,7 +31,8 @@ in its declared stack and no existing search infrastructure.
 3. **Reranker behind a feature flag** (`RERANK_ENABLED`, default **OFF** per the
    repo's config-defaults rule). The fused top-N (default 20) is optionally
    reranked to top-k before answer composition. The reranker choice (Cohere
-   Rerank API vs self-hosted BGE) is **ADR 0003** (proposed, Chris decides).
+   Rerank API vs self-hosted BGE) was settled by **ADR 0003** (decided
+   2026-06-11: Cohere Rerank 4 Fast — see its decision record).
 4. **Provenance is captured at ingestion time.** Each chunk row carries
    `source_id` (FK to the registry id in `registries/sources.yml`),
    `document_id`, `section`, `page`, and `span`. Citations resolve from these
@@ -52,7 +53,7 @@ in its declared stack and no existing search infrastructure.
 - The flag means the system must be *useful without the reranker*; the reranker
   is an upgrade, not a dependency. M2 ships flag-off; M3 turns it on.
 - Abstention (the confidence gate, see the locked plan) reads the *fused*
-  evidence strength; the exact signal is part of ADR 0003's open decision.
+  evidence strength; the signal is fixed by ADR 0003 D4 (fused-RRF threshold + min-hits).
 - Alembic adds one new dev dependency and a `migrations/` directory to the
   analyst subtree only; no other part of the monorepo gains a database.
 

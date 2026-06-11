@@ -58,8 +58,8 @@ class LLMClient(Protocol):
 class AnthropicClient:
     """Concrete provider implementation: Anthropic for generation.
 
-    The embedding provider is an ADR 0003 open decision and may be a different
-    vendor — if so, it gets its own class here and the composition stays
+    Embeddings (ADR 0003 D2) come from OpenAI (text-embedding-3-small), a
+    different vendor — it gets its own class here and the composition stays
     behind get_client(). Model ids come from configuration (ANALYST_MODEL /
     EMBEDDING_MODEL), never hard-coded.
     """
@@ -74,7 +74,7 @@ class AnthropicClient:
 
     def embed(self, texts: list[str]) -> EmbeddingResult:
         """Implemented in H1-11 once ADR 0003 fixes the embedding provider."""
-        raise NotImplementedError("H1-11: embedding provider pending ADR 0003 decision")
+        raise NotImplementedError("H1-11: embeddings not yet implemented (ADR 0003 D2: text-embedding-3-small)")
 
 
 def get_client() -> LLMClient:
