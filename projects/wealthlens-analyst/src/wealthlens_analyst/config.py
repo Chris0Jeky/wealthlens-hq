@@ -39,6 +39,22 @@ class Settings:
     app_env: str
 
 
+def _parse_budget_cap(raw: str | None) -> float | None:
+    """Parse the spend cap; a malformed value fails LOUDLY at startup.
+
+    The cap is the one variable whose whole job is safety. Silently treating a
+    typo as "no cap" would block all spend with no explanation (confusing) —
+    and silently treating it as "unlimited" would be dangerous. So: clear
+    startup error, no guessing.
+    """
+    if not raw:
+        return None  # not configured -> fail-closed (middleware blocks spend)
+    try:
+        return float(raw)
+    except ValueError as exc:
+        raise ValueError(f"BUDGET_MONTHLY_CAP_GBP must be numeric, got {raw!r}") from exc
+
+
 def load_settings() -> Settings:
     """Build Settings from the process environment."""
     cap_raw = os.environ.get("BUDGET_MONTHLY_CAP_GBP")
@@ -52,6 +68,6 @@ def load_settings() -> Settings:
         langfuse_host=os.environ.get("LANGFUSE_HOST", ""),
         langfuse_public_key=os.environ.get("LANGFUSE_PUBLIC_KEY", ""),
         langfuse_secret_key=os.environ.get("LANGFUSE_SECRET_KEY", ""),
-        budget_monthly_cap_gbp=float(cap_raw) if cap_raw else None,
+        budget_monthly_cap_gbp=_parse_budget_cap(cap_raw),
         app_env=os.environ.get("APP_ENV", "development"),
     )

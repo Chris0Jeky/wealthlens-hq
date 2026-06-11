@@ -37,8 +37,8 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install analyst package (dev extras + jsonschema)
-        run: python -m pip install -e "projects/wealthlens-analyst[dev]" jsonschema
+      - name: Install analyst package (dev extras include jsonschema)
+        run: python -m pip install -e "projects/wealthlens-analyst[dev]"
 
       - name: Lint + type-check (ruff, strict mypy)
         working-directory: projects/wealthlens-analyst

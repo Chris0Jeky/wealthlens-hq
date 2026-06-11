@@ -57,6 +57,10 @@
     {
       "if": { "properties": { "category": { "const": "out_of_corpus" } } },
       "then": { "properties": { "expected_behaviour": { "const": "refuse" } } }
+    },
+    {
+      "if": { "properties": { "category": { "const": "in_corpus" } } },
+      "then": { "properties": { "expected_behaviour": { "const": "answer" } } }
     }
   ]
 }

@@ -122,8 +122,9 @@ task, confirm approach in two lines, implement.
 make lint              # ruff check + mypy (backend)
 make format            # ruff format (auto-fix)
 make test              # pytest -q (backend)
-make dev-backend       # uvicorn on 127.0.0.1:8000
+make dev-backend       # dashboard uvicorn on 127.0.0.1:8000
 make dev-frontend      # vite dev server on :3000
+make dev               # ANALYST uvicorn on 127.0.0.1:8100 (Hero #1)
 make ci-quick          # lint + tests (~60s, no external deps)
 make ci-full           # lint + tests + frontend build + type check
 ```

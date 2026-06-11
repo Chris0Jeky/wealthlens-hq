@@ -11,16 +11,18 @@
 
 | | Cohere Rerank API | Self-hosted BGE (`BAAI/bge-reranker-v2-m3`) |
 |---|---|---|
-| Model | `rerank-v4.0-fast` / `rerank-v4.0-pro` | 0.6B cross-encoder, Apache 2.0 |
+| Model | `rerank-v4.0-fast` / `rerank-v4.0-pro` — [docs.cohere.com/docs/rerank](https://docs.cohere.com/docs/rerank) | 0.6B cross-encoder, Apache 2.0 — [model card](https://huggingface.co/BAAI/bge-reranker-v2-m3) |
 | Cost / 1k queries | **$2.00** (Fast) / $2.50 (Pro) — [cohere.com/pricing](https://cohere.com/pricing); 1 search unit = 1 query + up to 100 docs | $0 marginal (compute only) |
 | Added p95 latency | Not published (Fast is "lowest latency", qualitative only) — *unverified* | CPU at low QPS: order of seconds for 20-50 candidates (*estimate, no published benchmark*) |
-| Ops burden | None (API) | One more service: ~1.2GB+ weights, 2-3GB RAM fp32, serving process, version pinning |
+| Ops burden | None (API) | One more service: ~1.2GB weights at fp16 (~2.4GB fp32; *estimates from 0.6B params, not benchmarked*), serving process, version pinning |
 | Dev / free tier | Trial keys: free, 10 req/min, 1,000 calls/mo, non-production only — [docs.cohere.com/docs/rate-limits](https://docs.cohere.com/docs/rate-limits) | n/a |
 
 **Recommendation:** Cohere Rerank 4 Fast. At this volume it's ~$2/month and
 zero-ops; the trial key covers all development. Keep bge-reranker-v2-m3 as
-the documented exit ramp behind the same `rerank()` seam (Cohere delisted
-rerank-v3.5's price this year — pricing churn is itself a risk signal).
+the documented exit ramp behind the same `rerank()` seam (rerank-v3.5's price
+no longer appears on [cohere.com/pricing](https://cohere.com/pricing) as of
+2026-06-11, though third-party listings still show $2/1k — pricing churn is
+itself a risk signal).
 
 ## D2 — Embedding model: one hosted + one open-weights
 
@@ -30,10 +32,14 @@ rerank-v3.5's price this year — pricing churn is itself a risk signal).
 | Dims (pgvector) | 1536 → ~6.0KB/vector, ~62MB per 10k chunks | 1024 (MIT licence, 8192-token window) → ~4.0KB/vector, ~41MB per 10k chunks |
 | Index | Standard HNSW fine (≤2,000-dim limit verified current — [pgvector README](https://github.com/pgvector/pgvector)) | Standard HNSW fine |
 
-Also priced: `text-embedding-3-large` $0.13/1M, 3072 dims — **exceeds the
-2,000-dim HNSW limit** at full width (needs halfvec or dimension-shortening);
-not worth it at this scale. Cohere Embed 4: $0.12/1M. Voyage `voyage-4-lite`
-$0.02/1M + 200M free tokens (third vendor for negligible savings).
+Also priced: `text-embedding-3-large` $0.13/1M, 3072 dims
+([model page](https://developers.openai.com/api/docs/models/text-embedding-3-large))
+— **exceeds the 2,000-dim HNSW limit** at full width (needs halfvec or
+dimension-shortening); not worth it at this scale. Cohere Embed 4: $0.12/1M
+([cohere.com/pricing](https://cohere.com/pricing)). Voyage `voyage-4-lite`
+$0.02/1M + 200M free tokens
+([voyage pricing](https://docs.voyageai.com/docs/pricing)) — a third vendor
+for negligible savings.
 
 **Recommendation:** `text-embedding-3-small` to ship (embedding the whole
 corpus costs well under $0.10; one vendor key already needed if Cohere rerank
@@ -49,13 +55,15 @@ matters more. Caveat: hosted embeddings put a second provider behind the
 | **Hetzner CAX11** (Arm 2vCPU/4GB) + Docker Compose, DB on-box | **~£4.2** (€4.49 + €0.50 IPv4 — [hetzner price adjustment, Apr 2026](https://docs.hetzner.com/general/infrastructure-and-availability/price-adjustment/)) | on-box (`pgvector/pgvector` image) | yes | 4 | You own patching, TLS (Caddy), backups (nightly `pg_dump` cron) |
 | Fly.io machine + Neon Free | ~£2-4 (Fly ~$2-4 — [fly.io pricing](https://fly.io/docs/about/pricing/); Neon $0 — [neon.com/pricing](https://neon.com/pricing)) | Neon managed | yes (all plans) | 2 | Neon Free autosuspends after 5 min idle (auto-wakes; brief cold start). Fly has **no free tier** for new orgs; Fly *Managed* Postgres starts $38/mo — out of budget |
 | Railway Hobby | ~£4-11 ($5 incl. credit + metered — [railway pricing](https://docs.railway.com/reference/pricing/plans)) | pgvector template (standard image lacks it) | yes via template | 2 | Always-on app+DB likely exceeds the $5 credit; cost is usage-metered |
-| Supabase Free (DB only) | £0 | Supabase managed | yes | 1 | **Free projects pause after 1 week idle, manual restore** — a public demo link that silently dies. Pro ($25/mo) eats the budget |
+| Supabase Free (DB only) | £0 — [supabase.com/pricing](https://supabase.com/pricing) | Supabase managed | yes — [pgvector docs](https://supabase.com/docs/guides/database/extensions/pgvector) | 1 | **Free projects pause after 1 week idle, manual restore** — a public demo link that silently dies. Pro ($25/mo) eats the budget |
 
 **Langfuse sizing note (affects D3):** self-hosted Langfuse v3+ requires
 Postgres + ClickHouse + Redis/Valkey + S3-compatible storage + web/worker
 containers ([langfuse.com/self-hosting](https://langfuse.com/self-hosting)) —
-a real memory footprint. On Hetzner that argues for the €7-8 4GB→8GB step up
-(CX32/CAX21) or running Langfuse on a second small box; worth deciding
+a real memory footprint. On Hetzner that argues for stepping up to an 8GB
+machine (CAX21-class, roughly €2-4/mo more — *approximate; confirm against
+[Hetzner's current price list](https://docs.hetzner.com/general/infrastructure-and-availability/price-adjustment/)
+when provisioning*) or running Langfuse on a second small box; worth deciding
 together with D3. (The locked decision says self-hosted; this is a sizing
 consequence, not a re-litigation.)
 

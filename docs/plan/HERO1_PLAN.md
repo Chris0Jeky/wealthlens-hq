@@ -20,7 +20,8 @@ other source before the live URL exists is forbidden.**
 
 ### M0 — Kickoff (week 1) — this session
 - [ ] Branch `chore/hero1-kickoff` carries: this plan, `tasks/hero1-backlog.md`
-      (25-40 half-day tasks, first 10 startable), ADRs 0001-0003, product
+      (25-40 half-day tasks; the first ten blocked on nothing outside the
+      backlog itself — H1-05..10 chain by design), ADRs 0001-0003, product
       scaffolding under `projects/wealthlens-analyst/` (stubs import cleanly),
       eval skeleton with 20 DRAFT golden questions, Makefile + CI extensions,
       `.env.example`.

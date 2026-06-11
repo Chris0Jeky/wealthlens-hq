@@ -64,3 +64,8 @@ def test_budget_config_fail_closed_default(monkeypatch: pytest.MonkeyPatch) -> N
 
     monkeypatch.setenv("BUDGET_MONTHLY_CAP_GBP", "10.00")
     assert load_settings().budget_monthly_cap_gbp == 10.0
+
+    # A malformed cap fails LOUDLY at startup — never silently unguarded.
+    monkeypatch.setenv("BUDGET_MONTHLY_CAP_GBP", "ten pounds")
+    with pytest.raises(ValueError, match="BUDGET_MONTHLY_CAP_GBP"):
+        load_settings()

@@ -22,8 +22,8 @@ personal where useful. Every statistic cited.
 **Slot:** week 8 (fortnight after #1).
 - Refusal as a product feature: the structured "cannot answer from this corpus"
   response, and why honest abstention is the whole credibility story.
-- Human-reviewed golden sets: 100 Q/A pairs, why the answers were written by a
-  human (me) and what the agent was forbidden from fabricating.
+- Human-reviewed golden sets: 50-100 Q/A pairs, why the answers were written by
+  a human (me) and what the agent was forbidden from fabricating.
 - Deterministic checks vs model-graded metrics: citation resolvability, schema
   validity, correct refusal on out-of-corpus questions — the cheap checks that
   catch the expensive failures.

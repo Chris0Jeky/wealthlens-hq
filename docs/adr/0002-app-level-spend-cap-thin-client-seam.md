@@ -22,7 +22,7 @@ future gateway can replace without touching call sites.
      returns **429** with a structured refusal body when the cap is exceeded.
      Over-budget refusal is a *visible, tested* behaviour (deterministic eval
      check), not an error path.
-   - The cap value comes from configuration (`BUDGET_MONTHLY_CAP`), defaulting
+   - The cap value comes from configuration (`BUDGET_MONTHLY_CAP_GBP`), defaulting
      to a conservative value; like all new features in this repo it ships
      **default-safe** (a missing/zero budget row blocks spend rather than
      allowing unlimited spend — fail-closed).
