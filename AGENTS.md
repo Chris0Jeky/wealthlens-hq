@@ -141,7 +141,9 @@ Repo-local Codex skills live under `.agents/skills/` and supplement this file. U
 - `make ci-quick` passes locally (when code exists).
 - Relevant linters and typechecks pass.
 - `.codex/memories/00_ACTIVE.md` is updated if the work changes current status.
-- If a meaningful decision was made, capture it in `.codex/memories/decisions/`.
+- If a meaningful decision was made, capture it in `.codex/memories/decisions/`
+  (workspace decisions) or `docs/adr/` (product ADRs that must travel with an
+  extractable product subtree, e.g. wealthlens-analyst).
 - If a data pipeline was added or changed, re-run it to verify the output and regenerate charts.
 - If a new data source was used, add it to `projects/wealthlens-dashboard/docs/data-licences.md`.
 - Commits are made incrementally as work progresses, not batched at session end.
@@ -183,7 +185,8 @@ Repo-local Codex skills live under `.agents/skills/` and supplement this file. U
 
 - `.codex/memories/00_ACTIVE.md` — current focus and status board
 - `.codex/memories/program/` — cross-cutting program context
-- `.codex/memories/decisions/` — captured design decisions (ADRs)
+- `.codex/memories/decisions/` — captured workspace design decisions
+- `docs/adr/` — product ADRs (kept out of `.codex/` so they survive the private-repo split and travel with product extraction)
 - `.codex/memories/session_notes/` — running notes for multi-session work
 - `.agents/skills/` — repo-scoped Codex workflows
 

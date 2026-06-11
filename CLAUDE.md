@@ -97,6 +97,17 @@ The main planned product is `projects/wealthlens-dashboard/`, with:
 - Mobile-responsive charts that meet WCAG AA minimum
 - Clear docstrings and comments because volunteers will read the code
 
+## Hero #1: WealthLens Analyst (active build)
+
+`projects/wealthlens-analyst/` — evidence-backed RAG analyst over official UK
+wealth statistics. **The plan is locked** (`docs/plan/HERO1_PLAN.md`); the
+ordered backlog is `tasks/hero1-backlog.md`; decisions are `docs/adr/0001-0003`.
+The subtree has its own `CLAUDE.md` with the locked decisions and a NEVER-DO
+list (no re-planning, no new corpus sources before the live URL, no fabricated
+golden answers, every model call through `llm/client.py`, hard spend cap).
+Session opener: read that CLAUDE.md + the backlog, pick the next unblocked
+task, confirm approach in two lines, implement.
+
 ## Architecture quick reference
 
 - **Dashboard backend:** Python 3.11+, FastAPI, Pydantic, SQLite (dev) / PostgreSQL (prod)
@@ -111,8 +122,9 @@ The main planned product is `projects/wealthlens-dashboard/`, with:
 make lint              # ruff check + mypy (backend)
 make format            # ruff format (auto-fix)
 make test              # pytest -q (backend)
-make dev-backend       # uvicorn on 127.0.0.1:8000
+make dev-backend       # dashboard uvicorn on 127.0.0.1:8000
 make dev-frontend      # vite dev server on :3000
+make dev               # ANALYST uvicorn on 127.0.0.1:8100 (Hero #1)
 make ci-quick          # lint + tests (~60s, no external deps)
 make ci-full           # lint + tests + frontend build + type check
 ```
@@ -143,6 +155,7 @@ Use these Claude skills when relevant:
 - `vision/north-stars.md` — success metrics and milestones
 - `identity/principles.md` — values-based decision guidance
 - `projects/wealthlens-dashboard/` — main product (backend, frontend, data, docs)
+- `projects/wealthlens-analyst/` — Hero #1 RAG analyst (locked plan: `docs/plan/HERO1_PLAN.md`; backlog: `tasks/hero1-backlog.md`)
 - `automation/data-pipelines/` — reproducible data fetching scripts
 - `.codex/memories/00_ACTIVE.md` — current focus and status board
 
