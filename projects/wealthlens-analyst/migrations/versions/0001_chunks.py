@@ -51,6 +51,7 @@ def upgrade() -> None:
             sa.Computed("to_tsvector('english', text)", persisted=True),
             nullable=False,
         ),
+        sa.CheckConstraint("token_count >= 0", name="chunks_token_count_nonnegative"),
     )
     op.create_index("chunks_ts_gin", "chunks", ["ts"], postgresql_using="gin")
     op.create_index("chunks_source", "chunks", ["source_id", "document_id"])

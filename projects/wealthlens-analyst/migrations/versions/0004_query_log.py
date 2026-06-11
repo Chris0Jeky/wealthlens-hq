@@ -38,7 +38,10 @@ def upgrade() -> None:
         sa.Column("gate_signal", sa.Double(), nullable=True),
         sa.Column("tokens_in", sa.Integer(), server_default=sa.text("0"), nullable=False),
         sa.Column("tokens_out", sa.Integer(), server_default=sa.text("0"), nullable=False),
-        sa.Column("cost_gbp", sa.Numeric(10, 6), server_default=sa.text("0"), nullable=False),
+        # scale 8: a single embedding call costs fractions of a micro-pound;
+        # at scale 6 those would round to zero and the summed spend (the hard
+        # cap's input) would systematically understate reality.
+        sa.Column("cost_gbp", sa.Numeric(12, 8), server_default=sa.text("0"), nullable=False),
         sa.Column("latency_ms", sa.Integer(), nullable=False),
         sa.Column("rerank_used", sa.Boolean(), server_default=sa.text("false"), nullable=False),
         sa.CheckConstraint(
