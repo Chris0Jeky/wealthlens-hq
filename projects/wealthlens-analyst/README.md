@@ -13,8 +13,8 @@ abstention, a committed eval harness, and a hard spend cap.
 
 - `src/wealthlens_analyst/` — the service (retrieval, answer, llm seam,
   budget, api, ingest). See `CLAUDE.md` for the subtree map and locked rules.
-- `migrations/` — Alembic; schema drafts live in `migrations/drafts/` until
-  task H1-05 promotes them.
+- `migrations/` — Alembic; hand-written revisions in `migrations/versions/`
+  (see `migrations/README.md` for usage).
 - `evals/` — golden set (human-reviewed; DRAFT questions await review),
   deterministic checks, RAGAS runner, committed reports.
 - `tests/` — pytest (mypy strict, monorepo ruff rules).

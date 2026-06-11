@@ -1,7 +1,7 @@
 """Lexical retrieval over Postgres full-text search.
 
 Queries the `chunks` table's tsvector column (GIN-indexed; see
-migrations/drafts/0001_chunks.py) and returns ranked chunk hits. Official
+migrations/versions/0001_chunks.py) and returns ranked chunk hits. Official
 statistics are full of exact terms ("decile", "nil-rate band", years, table
 numbers), which is why the lexical leg of the hybrid is load-bearing.
 

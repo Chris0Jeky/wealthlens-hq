@@ -1,6 +1,11 @@
 # ADR 0003 — Reranker, embedding model, hosting, and abstention mechanism (open-decisions memo)
 
-- Status: **Proposed** — Chris decides; the agent does not.
+- Status: **Partially accepted** — D1/D2/D4 adopted 2026-06-11 under Chris's
+  explicit blanket delegation ("make all the reasonable decisions that you can
+  make on your own"); each followed the memo's recommendation and Chris can
+  override any of them before the affected milestone ships. D3 (hosting)
+  remains **Proposed**: it requires Chris's hosting account and payment
+  details, so it stays his call to action.
 - Date: 2026-06-11. All prices/versions below were web-verified on this date
   against official pages (source URLs inline). Numbers marked *unverified*
   could not be confirmed on an official page and must not be relied on.
@@ -106,9 +111,15 @@ Convention notes: mypy 2.1.0 is current but the monorepo caps `<2` — the
 analyst matches the repo (`mypy>=1.10,<2`). Langfuse SDK is now v4
 (OTel-based since v3); self-hosted platform requirements above.
 
-## Decision record (Chris fills in)
+## Decision record (D1/D2/D4 recorded under delegation; D3 for Chris)
 
-- [ ] D1 reranker: ______
-- [ ] D2 embedding model: ______
-- [ ] D3 hosting (+ Langfuse placement): ______
-- [ ] D4 abstention mechanism: ______
+- [x] D1 reranker: **Cohere Rerank 4 Fast** (per recommendation; adopted by
+      delegation 2026-06-11; bge-reranker-v2-m3 documented as exit ramp)
+- [x] D2 embedding model: **OpenAI text-embedding-3-small, 1536 dims** (per
+      recommendation; adopted by delegation 2026-06-11; encoded in migration
+      0002_embeddings)
+- [ ] D3 hosting (+ Langfuse placement): ______ (Chris — needs your hosting
+      account; memo recommends Hetzner CAX11/CAX21 + Docker Compose)
+- [x] D4 abstention mechanism: **fused-RRF-score threshold + min-hits guard**
+      (per recommendation; adopted by delegation 2026-06-11; calibrated against
+      the reviewed golden set in H1-21)

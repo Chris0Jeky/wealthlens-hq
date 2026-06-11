@@ -12,18 +12,18 @@ Last updated: 2026-06-11
 
 - [ ] H1-01 (M0) Tag the corpus slice in `registries/sources.yml`: add `analyst_corpus: true` to `ons-was-wealth`, `hmrc-cgt-statistics`, `hmrc-tax-receipts`; add 3-5 new entries for the chosen IFS/RF reports (id, name, url, access_date, format: report, licence, update_pattern, pipeline: null, notes) — done when `sources.yml` validates as YAML and lists 6-8 slice sources. [deps: none]
 - [ ] H1-02 (M0) Chris reviews the 20 DRAFT golden questions in `evals/golden/golden_set.jsonl`, rewrites freely, writes `expected_answer` + `required_citations` for the in-corpus 15 (@Chris) — done when no `status: DRAFT` remains in the first 20. [deps: none]
-- [ ] H1-03 (M0) Chris rules on ADR 0003 (reranker, embedding model, hosting, abstention mechanism) (@Chris) — done when ADR 0003 status flips to Accepted with the four choices recorded. [deps: none]
+- [ ] H1-03 (M0) Chris rules on ADR 0003 — REMAINING: **D3 hosting only** (needs his account/payment); D1/D2/D4 adopted by delegation 2026-06-11 per the memo's recommendations (@Chris) — done when D3 is recorded and ADR 0003 flips to Accepted. [deps: none]
 
 ## M1 — corpus ingested
 
-- [ ] H1-04 (M1) Add a `postgres` service (pgvector image) to `docker-compose.yml` + `DATABASE_URL` plumbing in the analyst config — done when `docker compose up postgres` serves a DB with `CREATE EXTENSION vector` available. [deps: none]
-- [ ] H1-05 (M1) Wire Alembic: `alembic.ini` + `migrations/env.py` against the analyst SQLAlchemy metadata; promote the four draft migrations (chunks, embeddings, budgets, query_log) to real revisions — done when `alembic upgrade head` succeeds on an empty DB and `alembic downgrade base` reverses it. [deps: H1-04]
+- [x] H1-04 (M1) Add a `postgres` service (pgvector image) to `docker-compose.yml` + `DATABASE_URL` plumbing in the analyst config — done when `docker compose up postgres` serves a DB with `CREATE EXTENSION vector` available. [deps: none] [completed: 2026-06-11 — `analyst-db` service, host port 15432 (5432/5433 are Windows-excluded on the dev box)]
+- [x] H1-05 (M1) Wire Alembic: `alembic.ini` + `migrations/env.py` against the analyst SQLAlchemy metadata; promote the four draft migrations (chunks, embeddings, budgets, query_log) to real revisions — done when `alembic upgrade head` succeeds on an empty DB and `alembic downgrade base` reverses it. [deps: H1-04] [completed: 2026-06-11 — verified live: upgrade/downgrade/re-upgrade + FTS/vector/constraint smoke tests]
 - [ ] H1-06 (M1) Implement `ingest/fetch_documents.py`: download the 3-5 IFS/RF report PDFs from their registry URLs into `data/corpus/` (gitignored), verifying checksum + recording access date — done when all slice PDFs fetch reproducibly and a missing/changed URL fails loudly. [deps: H1-01]
 - [ ] H1-07 (M1) Implement tabular-source rendering in `ingest/slice_corpus.py`: turn the existing pipelines' processed WAS/HMRC outputs into citable text chunks (one chunk per table section/band with year + units) — done when chunks carry full provenance (source_id, document_id, section, page=null, span) and a unit test locks the format. [deps: H1-05]
 - [ ] H1-08 (M1) Implement PDF extraction + chunking for the report documents (page-aware, ~500-token chunks, heading-anchored sections) — done when every chunk row has non-null page + span and a sampled chunk visually matches the source PDF page. [deps: H1-05, H1-06]
 - [ ] H1-09 (M1) Ingestion integrity gate: reject any chunk with null provenance; `make ingest-slice` runs fetch→chunk→write end-to-end — done when a deliberately provenance-stripped fixture chunk fails ingestion in a test. [deps: H1-07, H1-08]
 - [ ] H1-10 (M1) Build the FTS path: `tsvector` column + GIN index migration + `retrieval/fts.py` query — done when a fixture query returns ranked chunks and the index is used (EXPLAIN). [deps: H1-09]
-- [ ] H1-11 (M1) Embed the corpus: `retrieval/dense.py` + batch embedding script through the `llm/client.py` seam (model per ADR 0003), writing pgvector rows + index — done when every chunk has an embedding and cosine query returns sane neighbours on 3 spot checks. [deps: H1-09, H1-03]
+- [ ] H1-11 (M1) Embed the corpus: `retrieval/dense.py` + batch embedding script through the `llm/client.py` seam (model per ADR 0003), writing pgvector rows + index — done when every chunk has an embedding and cosine query returns sane neighbours on 3 spot checks. [deps: H1-09]
 
 ## M2 — hybrid retrieval behind /ask
 
@@ -34,7 +34,7 @@ Last updated: 2026-06-11
 
 ## M3 — reranker + citations
 
-- [ ] H1-16 (M3) Implement `retrieval/rerank.py` per the ADR 0003 choice behind `RERANK_ENABLED` (default OFF) — done when flag-off is byte-identical to M2 behaviour and flag-on reorders a fixture case. [deps: H1-03, H1-13]
+- [ ] H1-16 (M3) Implement `retrieval/rerank.py` (ADR 0003 D1: Cohere Rerank 4 Fast) behind `RERANK_ENABLED` (default OFF) — done when flag-off is byte-identical to M2 behaviour and flag-on reorders a fixture case. [deps: H1-13]
 - [ ] H1-17 (M3) A/B recall: re-run H1-14 with rerank on; record both columns in the same report — done when the report shows flag-on vs flag-off side by side. [deps: H1-14, H1-16]
 - [ ] H1-18 (M3) Implement `answer/compose.py`: generation through the client seam, prompt forces claims to cite retrieved chunk ids — done when a live local query returns an answer whose citations are all in the retrieved set. [deps: H1-13]
 - [ ] H1-19 (M3) Implement `answer/citations.py`: resolve cited chunk_ids to {source, document, section/page} from the DB; strip/flag unresolvable citations — done when a fabricated chunk_id in a fixture answer is caught and the response carries resolved citations only. [deps: H1-18]
@@ -42,7 +42,7 @@ Last updated: 2026-06-11
 
 ## M4 — abstention
 
-- [ ] H1-21 (M4) Implement `answer/abstain.py`: the confidence gate per ADR 0003 (threshold or judge), returning the structured refusal — done when weak-evidence fixture queries refuse and strong ones don't, under unit test. [deps: H1-03, H1-13]
+- [ ] H1-21 (M4) Implement `answer/abstain.py`: the confidence gate (ADR 0003 D4: fused-RRF threshold + min-hits), returning the structured refusal — done when weak-evidence fixture queries refuse and strong ones don't, under unit test. [deps: H1-13]
 - [ ] H1-22 (M4) Wire the gate into /ask ahead of generation; refusal logged as decision=refused with zero generation cost — done when the 5 out-of-corpus golden questions all refuse against the live local corpus. [deps: H1-20, H1-21]
 - [ ] H1-23 (M4) Flesh out `evals/checks/deterministic.py`: citation presence + resolvability, schema validity, correct refusal set, latency/cost bound stubs — done when `make eval-deterministic` passes locally and in the ci-analyst job. [deps: H1-20, H1-22]
 

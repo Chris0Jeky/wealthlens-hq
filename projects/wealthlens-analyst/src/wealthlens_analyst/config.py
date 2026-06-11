@@ -28,6 +28,7 @@ class Settings:
     anthropic_api_key: str
     analyst_model: str
     embedding_model: str
+    openai_api_key: str  # embeddings provider (ADR 0003 D2)
     rerank_enabled: bool
     cohere_api_key: str
     langfuse_host: str
@@ -63,6 +64,7 @@ def load_settings() -> Settings:
         anthropic_api_key=os.environ.get("ANTHROPIC_API_KEY", ""),
         analyst_model=os.environ.get("ANALYST_MODEL", ""),
         embedding_model=os.environ.get("EMBEDDING_MODEL", ""),
+        openai_api_key=os.environ.get("OPENAI_API_KEY", ""),
         rerank_enabled=_env_bool("RERANK_ENABLED", default=False),
         cohere_api_key=os.environ.get("COHERE_API_KEY", ""),
         langfuse_host=os.environ.get("LANGFUSE_HOST", ""),

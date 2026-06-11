@@ -15,7 +15,9 @@ Positioning: "I make LLM systems cheap, reliable, and provably valuable in produ
 
 `docs/plan/HERO1_PLAN.md` (milestones M0-M6) and `tasks/hero1-backlog.md`
 (ordered half-day tasks) are locked. Do not re-plan, re-architect, or re-sequence.
-Anything genuinely open lives in ADR 0003 and is **Chris's decision, not yours**.
+Anything genuinely open lives in ADR 0003 and is **Chris's decision, not
+yours** (exception: on 2026-06-11 Chris explicitly delegated D1/D2/D4, now
+recorded in the ADR's decision record; D3 hosting remains his).
 
 ## Locked decisions (compressed — full text in docs/adr/)
 
@@ -60,7 +62,7 @@ src/wealthlens_analyst/
   budget/     models.py middleware.py                 # hard cap (ADR 0002)
   api/        app.py routes.py                        # /ask /healthz /metrics/data
   ingest/     slice_corpus.py fetch_documents.py
-migrations/   Alembic (drafts/ until H1-05 promotes them)
+migrations/   Alembic (hand-written revisions in versions/)
 evals/        golden/ checks/ run_ragas.py reports/
 tests/
 ```

@@ -101,9 +101,10 @@ other source before the live URL exists is forbidden.**
 No new test infrastructure beyond what the evals need. No speculative
 abstractions. One CI job. When polish competes with shipping, shipping wins.
 
-## Open decisions (ADR 0003 — Chris decides)
+## Open decisions (ADR 0003)
 
-Reranker (Cohere API vs self-hosted BGE) · embedding model (one hosted vs one
-open-weights) · hosting (Fly.io / Hetzner / Railway; on-box vs managed
-Postgres) · abstention mechanism (fused-score threshold vs reranker-score
-threshold vs small judge call).
+Decided 2026-06-11 (adopted under Chris's delegation; see the ADR's decision
+record): D1 reranker = Cohere Rerank 4 Fast · D2 embeddings =
+text-embedding-3-small (1536) · D4 abstention = fused-RRF threshold +
+min-hits. **Still open — D3 hosting (Chris: needs your account):** Fly.io /
+Hetzner / Railway; on-box vs managed Postgres; Langfuse placement.
