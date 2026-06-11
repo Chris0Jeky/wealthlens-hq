@@ -67,10 +67,16 @@ def check_golden_static() -> list[str]:
 
     reviewed = [r for r in records if r.get("status") == "REVIEWED"]
     for record in reviewed:
-        if record.get("expected_behaviour") == "answer" and not record.get("expected_answer"):
-            failures.append(f"{record['id']}: REVIEWED answer question has empty expected_answer")
-        if record.get("expected_behaviour") == "answer" and not record.get("required_citations"):
-            failures.append(f"{record['id']}: REVIEWED answer question has no required_citations")
+        if record.get("expected_behaviour") == "answer":
+            if not record.get("expected_answer"):
+                failures.append(f"{record['id']}: REVIEWED answer question has empty expected_answer")
+            if not record.get("required_citations"):
+                failures.append(f"{record['id']}: REVIEWED answer question has no required_citations")
+        else:  # refuse: a refusal probe must not smuggle in ground-truth text
+            if record.get("expected_answer"):
+                failures.append(f"{record['id']}: REVIEWED refuse question must have empty expected_answer")
+            if record.get("required_citations"):
+                failures.append(f"{record['id']}: REVIEWED refuse question must have no required_citations")
 
     drafts = len(records) - len(reviewed)
     print(
