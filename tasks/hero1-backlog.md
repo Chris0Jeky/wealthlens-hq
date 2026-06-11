@@ -1,12 +1,28 @@
 # Hero #1 backlog — WealthLens v2 analyst
 
-Last updated: 2026-06-11
+Last updated: 2026-06-11 (post-session-6: #403 + #404 merged; M0 done bar Chris's gates)
 
 > Seeded by the kickoff session. Ordered; each task ≤ half a day. Work top-down:
 > a task is startable when its `deps` are done. Plan: `docs/plan/HERO1_PLAN.md`.
 > Session opener: "Read projects/wealthlens-analyst/CLAUDE.md and this backlog,
 > pick up the next unblocked task, confirm approach in two lines, implement."
 > Format: `- [ ] H1-NN (M*) Task — done-when. [deps: …]`
+
+## ▶ NEXT SESSION (seeded 2026-06-11)
+
+1. **H1-01** — corpus-slice tagging. The report shortlist is researched and
+   decision-ready in `tasks/hero1-corpus-candidates.md` (verified URLs +
+   paste-ready `sources.yml` YAML). Proceed with its recommended set unless
+   Chris objects; record access dates fresh at fetch time.
+2. **H1-12** — pure RRF fusion (`retrieval/fuse_rrf.py`), no deps, fully
+   unit-testable offline. Good warm-up or parallel PR.
+3. **H1-06/07** — document fetch + tabular chunking (after H1-01).
+4. Waiting on Chris (see `tasks/ACTION-REQUIRED.md` items 6-7): H1-02 golden
+   questions review; ADR 0003 **D3 hosting**.
+
+Local env: `docker compose up -d analyst-db` (port **15432**); use
+`make PYTHON=python <target>` on this box. PR gate per repo convention:
+2 independent adversarial reviews + bot threads resolved + green CI, then merge.
 
 ## M0 — kickoff residue (startable immediately)
 

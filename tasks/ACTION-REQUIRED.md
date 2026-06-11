@@ -1,6 +1,6 @@
 # ⚑ ACTION REQUIRED — Chris's outstanding tasks
 
-Last updated: 2026-06-11
+Last updated: 2026-06-11 (added the two Hero #1 gates)
 
 > **This file is the single curated list of things that need _Chris_ (a human),
 > not the autonomous agent.** It exists so high-leverage actions never get lost in
@@ -73,7 +73,21 @@ Last updated: 2026-06-11
 
 ### 🛠 Decision needed (agent is blocked on your go-ahead)
 
-6. - [ ] **Merge the `make ci-quick` reliability fix (PR #350)** — **P2, authorized + done, pending merge**
+6. - [ ] **Hero #1: review the 20 DRAFT golden questions (H1-02)** — **P1, ~1 focused hour**
+   - **Why:** Every eval claim in the WealthLens Analyst inherits its credibility from this file. The agent is forbidden from writing the answers (no fabricated ground truth) — only you can. M2's recall measurement and everything after it waits on this.
+   - **How:**
+     1. Open `projects/wealthlens-analyst/evals/golden/golden_set.jsonl` (20 records: 15 in-corpus, 5 refusal probes; each has a reviewer note).
+     2. Rewrite any question freely; for the 15 in-corpus ones fill `expected_answer` + `required_citations` (source_id from `registries/sources.yml`); flip `status` to `REVIEWED`.
+     3. Leave the 5 refusal probes' answers EMPTY (the deterministic check enforces this).
+     4. Run `make PYTHON=python eval-golden-validate` — it must pass.
+   - **Done when:** no `status: DRAFT` remains in the first 20.
+
+7. - [ ] **Hero #1: rule on ADR 0003 D3 — hosting** — **P1, small decision (needs your account + card)**
+   - **Why:** The only still-open locked-plan decision (D1/D2/D4 were adopted under your delegation). M6's live URL needs a host; the memo in `docs/adr/0003-reranker-embedding-hosting-selection.md` compares Hetzner / Fly+Neon / Railway / Supabase with verified prices.
+   - **How:** Read the D3 table + Langfuse sizing note. Recommendation: **Hetzner CAX21** (8GB, ~£7/mo, everything on-box incl. Langfuse) or CAX11 (~£4.2/mo) with Langfuse placed separately. Decide, create the account, then tell the agent — provisioning (Docker Compose, Caddy, pg_dump cron) is agent-doable from there (H1-30).
+   - **Done when:** D3 is ticked in the ADR's decision record and ADR 0003 flips to Accepted.
+
+8. - [ ] **Merge the `make ci-quick` reliability fix (PR #350)** — **P2, authorized + done, pending merge**
    - **Status (2026-06-05):** you authorized this; **fixed in PR #350**. The Makefile no longer swallows failures (`|| echo …` removed), so `make ci-quick` now runs real ruff + mypy + pytest and fails loudly. The dashboard-backend failures it used to hide are already resolved — a real run now shows **201 passed**. PR #350 also installs dev deps in `backend-install`, adds job timeouts, and enables Dependabot auto-merge.
    - **Repo-setting actions for you (3, one-time)** — for Dependabot auto-merge to work end-to-end:
      1. **Settings → General → Allow auto-merge** (ON), else `gh pr merge --auto` errors.

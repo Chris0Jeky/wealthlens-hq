@@ -44,8 +44,10 @@ reasonable decisions that you can make on your own... I give you my trust")
   outreach/, .codex/memories/ etc. — repo is PUBLIC).
 
 ### ⏭️ NEXT (hero1 backlog, top of queue)
-1. **H1-01** tag corpus slice in `registries/sources.yml` — needs the 3-5 IFS/RF reports
-   NAMED (suggest: pick with Chris or web-verify canonical ones; licence + access date).
+1. **H1-01** tag corpus slice in `registries/sources.yml` — SEEDED: the report shortlist
+   is web-verified and decision-ready in `tasks/hero1-corpus-candidates.md` (5 recommended,
+   paste-ready YAML, licence notes incl. the RF CC-BY-NC-**ND** quote-with-citation
+   handling). Proceed with the recommended set unless Chris objects.
 2. **H1-02 (@Chris)** review the 20 DRAFT golden questions — his highest-leverage hour.
 3. **H1-12** pure RRF fusion (no deps) · then H1-06/07 (document fetch + tabular chunking).
 - Dashboard-loop leftovers unchanged from session 5: PR-5 (productivity caveat),
