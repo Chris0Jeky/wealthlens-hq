@@ -47,8 +47,9 @@ personal where useful. Every statistic cited.
 
 ## 10 named people (demo send list — placeholder, Chris to fill)
 
-> Rule: check `tasks/outreach/contacts.md` and `tasks/outreach/emails-sent.md`
-> before contacting anyone; log every send in `emails-sent.md`.
+> Rule: check `../hq-private/projects/wealthlens/outreach/contacts.md` and
+> `emails-sent.md` (private repo) before contacting anyone; log every send
+> in that `emails-sent.md`.
 
 1. _TBD — Tax Justice UK contact_
 2. _TBD — Patriotic Millionaires UK contact_

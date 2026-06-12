@@ -6,21 +6,34 @@ Compact session contract for Claude Code in `wealthlens-hq/`. Move detailed proc
 
 1. User prompt for the current turn.
 2. `AGENTS.md` for repo-wide operating rules.
-3. `.codex/memories/00_ACTIVE.md` for current focus areas and status.
-4. `.codex/memories/program/00_READ_THIS_FIRST.md` for program context.
+3. `../hq-private/projects/wealthlens/memories/00_ACTIVE.md` for current focus areas and status (private HQ repo — see below).
+4. `../hq-private/projects/wealthlens/memories/program/00_READ_THIS_FIRST.md` for program context.
 5. `autodoc/AGENT_INDEX.md` for code-grounded orientation (once code exists).
 6. Relevant skill under `.claude/skills/*/SKILL.md`.
-7. Strategy, vision, and identity docs for non-coding work.
+7. Strategy and vision docs for non-coding work.
 8. Research docs for data and analysis work.
 
 When sources conflict, use the higher source and report the conflict.
 
+## Private HQ repo (sensitive material)
+
+Personal and sensitive material (identity/CVs, job applications, outreach
+contacts and email logs, career strategy, agent session memories incl.
+ORCHESTRATION.md, journal, meetings, people, funding memos) lives in the
+**private** repo `Chris0Jeky/hq-private`, cloned as a sibling checkout at
+`../hq-private` (this machine: `C:\Users\jekyt\source\hq-private`). Moved
+2026-06-13; decision C recorded — public git history was NOT rewritten, so
+treat pre-2026-06-13 history as already seen. **Never copy hq-private content
+back into this public repo** (commits, PRs, issues, or docs). If
+`../hq-private` does not exist (e.g. a volunteer's machine), skip the
+private-path steps — they are Chris-only.
+
 ## First 5 minutes
 
-1. Read `.codex/memories/session_notes/ORCHESTRATION.md` — **master control document** for the active multi-session workflow (branch status, open PRs, review rounds, recovery instructions). If it exists, follow its recovery checklist before doing anything else.
+1. Read `../hq-private/projects/wealthlens/memories/session_notes/ORCHESTRATION.md` — **master control document** for the active multi-session workflow (branch status, open PRs, review rounds, recovery instructions). If it exists, follow its recovery checklist before doing anything else.
 2. Read `AGENTS.md`.
-3. Read `.codex/memories/00_ACTIVE.md`.
-4. Read `.codex/memories/program/00_READ_THIS_FIRST.md`.
+3. Read `../hq-private/projects/wealthlens/memories/00_ACTIVE.md`.
+4. Read `../hq-private/projects/wealthlens/memories/program/00_READ_THIS_FIRST.md`.
 5. Read `tasks/active-sprint.md`.
 6. Read `tasks/ACTION-REQUIRED.md` — Chris's outstanding human action items; you must surface these (see "Action-required protocol" below).
 7. Select one primary skill and, at most, one support skill.
@@ -62,7 +75,7 @@ Chris is a London-based software engineer and the founder of WealthLens UK, an o
 - Near-co-founder of a quant/options trading platform startup
 - Built Taskdeck: a 4,000-commit local-first developer tool (.NET 8, Vue 3, LLM integration)
 - Works at Middlesex University in Widening Participation outreach
-- See `identity/` for fuller context
+- Fuller personal context: `../hq-private/identity/` (private repo)
 
 ### Technical skills
 
@@ -142,7 +155,7 @@ Use these Claude skills when relevant:
 
 ## Important paths
 
-- `.codex/memories/session_notes/ORCHESTRATION.md` — **master control for multi-session workflow** (read first!)
+- `../hq-private/projects/wealthlens/memories/session_notes/ORCHESTRATION.md` — **master control for multi-session workflow** (read first!; private repo)
 - `tasks/ACTION-REQUIRED.md` — **Chris's outstanding human action items** (surface these every summary; see "Action-required protocol")
 - `tasks/active-sprint.md` — current priorities
 - `tasks/deadlines.md` — all time-sensitive items in one date table
@@ -153,11 +166,11 @@ Use these Claude skills when relevant:
 - `research/data-sources/data-source-registry.md` — data source catalogue
 - `strategy/branding-playbook.md` — tone, platform, and public voice guidance
 - `vision/north-stars.md` — success metrics and milestones
-- `identity/principles.md` — values-based decision guidance
+- `../hq-private/identity/principles.md` — values-based decision guidance (private repo)
 - `projects/wealthlens-dashboard/` — main product (backend, frontend, data, docs)
 - `projects/wealthlens-analyst/` — Hero #1 RAG analyst (locked plan: `docs/plan/HERO1_PLAN.md`; backlog: `tasks/hero1-backlog.md`)
 - `automation/data-pipelines/` — reproducible data fetching scripts
-- `.codex/memories/00_ACTIVE.md` — current focus and status board
+- `../hq-private/projects/wealthlens/memories/00_ACTIVE.md` — current focus and status board (private repo)
 
 ## Domain-specific guidance
 
@@ -177,8 +190,8 @@ Action items extracted from research should go into `tasks/inbox.md`. Key insigh
 
 ### Outreach rules
 
-- Check `tasks/outreach/contacts.md` before contacting anyone
-- Check `tasks/outreach/emails-sent.md` for prior contact history
+- Check `../hq-private/projects/wealthlens/outreach/contacts.md` before contacting anyone (private repo)
+- Check `../hq-private/projects/wealthlens/outreach/emails-sent.md` for prior contact history
 - Tone should be professional, specific, and value-offering
 - Include a link to something already built whenever possible
 

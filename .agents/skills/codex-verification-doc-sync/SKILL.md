@@ -16,9 +16,9 @@ description: Final verification and status sync before handoff. Use before endin
 1. Re-read the requested outcome.
 2. Verify the changed seam directly (run tests, check output, validate format).
 3. State what was verified and what was not.
-4. Update `.codex/memories/00_ACTIVE.md` if focus area status changed.
+4. Update `../hq-private/projects/wealthlens/memories/00_ACTIVE.md` (private sibling repo) if focus area status changed.
 5. Update `tasks/active-sprint.md` or `tasks/done.md` if tasks completed.
-6. Capture decisions in `.codex/memories/decisions/` if meaningful tradeoffs were made.
+6. Capture decisions in `../hq-private/projects/wealthlens/memories/decisions/` if meaningful tradeoffs were made.
 7. Produce handoff summary using the format below.
 
 ## Handoff format

@@ -10,11 +10,11 @@ Use this when you are implementing or editing inside this repo.
 
 ## Workflow
 
-1. Check the current focus in `.codex/memories/00_ACTIVE.md`.
+1. Check the current focus in `../hq-private/projects/wealthlens/memories/00_ACTIVE.md` (private sibling repo; skip if absent).
 2. Identify the smallest seam that advances the request.
 3. Keep the diff within one coherent seam — do not mix code changes with strategy doc changes.
 4. Run the narrowest meaningful verification.
-5. If the change affects status, queue the required `.codex` sync work before closing.
+5. If the change affects status, queue the required status-board sync (private memories repo) before closing.
 
 ## Preferred checks by domain
 

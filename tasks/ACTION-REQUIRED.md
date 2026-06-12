@@ -1,6 +1,6 @@
 # ⚑ ACTION REQUIRED — Chris's outstanding tasks
 
-Last updated: 2026-06-13 (private-repo split phase 1 done; item 1 now awaits the history decision)
+Last updated: 2026-06-13 (private-repo split EXECUTED under decision C; item 1 awaits Chris's confirm)
 
 > **This file is the single curated list of things that need _Chris_ (a human),
 > not the autonomous agent.** It exists so high-leverage actions never get lost in
@@ -34,17 +34,13 @@ Last updated: 2026-06-13 (private-repo split phase 1 done; item 1 now awaits the
 
 ### ⏰ Time-sensitive (act this week)
 
-1. - [ ] **Private-repo split: PHASE 1 DONE — now decide the history strategy** — **P1**
-   - **Progress (2026-06-13, agent):** private repo **`Chris0Jeky/hq-private`** created (verified PRIVATE) and all sensitive content **copied** there (44 files: `identity/`, `tasks/applications/`, `tasks/outreach/`, `strategy/career-strategy.md`, `.codex/memories/`, `journal/`, `meetings/`, `people/`, BGV memo, chat dump, TODAY.md). Local clone: `C:\Users\jekyt\source\hq-private`. Nothing removed from this public repo yet — removal only helps once the history question is settled, and the public copies remain the live working set until phase 2.
-   - **Your decision (the only blocker):** removing files from the tip does NOT scrub public git history. Pick one — full decision matrix in `hq-private/MIGRATION.md`:
-     - **A (recommended): history purge** — `git filter-repo` + force-push + GitHub Support cache-clear. Strongest privacy (outreach files hold third-party personal data); cost: all commit SHAs change, old clones diverge.
-     - **B: nuke & re-publish** — loses stars/issues/history AND breaks the live GitHub Pages URL; not recommended while the site lives at `chris0jeky.github.io/wealthlens-hq/`.
-     - **C: accept exposure** — remove from tip only; CVs/contacts stay retrievable from history.
-   - **Then (agent-doable on your go):** delete the dirs from the public tip, update every reference (CLAUDE.md / AGENTS.md / SessionStart hook / docs), run the purge if A, verify per the `MIGRATION.md` checklist.
-   - **Done when:** sensitive dirs are gone from the public tip and the history decision is recorded + executed.
+1. - [ ] **Private-repo split: EXECUTED (decision C) — say "done" to close** — **P1**
+   - **Decision (Chris, 2026-06-13):** option **C** — remove from the public tip, accept history exposure (no rewrite). Recorded in `hq-private/MIGRATION.md`.
+   - **Executed (agent, 2026-06-13):** all sensitive material lives in **`Chris0Jeky/hq-private`** (clone: `C:\Users\jekyt\source\hq-private`) and was removed from this public repo's tip; every doc/hook/skill reference repointed to `../hq-private/...`; `.gitignore` guards added so the paths can't be re-committed. Note: pre-2026-06-13 history still contains the files (that is what C accepts) — treat CVs/contacts as already-seen.
+   - **Done when:** you confirm, and this item moves to Done.
 
 2. - [ ] **BGV: prep for Spring 2027** (Autumn 2026 SKIPPED — decided 2026-06-05) — **P2 (no longer this-week-urgent)**
-   - **Decision (2026-06-05):** skip the BGV Autumn 2026 round (deadline was 21 June) and target **Spring 2027** (~early-Jan 2027 deadline), to clear the two blockers first rather than rush a weak 16-day application against ~3-4% odds. Full rationale: `tasks/bgv-go-no-go-2026.md`.
+   - **Decision (2026-06-05):** skip the BGV Autumn 2026 round (deadline was 21 June) and target **Spring 2027** (~early-Jan 2027 deadline), to clear the two blockers first rather than rush a weak 16-day application against ~3-4% odds. Full rationale: `../hq-private/projects/wealthlens/funding/bgv-go-no-go-2026.md` (private repo).
    - **How (over summer/autumn 2026):** decide the legal structure (UK for-profit Ltd vs keep the CIC/charity option — BGV only funds for-profit-companies-limited-by-shares, so this forecloses one path either way); line up at least one co-founder; draft a one-page impact + revenue thesis. Then apply when Spring 2027 opens.
    - **Done when:** Spring 2027 application submitted, OR re-decided.
 
@@ -61,9 +57,9 @@ Last updated: 2026-06-13 (private-repo split phase 1 done; item 1 now awaits the
    - **Why:** Partnerships are north-star #3 and these were all gated on "v0.1 live", which is now true.
    - **Targets:** Tax Justice UK (`info@taxjustice.uk`), Patriotic Millionaires UK (website contact form), The Equality Trust (`info@equalitytrust.org.uk`), Gary Stevenson (DM `@garyseconomics` on X).
    - **How:**
-     1. **Check `tasks/outreach/contacts.md` and `tasks/outreach/emails-sent.md` first** — never double-contact (AGENTS.md outreach rule).
+     1. **Check `../hq-private/projects/wealthlens/outreach/contacts.md` and `emails-sent.md` first** (private repo) — never double-contact (AGENTS.md outreach rule).
      2. Per email: professional, specific, value-offering (not asking favours); include the **live link** and one concrete chart relevant to them; one clear ask.
-     3. Log each in `tasks/outreach/emails-sent.md` with the date.
+     3. Log each in `../hq-private/projects/wealthlens/outreach/emails-sent.md` with the date.
    - **Done when:** all four sent and logged. (I can draft any/all of these for you on request.)
 
 5. - [ ] **Register the `wealthlens.uk` domain** — **P2 (foundational)**
@@ -102,4 +98,4 @@ Last updated: 2026-06-13 (private-repo split phase 1 done; item 1 now awaits the
 
 _(Cleared items move here with `[completed: YYYY-MM-DD]` once Chris confirms.)_
 
-- [x] **Prepare for mySociety interview (if shortlisted)** — **not shortlisted: application rejected** (Chris confirmed 2026-06-11). Recorded per the item's done-when. Interview-prep habits (daily no-AI Python practice, Exercism) remain useful for future applications — see `tasks/applications/interview-prep-general.md`. [completed: 2026-06-11]
+- [x] **Prepare for mySociety interview (if shortlisted)** — **not shortlisted: application rejected** (Chris confirmed 2026-06-11). Recorded per the item's done-when. Interview-prep habits (daily no-AI Python practice, Exercism) remain useful for future applications — see `../hq-private/career/applications/interview-prep-general.md` (private repo). [completed: 2026-06-11]

@@ -14,7 +14,7 @@ description: Implement one assigned issue or task in an isolated git worktree. U
 ## Steps
 
 1. Read the issue or task description fully.
-2. Read `.codex/memories/00_ACTIVE.md` for current context.
+2. Read `../hq-private/projects/wealthlens/memories/00_ACTIVE.md` (private sibling repo; skip if absent) for current context.
 3. Identify the smallest diff that resolves the issue.
 4. Create a branch named for the task: `<area>/<short-description>`.
 5. Implement the change — stay within the intended seam.
@@ -36,4 +36,4 @@ description: Implement one assigned issue or task in an isolated git worktree. U
 - Do not mix code changes with strategy/outreach changes.
 - Data must always cite its source — no fabricated statistics.
 - Volunteers will read this code — write clear docstrings.
-- Keep running notes in `.codex/memories/session_notes/` for multi-session work.
+- Keep running notes in `../hq-private/projects/wealthlens/memories/session_notes/` (private sibling repo) for multi-session work.

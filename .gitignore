@@ -77,3 +77,15 @@ Thumbs.db
 # IDE
 .idea/
 .vscode/
+
+# Private material — moved to the hq-private repo (2026-06-13).
+# Guard against accidental re-commit; the live copies are in ../hq-private.
+/identity/
+/journal/
+/meetings/
+/people/
+/tasks/applications/
+/tasks/outreach/
+/.codex/
+/ChatWithClaude.txt
+/TODAY.md

@@ -85,7 +85,8 @@ abstractions. One CI job (`ci-analyst.yml`). Shipping beats polish.
 - Add test infrastructure beyond what the evals need.
 - Call a provider SDK outside `llm/client.py`.
 - Commit secrets (keys go in `.env`, documented in `.env.example` only).
-- Modify personal-material directories (`identity/`, `journal/`, `meetings/`,
-  `people/`, `tasks/applications/`, `tasks/outreach/`, `strategy/`, `vision/`,
-  `legal/`, `.codex/memories/`) — slated for the private-repo split.
+- Modify `strategy/`, `vision/`, or `legal/` docs, or reintroduce the
+  personal-material directories that moved to the private `hq-private` repo
+  on 2026-06-13 (`identity/`, `journal/`, `meetings/`, `people/`,
+  `tasks/applications/`, `tasks/outreach/`, `.codex/memories/`).
 - Skip the spend-cap path for "internal" calls — every model call is metered.

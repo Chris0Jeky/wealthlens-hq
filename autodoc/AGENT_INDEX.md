@@ -9,7 +9,6 @@ These paths are large, generated, or low-signal for most tasks. Skip unless the 
 - `research/raw/Claude_Resources/` — raw LLM outputs, large
 - `research/raw/Codex_Resources/` — raw LLM outputs, large
 - `research/raw/Combined/` — merged research, large
-- `identity/cv.pdf` — binary file
 - `.idea/` — IDE settings
 - `node_modules/`, `.venv/` — dependencies (when they exist)
 
@@ -32,14 +31,14 @@ These paths are large, generated, or low-signal for most tasks. Skip unless the 
 | Strategy | `strategy/*.md` | 8 playbooks, fully written |
 | Vision | `vision/*.md` | 5 docs, fully written |
 | Research | `research/synthesised/key-insights.md` | Distilled from 10+ raw inputs |
-| Outreach | `tasks/outreach/` | Contacts, emails sent, follow-ups |
+| Outreach | `../hq-private/projects/wealthlens/outreach/` | Contacts, emails sent, follow-ups (private sibling repo) |
 | Data sources | `research/data-sources/data-source-registry.md` | Template with TODOs |
 
 ## Current agent-readiness
 
 - Claude Code harness: fully configured (settings, hooks, skills, protocols)
 - Codex skills: basic set (onramp, worker, verification, question batch)
-- Control plane: `.codex/memories/00_ACTIVE.md` as status board
+- Control plane: `../hq-private/projects/wealthlens/memories/00_ACTIVE.md` as status board (private sibling repo)
 - No production code — all product directories are stubs
 - Strategy and research documentation is comprehensive and coherent
 

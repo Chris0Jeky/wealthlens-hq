@@ -18,10 +18,10 @@ Use this after meaningful work or before ending a session.
 
 Update these only when the work actually changes their truth:
 
-- `.codex/memories/00_ACTIVE.md` — if focus area status changed
+- `../hq-private/projects/wealthlens/memories/00_ACTIVE.md` (private sibling repo) — if focus area status changed
 - `tasks/active-sprint.md` — if a sprint task was completed or added
 - `tasks/done.md` — if a task should be marked complete
-- `.codex/memories/decisions/` — if a meaningful decision was made
+- `../hq-private/projects/wealthlens/memories/decisions/` — if a meaningful decision was made
 
 ## Handoff format
 

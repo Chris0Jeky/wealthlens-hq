@@ -15,7 +15,7 @@ Repo-local Codex skills for WealthLens HQ. These supplement `AGENTS.md` and are 
 
 ```text
 1. Read AGENTS.md
-2. Read .codex/memories/00_ACTIVE.md
+2. Read ../hq-private/projects/wealthlens/memories/00_ACTIVE.md (private sibling repo; skip if absent)
 3. Check if a skill matches the task type
 4. If yes, follow the skill's workflow
 5. If no, follow AGENTS.md general guidance

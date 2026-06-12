@@ -3,13 +3,19 @@
 Repository-level operating instructions for coding agents working in `wealthlens-hq/`.
 
 Use [CLAUDE.md](./CLAUDE.md) as the Claude Code session contract.
-Use [.codex/README.md](./.codex/README.md) for Codex planning and phase gate orientation.
 Use [autodoc/README.md](./autodoc/README.md) as the concise code-grounded synthesis layer (once code exists).
+
+> **Private HQ repo:** personal/sensitive material (identity, applications,
+> outreach contacts + logs, agent session memories incl. ORCHESTRATION.md,
+> journal/meetings/people, funding memos) lives in the **private** repo
+> `Chris0Jeky/hq-private`, cloned as a sibling at `../hq-private` (moved
+> 2026-06-13). Never copy its content into this public repo. If `../hq-private`
+> is absent (volunteer machine), skip private-path steps — they are Chris-only.
 
 ## Scope
 
 - Work inside this repository only.
-- Treat `.codex/memories/00_ACTIVE.md` as the workspace status board. Always check it — do not assume what is active.
+- Treat `../hq-private/projects/wealthlens/memories/00_ACTIVE.md` (private sibling repo) as the workspace status board. Always check it — do not assume what is active.
 - Prefer small, reviewable diffs. Avoid rewrite-style changes.
 - When implementing a backlog item, do the work on a branch scoped to that item.
 - Preserve existing repo conventions unless there is a documented reason to change them.
@@ -17,13 +23,13 @@ Use [autodoc/README.md](./autodoc/README.md) as the concise code-grounded synthe
 
 ## Active orchestration
 
-An end-to-end autonomous workflow may be in progress. **Always check** [`.codex/memories/session_notes/ORCHESTRATION.md`](.codex/memories/session_notes/ORCHESTRATION.md) for branch status, open PRs, review rounds, and recovery instructions before starting new work. That file is the master control document for multi-session continuity.
+An end-to-end autonomous workflow may be in progress. **Always check** `../hq-private/projects/wealthlens/memories/session_notes/ORCHESTRATION.md` (private sibling repo) for branch status, open PRs, review rounds, and recovery instructions before starting new work. That file is the master control document for multi-session continuity.
 
 ## First 5 minutes on any task
 
-1. Read `.codex/memories/session_notes/ORCHESTRATION.md` (if it exists).
-2. Read `.codex/memories/00_ACTIVE.md`.
-3. Read `.codex/memories/program/00_READ_THIS_FIRST.md`.
+1. Read `../hq-private/projects/wealthlens/memories/session_notes/ORCHESTRATION.md` (if it exists).
+2. Read `../hq-private/projects/wealthlens/memories/00_ACTIVE.md`.
+3. Read `../hq-private/projects/wealthlens/memories/program/00_READ_THIS_FIRST.md`.
 4. Read `tasks/active-sprint.md` for current priorities.
 5. Read `tasks/ACTION-REQUIRED.md` — Chris's outstanding human action items (see "Action-required protocol").
 6. Use the matching repo skill (`codex-repo-onramp`, `codex-worktree-issue-worker`, `codex-verification-doc-sync`, or `codex-question-batch`) before broad searching.
@@ -49,7 +55,7 @@ Repo-local Codex skills live under `.agents/skills/` and supplement this file. U
 - Inform the user during the run when the issue changes scope, risk, verification confidence, or future operability.
 - For every non-blocking workaround, capture a follow-up path: fix now, seed a follow-up, document accepted risk, or explain why no action is needed.
 - The final handoff must include any observed issue that was not fully fixed.
-- For long-running or multi-session tasks, keep a task-scoped markdown note under `.codex/memories/session_notes/`.
+- For long-running or multi-session tasks, keep a task-scoped markdown note under `../hq-private/projects/wealthlens/memories/session_notes/` (private sibling repo).
 
 ## Backward compatibility
 
@@ -117,8 +123,8 @@ Repo-local Codex skills live under `.agents/skills/` and supplement this file. U
 
 ### When working on outreach
 
-- Check `tasks/outreach/contacts.md` for existing relationships
-- Never send an email without checking `tasks/outreach/emails-sent.md` for prior contact
+- Check `../hq-private/projects/wealthlens/outreach/contacts.md` (private sibling repo) for existing relationships
+- Never send an email without checking `../hq-private/projects/wealthlens/outreach/emails-sent.md` for prior contact
 - Tone: professional, specific, offering value (not asking for favours)
 - Always include a link to something you've already built
 
@@ -131,7 +137,7 @@ Repo-local Codex skills live under `.agents/skills/` and supplement this file. U
 ### When making decisions
 
 - Refer to `vision/north-stars.md` for what success looks like
-- Refer to `identity/principles.md` for values-based decision making
+- Refer to `../hq-private/identity/principles.md` (private sibling repo) for values-based decision making
 - When in doubt, optimise for: (1) shipping something real, (2) making it visible, (3) connecting with the right people — in that order
 
 ## Definition of Done
@@ -140,8 +146,8 @@ Repo-local Codex skills live under `.agents/skills/` and supplement this file. U
 - Tests are added or updated, or verification steps are written explicitly (for code work).
 - `make ci-quick` passes locally (when code exists).
 - Relevant linters and typechecks pass.
-- `.codex/memories/00_ACTIVE.md` is updated if the work changes current status.
-- If a meaningful decision was made, capture it in `.codex/memories/decisions/`
+- `../hq-private/projects/wealthlens/memories/00_ACTIVE.md` (private sibling repo) is updated if the work changes current status.
+- If a meaningful decision was made, capture it in `../hq-private/projects/wealthlens/memories/decisions/`
   (workspace decisions) or `docs/adr/` (product ADRs that must travel with an
   extractable product subtree, e.g. wealthlens-analyst).
 - If a data pipeline was added or changed, re-run it to verify the output and regenerate charts.
@@ -175,19 +181,18 @@ Repo-local Codex skills live under `.agents/skills/` and supplement this file. U
 
 ### Strategy and operations
 
-- `strategy/` — branding, content, growth, outreach, funding, partnership, volunteer, career
+- `strategy/` — branding, content, growth, outreach, funding, partnership, volunteer
 - `vision/` — mission, theory of change, horizon, north stars, inspiration
-- `identity/` — about Chris, CV, principles, passions, portfolio, skills
 - `research/` — raw inputs, synthesised insights, data source registry, reading list
-- `tasks/` — `ACTION-REQUIRED.md` (Chris's human action items — surface every summary), active sprint, deadlines, inbox, done, outreach tracking, learning, social media
+- `tasks/` — `ACTION-REQUIRED.md` (Chris's human action items — surface every summary), active sprint, deadlines, inbox, done, learning, social media
 
-### Memory and planning
+### Memory and planning (private sibling repo `../hq-private`)
 
-- `.codex/memories/00_ACTIVE.md` — current focus and status board
-- `.codex/memories/program/` — cross-cutting program context
-- `.codex/memories/decisions/` — captured workspace design decisions
-- `docs/adr/` — product ADRs (kept out of `.codex/` so they survive the private-repo split and travel with product extraction)
-- `.codex/memories/session_notes/` — running notes for multi-session work
+- `../hq-private/projects/wealthlens/memories/00_ACTIVE.md` — current focus and status board
+- `../hq-private/projects/wealthlens/memories/program/` — cross-cutting program context
+- `../hq-private/projects/wealthlens/memories/decisions/` — captured workspace design decisions
+- `docs/adr/` — product ADRs (kept public so they travel with product extraction)
+- `../hq-private/projects/wealthlens/memories/session_notes/` — running notes for multi-session work
 - `.agents/skills/` — repo-scoped Codex workflows
 
 ## Canonical commands

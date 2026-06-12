@@ -2,7 +2,7 @@
 
 Last updated: 2026-05-14
 
-The distilled 20% of research that should drive 80% of action. Extracted from all research documents in `research/raw/`, `ChatWithClaude.txt`, and `identity/`.
+The distilled 20% of research that should drive 80% of action. Extracted from all research documents in `research/raw/` plus personal sources (`ChatWithClaude.txt`, `identity/` — now in the private `hq-private` repo).
 
 ---
 

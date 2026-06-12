@@ -1,6 +1,6 @@
 # Outreach Strategy
 
-Last updated: 2026-05-14
+Last updated: 2026-06-13
 
 ## Rule
 
@@ -8,9 +8,11 @@ Do not ask for favours before showing useful work. Outreach should offer value: 
 
 ## Before Contacting Anyone
 
-- Check `tasks/outreach/contacts.md`.
-- Check `tasks/outreach/emails-sent.md`.
-- Check whether there is already a relevant draft in `tasks/outreach/emails-to-send.md`.
+Contact lists and email logs live in the private HQ repo (`../hq-private/projects/wealthlens/outreach/`):
+
+- Check `contacts.md`.
+- Check `emails-sent.md`.
+- Check whether there is already a relevant draft in `emails-to-send.md`.
 
 ## Target Groups
 

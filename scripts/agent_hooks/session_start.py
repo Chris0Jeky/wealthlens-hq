@@ -14,7 +14,9 @@ def main() -> int:
                     "hookEventName": "SessionStart",
                     "additionalContext": (
                         "WealthLens HQ workspace. "
-                        "Read CLAUDE.md, AGENTS.md, .codex/memories/00_ACTIVE.md, "
+                        "Read CLAUDE.md, AGENTS.md, "
+                        "../hq-private/projects/wealthlens/memories/00_ACTIVE.md "
+                        "(private sibling repo; skip if absent), "
                         "and tasks/active-sprint.md. "
                         "ACTION REQUIRED: read tasks/ACTION-REQUIRED.md and surface "
                         "its open items (lead with anything due today/overdue) in "

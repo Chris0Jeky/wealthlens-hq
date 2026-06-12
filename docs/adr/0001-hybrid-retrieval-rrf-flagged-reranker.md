@@ -4,10 +4,10 @@
 - Deciders: Chris (plan locked before this session)
 - Scope: `projects/wealthlens-analyst/` (WealthLens v2, evidence-backed research analyst)
 
-> Note on location: existing decision records live in `.codex/memories/decisions/`
-> (date-named). Product ADRs live here in `docs/adr/` (numbered) instead, because
-> `.codex/memories/` is personal-planning material slated for the private-repo split,
-> and these ADRs must travel with the product when it is extracted to its own repo.
+> Note on location: workspace decision records live in the private HQ repo
+> (`../hq-private/projects/wealthlens/memories/decisions/`, date-named; moved
+> there 2026-06-13). Product ADRs live here in `docs/adr/` (numbered) instead,
+> because they must travel with the product when it is extracted to its own repo.
 
 ## Context
 

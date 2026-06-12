@@ -69,8 +69,7 @@ wealthlens-hq/
 ├── docs/                     # Documentation
 ├── research/                 # Research inputs and synthesis
 ├── strategy/                 # Branding, outreach strategy
-├── tasks/                    # Sprint tracking, inbox, backlog
-└── identity/                 # Organisational values and principles
+└── tasks/                    # Sprint tracking, inbox, backlog
 ```
 
 ## Data Flow

@@ -36,8 +36,7 @@ Prioritised tasks that are not in the current sprint. Grouped by domain.
 
 - [ ] Create good-first-issue list for contributors (@Chris) [due: 2026-06-14]
 - [ ] Draft initial `projects/wealthlens-dashboard/CONTRIBUTING.md` (@Chris) [due: 2026-05-21]
-- [ ] Create people/roles.md defining volunteer roles
-- [ ] Create people/onboarding.md for new volunteers
+- [x] Create people roles/onboarding files [completed: created, then moved to `../hq-private/projects/wealthlens/people/` with the private-repo split 2026-06-13]
 
 ## Outreach (After v0.1)
 

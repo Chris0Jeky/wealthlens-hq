@@ -27,7 +27,7 @@ Last updated: 2026-06-11
 This week's focus. Keep this list to 5-7 tasks.
 
 > **NEXT SESSION START HERE:** Wave 13 is active. Read
-> `.codex/memories/session_notes/ORCHESTRATION.md` (top "🟢 HANDOFF" section) first —
+> `../hq-private/projects/wealthlens/memories/session_notes/ORCHESTRATION.md` (private sibling repo; top "🟢 HANDOFF" section) first —
 > it has the full state, where to start (#337 synth generation provenance review/aging), the engine
 > architecture, the backlog, and the ops gotchas. Quick status below.
 

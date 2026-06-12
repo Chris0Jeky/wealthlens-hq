@@ -11,8 +11,8 @@ Establish current truth before editing code, content, or docs.
 ## Read first
 
 1. `AGENTS.md`
-2. `.codex/memories/00_ACTIVE.md`
-3. `.codex/memories/program/00_READ_THIS_FIRST.md`
+2. `../hq-private/projects/wealthlens/memories/00_ACTIVE.md` (private sibling repo; skip if absent)
+3. `../hq-private/projects/wealthlens/memories/program/00_READ_THIS_FIRST.md`
 4. `tasks/active-sprint.md`
 
 Read when relevant:
@@ -33,7 +33,7 @@ Extract only what the task needs:
 
 ## Guardrails
 
-- trust `.codex/memories/00_ACTIVE.md` over older docs when they conflict
-- do not bulk-read strategy, vision, or identity docs unless the task requires them
+- trust the private status board (`../hq-private/projects/wealthlens/memories/00_ACTIVE.md`) over older docs when they conflict
+- do not bulk-read strategy, vision, or private identity docs unless the task requires them
 - keep the first implementation slice small and measurable
 - this is a multi-domain workspace — identify the domain before reaching for code tools

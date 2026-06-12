@@ -14,8 +14,8 @@ description: Orient to WealthLens HQ before editing. Use for broad/ambiguous req
 ## Steps
 
 1. Read `AGENTS.md` for operating rules.
-2. Read `.codex/memories/00_ACTIVE.md` for current status.
-3. Read `.codex/memories/program/00_READ_THIS_FIRST.md` for program context.
+2. Read `../hq-private/projects/wealthlens/memories/00_ACTIVE.md` (private sibling repo; skip if absent) for current status.
+3. Read `../hq-private/projects/wealthlens/memories/program/00_READ_THIS_FIRST.md` for program context.
 4. Read `tasks/active-sprint.md` for current priorities.
 5. Identify which domain the task falls into (code, content, research, outreach, strategy).
 6. Identify the smallest change that creates measurable progress.
@@ -23,6 +23,6 @@ description: Orient to WealthLens HQ before editing. Use for broad/ambiguous req
 
 ## Guardrails
 
-- Trust `.codex/memories/00_ACTIVE.md` over older docs when they conflict.
-- Do not bulk-read strategy, vision, or identity docs unless the task requires them.
+- Trust the private status board (`../hq-private/projects/wealthlens/memories/00_ACTIVE.md`) over older docs when they conflict.
+- Do not bulk-read strategy, vision, or private identity docs unless the task requires them.
 - This is a multi-domain workspace — identify the domain before reaching for code tools.

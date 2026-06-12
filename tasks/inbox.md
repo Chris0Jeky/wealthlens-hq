@@ -429,7 +429,7 @@ initiative and needs approvals, partnerships, and curriculum design.
 
 ## Career: Job Applications and Education
 
-- [x] Apply to mySociety SocietyWorks Developer role by 31 May 2026 [submitted: 2026-05-31]. Tracking file: `tasks/applications/mysociety-societyworks-2026.md`
+- [x] Apply to mySociety SocietyWorks Developer role by 31 May 2026 [submitted: 2026-05-31; rejected 2026-06-11]. Tracking file: `../hq-private/career/applications/mysociety-societyworks-2026.md` (private repo)
 - [ ] Apply to GDS Senior Developer and HMRC/DWP/MoJ DDaT roles via Civil Service Jobs
 - [ ] Apply to NHS England Band 7 digital roles
 - [ ] Apply to UCL ARC RSE (autumn round, September-November)
@@ -460,10 +460,7 @@ initiative and needs approvals, partnerships, and curriculum design.
 
 ## Community and People
 
-- [ ] Create people/contributors.md listing all contributors
-- [ ] Create people/onboarding.md for new volunteers
-- [ ] Create people/roles.md defining available roles
-- [ ] Create people/thank-yous.md recognition log
+- [x] Create contributors/onboarding/roles/thank-yous people files [completed: created, then moved to `../hq-private/projects/wealthlens/people/` with the private-repo split 2026-06-13]
 - [ ] Create Discord server (delay until prototype exists): #general, #engineering, #data-research, #design, #content, #introductions
 - [x] Write "About" page copy for future website [completed: 2026-05-16 — AboutView.vue on frontend]
 
