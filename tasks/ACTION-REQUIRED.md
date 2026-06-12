@@ -1,6 +1,6 @@
 # ⚑ ACTION REQUIRED — Chris's outstanding tasks
 
-Last updated: 2026-06-11 (added the two Hero #1 gates)
+Last updated: 2026-06-13 (private-repo split phase 1 done; item 1 now awaits the history decision)
 
 > **This file is the single curated list of things that need _Chris_ (a human),
 > not the autonomous agent.** It exists so high-leverage actions never get lost in
@@ -34,14 +34,14 @@ Last updated: 2026-06-11 (added the two Hero #1 gates)
 
 ### ⏰ Time-sensitive (act this week)
 
-1. - [ ] **Split sensitive/organisational material into a private repo** — **P1**
-   - **Why:** The repo is PUBLIC and currently exposes personal material: `identity/` (CVs, cover letters, personal story), `tasks/applications/` (job applications), `tasks/outreach/` (contact lists, email logs), `strategy/career-strategy.md`, `.codex/memories/` (session notes), `journal/`, `meetings/`, `people/`. Chris confirmed (2026-06-11) the private-hq split is planned. The Hero #1 product subtree (`projects/wealthlens-analyst/`) is being built extraction-clean, so the split is independent of product work.
-   - **How:**
-     1. Create a private repo (e.g. `wealthlens-private-hq`).
-     2. Move the directories above (git history caveat: moving does NOT scrub them from public history — decide whether `git filter-repo`/BFG history purge is worth it for the CV PDFs and contacts, or accept history exposure).
-     3. Update CLAUDE.md / AGENTS.md authority-order paths that point at `.codex/memories/`.
-     4. The agent can do the mechanical split on your go-ahead; the history-purge decision is yours.
-   - **Done when:** sensitive dirs live in the private repo and (decision recorded) public history is purged or accepted.
+1. - [ ] **Private-repo split: PHASE 1 DONE — now decide the history strategy** — **P1**
+   - **Progress (2026-06-13, agent):** private repo **`Chris0Jeky/hq-private`** created (verified PRIVATE) and all sensitive content **copied** there (44 files: `identity/`, `tasks/applications/`, `tasks/outreach/`, `strategy/career-strategy.md`, `.codex/memories/`, `journal/`, `meetings/`, `people/`, BGV memo, chat dump, TODAY.md). Local clone: `C:\Users\jekyt\source\hq-private`. Nothing removed from this public repo yet — removal only helps once the history question is settled, and the public copies remain the live working set until phase 2.
+   - **Your decision (the only blocker):** removing files from the tip does NOT scrub public git history. Pick one — full decision matrix in `hq-private/MIGRATION.md`:
+     - **A (recommended): history purge** — `git filter-repo` + force-push + GitHub Support cache-clear. Strongest privacy (outreach files hold third-party personal data); cost: all commit SHAs change, old clones diverge.
+     - **B: nuke & re-publish** — loses stars/issues/history AND breaks the live GitHub Pages URL; not recommended while the site lives at `chris0jeky.github.io/wealthlens-hq/`.
+     - **C: accept exposure** — remove from tip only; CVs/contacts stay retrievable from history.
+   - **Then (agent-doable on your go):** delete the dirs from the public tip, update every reference (CLAUDE.md / AGENTS.md / SessionStart hook / docs), run the purge if A, verify per the `MIGRATION.md` checklist.
+   - **Done when:** sensitive dirs are gone from the public tip and the history decision is recorded + executed.
 
 2. - [ ] **BGV: prep for Spring 2027** (Autumn 2026 SKIPPED — decided 2026-06-05) — **P2 (no longer this-week-urgent)**
    - **Decision (2026-06-05):** skip the BGV Autumn 2026 round (deadline was 21 June) and target **Spring 2027** (~early-Jan 2027 deadline), to clear the two blockers first rather than rush a weak 16-day application against ~3-4% odds. Full rationale: `tasks/bgv-go-no-go-2026.md`.

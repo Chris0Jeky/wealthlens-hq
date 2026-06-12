@@ -5,7 +5,23 @@
 >
 > **CRITICAL**: Update this file BEFORE every compaction risk (long tool calls, large diffs).
 
-Last updated: 2026-06-11 (session 6 — HERO #1 LAUNCHED: 2 PRs merged (#403-404); 0 open; clean checkpoint)
+Last updated: 2026-06-13 (session 7 — private-repo split PHASE 1: `Chris0Jeky/hq-private` created + all sensitive content ported)
+
+## ▶️ SESSION 7 (2026-06-13) — PRIVATE-REPO SPLIT, PHASE 1 (ACTION-REQUIRED item 1)
+
+- Created **`Chris0Jeky/hq-private`** (verified PRIVATE; local clone
+  `C:\Users\jekyt\source\hq-private`) as Chris's cross-project private command centre.
+- **Copied** (not moved) all sensitive content there in 5 logical commits (44 files):
+  identity/ → identity/; tasks/applications/ + strategy/career-strategy.md → career/;
+  tasks/outreach/ + .codex/memories/ + bgv memo + people/ → projects/wealthlens/;
+  journal/ + meetings/ → top level; ChatWithClaude.txt + TODAY.md → archive/.
+- Wrote `hq-private/MIGRATION.md`: full mapping + the PHASE 2 plan (remove from public
+  tip + update CLAUDE.md/AGENTS.md/hook references) + the history-strategy decision
+  matrix (A purge via filter-repo — recommended; B nuke-and-republish — breaks the live
+  Pages URL; C accept exposure). **Phase 2 is BLOCKED on Chris picking A/B/C** (recorded
+  in ACTION-REQUIRED item 1). Until phase 2, the public copies (this file included)
+  remain the LIVE working set; the hq-private copies are a 2026-06-13 snapshot.
+- Public repo untouched apart from this doc + ACTION-REQUIRED progress note.
 
 ## ▶️ SESSION 6 (2026-06-11) — HERO #1 (WealthLens Analyst) kickoff + DB layer. 2 PRs MERGED.
 
