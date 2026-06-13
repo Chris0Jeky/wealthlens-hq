@@ -187,8 +187,9 @@ def _fill_to_cap(mw: RateLimitMiddleware, count: int, now: float) -> None:
     """Seed the limiter's IP table with `count` distinct synthetic IPs.
 
     Each gets one recent timestamp so it survives the 60s sliding-window clean
-    and counts toward MAX_TRACKED_IPS. IPs are 10.0.x.y, distinct for count up
-    to 65536 and disjoint from the public test IPs (203.0.113.*, 192.0.2.*).
+    and counts toward MAX_TRACKED_IPS. IPs are 10.x.x.x, distinct for any count
+    up to 256**3 (~16.7M, well above the cap) and disjoint from the public test
+    IPs (203.0.113.*, 192.0.2.*).
     """
     for i in range(count):
         ip = f"10.{(i // 65536) % 256}.{(i // 256) % 256}.{i % 256}"
@@ -246,16 +247,32 @@ class TestRateLimitOverflow:
 
         asyncio.run(run())
 
-    def test_at_cap_existing_ip_still_limited(self) -> None:
-        """Overflow bypass applies only to *unseen* IPs; known IPs still limited."""
+    def test_at_cap_known_under_limit_ip_is_tracked_not_failed_open(self) -> None:
+        """Overflow bypass applies ONLY to unseen IPs: a KNOWN IP that is under
+        its limit while the table is full is still tracked (appended, not fail-
+        open'd) and is eventually limited.
+
+        This pins the `client_ip not in self._hits` half of the overflow guard
+        (rate_limit.py:75): seed the known IP UNDER its limit so the line-67
+        per-minute check does NOT short-circuit first. Removing the `not in`
+        guard would fail-open the first request (200 but not appended), so the
+        IP would never reach its limit and the final assertion (429) would fail.
+        """
         mw = RateLimitMiddleware(_noop_asgi, requests_per_minute=3)
         now = time.time()
         _fill_to_cap(mw, MAX_TRACKED_IPS - 1, now)
         existing_ip = "192.0.2.7"
-        mw._hits[existing_ip] = [now, now, now]  # already at the per-minute limit
+        mw._hits[existing_ip] = [now]  # KNOWN, 1 hit (under limit); table now full
         assert len(mw._hits) == MAX_TRACKED_IPS
 
         async def run() -> None:
+            # Known + under limit -> tracked through the cap (NOT failed open),
+            # so each request is appended rather than bypassed.
+            for _ in range(2):
+                resp = await mw.dispatch(_make_request(existing_ip), _call_next)
+                assert resp.status_code == 200
+            assert len(mw._hits[existing_ip]) == 3  # 1 seeded + 2 appended
+            # Now at the per-minute limit -> 429 (the bypass never applied to it).
             resp = await mw.dispatch(_make_request(existing_ip), _call_next)
             assert resp.status_code == 429
 
