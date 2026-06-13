@@ -1,6 +1,6 @@
 # ⚑ ACTION REQUIRED — Chris's outstanding tasks
 
-Last updated: 2026-06-13 (session 8 build loop; added item 9 — wealth-shares stat-card data-integrity reconcile)
+Last updated: 2026-06-13 (session 8; private-repo split confirmed DONE by Chris; H1-02 / ADR-D3 / stat-card reconcile surfaced for decision)
 
 > **This file is the single curated list of things that need _Chris_ (a human),
 > not the autonomous agent.** It exists so high-leverage actions never get lost in
@@ -34,26 +34,21 @@ Last updated: 2026-06-13 (session 8 build loop; added item 9 — wealth-shares s
 
 ### ⏰ Time-sensitive (act this week)
 
-1. - [ ] **Private-repo split: EXECUTED (decision C) — say "done" to close** — **P1**
-   - **Decision (Chris, 2026-06-13):** option **C** — remove from the public tip, accept history exposure (no rewrite). Recorded in `hq-private/MIGRATION.md`.
-   - **Executed (agent, 2026-06-13):** all sensitive material lives in **`Chris0Jeky/hq-private`** (clone: `C:\Users\jekyt\source\hq-private`) and was removed from this public repo's tip; every doc/hook/skill reference repointed to `../hq-private/...`; `.gitignore` guards added so the paths can't be re-committed. Note: pre-2026-06-13 history still contains the files (that is what C accepts) — treat CVs/contacts as already-seen.
-   - **Done when:** you confirm, and this item moves to Done.
-
-2. - [ ] **BGV: prep for Spring 2027** (Autumn 2026 SKIPPED — decided 2026-06-05) — **P2 (no longer this-week-urgent)**
+1. - [ ] **BGV: prep for Spring 2027** (Autumn 2026 SKIPPED — decided 2026-06-05) — **P2 (no longer this-week-urgent)**
    - **Decision (2026-06-05):** skip the BGV Autumn 2026 round (deadline was 21 June) and target **Spring 2027** (~early-Jan 2027 deadline), to clear the two blockers first rather than rush a weak 16-day application against ~3-4% odds. Full rationale: `../hq-private/projects/wealthlens/funding/bgv-go-no-go-2026.md` (private repo).
    - **How (over summer/autumn 2026):** decide the legal structure (UK for-profit Ltd vs keep the CIC/charity option — BGV only funds for-profit-companies-limited-by-shares, so this forecloses one path either way); line up at least one co-founder; draft a one-page impact + revenue thesis. Then apply when Spring 2027 opens.
    - **Done when:** Spring 2027 application submitted, OR re-decided.
 
 ### 🚀 Unblocked & high-leverage (v0.1 is live — these were waiting on a public URL)
 
-3. - [ ] **Publish the first LinkedIn post + update your LinkedIn profile** — **P1**
+2. - [ ] **Publish the first LinkedIn post + update your LinkedIn profile** — **P1**
    - **Why:** "Make it visible" is north-star #2. The site is live; the launch story is the single highest-visibility action available and it has been blocked only on you.
    - **How:**
      1. **Post:** "Why I'm building WealthLens UK" — personal story (housing/wages/opportunity, your WP work), the problem (UK wealth inequality is invisible), the build (live link + one chart screenshot), the ask (volunteers/feedback). Tone per `strategy/branding-playbook.md`: confident, data-driven, non-partisan.
      2. **Profile:** headline + About + Featured (WealthLens, Springer paper, WP outreach, Taskdeck) + add skills (Data Visualisation, Open Data, Economic Research, Widening Participation). Copy guidance is in `strategy/`.
    - **Done when:** post is live and profile updated. (Then tell me — I'll tick the related `inbox.md` content items too.)
 
-4. - [ ] **Send the four unblocked outreach emails** — **P1**
+3. - [ ] **Send the four unblocked outreach emails** — **P1**
    - **Why:** Partnerships are north-star #3 and these were all gated on "v0.1 live", which is now true.
    - **Targets:** Tax Justice UK (`info@taxjustice.uk`), Patriotic Millionaires UK (website contact form), The Equality Trust (`info@equalitytrust.org.uk`), Gary Stevenson (DM `@garyseconomics` on X).
    - **How:**
@@ -62,14 +57,14 @@ Last updated: 2026-06-13 (session 8 build loop; added item 9 — wealth-shares s
      3. Log each in `../hq-private/projects/wealthlens/outreach/emails-sent.md` with the date.
    - **Done when:** all four sent and logged. (I can draft any/all of these for you on request.)
 
-5. - [ ] **Register the `wealthlens.uk` domain** — **P2 (foundational)**
+4. - [ ] **Register the `wealthlens.uk` domain** — **P2 (foundational)**
    - **Why:** Unblocks a project email (`hello@wealthlens.uk`), a custom deploy domain, and Bluesky handle verification. Cheap, one-time, and several other tasks depend on it.
    - **How:** Buy via any UK registrar (`.uk` is cheap). Also grab `wealthlensuk.org` if available. Then I can wire Cloudflare Pages / DNS when you're ready.
    - **Done when:** domain owned (note the registrar + renewal date here or in `deadlines.md`).
 
 ### 🛠 Decision needed (agent is blocked on your go-ahead)
 
-6. - [ ] **Hero #1: review the 20 DRAFT golden questions (H1-02)** — **P1, ~1 focused hour**
+5. - [ ] **Hero #1: review the 20 DRAFT golden questions (H1-02)** — **P1, ~1 focused hour**
    - **Why:** Every eval claim in the WealthLens Analyst inherits its credibility from this file. The agent is forbidden from writing the answers (no fabricated ground truth) — only you can. M2's recall measurement and everything after it waits on this.
    - **How:**
      1. Open `projects/wealthlens-analyst/evals/golden/golden_set.jsonl` (20 records: 15 in-corpus, 5 refusal probes; each has a reviewer note).
@@ -78,12 +73,12 @@ Last updated: 2026-06-13 (session 8 build loop; added item 9 — wealth-shares s
      4. Run `make PYTHON=python eval-golden-validate` — it must pass.
    - **Done when:** no `status: DRAFT` remains in the first 20.
 
-7. - [ ] **Hero #1: rule on ADR 0003 D3 — hosting** — **P1, small decision (needs your account + card)**
+6. - [ ] **Hero #1: rule on ADR 0003 D3 — hosting** — **P1, small decision (needs your account + card)**
    - **Why:** The only still-open locked-plan decision (D1/D2/D4 were adopted under your delegation). M6's live URL needs a host; the memo in `docs/adr/0003-reranker-embedding-hosting-selection.md` compares Hetzner / Fly+Neon / Railway / Supabase with verified prices.
    - **How:** Read the D3 table + Langfuse sizing note. Recommendation: **Hetzner CAX21** (8GB, ~£7/mo, everything on-box incl. Langfuse) or CAX11 (~£4.2/mo) with Langfuse placed separately. Decide, create the account, then tell the agent — provisioning (Docker Compose, Caddy, pg_dump cron) is agent-doable from there (H1-30).
    - **Done when:** D3 is ticked in the ADR's decision record and ADR 0003 flips to Accepted.
 
-8. - [ ] **Merge the `make ci-quick` reliability fix (PR #350)** — **P2, authorized + done, pending merge**
+7. - [ ] **Merge the `make ci-quick` reliability fix (PR #350)** — **P2, authorized + done, pending merge**
    - **Status (2026-06-05):** you authorized this; **fixed in PR #350**. The Makefile no longer swallows failures (`|| echo …` removed), so `make ci-quick` now runs real ruff + mypy + pytest and fails loudly. The dashboard-backend failures it used to hide are already resolved — a real run now shows **201 passed**. PR #350 also installs dev deps in `backend-install`, adds job timeouts, and enables Dependabot auto-merge.
    - **Repo-setting actions for you (3, one-time)** — for Dependabot auto-merge to work end-to-end:
      1. **Settings → General → Allow auto-merge** (ON), else `gh pr merge --auto` errors.
@@ -92,7 +87,7 @@ Last updated: 2026-06-13 (session 8 build loop; added item 9 — wealth-shares s
    - **Note:** #350 was hardened further during review this session — `requirements-dev.txt` now pins ruff/mypy/httpx/pandas-stubs so a clean `make install && make ci-quick` genuinely passes, and `pipeline-test`/`frontend-install` were fixed. All findings addressed; CI green.
    - **Done when:** PR #350 merges (then move this to Done).
 
-9. - [ ] **Wealth-shares chart: reconcile the stat-card / lede numbers with the WID series** — **P2, data-integrity, source decision**
+8. - [ ] **Wealth-shares chart: reconcile the stat-card / lede numbers with the WID series** — **P2, data-integrity, source decision**
    - **Why:** PR #409 fixed a 100x unit bug so the WID chart now draws the CORRECT shares (top 10% ≈ 57% in 2023, top 1% ≈ 21%). That fix surfaced a pre-existing mismatch in `frontend/src/config/chartArticles.ts`: the **"Top 1% alone: 28%"** stat card and the **"Postwar low (1980): 50%"** card + lede are **not** supported by the WID p99p100/p90p100 series the page plots (WID top-1% 2023 ≈ 21%, never 28% post-1900; WID 1980 top-10% ≈ 58%, the modern low ≈ 52% in ~1990). Data-integrity guardrail: every figure must cite its source.
    - **Decision needed:** for each card, EITHER (a) cite the specific alternative source/definition that yields 28% / 50% (e.g. a different vintage, income vs wealth, or household basis) on the card, OR (b) approve correcting them to the WID values the chart draws (and re-check the "more than the bottom 70% combined" / "bottom 50% = 6%" claims against a cited source). The 57% headline card is already correct.
    - **Agent-doable once you decide:** I can apply (b) with WID-cited values, or wire (a) citations, in a small reviewed PR. I did NOT change your public headline numbers unilaterally.
@@ -104,4 +99,5 @@ Last updated: 2026-06-13 (session 8 build loop; added item 9 — wealth-shares s
 
 _(Cleared items move here with `[completed: YYYY-MM-DD]` once Chris confirms.)_
 
+- [x] **Private-repo split (decision C)**: sensitive material moved to the private `Chris0Jeky/hq-private` repo, removed from the public tip, every doc/hook/skill reference repointed to `../hq-private/...`, and `.gitignore` guards added; pre-split history exposure accepted (no rewrite). Chris confirmed complete. [completed: 2026-06-13]
 - [x] **Prepare for mySociety interview (if shortlisted)** — **not shortlisted: application rejected** (Chris confirmed 2026-06-11). Recorded per the item's done-when. Interview-prep habits (daily no-AI Python practice, Exercism) remain useful for future applications — see `../hq-private/career/applications/interview-prep-general.md` (private repo). [completed: 2026-06-11]
