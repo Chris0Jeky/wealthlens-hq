@@ -181,8 +181,8 @@ describe("Chart components", () => {
       expect(wrapper.text()).toContain("View data as table");
       expect(wrapper.findAll("tbody tr").length).toBe(2); // years 2020, 2021
       // Unit fix: WID stores shares as fractions (0.527); the chart/table render
-      // percent (52.7%), matching the article's "57%" framing rather than the
-      // old 0.5% mis-scaling.
+      // percent (52.7%) rather than the old 0.5% mis-scaling. (Fixture values are
+      // illustrative, not the production 0.5712/0.2126 figures.)
       expect(wrapper.text()).toContain("52.7%");
       expect(wrapper.text()).toContain("21.3%");
     });

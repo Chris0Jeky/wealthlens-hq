@@ -113,7 +113,7 @@ const tableColumns = ["Year", "Top 1% share", "Top 10% share"];
  * One row per year for the AccessibleDataTable fallback (WCAG 1.1.1).
  * Mirrors exactly what the chart plots: percent shares (already converted in
  * seriesFor), formatted to one decimal place. A year present in only one
- * series leaves the other cell null, which the table renders as an em dash.
+ * series leaves the other cell null, which the table renders as a dash placeholder.
  */
 const tableRows = computed<DatasetRow[]>(() => {
   const byYear = new Map<number, DatasetRow>();
