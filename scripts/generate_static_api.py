@@ -189,6 +189,27 @@ def _read_csv_as_records(path: Path, slug: str = "") -> list[dict]:
     return records
 
 
+def _read_data_type(csv_path: Path) -> str | None:
+    """Return the ``data_type`` recorded in the CSV's ``.meta.json`` sidecar.
+
+    The pipelines write a sidecar (e.g. ``productivity_pay_gap.meta.json``)
+    next to each processed CSV recording provenance — ``"live_ons"`` for live
+    data or ``"illustrative_fallback"`` when illustrative data was used. The
+    frontend surfaces a data-honesty caveat when the value is
+    ``"illustrative_fallback"``.
+
+    Returns None when no sidecar exists or it cannot be read/parsed, so a
+    dataset without provenance metadata stays backward-compatible (no caveat).
+    """
+    meta_path = csv_path.with_suffix(".meta.json")
+    try:
+        sidecar = json.loads(meta_path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return None
+    value = sidecar.get("data_type")
+    return value if isinstance(value, str) else None
+
+
 def _load_simulator_scenarios() -> dict[str, dict[str, str]]:
     """Read the backend's SIMULATOR_SCENARIOS registry without importing it.
 
@@ -312,6 +333,7 @@ def main() -> None:
             "access_date": meta.get("access_date", ""),
             "row_count": len(records),
             "columns": columns,
+            "data_type": _read_data_type(csv_path),
         }
         meta_path = OUT_DIR / f"{slug}-metadata.json"
         meta_path.write_text(
