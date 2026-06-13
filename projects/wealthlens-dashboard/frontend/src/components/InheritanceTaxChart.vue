@@ -1,15 +1,22 @@
 <script setup lang="ts">
 /**
- * InheritanceTaxChart — Dual-panel chart showing IHT liability in the UK.
+ * InheritanceTaxChart: IHT liability in the UK, shown in two views.
  *
- * Panel 1: Donut showing 4.6% of estates pay IHT vs 95.4% that don't.
- * Panel 2: Bar chart showing IHT liability rate over time (2016–2022).
+ * The component offers an additive tab toggle (default: the trend view, so
+ * existing behaviour is unchanged):
+ *   - "Trend" (default): donut showing 4.6% of estates pay IHT vs 95.4% that
+ *     don't, plus a bar chart of the IHT liability rate over time (2016–2022).
+ *   - "By estate size": a bar chart of IHT paid by estate-size band, which
+ *     illustrates how concentrated the tax is in larger estates, plus an
+ *     accessible data table of the same band rows.
  *
  * Data source: HMRC Inheritance Tax Statistics 2021-22, Table 12.1
  * URL: https://www.gov.uk/government/statistics/inheritance-tax-statistics
  * Accessed: 2026-05-16
  *
- * Accessibility: WCAG AA high-contrast colors, aria-label, keyboard tooltip.
+ * Accessibility: WCAG AA high-contrast colors, aria-label, keyboard tooltip,
+ * an accessible tab group, and an AccessibleDataTable fallback for the band
+ * view (WCAG 1.1.1 non-text content).
  */
 import { computed, onMounted, ref } from "vue";
 import { use } from "echarts/core";
@@ -22,6 +29,9 @@ import {
   LegendComponent,
 } from "echarts/components";
 import VChart from "vue-echarts";
+import TabGroup, { type Tab } from "@/components/TabGroup.vue";
+import AccessibleDataTable from "@/components/AccessibleDataTable.vue";
+import type { DatasetRow } from "@/stores/data";
 import { escapeHtml } from "@/utils/chart";
 import { fetchWithRetry } from "@/utils/fetchWithRetry";
 
@@ -147,6 +157,17 @@ onMounted(async () => {
 
 /** Whether we have data to show. */
 const hasData = computed(() => data.value !== null);
+
+/**
+ * Additive view toggle. Defaults to "trend" so the existing dual-panel trend
+ * view is unchanged; the by-estate-size band view is strictly opt-in (config
+ * defaults stay OFF / backward-compatible).
+ */
+const views: Tab[] = [
+  { id: "trend", label: "Trend" },
+  { id: "bands", label: "By estate size" },
+];
+const activeView = ref<string>("trend");
 
 /** Donut chart option — 4.6% pay IHT vs 95.4% don't. */
 const donutOption = computed(() => {
@@ -293,6 +314,128 @@ const barOption = computed(() => {
     ],
   };
 });
+
+/**
+ * Bar chart option: IHT paid by estate-size band (£ million).
+ *
+ * Values are taken verbatim from the data file's by_estate_size array
+ * (tax_paid_m, in £ millions). No figures are computed or altered here.
+ * Bars use the same high-contrast blue as the trend bar chart; the band
+ * labels on the x-axis and the value labels on each bar mean the chart does
+ * not rely on colour alone to convey meaning (WCAG 1.4.1).
+ */
+const bandOption = computed(() => {
+  if (!data.value) return {};
+  const bands = data.value.by_estate_size.map((d) => d.band);
+  const taxPaid = data.value.by_estate_size.map((d) => d.tax_paid_m);
+
+  return {
+    animation: !prefersReducedMotion,
+    title: {
+      text: "IHT paid by estate size",
+      left: "center",
+      top: 0,
+      textStyle: {
+        fontSize: 15,
+        fontWeight: "bold",
+        color: "#111827",
+      },
+    },
+    tooltip: {
+      trigger: "axis" as const,
+      axisPointer: { type: "shadow" as const },
+      formatter: (
+        params: Array<{ seriesName: string; value: number; axisValue: string }>,
+      ) => {
+        if (!Array.isArray(params) || params.length === 0) return "";
+        const p = params[0];
+        return `<strong>${escapeHtml(String(p.axisValue))}</strong><br/>IHT paid: £${escapeHtml(String(p.value))}m`;
+      },
+    },
+    grid: {
+      left: "3%",
+      right: "4%",
+      bottom: "10%",
+      top: "18%",
+      containLabel: true,
+    },
+    xAxis: {
+      type: "category" as const,
+      data: bands,
+      name: "Estate size band",
+      nameLocation: "middle" as const,
+      nameGap: 50,
+      axisLabel: {
+        color: "#374151",
+        rotate: 30,
+      },
+    },
+    yAxis: {
+      type: "value" as const,
+      name: "IHT paid (£m)",
+      nameLocation: "middle" as const,
+      nameGap: 55,
+      min: 0,
+      axisLabel: {
+        color: "#374151",
+        formatter: "£{value}m",
+      },
+    },
+    series: [
+      {
+        name: "IHT paid",
+        type: "bar" as const,
+        data: taxPaid,
+        itemStyle: { color: COLOR_BAR },
+        barMaxWidth: 48,
+        label: {
+          show: true,
+          position: "top" as const,
+          formatter: "£{c}m",
+          fontSize: 12,
+          color: "#374151",
+        },
+      },
+    ],
+  };
+});
+
+/** Column headers for the by-estate-size accessible data-table fallback. */
+const bandTableColumns = ["Estate size band", "Estates", "IHT paid (£m)"];
+
+/**
+ * One row per estate-size band for the AccessibleDataTable fallback
+ * (WCAG 1.1.1). Mirrors exactly the values in the data file's by_estate_size
+ * array, with no calculation or alteration. Numeric columns are
+ * locale-formatted by the table component.
+ */
+const bandTableRows = computed<DatasetRow[]>(() => {
+  if (!data.value) return [];
+  return data.value.by_estate_size.map((d) => ({
+    "Estate size band": d.band,
+    Estates: d.estates,
+    "IHT paid (£m)": d.tax_paid_m,
+  }));
+});
+
+/**
+ * Descriptive aria-label for the band view (role=img). Reads the first and
+ * last band straight from the data, so screen-reader users get the same
+ * top/bottom contrast the bars convey. No derived statistics.
+ */
+const bandAriaLabel = computed(() => {
+  if (!data.value || data.value.by_estate_size.length === 0) {
+    return "Bar chart of inheritance tax paid by estate size band.";
+  }
+  const rows = data.value.by_estate_size;
+  const first = rows[0];
+  const last = rows[rows.length - 1];
+  return (
+    `Bar chart of inheritance tax paid by estate size band, in pounds million. ` +
+    `The "${first.band}" band covers ${first.estates.toLocaleString()} estates paying £${first.tax_paid_m}m. ` +
+    `The "${last.band}" band covers ${last.estates.toLocaleString()} estates paying £${last.tax_paid_m}m.`
+  );
+});
 </script>
 
 <template>
@@ -323,31 +466,59 @@ const barOption = computed(() => {
 
   <!-- Charts -->
   <div v-else>
-    <div
-      role="img"
-      :aria-label="`Inheritance Tax chart. Only ${data!.summary.liability_rate_pct}% of UK estates are liable for IHT. In 2021-22, ${data!.summary.estates_liable.toLocaleString()} estates out of approximately ${data!.summary.total_deaths.toLocaleString()} deaths paid IHT, raising £${data!.summary.total_iht_revenue_bn} billion.`"
-      class="w-full"
-    >
-      <!-- Dual panel layout -->
-      <div class="iht-panels">
-        <div class="iht-panel">
+    <!--
+      Additive view toggle. The "trend" tab is selected by default, so the
+      original dual-panel trend view renders unchanged on first load; the
+      by-estate-size band view is opt-in.
+    -->
+    <TabGroup v-model:active-id="activeView" :tabs="views">
+      <template #trend>
+        <div
+          role="img"
+          :aria-label="`Inheritance Tax chart. Only ${data!.summary.liability_rate_pct}% of UK estates are liable for IHT. In 2021-22, ${data!.summary.estates_liable.toLocaleString()} estates out of approximately ${data!.summary.total_deaths.toLocaleString()} deaths paid IHT, raising £${data!.summary.total_iht_revenue_bn} billion.`"
+          class="w-full"
+        >
+          <!-- Dual panel layout -->
+          <div class="iht-panels">
+            <div class="iht-panel">
+              <VChart
+                class="w-full"
+                style="height: 360px"
+                :option="donutOption"
+                autoresize
+              />
+            </div>
+            <div class="iht-panel">
+              <VChart
+                class="w-full"
+                style="height: 360px"
+                :option="barOption"
+                autoresize
+              />
+            </div>
+          </div>
+        </div>
+      </template>
+
+      <template #bands>
+        <div role="img" :aria-label="bandAriaLabel" class="w-full">
           <VChart
             class="w-full"
-            style="height: 360px"
-            :option="donutOption"
+            style="height: 420px"
+            :option="bandOption"
             autoresize
           />
         </div>
-        <div class="iht-panel">
-          <VChart
-            class="w-full"
-            style="height: 360px"
-            :option="barOption"
-            autoresize
-          />
-        </div>
-      </div>
-    </div>
+
+        <!-- Accessible data-table fallback (WCAG 1.1.1 non-text content). -->
+        <AccessibleDataTable
+          :rows="bandTableRows"
+          :columns="bandTableColumns"
+          :numeric-columns="['Estates', 'IHT paid (£m)']"
+          caption="UK inheritance tax by estate-size band, 2021-22: estates and IHT paid (£ million). Source: HMRC Inheritance Tax Statistics 2021-22, Table 12.1."
+        />
+      </template>
+    </TabGroup>
 
     <!-- Source citation -->
     <p class="text-sm text-[var(--wl-ink-muted)] mt-4 text-center">
