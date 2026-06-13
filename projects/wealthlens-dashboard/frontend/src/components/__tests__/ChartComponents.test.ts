@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { mount } from "@vue/test-utils";
+import { mount, flushPromises } from "@vue/test-utils";
 import { createPinia, setActivePinia } from "pinia";
 import { ref, shallowRef } from "vue";
 
@@ -17,6 +17,20 @@ vi.mock("@/composables/useChartData", () => ({
     rows: mockRows,
     loading: mockLoading,
     error: mockError,
+  }),
+}));
+
+/**
+ * Mock the data store. ProductivityPayChart calls useDataStore().fetchMetadata
+ * in onMounted to read the dataset's data_type (illustrative vs live). Stubbing
+ * it keeps the other chart tests unaffected and lets us drive the caveat below.
+ * mockDataType controls what fetchMetadata resolves data_type to.
+ */
+let mockDataType: string | null = null;
+
+vi.mock("@/stores/data", () => ({
+  useDataStore: () => ({
+    fetchMetadata: vi.fn().mockResolvedValue({ data_type: mockDataType }),
   }),
 }));
 
@@ -95,6 +109,7 @@ describe("Chart components", () => {
     mockRows = shallowRef([]);
     mockLoading = ref(true);
     mockError = ref(null);
+    mockDataType = null;
 
     // Stub window.matchMedia (not available in jsdom by default)
     Object.defineProperty(window, "matchMedia", {
@@ -216,6 +231,42 @@ describe("Chart components", () => {
       const vchart = wrapper.find(".vchart-stub");
       expect(vchart.exists()).toBe(true);
       expect(wrapper.text()).not.toContain("No data available");
+    });
+  });
+
+  describe("ProductivityPayChart data-honesty caveat", () => {
+    const productivityRows = [
+      { year: 2000, productivity_index: 108.0, pay_index: 107.0, gap_pct: 0.9 },
+      { year: 2020, productivity_index: 128.0, pay_index: 114.0, gap_pct: 12.3 },
+    ];
+
+    it("shows the illustrative caveat when data_type is illustrative_fallback", async () => {
+      mockLoading.value = false;
+      mockError.value = null;
+      mockRows.value = productivityRows;
+      mockDataType = "illustrative_fallback";
+
+      const wrapper = mount(ProductivityPayChart);
+      // onMounted fetchMetadata is async — let the promise + reactivity settle.
+      await flushPromises();
+
+      expect(wrapper.text()).toContain(
+        "Illustrative. Derived from ONS bulletins, not exact time-series values.",
+      );
+    });
+
+    it("hides the caveat when data_type is live_ons", async () => {
+      mockLoading.value = false;
+      mockError.value = null;
+      mockRows.value = productivityRows;
+      mockDataType = "live_ons";
+
+      const wrapper = mount(ProductivityPayChart);
+      await flushPromises();
+
+      expect(wrapper.text()).not.toContain(
+        "Illustrative. Derived from ONS bulletins, not exact time-series values.",
+      );
     });
   });
 
