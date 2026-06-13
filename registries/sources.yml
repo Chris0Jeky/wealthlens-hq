@@ -39,13 +39,16 @@ sources:
     url: https://www.resolutionfoundation.org/publications/
     access_date: "2026-05-16"
     format: report
-    licence: open-publication
+    licence: CC BY-NC-ND 4.0
     update_pattern: annual
     pipeline: fetch_generational_wealth.py
     notes: >
       Median total household wealth by generation (Baby Boomers, Gen X,
       Millennials) at ages 30, 40, 50, 60 in 2022 real-term GBP. Supplemented
-      by ONS Wealth and Assets Survey wave data.
+      by ONS Wealth and Assets Survey wave data. Licence corrected from the
+      vague "open-publication" to RF's site-wide CC BY-NC-ND 4.0. This entry is
+      the derived chart series; the full report lives in the analyst-corpus
+      entry rf-intergenerational-audit-2024.
 
   - id: hmrc-cgt-statistics
     name: HMRC Capital Gains Tax Statistics
@@ -206,10 +209,13 @@ sources:
     analyst_corpus: true
     notes: >-
       6th edition (Broome, Hale, Slaughter; DOI 10.63492/po886z; 73pp). Special
-      focus: gifts, inheritances, intergenerational transfers. ND licence:
-      serve as quote-with-citation + link to full report, never paraphrase-as-ours.
-      PDF URL typo ("Intergenerationl") is real. Distinct from the pipeline-fed
-      resolution-generational-wealth entry (that is the derived chart series).
+      focus: gifts, inheritances, intergenerational transfers. ND licence
+      (ENFORCEMENT PENDING H1-18): the answer composer must serve RF spans as
+      verbatim quote-with-citation + link to the full report, never
+      paraphrase-as-ours; no code enforces this yet, so it is documented here
+      as a downstream obligation. PDF URL typo ("Intergenerationl") is real.
+      Distinct from the pipeline-fed resolution-generational-wealth entry (that
+      is the derived chart series).
 
   - id: ifs-r188-inheritances-lifecycle
     name: "IFS R188 — Inheritances and inequality over the life cycle (2021)"
@@ -225,6 +231,10 @@ sources:
       Bourquin, Joyce, Sturrock (Nuffield-funded; 95pp). Cohort projections of
       inheritance flows and their effect on within/between-generation wealth
       inequality. IFS HTML is Cloudflare-gated; fetch the PDF URL directly.
+      The pdf_url is intentionally over-encoded (%252520...); IFS serves the
+      file under this exact path (web-verified 2026-06-11) - do NOT urldecode
+      before fetching. H1-06 should assert a 200 + application/pdf so a silent
+      404 fails loudly rather than ingesting an error page.
 
   - id: rf-before-the-fall-2025
     name: "Resolution Foundation — Before the fall: the distribution of household wealth in Britain (2025)"
@@ -238,8 +248,9 @@ sources:
     analyst_corpus: true
     notes: >-
       Broome & Kanabar (DOI 10.63492/pcv793; 61pp). Latest comprehensive wealth
-      distribution audit on 2020-22 WAS data. ND licence: quote-with-citation
-      handling as above.
+      distribution audit on 2020-22 WAS data. ND licence (ENFORCEMENT PENDING
+      H1-18): verbatim quote-with-citation only, never paraphrase-as-ours - same
+      downstream obligation as rf-intergenerational-audit-2024.
 
   - id: ifs-green-budget-2023-iht
     name: "IFS — Reforming inheritance tax (Green Budget 2023, ch. 7)"
@@ -261,11 +272,12 @@ sources:
     pdf_url: https://ifs.org.uk/sites/default/files/2026-03/Trends-in-income-and-wealth-inequalities-IFS-Deaton-Review-of-Inequality-final.pdf
     access_date: "2026-06-11"
     format: report
-    licence: CC BY 4.0 (OUP published version)
+    licence: CC BY 4.0
     update_pattern: one-off
     pipeline: null
     analyst_corpus: true
     notes: >-
       Bourquin, Brewer, Wernham (DOI 10.1093/ooec/odad100; 135pp). Long-run
-      wealth-vs-income inequality framing. Cite the OUP article as canonical;
-      ingest the IFS-hosted final PDF (old chapter URL redirects).
+      wealth-vs-income inequality framing. CC BY 4.0 applies to the OUP
+      published version; cite the OUP article as canonical and ingest the
+      IFS-hosted final PDF (old chapter URL redirects).
