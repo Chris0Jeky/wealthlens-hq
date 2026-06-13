@@ -281,3 +281,18 @@ sources:
       wealth-vs-income inequality framing. CC BY 4.0 applies to the OUP
       published version; cite the OUP article as canonical and ingest the
       IFS-hosted final PDF (old chapter URL redirects).
+
+  - id: hmrc-iht-statistics
+    name: HMRC Inheritance Tax Statistics
+    url: https://www.gov.uk/government/statistics/inheritance-tax-statistics
+    access_date: "2026-05-16"
+    format: ods
+    licence: OGL-3.0
+    update_pattern: annual
+    pipeline: null
+    notes: >
+      Backs the inheritance-tax dashboard chart and its freshness entry
+      (2021-22 edition). Table 12.1 - Estates notified to HMRC and liable to
+      IHT, plus tax paid by estate-size band. Hand-curated chart values (no
+      fetch pipeline); source/url/access_date match the chart's own meta block
+      and freshness.json. Crown copyright under the Open Government Licence v3.0.

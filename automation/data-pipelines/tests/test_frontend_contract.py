@@ -48,6 +48,7 @@ rewrite; both are ISO ``YYYY-MM-DD`` provenance dates.
 
 from __future__ import annotations
 
+import datetime
 import json
 import re
 from pathlib import Path
@@ -160,6 +161,14 @@ def test_committed_chart_has_cited_metadata(slug: str) -> None:
         value = meta.get(field)
         assert isinstance(value, str) and value.strip(), f"{meta_path.name}: '{field}' must be a non-empty string"
 
+    # source_url must be an http(s) URL, not a placeholder like "tbd"/"see notes" —
+    # matches the frontend static-data-validation.test.ts `new URL(...)` check on
+    # the same files (a citation URL is the load-bearing part of provenance).
+    source_url = meta["source_url"]
+    assert re.match(r"^https?://", source_url), (
+        f"{meta_path.name}: 'source_url' must be an http(s) URL, got {source_url!r}"
+    )
+
     # A provenance date under either committed key (access_date | last_updated).
     date_value = next(
         (meta[k] for k in DATE_FIELD_KEYS if isinstance(meta.get(k), str) and meta[k].strip()),
@@ -169,3 +178,9 @@ def test_committed_chart_has_cited_metadata(slug: str) -> None:
         f"{meta_path.name}: a non-empty date field ({' or '.join(DATE_FIELD_KEYS)}) is required"
     )
     assert _ISO_DATE.match(date_value), f"{meta_path.name}: date '{date_value}' must be ISO YYYY-MM-DD"
+    # Reject regex-valid but impossible dates (e.g. 2026-99-99) — mirrors the
+    # frontend isRealCalendarDate() round-trip guard.
+    try:
+        datetime.date.fromisoformat(date_value)
+    except ValueError as err:
+        raise AssertionError(f"{meta_path.name}: date '{date_value}' is not a real calendar date") from err
