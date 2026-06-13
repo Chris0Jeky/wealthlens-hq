@@ -1,6 +1,6 @@
 # ⚑ ACTION REQUIRED — Chris's outstanding tasks
 
-Last updated: 2026-06-13 (private-repo split EXECUTED under decision C; item 1 awaits Chris's confirm)
+Last updated: 2026-06-13 (session 8 build loop; added item 9 — wealth-shares stat-card data-integrity reconcile)
 
 > **This file is the single curated list of things that need _Chris_ (a human),
 > not the autonomous agent.** It exists so high-leverage actions never get lost in
@@ -91,6 +91,12 @@ Last updated: 2026-06-13 (private-repo split EXECUTED under decision C; item 1 a
      3. **Settings → Actions → General → Allow GitHub Actions to create and approve pull requests** (ON) — personal repos default this OFF, and without it the workflow's `gh pr review --approve` step fails. (Surfaced by review on #350; the workflow now documents this prerequisite.)
    - **Note:** #350 was hardened further during review this session — `requirements-dev.txt` now pins ruff/mypy/httpx/pandas-stubs so a clean `make install && make ci-quick` genuinely passes, and `pipeline-test`/`frontend-install` were fixed. All findings addressed; CI green.
    - **Done when:** PR #350 merges (then move this to Done).
+
+9. - [ ] **Wealth-shares chart: reconcile the stat-card / lede numbers with the WID series** — **P2, data-integrity, source decision**
+   - **Why:** PR #409 fixed a 100x unit bug so the WID chart now draws the CORRECT shares (top 10% ≈ 57% in 2023, top 1% ≈ 21%). That fix surfaced a pre-existing mismatch in `frontend/src/config/chartArticles.ts`: the **"Top 1% alone: 28%"** stat card and the **"Postwar low (1980): 50%"** card + lede are **not** supported by the WID p99p100/p90p100 series the page plots (WID top-1% 2023 ≈ 21%, never 28% post-1900; WID 1980 top-10% ≈ 58%, the modern low ≈ 52% in ~1990). Data-integrity guardrail: every figure must cite its source.
+   - **Decision needed:** for each card, EITHER (a) cite the specific alternative source/definition that yields 28% / 50% (e.g. a different vintage, income vs wealth, or household basis) on the card, OR (b) approve correcting them to the WID values the chart draws (and re-check the "more than the bottom 70% combined" / "bottom 50% = 6%" claims against a cited source). The 57% headline card is already correct.
+   - **Agent-doable once you decide:** I can apply (b) with WID-cited values, or wire (a) citations, in a small reviewed PR. I did NOT change your public headline numbers unilaterally.
+   - **Done when:** the stat cards + lede either cite their source or match the WID series, with no within-page contradiction.
 
 ---
 
