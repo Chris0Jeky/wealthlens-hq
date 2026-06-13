@@ -1,11 +1,11 @@
 # ADR 0003 — Reranker, embedding model, hosting, and abstention mechanism (open-decisions memo)
 
-- Status: **Partially accepted** — D1/D2/D4 adopted 2026-06-11 under Chris's
-  explicit blanket delegation ("make all the reasonable decisions that you can
-  make on your own"); each followed the memo's recommendation and Chris can
-  override any of them before the affected milestone ships. D3 (hosting)
-  remains **Proposed**: it requires Chris's hosting account and payment
-  details, so it stays his call to action.
+- Status: **Accepted** — D1/D2/D4 adopted 2026-06-11 under Chris's explicit
+  blanket delegation ("make all the reasonable decisions that you can make on
+  your own"); D3 (hosting) decided by Chris 2026-06-13 (**Hetzner CAX21**, per
+  the memo's recommendation). Each followed the memo; Chris can override any
+  before the affected milestone ships. Provisioning is H1-30, once the Hetzner
+  account exists.
 - Date: 2026-06-11. All prices/versions below were web-verified on this date
   against official pages (source URLs inline). Numbers marked *unverified*
   could not be confirmed on an official page and must not be relied on.
@@ -118,8 +118,10 @@ analyst matches the repo (`mypy>=1.10,<2`). Langfuse SDK is now v4
 - [x] D2 embedding model: **OpenAI text-embedding-3-small, 1536 dims** (per
       recommendation; adopted by delegation 2026-06-11; encoded in migration
       0002_embeddings)
-- [ ] D3 hosting (+ Langfuse placement): ______ (Chris — needs your hosting
-      account; memo recommends Hetzner CAX11/CAX21 + Docker Compose)
+- [x] D3 hosting (+ Langfuse placement): **Hetzner CAX21** (8GB Arm, ~£7/mo,
+      Docker Compose, everything on-box incl. self-hosted Langfuse) — chosen by
+      Chris 2026-06-13. Next: Chris creates the Hetzner account, then the agent
+      provisions (H1-30: Docker Compose, Caddy TLS, nightly pg_dump cron, Alembic + ingest).
 - [x] D4 abstention mechanism: **fused-RRF-score threshold + min-hits guard**
       (per recommendation; adopted by delegation 2026-06-11; calibrated against
       the reviewed golden set in H1-21)

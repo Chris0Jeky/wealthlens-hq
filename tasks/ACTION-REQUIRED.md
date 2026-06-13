@@ -1,6 +1,6 @@
 # ⚑ ACTION REQUIRED — Chris's outstanding tasks
 
-Last updated: 2026-06-13 (session 8; private-repo split confirmed DONE by Chris; H1-02 / ADR-D3 / stat-card reconcile surfaced for decision)
+Last updated: 2026-06-13 (session 8; private-split DONE + ADR-D3 hosting DECIDED=Hetzner CAX21; H1-02=reword+map, stat-cards=correct-to-WID chosen)
 
 > **This file is the single curated list of things that need _Chris_ (a human),
 > not the autonomous agent.** It exists so high-leverage actions never get lost in
@@ -73,10 +73,10 @@ Last updated: 2026-06-13 (session 8; private-repo split confirmed DONE by Chris;
      4. Run `make PYTHON=python eval-golden-validate` — it must pass.
    - **Done when:** no `status: DRAFT` remains in the first 20.
 
-6. - [ ] **Hero #1: rule on ADR 0003 D3 — hosting** — **P1, small decision (needs your account + card)**
-   - **Why:** The only still-open locked-plan decision (D1/D2/D4 were adopted under your delegation). M6's live URL needs a host; the memo in `docs/adr/0003-reranker-embedding-hosting-selection.md` compares Hetzner / Fly+Neon / Railway / Supabase with verified prices.
-   - **How:** Read the D3 table + Langfuse sizing note. Recommendation: **Hetzner CAX21** (8GB, ~£7/mo, everything on-box incl. Langfuse) or CAX11 (~£4.2/mo) with Langfuse placed separately. Decide, create the account, then tell the agent — provisioning (Docker Compose, Caddy, pg_dump cron) is agent-doable from there (H1-30).
-   - **Done when:** D3 is ticked in the ADR's decision record and ADR 0003 flips to Accepted.
+6. - [ ] **Create the Hetzner CAX21 account so the Analyst can be provisioned** — **P1 (D3 decided; needs your card)**
+   - **Decided (2026-06-13):** D3 hosting = **Hetzner CAX21** (8GB Arm, ~£7/mo, Docker Compose, everything on-box incl. self-hosted Langfuse). ADR 0003 flipped to Accepted; the decision is recorded — this item is now just the account-creation step.
+   - **How:** create a Hetzner Cloud account (hetzner.com/cloud) + add a card; spin up a CAX21 server (Ubuntu LTS, Arm, an EU region); give the agent SSH access (server IP + a key). Then I run **H1-30**: Docker Compose (app + Postgres/pgvector + Langfuse) + Caddy TLS + nightly `pg_dump` cron + Alembic + ingest.
+   - **Done when:** the CAX21 server exists and I have access (then H1-30 provisions it).
 
 7. - [ ] **Merge the `make ci-quick` reliability fix (PR #350)** — **P2, authorized + done, pending merge**
    - **Status (2026-06-05):** you authorized this; **fixed in PR #350**. The Makefile no longer swallows failures (`|| echo …` removed), so `make ci-quick` now runs real ruff + mypy + pytest and fails loudly. The dashboard-backend failures it used to hide are already resolved — a real run now shows **201 passed**. PR #350 also installs dev deps in `backend-install`, adds job timeouts, and enables Dependabot auto-merge.
@@ -99,5 +99,6 @@ Last updated: 2026-06-13 (session 8; private-repo split confirmed DONE by Chris;
 
 _(Cleared items move here with `[completed: YYYY-MM-DD]` once Chris confirms.)_
 
+- [x] **Hero #1 ADR 0003 D3 — hosting decision**: chosen **Hetzner CAX21** (8GB Arm, ~£7/mo, Docker Compose, all on-box incl. self-hosted Langfuse) per the memo; ADR flipped to Accepted. Provisioning (H1-30) now waits only on the account (see open item 6). [completed: 2026-06-13]
 - [x] **Private-repo split (decision C)**: sensitive material moved to the private `Chris0Jeky/hq-private` repo, removed from the public tip, every doc/hook/skill reference repointed to `../hq-private/...`, and `.gitignore` guards added; pre-split history exposure accepted (no rewrite). Chris confirmed complete. [completed: 2026-06-13]
 - [x] **Prepare for mySociety interview (if shortlisted)** — **not shortlisted: application rejected** (Chris confirmed 2026-06-11). Recorded per the item's done-when. Interview-prep habits (daily no-AI Python practice, Exercism) remain useful for future applications — see `../hq-private/career/applications/interview-prep-general.md` (private repo). [completed: 2026-06-11]
