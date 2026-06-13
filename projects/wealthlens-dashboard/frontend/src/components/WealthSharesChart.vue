@@ -7,7 +7,13 @@
  * Columns: year, percentile, value
  * Percentile filters: p99p100 (top 1%), p90p100 (top 10%)
  *
- * Accessibility: WCAG AA high-contrast colors, aria-label, keyboard tooltip.
+ * Units: WID stores wealth shares as fractions of 1 (e.g. 0.57 = 57%). The
+ * chart axis, tooltip, aria-label and data table all present percent, so the
+ * fraction is converted to percent at the display boundary (seriesFor). The
+ * stored value remains the raw fraction (single source of truth).
+ *
+ * Accessibility: WCAG AA high-contrast colors, aria-label, keyboard tooltip,
+ * and an AccessibleDataTable fallback (WCAG 1.1.1 non-text content).
  */
 import { computed, ref } from "vue";
 import { use } from "echarts/core";
@@ -20,7 +26,9 @@ import {
   LegendComponent,
 } from "echarts/components";
 import VChart from "vue-echarts";
+import AccessibleDataTable from "@/components/AccessibleDataTable.vue";
 import { useChartData } from "@/composables/useChartData";
+import type { DatasetRow } from "@/stores/data";
 import type { EChartsExportable } from "@/composables/useChartExport";
 import { escapeHtml, safeMinMax, warnIfSignificantDataLoss } from "@/utils/chart";
 import { COLOR_TOP_10, COLOR_TOP_1 } from "@/config/chartColors";
@@ -54,7 +62,9 @@ function seriesFor(percentile: string): { years: number[]; values: number[] } {
   const matched = rows.value.filter((r) => r.percentile === percentile);
   const mapped = matched.map((r) => ({
     year: Number(r.year),
-    value: Number(r.value),
+    // WID shares are fractions of 1 (0.57); convert to percent for display so
+    // the axis/tooltip/aria-label/table all read e.g. 57%, not 0.57%.
+    value: Number(r.value) * 100,
   }));
   const filtered = mapped
     .filter((r) => !isNaN(r.year) && !isNaN(r.value))
@@ -95,6 +105,39 @@ const top10Range = computed(() => safeMinMax(top10Data.value.values));
 
 /** Safe min/max for top 1% series values. */
 const top1Range = computed(() => safeMinMax(top1Data.value.values));
+
+/** Column headers for the accessible data-table fallback. */
+const tableColumns = ["Year", "Top 1% share", "Top 10% share"];
+
+/**
+ * One row per year for the AccessibleDataTable fallback (WCAG 1.1.1).
+ * Mirrors exactly what the chart plots: percent shares (already converted in
+ * seriesFor), formatted to one decimal place. A year present in only one
+ * series leaves the other cell null, which the table renders as an em dash.
+ */
+const tableRows = computed<DatasetRow[]>(() => {
+  const byYear = new Map<number, DatasetRow>();
+  const fmt = (v: number): string => `${v.toFixed(1)}%`;
+  const add = (
+    series: { years: number[]; values: number[] },
+    key: "Top 1% share" | "Top 10% share",
+  ): void => {
+    series.years.forEach((year, i) => {
+      const row = byYear.get(year) ?? {
+        Year: year,
+        "Top 1% share": null,
+        "Top 10% share": null,
+      };
+      row[key] = fmt(series.values[i]);
+      byYear.set(year, row);
+    });
+  };
+  add(top1Data.value, "Top 1% share");
+  add(top10Data.value, "Top 10% share");
+  return [...byYear.values()].sort(
+    (a, b) => (a.Year as number) - (b.Year as number),
+  );
+});
 
 const option = computed(() => {
   const top1 = top1Data.value;
@@ -232,5 +275,12 @@ const option = computed(() => {
       >
         World Inequality Database (wid.world)<span class="sr-only"> (opens in new tab)</span></a>, accessed 2026-05-14
     </p>
+
+    <!-- Accessible data-table fallback (WCAG 1.1.1 non-text content). -->
+    <AccessibleDataTable
+      :rows="tableRows"
+      :columns="tableColumns"
+      caption="UK net personal wealth shares by year: top 1% and top 10% (equal-split adults). Source: World Inequality Database (wid.world), CC-BY 4.0."
+    />
   </div>
 </template>
