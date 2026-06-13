@@ -45,12 +45,13 @@ def test_app_factory_and_healthz() -> None:
 
 
 def test_pending_stubs_raise_not_implemented() -> None:
-    """Pending seams fail loudly, not silently (repo rule: no silent failures)."""
-    from wealthlens_analyst.llm.client import get_client
-    from wealthlens_analyst.retrieval.fuse_rrf import fuse_rrf
+    """Pending seams fail loudly, not silently (repo rule: no silent failures).
 
-    with pytest.raises(NotImplementedError):
-        fuse_rrf([], [])
+    fuse_rrf (H1-12) is now implemented, so it is no longer asserted here — its
+    behaviour is pinned by tests/test_fuse_rrf.py.
+    """
+    from wealthlens_analyst.llm.client import get_client
+
     with pytest.raises(NotImplementedError):
         get_client()
 

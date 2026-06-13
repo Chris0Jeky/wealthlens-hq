@@ -7,11 +7,11 @@ cosine similarity). k = 60 is the standard constant from the original paper
 
 This module is pure (no DB, no model calls) so the eval harness's
 deterministic checks can exercise it directly.
-
-Pending: task H1-12 in tasks/hero1-backlog.md.
 """
 
 from __future__ import annotations
+
+from dataclasses import replace
 
 from wealthlens_analyst.retrieval.fts import ChunkHit
 
@@ -27,9 +27,35 @@ def fuse_rrf(
 ) -> list[ChunkHit]:
     """Fuse two ranked lists into one, ordered by descending RRF score.
 
-    Each returned hit keeps its provenance; component ranks are surfaced via
-    the /ask?debug=retrieval response so recall analysis can attribute hits
-    to a retriever. Ties break deterministically (by chunk_id) so results
-    are reproducible.
+    RRF score per chunk is ``sum over lists of 1 / (k + rank)`` where ``rank``
+    is the chunk's 1-based position in that list (ADR 0001). The fusion is
+    rank-based, so the retriever-native ``ChunkHit.score`` values (ts_rank vs
+    cosine similarity) are deliberately ignored — only list position matters,
+    which is what makes RRF robust to incomparable score distributions.
+
+    Each returned hit keeps its provenance (source_id/document_id/section/
+    page/span/text); its ``rank`` is reassigned to the fused 1-based rank and
+    its ``score`` to the fused RRF score. Component (per-retriever) ranks are
+    surfaced separately by the /ask?debug=retrieval response (H1-13), not here,
+    so recall analysis can still attribute a hit to a retriever.
+
+    Ties break deterministically by ascending ``chunk_id`` so results are
+    reproducible. Pure function: no DB, no model calls.
     """
-    raise NotImplementedError("H1-12: RRF fusion not yet implemented")
+    if k <= 0:
+        raise ValueError(f"RRF k must be positive, got {k}")
+
+    scores: dict[int, float] = {}
+    representative: dict[int, ChunkHit] = {}
+    for ranked in (lexical, dense):
+        for position, hit in enumerate(ranked, start=1):
+            scores[hit.chunk_id] = scores.get(hit.chunk_id, 0.0) + 1.0 / (k + position)
+            # First occurrence wins; both inputs are deterministic, so this is
+            # stable and preserves the chunk's ingestion-time provenance.
+            representative.setdefault(hit.chunk_id, hit)
+
+    ordered_ids = sorted(scores, key=lambda cid: (-scores[cid], cid))
+    return [
+        replace(representative[cid], rank=fused_rank, score=scores[cid])
+        for fused_rank, cid in enumerate(ordered_ids[:limit], start=1)
+    ]
