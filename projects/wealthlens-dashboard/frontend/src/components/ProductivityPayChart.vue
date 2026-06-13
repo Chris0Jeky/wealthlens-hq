@@ -8,7 +8,7 @@
  *
  * Accessibility: WCAG AA high-contrast colors, aria-label, keyboard tooltip.
  */
-import { computed, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { use } from "echarts/core";
 import { CanvasRenderer } from "echarts/renderers";
 import { LineChart } from "echarts/charts";
@@ -21,6 +21,7 @@ import {
 import VChart from "vue-echarts";
 import { useChartData } from "@/composables/useChartData";
 import type { EChartsExportable } from "@/composables/useChartExport";
+import { useDataStore } from "@/stores/data";
 import { escapeHtml, safeMinMax, warnIfSignificantDataLoss } from "@/utils/chart";
 
 // Register only the ECharts modules we need (tree-shaking)
@@ -37,6 +38,25 @@ const { rows, loading, error } = useChartData("productivity-pay");
 const chart = ref<EChartsExportable | null>(null);
 
 defineExpose({ chart });
+
+/**
+ * Data-honesty caveat: true only when the pipeline fell back to illustrative
+ * data (sidecar data_type === "illustrative_fallback"). Default OFF — a live
+ * dataset, a missing sidecar, or a failed metadata fetch all leave this false,
+ * so the caveat shows ONLY when we positively know the data is illustrative.
+ */
+const isIllustrative = ref(false);
+const dataStore = useDataStore();
+
+onMounted(async () => {
+  try {
+    const meta = await dataStore.fetchMetadata("productivity-pay");
+    isIllustrative.value = meta.data_type === "illustrative_fallback";
+  } catch {
+    // A metadata fetch failure must not break the chart; leave the caveat off.
+    isIllustrative.value = false;
+  }
+});
 
 /**
  * Respect prefers-reduced-motion (WCAG 2.3.3).
@@ -200,6 +220,15 @@ const option = computed(() => {
         autoresize
       />
     </div>
+
+    <!-- Data-honesty caveat — shown only when the pipeline used illustrative
+         fallback data (data_type === "illustrative_fallback"). Default OFF. -->
+    <p
+      v-if="isIllustrative"
+      class="text-xs text-[var(--wl-ink-muted)] mt-2 text-center italic"
+    >
+      Illustrative. Derived from ONS bulletins, not exact time-series values.
+    </p>
 
     <!-- Source citation -->
     <p class="text-sm text-[var(--wl-ink-muted)] mt-4 text-center">
