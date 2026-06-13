@@ -1,0 +1,9 @@
+{
+  "name": "inheritance-tax",
+  "description": "Share of estates liable for Inheritance Tax in the UK, plus IHT liability rate over time and tax paid by estate size.",
+  "source": "HMRC Inheritance Tax Statistics 2021-22",
+  "source_url": "https://www.gov.uk/government/statistics/inheritance-tax-statistics",
+  "access_date": "2026-05-16",
+  "row_count": 6,
+  "columns": ["year", "deaths", "liable", "rate_pct", "revenue_bn"]
+}

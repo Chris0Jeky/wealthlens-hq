@@ -48,6 +48,7 @@ projects/wealthlens-dashboard/frontend/public/data/*
 !projects/wealthlens-dashboard/frontend/public/data/wealth-shares.json
 !projects/wealthlens-dashboard/frontend/public/data/wealth-shares-metadata.json
 !projects/wealthlens-dashboard/frontend/public/data/inheritance-tax.json
+!projects/wealthlens-dashboard/frontend/public/data/inheritance-tax-metadata.json
 !projects/wealthlens-dashboard/frontend/public/data/wage-stagnation.json
 !projects/wealthlens-dashboard/frontend/public/data/wage-stagnation-metadata.json
 
