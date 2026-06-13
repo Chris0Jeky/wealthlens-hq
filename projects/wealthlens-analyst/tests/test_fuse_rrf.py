@@ -77,7 +77,10 @@ def test_limit_truncates_to_top_n() -> None:
     assert [h.chunk_id for h in fused] == [1, 2]
 
 
-def test_k_override_changes_scores_not_order() -> None:
+def test_k_override_scales_single_list_scores() -> None:
+    # Scoped to a SINGLE list: order is monotonic in position for any k>0, so
+    # only the absolute scores change. (For two overlapping lists, k can also
+    # reweight overlap-vs-depth and change the order — not asserted here.)
     lst = _ranked(1, 2, 3)
     default = fuse_rrf(lst, [])
     small_k = fuse_rrf(lst, [], k=1)
@@ -102,3 +105,14 @@ def test_provenance_preserved() -> None:
 def test_invalid_k_raises() -> None:
     with pytest.raises(ValueError, match="k must be positive"):
         fuse_rrf(_ranked(1), [], k=0)
+
+
+def test_negative_limit_raises() -> None:
+    # Fail loudly rather than silently returning a slice-truncated set
+    # (Python's list[:-1] would drop from the end — a silent wrong result).
+    with pytest.raises(ValueError, match="limit must be non-negative"):
+        fuse_rrf(_ranked(1, 2, 3), [], limit=-1)
+
+
+def test_limit_zero_returns_empty() -> None:
+    assert fuse_rrf(_ranked(1, 2, 3), [], limit=0) == []

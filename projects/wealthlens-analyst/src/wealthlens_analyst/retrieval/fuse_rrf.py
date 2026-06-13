@@ -27,23 +27,33 @@ def fuse_rrf(
 ) -> list[ChunkHit]:
     """Fuse two ranked lists into one, ordered by descending RRF score.
 
-    RRF score per chunk is ``sum over lists of 1 / (k + rank)`` where ``rank``
-    is the chunk's 1-based position in that list (ADR 0001). The fusion is
-    rank-based, so the retriever-native ``ChunkHit.score`` values (ts_rank vs
-    cosine similarity) are deliberately ignored — only list position matters,
-    which is what makes RRF robust to incomparable score distributions.
+    RRF score per chunk is ``sum over lists of 1 / (k + rank)`` (ADR 0001).
+    ``rank`` here is the chunk's 1-based POSITION in the list (``enumerate``),
+    NOT the ``ChunkHit.rank`` field — the retriever-native ``ChunkHit.score``
+    and ``ChunkHit.rank`` are deliberately ignored, so RRF stays robust to the
+    incomparable ts_rank vs cosine score distributions.
+
+    Preconditions (both guaranteed by the FTS/dense producers, which emit
+    ``ORDER BY ... LIMIT`` so position == rank and rows are unique):
+      * each input list is ordered by its retriever's rank (best first);
+      * each ``chunk_id`` appears at most once per list — a duplicate within a
+        single list would double-count its contribution (the chunks-table PK
+        makes that unreachable in practice, so it is asserted by convention).
 
     Each returned hit keeps its provenance (source_id/document_id/section/
     page/span/text); its ``rank`` is reassigned to the fused 1-based rank and
     its ``score`` to the fused RRF score. Component (per-retriever) ranks are
-    surfaced separately by the /ask?debug=retrieval response (H1-13), not here,
-    so recall analysis can still attribute a hit to a retriever.
+    surfaced separately by the /ask?debug=retrieval response (H1-13), which
+    still holds the raw input lists — so recall analysis can attribute a hit
+    to a retriever even though this function overwrites rank/score.
 
     Ties break deterministically by ascending ``chunk_id`` so results are
-    reproducible. Pure function: no DB, no model calls.
+    reproducible. ``limit`` must be >= 0. Pure function: no DB, no model calls.
     """
     if k <= 0:
         raise ValueError(f"RRF k must be positive, got {k}")
+    if limit < 0:
+        raise ValueError(f"RRF limit must be non-negative, got {limit}")
 
     scores: dict[int, float] = {}
     representative: dict[int, ChunkHit] = {}
