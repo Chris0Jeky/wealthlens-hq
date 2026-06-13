@@ -10,12 +10,17 @@ Verifies that the RateLimitMiddleware correctly:
 
 from __future__ import annotations
 
+import asyncio
 import importlib
+import time
 
-from app.rate_limit import RateLimitMiddleware
+from app.rate_limit import MAX_TRACKED_IPS, RateLimitMiddleware
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from pytest import MonkeyPatch
+from starlette.requests import Request
+from starlette.responses import Response
+from starlette.types import Receive, Scope, Send
 
 
 def _create_app(requests_per_minute: int = 5, trust_forwarded_for: bool = False) -> FastAPI:
@@ -150,3 +155,108 @@ class TestRateLimitAppConfig:
         for _ in range(60):
             assert client.get("/openapi.json").status_code == 200
         assert client.get("/openapi.json").status_code == 429
+
+
+async def _noop_asgi(scope: Scope, receive: Receive, send: Send) -> None:
+    """Placeholder downstream ASGI app for direct dispatch() tests (never run)."""
+    return None
+
+
+def _make_request(client_ip: str) -> Request:
+    """Build a minimal GET request scope with a fixed client IP."""
+    scope: Scope = {
+        "type": "http",
+        "http_version": "1.1",
+        "method": "GET",
+        "path": "/test",
+        "headers": [],
+        "query_string": b"",
+        "scheme": "http",
+        "server": ("testserver", 80),
+        "client": (client_ip, 12345),
+    }
+    return Request(scope)
+
+
+async def _call_next(request: Request) -> Response:
+    """Stand-in downstream handler; returns 200 like a normal route would."""
+    return Response("ok", status_code=200)
+
+
+def _fill_to_cap(mw: RateLimitMiddleware, count: int, now: float) -> None:
+    """Seed the limiter's IP table with `count` distinct synthetic IPs.
+
+    Each gets one recent timestamp so it survives the 60s sliding-window clean
+    and counts toward MAX_TRACKED_IPS. IPs are 10.0.x.y, distinct for count up
+    to 65536 and disjoint from the public test IPs (203.0.113.*, 192.0.2.*).
+    """
+    for i in range(count):
+        ip = f"10.{(i // 65536) % 256}.{(i // 256) % 256}.{i % 256}"
+        mw._hits[ip] = [now]
+
+
+class TestRateLimitOverflow:
+    """Characterise CURRENT behaviour when the IP table hits MAX_TRACKED_IPS.
+
+    rate_limit.py hard-caps tracking at MAX_TRACKED_IPS (10_000) distinct IPs.
+    Once the table is full, a *previously unseen* IP is allowed through without
+    being counted (fail-open) -- see rate_limit.py lines 75-76. These tests LOCK
+    that documented behaviour; they are NOT asserting a desired/changed design,
+    so if the team later decides to fail-closed at the cap, flip them deliberately.
+    Driven via dispatch() directly to avoid 10k HTTP round-trips through TestClient.
+    """
+
+    def test_below_cap_new_ip_is_tracked_and_limited(self) -> None:
+        """Below the cap the normal sliding-window limit still applies."""
+        mw = RateLimitMiddleware(_noop_asgi, requests_per_minute=3)
+        now = time.time()
+        _fill_to_cap(mw, MAX_TRACKED_IPS - 1, now)
+        assert len(mw._hits) == MAX_TRACKED_IPS - 1
+
+        async def run() -> None:
+            new_ip = "203.0.113.5"
+            # First 3 requests are allowed and the IP becomes tracked.
+            for _ in range(3):
+                resp = await mw.dispatch(_make_request(new_ip), _call_next)
+                assert resp.status_code == 200
+            assert new_ip in mw._hits
+            # 4th request over the per-minute limit is rejected.
+            resp = await mw.dispatch(_make_request(new_ip), _call_next)
+            assert resp.status_code == 429
+
+        asyncio.run(run())
+
+    def test_at_cap_new_ip_fails_open(self) -> None:
+        """At the cap a brand-new IP is allowed through and NOT tracked."""
+        mw = RateLimitMiddleware(_noop_asgi, requests_per_minute=1)
+        now = time.time()
+        _fill_to_cap(mw, MAX_TRACKED_IPS, now)
+        assert len(mw._hits) == MAX_TRACKED_IPS
+
+        async def run() -> None:
+            new_ip = "203.0.113.99"
+            # requests_per_minute is 1, so any tracked IP would 429 on a 2nd hit;
+            # but an unseen IP at the cap fails open on every request.
+            for _ in range(5):
+                resp = await mw.dispatch(_make_request(new_ip), _call_next)
+                assert resp.status_code == 200
+            # Documented fail-open: the new IP is never added to the table.
+            assert new_ip not in mw._hits
+            assert len(mw._hits) == MAX_TRACKED_IPS
+
+        asyncio.run(run())
+
+    def test_at_cap_existing_ip_still_limited(self) -> None:
+        """Overflow bypass applies only to *unseen* IPs; known IPs still limited."""
+        mw = RateLimitMiddleware(_noop_asgi, requests_per_minute=3)
+        now = time.time()
+        _fill_to_cap(mw, MAX_TRACKED_IPS - 1, now)
+        existing_ip = "192.0.2.7"
+        mw._hits[existing_ip] = [now, now, now]  # already at the per-minute limit
+        assert len(mw._hits) == MAX_TRACKED_IPS
+
+        async def run() -> None:
+            resp = await mw.dispatch(_make_request(existing_ip), _call_next)
+            assert resp.status_code == 429
+
+        asyncio.run(run())
