@@ -1,8 +1,22 @@
 # Active Sprint
 
-Last updated: 2026-06-11
+Last updated: 2026-06-13
 
-> **LATEST (2026-06-11 — Hero #1 launched):** PRs #403 (kickoff: plan/backlog/ADRs/
+> **LATEST (2026-06-13 — session 8 autonomous build loop):** 5 PRs merged to main,
+> each with a planning workflow + 2 independent adversarial-review lenses + green CI:
+> **#406** H1-01 (tag Hero #1 corpus slice: 8 sources in `registries/sources.yml`),
+> **#407** H1-12 (pure RRF fusion `retrieval/fuse_rrf.py` + 15 tests),
+> **#408** PR-8 (rate-limit overflow characterisation test, mutation-verified),
+> **#409** WL-001 (**fixed a 100× unit bug** on the WID wealth-shares chart — shares
+> were plotted as fractions on a % axis, showing ~0.5% vs the true 57% — and wired the
+> unused `AccessibleDataTable`, WCAG 1.1.1), **#410** PR-5 (productivity-pay
+> "illustrative data" caveat, 4-layer data-honesty fix). Dependabot #392 closed (mypy
+> conflict). New data-integrity item flagged for Chris (`ACTION-REQUIRED` #9: the
+> wealth-shares stat cards "28%"/"1980=50%" don't match the now-correct WID series).
+> Wave 4 in flight: WL-003/007 (inheritance-tax metadata + chart-contract test).
+> Full state: `../hq-private/projects/wealthlens/memories/session_notes/ORCHESTRATION.md` (session 8).
+
+> **Prior (2026-06-11 — Hero #1 launched):** PRs #403 (kickoff: plan/backlog/ADRs/
 > scaffolding/evals) + #404 (Postgres+pgvector + Alembic, live-verified) MERGED. Next
 > unblocked: H1-01 (tag corpus slice), H1-02 (@Chris: review 20 golden questions),
 > H1-12 (RRF). See `tasks/hero1-backlog.md` + `docs/plan/HERO1_PLAN.md` (LOCKED).
