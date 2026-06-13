@@ -31,6 +31,14 @@ class DatasetMetadataResponse(BaseModel):
         default=None,
         description="ISO 8601 datetime of last CSV file modification, or null if missing",
     )
+    data_type: str | None = Field(
+        default=None,
+        description=(
+            "Data provenance from the pipeline's .meta.json sidecar: "
+            "'live_ons' for live data, 'illustrative_fallback' when "
+            "illustrative data was used, or null if no sidecar exists"
+        ),
+    )
 
 
 class AllDatasetsMetadataResponse(BaseModel):

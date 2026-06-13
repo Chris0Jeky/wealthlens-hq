@@ -18,6 +18,8 @@ export interface DatasetMetadata {
   access_date: string
   row_count: number
   columns: string[]
+  /** Pipeline provenance: 'live_ons', 'illustrative_fallback', or null (no sidecar). */
+  data_type?: string | null
 }
 
 export interface PaginatedResponse {

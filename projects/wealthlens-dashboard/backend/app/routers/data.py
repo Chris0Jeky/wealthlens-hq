@@ -7,6 +7,7 @@ that reports CSV availability.
 
 from __future__ import annotations
 
+import json
 import logging
 import math
 import os
@@ -213,6 +214,7 @@ def _build_metadata(dataset_name: str) -> dict[str, Any]:
     row_count, columns = _metadata_cache[dataset_name]
 
     last_updated = _get_last_updated(dataset_name)
+    data_type = _get_data_type(dataset_name)
 
     return {
         "name": dataset_name,
@@ -223,6 +225,7 @@ def _build_metadata(dataset_name: str) -> dict[str, Any]:
         "row_count": row_count,
         "columns": columns,
         "last_updated": last_updated,
+        "data_type": data_type,
     }
 
 
@@ -244,6 +247,31 @@ def _get_last_updated(dataset_name: str) -> str | None:
     except OSError as exc:
         logger.warning("Cannot stat dataset %s: %s", dataset_name, exc)
         return None
+
+
+def _get_data_type(dataset_name: str) -> str | None:
+    """Return the ``data_type`` from a dataset's ``.meta.json`` sidecar.
+
+    The data pipelines write a sidecar (e.g. ``productivity_pay_gap.meta.json``)
+    next to each processed CSV recording provenance — ``"live_ons"`` for live
+    data or ``"illustrative_fallback"`` when illustrative data was used. The
+    frontend surfaces a data-honesty caveat when the value is
+    ``"illustrative_fallback"``.
+
+    Deliberately UNCACHED (unlike row_count/columns): a pipeline rerun that
+    switches a dataset between live and fallback data must be reflected without
+    a server restart, and this is a single cheap small-file read.
+
+    Returns None when no sidecar exists or it cannot be read/parsed, so a
+    dataset without provenance metadata stays backward-compatible (no caveat).
+    """
+    sidecar_path = (DATA_DIR / DATASETS[dataset_name]).with_suffix(".meta.json")
+    try:
+        sidecar = json.loads(sidecar_path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return None
+    value = sidecar.get("data_type")
+    return value if isinstance(value, str) else None
 
 
 def _freshness_status(age_hours: float) -> Literal["fresh", "stale", "expired"]:

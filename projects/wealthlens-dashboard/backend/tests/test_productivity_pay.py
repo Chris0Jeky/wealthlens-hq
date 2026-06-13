@@ -10,6 +10,7 @@ pipeline has not been executed (no silent 503 skips).
 from __future__ import annotations
 
 import importlib
+import json
 import textwrap
 from collections.abc import Generator
 from pathlib import Path
@@ -85,6 +86,65 @@ class TestProductivityPayMetadata:
         meta = response.json()
         expected = {"year", "productivity_index", "pay_index", "gap_pct"}
         assert expected.issubset(set(meta["columns"]))
+
+
+def _client_with_sidecar(
+    tmp_path: Path, data_type: str | None
+) -> Generator[TestClient, None, None]:
+    """Build a TestClient whose productivity-pay CSV optionally has a sidecar.
+
+    Writes the sample CSV to *tmp_path* and, when *data_type* is not None,
+    writes a ``productivity_pay_gap.meta.json`` sidecar recording that
+    provenance (mirroring what the pipeline emits). Patches DATA_DIR and
+    clears the metadata cache so the reloaded app reads from *tmp_path*.
+    """
+    csv_path = tmp_path / "productivity_pay_gap.csv"
+    csv_path.write_text(_SAMPLE_CSV, encoding="utf-8")
+    if data_type is not None:
+        sidecar = csv_path.with_suffix(".meta.json")
+        sidecar.write_text(
+            json.dumps({"data_type": data_type, "csv_file": csv_path.name}),
+            encoding="utf-8",
+        )
+
+    import app.routers.data as data_mod
+
+    with patch.object(data_mod, "DATA_DIR", tmp_path):
+        data_mod._metadata_cache.clear()
+        import app.main as main_mod
+        importlib.reload(main_mod)
+        yield TestClient(main_mod.app)
+
+
+class TestProductivityPayDataType:
+    """data_type provenance is surfaced (or null) in the metadata response.
+
+    Proves the data-honesty contract end-to-end through the backend: the
+    sidecar's data_type flows into GET /{name}/metadata so the frontend can
+    show an illustrative-data caveat. data_type is read UNCACHED, so each
+    case gets its own client/sidecar state.
+    """
+
+    def test_data_type_none_without_sidecar(self, tmp_path: Path) -> None:
+        """No sidecar -> data_type is null (backward-compatible default)."""
+        for client in _client_with_sidecar(tmp_path, data_type=None):
+            response = client.get("/api/data/productivity-pay/metadata")
+            assert response.status_code == 200
+            assert response.json()["data_type"] is None
+
+    def test_data_type_illustrative_fallback(self, tmp_path: Path) -> None:
+        """An illustrative_fallback sidecar surfaces as data_type."""
+        for client in _client_with_sidecar(tmp_path, data_type="illustrative_fallback"):
+            response = client.get("/api/data/productivity-pay/metadata")
+            assert response.status_code == 200
+            assert response.json()["data_type"] == "illustrative_fallback"
+
+    def test_data_type_live_ons(self, tmp_path: Path) -> None:
+        """A live_ons sidecar surfaces as data_type."""
+        for client in _client_with_sidecar(tmp_path, data_type="live_ons"):
+            response = client.get("/api/data/productivity-pay/metadata")
+            assert response.status_code == 200
+            assert response.json()["data_type"] == "live_ons"
 
 
 class TestProductivityPayData:
