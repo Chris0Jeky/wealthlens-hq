@@ -74,7 +74,6 @@ const regionData = computed(() => {
   // same coalesced data keeps the accessible table and the plotted line in
   // lockstep (no extra/stale points for non-visual users).
   const byRegionMap = new Map<string, Map<number, number>>();
-  let skippedRows = 0;
 
   for (const row of rows.value) {
     const region = String(row.region ?? "");
@@ -87,7 +86,6 @@ const regionData = computed(() => {
     const ratio =
       row.ratio == null || row.ratio === "" ? NaN : Number(row.ratio);
     if (!region || isNaN(year) || isNaN(ratio)) {
-      skippedRows++;
       continue;
     }
 
