@@ -6,6 +6,11 @@
   any number here against those before re-using it. Headline figures corrected
   2026-06-19 to the WID series (top 10% ~57%, top 1% ~21%, all-time low ~52% around
   1990); the middle-40%/bottom-50% split is illustrative and unverified here.
+  ⚠️ STALE PLOTTED DATA: the embedded `const DATA` array further down (which draws
+  the SVG line) was NOT re-synced — it still plots the old illustrative series
+  (top 1% as 28, the low at ~50% in 1980). Only the prose + stat cards above were
+  corrected. Re-syncing the data array to WID is a tracked follow-up; until then the
+  drawn line is approximate and must not be quoted.
 -->
 <html lang="en">
 <head>
@@ -567,7 +572,7 @@
       <p>In two hundred years of data, the top 10% have <strong>never</strong> held less than about 52% of UK personal wealth. The post-war compression was real — but partial. Since around 1990, the trend has been steady re-concentration.</p>
     </div>
 
-    <p>The shape tells a story in three acts. From 1820 to 1914, the UK was the most unequal large economy in the world by some measures — a tiny aristocratic and capitalist class held almost 90% of all personal wealth. Two world wars, progressive taxation, and the postwar welfare settlement compressed this dramatically: by around 1990 the top 10%'s share had fallen to about 52% — its lowest — while the bottom 90% held roughly 43%. Since then the curve has bent the other way.</p>
+    <p>The shape tells a story in three acts. From 1820 to 1914, the UK was the most unequal large economy in the world by some measures — a tiny aristocratic and capitalist class held almost 90% of all personal wealth. Two world wars, progressive taxation, and the postwar welfare settlement compressed this dramatically: by around 1990 the top 10%'s share had fallen to about 52% — its lowest. Since then the curve has bent the other way.</p>
 
     <h2>Why it <em>matters</em></h2>
     <p>Wealth, not income, is the dominant determinant of life outcomes in the UK in 2026. It funds deposits on first homes, university choices, business creation, and old-age security. When wealth is concentrated, opportunity is too — and the rate of inter-generational mobility falls. The "left-behind town" isn't a metaphor. It's a balance sheet.</p>

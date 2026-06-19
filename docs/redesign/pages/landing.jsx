@@ -5,7 +5,11 @@
    projects/wealthlens-dashboard/frontend/src/config/chartArticles.ts (WID series:
    top 10% ~57%, top 1% ~21%). The FLOW_GROUPS split below (top 10% 57 / middle 40
    37 / bottom 50 6) is illustrative and not verified against a cited source — do
-   not re-use these middle/bottom figures without checking WID first. */
+   not re-use these middle/bottom figures without checking WID first.
+   ⚠️ STALE PLOTTED DATA: the WEALTH_SHARES array (which draws the featured line
+   chart) was NOT re-synced — it still plots top 1% as 28 and the all-time low at
+   ~50% in 1980 (WID: top 1% ~21%, low ~52% around 1990). Re-syncing it is a tracked
+   follow-up; the drawn line is approximate and must not be quoted. */
 
 const LANDING_TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
   "palette": "frontpage",
