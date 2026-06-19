@@ -152,4 +152,22 @@ describe("WealthByDecileChart accessible data table", () => {
     ]);
     expect(wrapper.text()).not.toContain("NaN");
   });
+
+  it("only claims 'net negative wealth' in the aria-label when the poorest decile is actually negative", () => {
+    // Negative poorest (synthetic) → the warning clause appears.
+    const neg = mount(WealthByDecileChart);
+    expect(neg.find("[role='img']").attributes("aria-label") ?? "").toContain(
+      "net negative wealth",
+    );
+
+    // Positive poorest (as in the real ONS data, +£13.9bn) → NO false claim of a
+    // red-highlighted negative bar that is never drawn.
+    mockRows.value = DECILE_ROWS.map((r, i) =>
+      i === 0 ? { ...r, total_wealth_bn: 13.9 } : r,
+    );
+    const pos = mount(WealthByDecileChart);
+    const label = pos.find("[role='img']").attributes("aria-label") ?? "";
+    expect(label).not.toContain("net negative wealth");
+    expect(label).not.toContain("highlighted in red");
+  });
 });

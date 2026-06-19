@@ -5,8 +5,10 @@
  * Data source: ONS Wealth and Assets Survey
  * Columns: decile, total_wealth_bn (GBP billions)
  *
- * The 1st (poorest) decile has negative net wealth and is highlighted
- * in a warning color. All other bars use a standard WCAG AA compliant blue.
+ * Any decile whose net wealth is negative is highlighted in a warning color;
+ * all other bars use a standard WCAG AA compliant blue. (With the current ONS
+ * data every decile's total wealth is positive, so no bar is highlighted — the
+ * negative styling is a data-driven safeguard, not an assumption about a band.)
  *
  * Accessibility: WCAG AA high-contrast colors, aria-label, escapeHtml tooltips.
  */
@@ -76,6 +78,16 @@ const headlineInsight = computed(() => {
   const poorest = data[0];
   if (!richest || !poorest) return "";
   return `The ${richest.decile} decile holds ${richest.totalWealthBn.toLocaleString()}bn in total wealth, while the ${poorest.decile} decile has ${poorest.totalWealthBn.toLocaleString()}bn`;
+});
+
+/**
+ * Only claim the "negative net wealth / red highlight" in the aria-label when the
+ * poorest decile's value is actually negative. The committed ONS data is positive
+ * (+£13.9bn), so the claim would otherwise describe a red bar that is never drawn.
+ */
+const poorestIsNegative = computed(() => {
+  const poorest = parsedData.value[0];
+  return poorest ? poorest.totalWealthBn < 0 : false;
 });
 
 /**
@@ -199,7 +211,7 @@ const option = computed(() => {
   <div v-else>
     <div
       role="img"
-      :aria-label="`Bar chart showing total household wealth by decile in the UK. ${headlineInsight}. The poorest decile is highlighted in red to indicate net negative wealth.`"
+      :aria-label="`Bar chart showing total household wealth by decile in the UK. ${headlineInsight}.${poorestIsNegative ? ' The poorest decile is highlighted in red to indicate net negative wealth.' : ''}`"
       class="w-full"
     >
       <VChart
