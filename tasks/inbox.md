@@ -54,16 +54,19 @@ Every concrete action item extracted from research. Triage into active-sprint, b
   - Root-cause fix options: set the build tsconfig to not emit (`noEmit`/separate
     typecheck project), or stop tracking the config/scripts `.js` and gitignore
     them + add a `predev`/`pretest` regen step. Pick one and apply repo-wide.
-- [ ] **Sync the `docs/redesign/pages/` static prototypes to the corrected
-  wealth-shares figures** (surfaced by PR #416 review, 2026-06-19). `chart.html`
-  (lines ~466, 491, 495-502, 559, 562), `landing.jsx:119`, `landing.html:943`
-  still show the discredited `Top 1% 28%`, `Bottom 50% 6%`, `Postwar low (1980)
-  50%`, `never < 49%`, `now at 1910 levels`, `since 1980`. These are design
-  mockups (NOT built or deployed — the live page renders from
-  `src/config/chartArticles.ts`), so low severity, but `chart.html` is the
-  broadsheet design source-of-truth the live page mirrors; leaving it stale risks
-  re-introducing the bad numbers on a future re-sync. Update the copy or mark the
-  file superseded by `chartArticles.ts`.
+- [~] **Sync the `docs/redesign/pages/` static prototypes to the corrected
+  wealth-shares figures** (surfaced by PR #416 review). **PROSE + STAT CARDS done in
+  PR #431** (Top 1% 28→21, Postwar low 1980/50→~1990/52, removed "1910 levels",
+  "since 1980"→"~1990", fixed a 1990 bottom-90 slip the review caught) + each file
+  now carries a "DESIGN MOCKUP — NOT DEPLOYED" banner pointing to chartArticles.ts.
+  **REMAINING:** the embedded chart DATA arrays that draw the SVG line — `const DATA`
+  in `chart.html` (~lines 651-674) and `WEALTH_SHARES` in `landing.jsx` (~369-392) —
+  still plot the OLD series (top 1% = 28, the ~1980/50% low) and the era-band shading
+  is hardcoded at 1980. #431 explicitly flags this as stale in the banners but does
+  NOT re-sync it, because the 5-column arrays carry middle-40/bottom-50 columns that
+  the 2-series WID data in `wealth-shares.json` can't supply. To finish: source the
+  full historical WID decomposition (incl. p50p90 / p0p50) and rebuild the arrays +
+  move the era band to ~1990. Low severity (not deployed).
 
 ---
 
