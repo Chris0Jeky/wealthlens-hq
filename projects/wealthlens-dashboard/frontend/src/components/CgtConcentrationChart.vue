@@ -37,7 +37,11 @@ import AccessibleDataTable from "@/components/AccessibleDataTable.vue";
 import type { DatasetRow } from "@/stores/data";
 import { useChartData } from "@/composables/useChartData";
 import type { EChartsExportable } from "@/composables/useChartExport";
-import { escapeHtml, toNumberOrNaN, warnIfSignificantDataLoss } from "@/utils/chart";
+import {
+  escapeHtml,
+  toNumberOrNaN,
+  warnIfSignificantDataLoss,
+} from "@/utils/chart";
 
 // Register only the ECharts modules we need (tree-shaking). The y=x equality
 // reference line is drawn as an ordinary line series, so no MarkLineComponent.
