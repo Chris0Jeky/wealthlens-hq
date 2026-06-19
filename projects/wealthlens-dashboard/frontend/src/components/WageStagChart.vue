@@ -26,7 +26,7 @@ import {
 } from "echarts/components";
 import VChart from "vue-echarts";
 import { useChartData } from "@/composables/useChartData";
-import { escapeHtml } from "@/utils/chart";
+import { escapeHtml, toNumberOrNaN } from "@/utils/chart";
 import AccessibleDataTable from "@/components/AccessibleDataTable.vue";
 
 // Register only the ECharts modules we need (tree-shaking)
@@ -65,27 +65,17 @@ const PEAK_YEAR = 2008;
 const PEAK_VALUE = 520;
 const ANNUAL_GROWTH = 0.015;
 
-/**
- * Coerce a raw cell to a finite number, treating nullish/blank cells as NaN.
- *
- * `Number(null)`, `Number(undefined)`, `Number("")` and `Number("   ")` all
- * coerce to `0`, which would slip past an `isNaN` guard and fabricate a £0 wage
- * for a missing data point. Mapping those cases to `NaN` first means the
- * downstream `isNaN` filter drops the row instead. A genuine `0` (or `"0"`)
- * still parses to `0` and is kept.
- */
-const toNumber = (cell: string | number | null | undefined): number => {
-  if (cell === null || cell === undefined) return NaN;
-  if (typeof cell === "string" && cell.trim() === "") return NaN;
-  return Number(cell);
-};
-
 /** Sorted actual data from the store. */
 const actualData = computed(() => {
+  // toNumberOrNaN: treat nullish/blank/non-finite cells as NaN. Number(null),
+  // Number(undefined), Number("") and Number("   ") all coerce to 0, which would
+  // slip past an isNaN guard and fabricate a £0 wage for a missing data point.
+  // Mapping those cases to NaN first means the downstream isNaN filter drops the
+  // row instead. A genuine 0 (or "0") still parses to 0 and is kept.
   return rows.value
     .map((r) => ({
-      year: toNumber(r.year),
-      value: toNumber(r.real_weekly),
+      year: toNumberOrNaN(r.year),
+      value: toNumberOrNaN(r.real_weekly),
     }))
     .filter((r) => !isNaN(r.year) && !isNaN(r.value))
     .sort((a, b) => a.year - b.year);
@@ -158,7 +148,7 @@ const latestYear = computed(() => {
 const tableColumns = ["Year", "Real weekly pay (£)"];
 const tableNumericColumns = ["Real weekly pay (£)"];
 // `actualData` already coerces blank/nullish cells to NaN and drops them (see
-// `toNumber` + the isNaN filter), so every `d.value` here is a finite, verbatim
+// `toNumberOrNaN` + the isNaN filter), so every `d.value` here is a finite, verbatim
 // ONS figure — a missing pay value is dropped, not rendered as a fabricated £0.
 // Let TypeScript infer the exact `{ Year: number; "Real weekly pay (£)": number }`
 // row shape (assignable to AccessibleDataTable's DatasetRow[]) rather than

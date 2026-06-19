@@ -21,7 +21,12 @@ import {
 import VChart from "vue-echarts";
 import { useChartData } from "@/composables/useChartData";
 import type { EChartsExportable } from "@/composables/useChartExport";
-import { escapeHtml, safeMinMax, warnIfSignificantDataLoss } from "@/utils/chart";
+import {
+  escapeHtml,
+  safeMinMax,
+  toNumberOrNaN,
+  warnIfSignificantDataLoss,
+} from "@/utils/chart";
 import AccessibleDataTable from "@/components/AccessibleDataTable.vue";
 
 // Register only the ECharts modules we need (tree-shaking)
@@ -77,14 +82,13 @@ const regionData = computed(() => {
 
   for (const row of rows.value) {
     const region = String(row.region ?? "");
-    // Coerce nullish/empty values to NaN BEFORE Number(), because Number(null)
-    // and Number("") both return 0 — which would silently fabricate a "year 0"
-    // or a 0 ratio. Mapping them to NaN lets the guard below drop the row from
-    // BOTH the chart and the accessible table (a genuine numeric 0 still passes).
-    const year =
-      row.year == null || row.year === "" ? NaN : Number(row.year);
-    const ratio =
-      row.ratio == null || row.ratio === "" ? NaN : Number(row.ratio);
+    // toNumberOrNaN: coerce nullish/empty/non-finite values to NaN, because
+    // Number(null) and Number("") both return 0 — which would silently fabricate
+    // a "year 0" or a 0 ratio. Mapping them to NaN lets the guard below drop the
+    // row from BOTH the chart and the accessible table (a genuine numeric 0 still
+    // passes).
+    const year = toNumberOrNaN(row.year);
+    const ratio = toNumberOrNaN(row.ratio);
     if (!region || isNaN(year) || isNaN(ratio)) {
       continue;
     }
