@@ -23,6 +23,7 @@ import VChart from "vue-echarts";
 import { useChartData } from "@/composables/useChartData";
 import type { EChartsExportable } from "@/composables/useChartExport";
 import { escapeHtml, warnIfSignificantDataLoss } from "@/utils/chart";
+import AccessibleDataTable from "@/components/AccessibleDataTable.vue";
 
 // Register only the ECharts modules we need (tree-shaking)
 use([
@@ -76,6 +77,8 @@ const chartData = computed(() => {
     cgt: sorted.map((r) => r.cgt),
     iht: sorted.map((r) => r.iht),
     sdlt: sorted.map((r) => r.sdlt),
+    workPct: sorted.map((r) => r.workPct),
+    wealthPct: sorted.map((r) => r.wealthPct),
     latestWorkPct: sorted.length > 0 ? sorted[sorted.length - 1].workPct : 0,
     latestWealthPct: sorted.length > 0 ? sorted[sorted.length - 1].wealthPct : 0,
   };
@@ -83,6 +86,61 @@ const chartData = computed(() => {
 
 /** True when the API returned actual data to display. */
 const hasData = computed(() => chartData.value.years.length > 0);
+
+/**
+ * Data-honesty flag: the tax-composition dataset is an illustrative composite
+ * (each row carries data_source === "illustrative"), so we surface a caveat
+ * whenever any plotted row is illustrative. Positive signal only — if the data
+ * ever carried real figures the caveat would correctly stay hidden.
+ */
+const isIllustrative = computed(
+  () =>
+    rows.value.length > 0 &&
+    rows.value.some((r) => r.data_source === "illustrative"),
+);
+
+/**
+ * Accessible data-table fallback (WCAG 1.1.1). Mirrors the plotted series — the
+ * five component taxes per year plus the work/wealth split — using the same
+ * already-loaded, verbatim figures the chart draws.
+ */
+const tableColumns = [
+  "Tax year",
+  "Income Tax (£bn)",
+  "NICs (£bn)",
+  "CGT (£bn)",
+  "IHT (£bn)",
+  "SDLT (£bn)",
+  "Work taxes (%)",
+  "Wealth taxes (%)",
+];
+const tableNumericColumns = tableColumns.filter((c) => c !== "Tax year");
+const tableRows = computed(() => {
+  const d = chartData.value;
+  return d.years.map((year, i) => ({
+    "Tax year": year,
+    "Income Tax (£bn)": d.incomeTax[i],
+    "NICs (£bn)": d.nics[i],
+    "CGT (£bn)": d.cgt[i],
+    "IHT (£bn)": d.iht[i],
+    "SDLT (£bn)": d.sdlt[i],
+    "Work taxes (%)": d.workPct[i],
+    "Wealth taxes (%)": d.wealthPct[i],
+  }));
+});
+
+/**
+ * Table caption — appends the illustrative-provenance hedge only when the data is
+ * actually illustrative, so the caption stays consistent with the caveat and the
+ * aria-label (all three self-hide if genuine HMRC figures are ever served).
+ */
+const tableCaption = computed(
+  () =>
+    "UK tax revenue composition by year: the five component taxes (£bn) and the share from taxes on work vs wealth (%)." +
+    (isIllustrative.value
+      ? " Illustrative composite figures approximated from HMRC receipts, not exact published values."
+      : ""),
+);
 
 const option = computed(() => {
   const data = chartData.value;
@@ -211,7 +269,7 @@ const option = computed(() => {
   <div v-else>
     <div
       role="img"
-      :aria-label="`Stacked bar chart showing UK tax revenue composition from ${chartData.years[0]} to ${chartData.years[chartData.years.length - 1]}. Taxes on work (income tax and NICs) make up approximately ${chartData.latestWorkPct.toFixed(0)}% of the total, while taxes on wealth (CGT, IHT, SDLT) account for just ${chartData.latestWealthPct.toFixed(0)}%.`"
+      :aria-label="`Stacked bar chart showing UK tax revenue composition from ${chartData.years[0]} to ${chartData.years[chartData.years.length - 1]}. Taxes on work (income tax and NICs) make up approximately ${chartData.latestWorkPct.toFixed(0)}% of the total, while taxes on wealth (CGT, IHT, SDLT) account for just ${chartData.latestWealthPct.toFixed(0)}%.${isIllustrative ? ' Figures are an illustrative composite approximated from HMRC receipts, not exact published values.' : ''}`"
       class="w-full"
     >
       <VChart
@@ -222,6 +280,24 @@ const option = computed(() => {
         autoresize
       />
     </div>
+
+    <!-- Accessible data-table fallback (WCAG 1.1.1 non-text content). -->
+    <AccessibleDataTable
+      :rows="tableRows"
+      :columns="tableColumns"
+      :numeric-columns="tableNumericColumns"
+      :caption="tableCaption"
+    />
+
+    <!-- Data-honesty caveat — rendered exactly when a plotted row is marked
+         illustrative (a positive signal). For the current composite dataset that
+         is always true; it would self-hide if genuine HMRC figures were served. -->
+    <p
+      v-if="isIllustrative"
+      class="text-xs text-[var(--wl-ink-muted)] mt-2 text-center italic"
+    >
+      Illustrative composite. Approximated from HMRC receipts, not exact published values.
+    </p>
 
     <!-- Source citation -->
     <p class="text-sm text-[var(--wl-ink-muted)] mt-4 text-center">
