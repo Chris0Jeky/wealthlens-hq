@@ -324,4 +324,46 @@ describe("CgtConcentrationChart concentration-curve view (WL-011)", () => {
     ]);
     // (The verbatim 100.1 / 100.6 staying in the TABLE is asserted above.)
   });
+
+  it("keeps the exposed chart ref wired on the curve tab so Export targets the visible chart", async () => {
+    // TabGroup mounts panel slots with v-if, so switching tabs unmounts the
+    // bands VChart. Both VCharts carry ref="chart"; the exposed `chart` must stay
+    // populated after the switch, otherwise useChartExport would export a
+    // disposed/null instance on the curve tab. (gemini HIGH / codex P2)
+    const wrapper = mount(CgtConcentrationChart);
+    // Default (bands) view: the ref points at the mounted band chart.
+    expect((wrapper.vm as unknown as { chart: unknown }).chart).toBeTruthy();
+
+    const curveTab = wrapper
+      .findAll("[role='tab']")
+      .find((t) => t.text() === "Concentration curve");
+    await curveTab!.trigger("click");
+
+    // After switching, the ref must still resolve to the now-visible curve chart.
+    expect((wrapper.vm as unknown as { chart: unknown }).chart).toBeTruthy();
+  });
+
+  it("tooltip formatter is null-safe (returns empty string for missing/partial params)", async () => {
+    const wrapper = mount(CgtConcentrationChart);
+    const curveTab = wrapper
+      .findAll("[role='tab']")
+      .find((t) => t.text() === "Concentration curve");
+    await curveTab!.trigger("click");
+
+    const vchart = wrapper.findComponent({ name: "VChart" });
+    const option = vchart.props("option") as {
+      tooltip: { formatter: (p: unknown) => string };
+    };
+    const fmt = option.tooltip.formatter;
+    // ECharts may call the formatter with no/partial params in some contexts;
+    // these must not throw and must yield an empty tooltip.
+    expect(fmt(undefined)).toBe("");
+    expect(fmt(null)).toBe("");
+    expect(fmt({})).toBe("");
+    expect(fmt({ dataIndex: 999 })).toBe(""); // out-of-range index
+    // A valid index still renders the verbatim values.
+    const ok = fmt({ dataIndex: 0 });
+    expect(ok).toContain("Cumulative taxpayers from top:");
+    expect(ok).toContain("Cumulative gains from top:");
+  });
 });

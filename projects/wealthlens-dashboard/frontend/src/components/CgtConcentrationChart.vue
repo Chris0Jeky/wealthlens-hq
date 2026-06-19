@@ -316,7 +316,10 @@ const curveOption = computed(() => {
     },
     tooltip: {
       trigger: "item" as const,
-      formatter: (params: { dataIndex: number }) => {
+      formatter: (params: { dataIndex?: number } | null | undefined) => {
+        // ECharts can invoke the formatter with no/partial params in some event
+        // contexts (and in tests with mocked instances); guard before indexing.
+        if (!params || params.dataIndex === undefined) return "";
         const p = pts[params.dataIndex];
         if (!p) return "";
         // Show the raw, verbatim values in the tooltip (not the clamped ones).
@@ -489,7 +492,14 @@ const curveAriaLabel = computed(() => {
         </div>
         <template v-else>
           <div role="img" :aria-label="curveAriaLabel" class="w-full">
+            <!--
+              Same ref="chart" as the bands view: TabGroup mounts panel slots
+              with v-if, so only one VChart exists at a time and the exposed
+              `chart` ref always points at the visible chart. Without this, the
+              Export button would export a disposed/null instance on this tab.
+            -->
             <VChart
+              ref="chart"
               class="w-full"
               style="height: 480px"
               :option="curveOption"
