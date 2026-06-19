@@ -27,6 +27,7 @@ import {
 import VChart from "vue-echarts";
 import { useChartData } from "@/composables/useChartData";
 import { escapeHtml } from "@/utils/chart";
+import AccessibleDataTable from "@/components/AccessibleDataTable.vue";
 
 // Register only the ECharts modules we need (tree-shaking)
 use([
@@ -131,6 +132,25 @@ const latestYear = computed(() => {
   const data = actualData.value;
   return data.length > 0 ? data[data.length - 1].year : 2024;
 });
+
+/**
+ * Accessible data-table fallback (WCAG 1.1.1). Mirrors the solid "actual
+ * earnings" series the chart plots — median real weekly pay per year — using the
+ * same already-loaded, filtered, year-sorted, verbatim figures (`actualData`).
+ * The counterfactual/gap series are derived visual aids, not source data, so the
+ * table reports only the genuine ONS figures.
+ */
+const tableColumns = ["Year", "Real weekly pay (£)"];
+const tableNumericColumns = ["Real weekly pay (£)"];
+const tableRows = computed<Record<string, string | number>[]>(() =>
+  actualData.value.map((d) => ({
+    Year: d.year,
+    // actualData already drops rows whose real_weekly is missing/non-numeric
+    // (its isNaN filter), so every value here is finite; AccessibleDataTable
+    // would render any non-finite value as "—" rather than a fabricated figure.
+    "Real weekly pay (£)": d.value,
+  })),
+);
 
 const option = computed(() => {
   return {
@@ -307,6 +327,14 @@ const option = computed(() => {
         autoresize
       />
     </div>
+
+    <!-- Accessible data-table fallback (WCAG 1.1.1 non-text content). -->
+    <AccessibleDataTable
+      :rows="tableRows"
+      :columns="tableColumns"
+      :numeric-columns="tableNumericColumns"
+      caption="UK median real weekly earnings by year (£, 2024 prices, CPI-adjusted). Source: ONS Annual Survey of Hours and Earnings (ASHE)."
+    />
 
     <!-- Gap annotation -->
     <p
