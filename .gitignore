@@ -35,8 +35,14 @@ projects/wealthlens-dashboard/frontend/scripts/fonts/*
 !projects/wealthlens-dashboard/frontend/scripts/fonts/*.ttf
 !projects/wealthlens-dashboard/frontend/scripts/fonts/README.md
 
-# Transpile artifacts — TypeScript source is canonical
+# Transpile artifacts — TypeScript source is canonical. The frontend build
+# typechecks with `vue-tsc -b --noEmit` so these should no longer be emitted, but
+# ignore them so a stray emit (or an old `vue-tsc -b`) can never be committed as a
+# stale shadow that Vite/vitest would resolve in preference to the .ts source.
 projects/wealthlens-dashboard/frontend/src/**/*.js
+projects/wealthlens-dashboard/frontend/vite.config.js
+projects/wealthlens-dashboard/frontend/vitest.config.js
+projects/wealthlens-dashboard/frontend/scripts/**/*.js
 
 # Generated static API data (built by scripts/generate_static_api.py)
 # Ignore generated files but whitelist committed static fallbacks.
