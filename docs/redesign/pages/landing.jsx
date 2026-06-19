@@ -1,5 +1,11 @@
 /* WealthLens UK — Landing page interactive bits
-   Red / cream / ink black newsprint aesthetic. */
+   Red / cream / ink black newsprint aesthetic.
+
+   ⚠️ DESIGN MOCKUP — NOT DEPLOYED. Canonical wealth figures + copy live in
+   projects/wealthlens-dashboard/frontend/src/config/chartArticles.ts (WID series:
+   top 10% ~57%, top 1% ~21%). The FLOW_GROUPS split below (top 10% 57 / middle 40
+   37 / bottom 50 6) is illustrative and not verified against a cited source — do
+   not re-use these middle/bottom figures without checking WID first. */
 
 const LANDING_TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
   "palette": "frontpage",
