@@ -198,6 +198,18 @@ group). Each: real per-row cell-mapping test + 2 adversarial reviews.
 
 ### Data-quality follow-ups surfaced during the a11y audit (2026-06-19)
 
+- [ ] **Systemic null→0 fabrication in chart parsers — extract a shared
+  `toNumberOrNaN` and sweep every chart.** The idiom `Number(x)` + `!isNaN(x)`
+  used across chart components admits `null`/`""` as a fabricated **0**
+  (`Number(null) === 0`, `Number("") === 0`), so a missing/suppressed source cell
+  is silently plotted/tabled as 0 instead of dropped or shown as "—". Surfaced
+  repeatedly by the a11y data-table reviews and fixed PER-CHART so far (CGT #417,
+  child-poverty #421, generational-wealth #423, boe-rates/housing/wage batch-2).
+  ROOT-CAUSE FIX: add a shared `toNumberOrNaN(v)` to
+  `frontend/src/utils/chart.ts` (`v == null || v === "" ? NaN : Number(v)`), use it
+  in every chart's parse step, and audit the charts NOT touched by the a11y thread.
+  Own reviewed PR. Data-integrity guardrail: never present a fabricated 0.
+
 - [ ] **GdhiByRegionChart: the dataset labels mixed geographies as "UK regions".**
   `gdhi-by-region.json` mixes true ITL1 regions (South East, Scotland) with
   sub-regions that double-count (Wales + East Wales + West Wales and The Valleys)
