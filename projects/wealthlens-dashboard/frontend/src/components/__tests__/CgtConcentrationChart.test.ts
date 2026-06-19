@@ -58,7 +58,6 @@ vi.mock("echarts/components", () => ({
   TooltipComponent: {},
   TitleComponent: {},
   LegendComponent: {},
-  MarkLineComponent: {},
 }));
 
 import CgtConcentrationChart from "@/components/CgtConcentrationChart.vue";
@@ -235,15 +234,17 @@ describe("CgtConcentrationChart concentration-curve view (WL-011)", () => {
   });
 
   it("shows a graceful message when the curve view has no plottable rows", async () => {
-    // Rows present for the band view's filter but missing the cumulative
-    // taxpayer column the curve needs → curve guard message, no table.
+    // The real data uses an explicit null for a missing cumulative taxpayer
+    // figure. Number(null) === 0, so without the toFiniteOrNaN guard this row
+    // would be plotted at the origin; it must instead be treated as missing →
+    // curve guard message, no table.
     mockRows.value = [
       {
         gain_band: "£0+",
         band_lower: 0,
         share_of_gains_pct: 7.0,
         cumul_gains_from_top_pct: 100.0,
-        // cumul_taxpayers_from_top_pct intentionally absent (NaN after Number())
+        cumul_taxpayers_from_top_pct: null,
       },
     ];
     const wrapper = mount(CgtConcentrationChart);
@@ -257,5 +258,70 @@ describe("CgtConcentrationChart concentration-curve view (WL-011)", () => {
       "No concentration-curve data available for this chart.",
     );
     expect(wrapper.text()).not.toContain("View data as table");
+  });
+
+  it("drops a band with a null cumulative-taxpayer value from the curve, not plots it at the origin", async () => {
+    // Mirrors the real data: the "£3,000+" band has cumul_taxpayers_from_top_pct
+    // null but a valid cumul_gains_from_top_pct (~100). Number(null) === 0 would
+    // fabricate a (0, 100.1) point that sorts FIRST and would hijack the
+    // headline/aria-label. Assert it is dropped from the curve + table and the
+    // real top band (£1m+) remains the most-concentrated point.
+    mockRows.value = [
+      ...CGT_ROWS,
+      {
+        gain_band: "£3k+",
+        band_lower: 3000,
+        share_of_gains_pct: 0.0,
+        share_of_taxpayers_pct: 0.6,
+        cumul_gains_from_top_pct: 100.1,
+        cumul_taxpayers_from_top_pct: null,
+      },
+    ];
+    const wrapper = mount(CgtConcentrationChart);
+
+    const curveTab = wrapper
+      .findAll("[role='tab']")
+      .find((t) => t.text() === "Concentration curve");
+    await curveTab!.trigger("click");
+
+    // The null-taxpayer band is NOT plotted (still 5 valid rows, not 6) and does
+    // not appear in the curve table.
+    const bodyRows = wrapper.findAll("tbody tr");
+    expect(bodyRows).toHaveLength(5);
+    const tableText = bodyRows.map((r) => r.text()).join(" ");
+    expect(tableText).not.toContain("£3k+");
+
+    // The headline aria-label still reads the genuine top band, not the fabricated 0%.
+    const label = wrapper.find("[role='img']").attributes("aria-label") ?? "";
+    expect(label).toContain('"£1m+ or more" band');
+    expect(label).toContain("top 1.5% of taxpayers");
+    expect(label).not.toContain("0.0% of taxpayers");
+  });
+
+  it("clamps only the plotted >100 point, keeping the raw value in the table", async () => {
+    const wrapper = mount(CgtConcentrationChart);
+
+    const curveTab = wrapper
+      .findAll("[role='tab']")
+      .find((t) => t.text() === "Concentration curve");
+    await curveTab!.trigger("click");
+
+    // Read the curve VChart's option directly (vue-echarts is stubbed with an
+    // `option` prop) to assert the clamp is applied to the PLOTTED series.
+    const vchart = wrapper.findComponent({ name: "VChart" });
+    const option = vchart.props("option") as {
+      series: { name: string; data: number[][] }[];
+    };
+    const curve = option.series.find((s) => s.name === "Concentration curve");
+    // Bottom band (£0+, raw 100.1/100.6) is last after the ascending sort and is
+    // clamped to the (100, 100) corner for the plot.
+    expect(curve?.data[curve.data.length - 1]).toEqual([100, 100]);
+    // The equality reference line is the fixed static diagonal.
+    const equality = option.series.find((s) => s.name === "Equality line (y = x)");
+    expect(equality?.data).toEqual([
+      [0, 0],
+      [100, 100],
+    ]);
+    // (The verbatim 100.1 / 100.6 staying in the TABLE is asserted above.)
   });
 });

@@ -30,7 +30,6 @@ import {
   TooltipComponent,
   TitleComponent,
   LegendComponent,
-  MarkLineComponent,
 } from "echarts/components";
 import VChart from "vue-echarts";
 import TabGroup, { type Tab } from "@/components/TabGroup.vue";
@@ -40,8 +39,8 @@ import { useChartData } from "@/composables/useChartData";
 import type { EChartsExportable } from "@/composables/useChartExport";
 import { escapeHtml, warnIfSignificantDataLoss } from "@/utils/chart";
 
-// Register only the ECharts modules we need (tree-shaking).
-// MarkLineComponent is added for the static y=x equality reference line.
+// Register only the ECharts modules we need (tree-shaking). The y=x equality
+// reference line is drawn as an ordinary line series, so no MarkLineComponent.
 use([
   CanvasRenderer,
   BarChart,
@@ -50,7 +49,6 @@ use([
   TooltipComponent,
   TitleComponent,
   LegendComponent,
-  MarkLineComponent,
 ]);
 
 const { rows, loading, error } = useChartData("cgt-concentration");
@@ -75,15 +73,27 @@ const COLOR_LINE = "#dc2626";
 const COLOR_CURVE = "#1a56db";
 const COLOR_EQUALITY = "#6b7280";
 
+/**
+ * Parse a numeric cell, treating null/undefined/empty as MISSING (NaN) rather
+ * than 0. The real data has genuine nulls (e.g. a band with no cumulative
+ * taxpayer figure), and Number(null) === 0 — which would fabricate a real data
+ * point at the origin. Mapping missing values to NaN lets the downstream
+ * isNaN() filters drop them instead of plotting a false (0, y) coordinate.
+ */
+function toFiniteOrNaN(v: unknown): number {
+  if (v === null || v === undefined || v === "") return NaN;
+  return Number(v);
+}
+
 /** Parsed and sorted data rows. */
 const sortedData = computed(() => {
   const mapped = rows.value.map((r) => ({
     gainBand: String(r.gain_band ?? ""),
-    bandLower: Number(r.band_lower),
-    shareOfGainsPct: Number(r.share_of_gains_pct),
-    cumulGainsFromTopPct: Number(r.cumul_gains_from_top_pct),
-    shareOfTaxpayersPct: Number(r.share_of_taxpayers_pct),
-    cumulTaxpayersFromTopPct: Number(r.cumul_taxpayers_from_top_pct),
+    bandLower: toFiniteOrNaN(r.band_lower),
+    shareOfGainsPct: toFiniteOrNaN(r.share_of_gains_pct),
+    cumulGainsFromTopPct: toFiniteOrNaN(r.cumul_gains_from_top_pct),
+    shareOfTaxpayersPct: toFiniteOrNaN(r.share_of_taxpayers_pct),
+    cumulTaxpayersFromTopPct: toFiniteOrNaN(r.cumul_taxpayers_from_top_pct),
   }));
   const filtered = mapped
     .filter(
@@ -255,7 +265,10 @@ const option = computed(() => {
  */
 const CLAMP_MAX = 100;
 function clampPctForDisplay(v: number): number {
-  // Clamp ONLY the >100 rounding artifact for plotting; the table keeps the raw value.
+  // Clamp ONLY the >100 rounding artifact for plotting; the table keeps the raw
+  // value. Note: more than one near-100 band can clamp to the same (100, 100)
+  // corner and so plot as coincident points — that is expected, and the raw,
+  // distinct figures remain visible in the accessible data table below.
   return v > CLAMP_MAX ? CLAMP_MAX : v;
 }
 
@@ -267,8 +280,12 @@ const curvePoints = computed(() => {
       taxpayersFromTop: d.cumulTaxpayersFromTopPct,
       gainsFromTop: d.cumulGainsFromTopPct,
     }))
+    // Drop any band whose cumulative figures are missing/non-finite (the real
+    // data has a band with a null taxpayer count) so we never plot a fabricated
+    // point. Such a band still appears in the default "by gain band" view.
     .filter(
-      (p) => !isNaN(p.taxpayersFromTop) && !isNaN(p.gainsFromTop),
+      (p) =>
+        Number.isFinite(p.taxpayersFromTop) && Number.isFinite(p.gainsFromTop),
     )
     // Order from the top band (small cumulative taxpayer share) downwards.
     .sort((a, b) => a.taxpayersFromTop - b.taxpayersFromTop);
