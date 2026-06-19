@@ -174,6 +174,28 @@ the build + its adversarial reviews:
 - [ ] PolicyEngine-UK integration / validation (`engine/` bridge, Blueprint §12)
 - [ ] Dashboard API bridge + assumptions sensitivity dashboard component
 
+## Accessibility: chart data-table fallbacks (WCAG 1.1.1)
+
+Seeded 2026-06-19 (session 9). Audit: only 3 of 12 data charts ship an
+`AccessibleDataTable` fallback (CgtConcentration, InheritanceTax, WealthShares).
+Per "Charts must meet WCAG AA" + "accessible by default", every data chart should
+offer a verbatim data-table alternative to its `role="img"` canvas. Pattern is
+established (see `WealthSharesChart.vue` / `CgtConcentrationChart.vue`): import
+`AccessibleDataTable`, map the chart's already-loaded rows to `columns` + `rows`,
+mark numeric columns, add a sourced `caption`. Additive, default-visible table
+below the chart; no data changes. One small reviewable PR per chart (or tight
+group). Each: real per-row cell-mapping test + 2 adversarial reviews.
+
+- [ ] BoeRatesChart — accessible data table (boe-rates.json)
+- [ ] ChildPovertyChart — accessible data table (child-poverty.json)
+- [ ] GdhiByRegionChart — accessible data table (gdhi-by-region.json)
+- [ ] GenerationalWealthChart — accessible data table (generational-wealth.json)
+- [ ] HousingAffordabilityChart — accessible data table (housing-affordability.json)
+- [ ] ProductivityPayChart — accessible data table (productivity-pay.json)
+- [ ] TaxCompositionChart — accessible data table (tax-composition.json)
+- [ ] WageStagChart — accessible data table (wage-stagnation.json)
+- [ ] WealthByDecileChart — accessible data table (wealth-by-decile.json)
+
 ## Build: Charts and Visualisations
 
 - [ ] Build "Where Do You Fit in UK Wealth?" personal comparator calculator

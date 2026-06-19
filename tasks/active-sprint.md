@@ -2,19 +2,21 @@
 
 Last updated: 2026-06-19
 
-> **LATEST (2026-06-19 — session 9 autonomous loop, cycle 1):** main `32ea724`.
-> **Merged:** #412 (WL-004 IHT by-estate-size band view, after 2 adversarial reviews
-> + all findings addressed) and 4 safe Dependabot dev bumps (#414 ruff, #395
-> eslint-plugin-vue, #413 pytest, #398 httpx). **Open + reviewed, aging for next
-> cycle:** #415 (vite manualChunks object→function form — fixes a pre-existing
-> TS2769 that was breaking the frontend build on dep-upgrade PRs #405/#401/#402) and
-> #416 (WL-009 / ACTION-REQUIRED #8 — corrected the wealth-shares stat cards + lede +
-> body + pullquote to the WID series the chart actually plots, every figure verified
-> against `wealth-shares.json`, with a new cross-file data-integrity guard test). Each
-> open PR has 2 independent adversarial reviews (all `approve`, all findings addressed)
-> + green CI. **Dependabot held for Chris:** majors #401 vite8, #402 vue-router5, #390
-> fetch-metadata3; prod bumps #391/#396/#399/#393; dev-major #394/#397. #405 esbuild
-> waits on #415 (its red build is the TS2769 #415 fixes). Full state:
+> **LATEST (2026-06-19 — session 9 autonomous loop, cycle 2):** main `c90d6bf`.
+> **Merged this cycle (5 PRs):** #415 (vite manualChunks object→function form — fixed
+> a pre-existing TS2769 breaking the frontend build on dep-upgrade PRs), #405 (esbuild
+> patch, rebased onto the #415 fix), #417 (WL-011 additive CGT Lorenz concentration
+> curve — review caught a critical null→0 fabrication, fixed + regression-tested),
+> #416 (WL-009 / ACTION-REQUIRED #8 wealth-shares stat-card correction), and #418
+> (undici 7.28.0 security bump, dev/transitive, clears npm advisories). #416/#417 each
+> got a SECOND round of adversarial re-review (4 agents, 2 lenses/PR) on their
+> review-fix commits — all `approve`, both raw findings adversarially verified as
+> false positives (the undici note + an unreachable whitespace-suppression edge case).
+> **Dependabot still held for Chris (prod/major):** #390 fetch-metadata3, #402
+> vue-router5 (majors); #391 plotly, #396 uvicorn, #399 vue, #393 vue-i18n (prod);
+> #394 pandas-stubs, #397 mypy<3 (dev-major). **Next thread:** 9 data charts lack an
+> accessible data-table fallback (WCAG 1.1.1) — see inbox "Accessibility: data-table
+> fallbacks". Full state:
 > `../hq-private/projects/wealthlens/memories/session_notes/ORCHESTRATION.md` (session 9).
 
 > **PRIOR (2026-06-13 — session 8 autonomous build loop):** 5 PRs merged to main,
