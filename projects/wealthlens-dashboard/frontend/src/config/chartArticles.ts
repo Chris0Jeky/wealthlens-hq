@@ -106,7 +106,9 @@ export const chartConfigs: Record<string, ChartConfig> = {
       /* Display date: human-readable format is intentional for the meta card */
       { label: "Updated", value: "14 May 2026" },
       { label: "Licence", value: "CC-BY 4.0" },
-      { label: "Data points", value: "22" },
+      /* 250 = the two plotted WID series (p90p100 + p99p100) × 125 years each
+         in wealth-shares.json; guarded by the stat-card data-integrity test. */
+      { label: "Data points", value: "250" },
       { label: "Chart ID", value: "WL-W-001" },
     ],
     /*
@@ -153,9 +155,9 @@ export const chartConfigs: Record<string, ChartConfig> = {
         // Mirror the two lines WealthSharesChart.vue actually draws: it plots
         // only the WID p90p100 (top 10%) and p99p100 (top 1%) series, in the
         // shared COLOR_TOP_10 / COLOR_TOP_1 (imported from the same source of
-        // truth as the chart, so they cannot drift apart). "Middle 40%" and
-        // "Bottom 50%" are discussed in the prose + stat cards but are not
-        // plotted, so they must not appear as legend dots.
+        // truth as the chart, so they cannot drift apart). The stat cards also
+        // cite the bottom 90% (a derived complement, 100 − top 10%), but that
+        // is not a plotted line, so it must not appear as a legend dot.
         { label: "Top 10%", color: COLOR_TOP_10, bold: true },
         { label: "Top 1%", color: COLOR_TOP_1 },
       ],

@@ -58,6 +58,8 @@ describe("chartArticles: wealth-shares stat cards match the WID series", () => {
   const top10Latest = top10[top10.length - 1].value;
   const top1Latest = top1[top1.length - 1].value;
   // All-time low of the top-10% share (the "postwar low" / least-concentrated).
+  // The strict `<` keeps the FIRST occurrence on a tie: 1990 and 1991 are both
+  // 51.6%, so the card's "(1990)" label is the earlier of the tied minima.
   const low = top10.reduce((m, r) => (r.value < m.value ? r : m), top10[0]);
 
   const cfg = chartConfigs["wealth-shares"];
@@ -89,9 +91,16 @@ describe("chartArticles: wealth-shares stat cards match the WID series", () => {
     expect(card?.label).toContain(String(low.year));
   });
 
-  it("no longer carries the discredited 28% / 50% / '1910 levels' claims", () => {
-    const values = (cfg.stats ?? []).map((s) => s.value);
-    expect(values).not.toContain("28");
+  it("meta 'Data points' equals the plotted row count", () => {
+    const dataPoints = cfg.meta.find((m) => m.label === "Data points");
+    expect(dataPoints?.value).toBe(String(rows.length));
+  });
+
+  it("no longer carries the discredited '1910 levels' lede claim", () => {
+    // The per-card recompute assertions above already pin the values to the
+    // series (so the old 28% / 50% cards cannot return). This guards the one
+    // claim with no card to anchor it: the false "now at 1910 levels" lede
+    // (top 10% was ~94% in 1910, not ~57%).
     expect(cfg.lede).not.toContain("1910 levels");
   });
 });

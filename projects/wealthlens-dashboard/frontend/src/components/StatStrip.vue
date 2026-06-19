@@ -8,7 +8,7 @@
  * @example
  * <StatStrip :stats="[
  *   { label: 'The headline', value: '57', unit: '%', description: '...', headline: true },
- *   { label: 'Top 1% alone', value: '28', unit: '%', description: '...' },
+ *   { label: 'Top 1% alone', value: '21', unit: '%', description: '...' },
  *   ...
  * ]" />
  */
