@@ -23,6 +23,7 @@ import VChart from "vue-echarts";
 import { useChartData } from "@/composables/useChartData";
 import type { EChartsExportable } from "@/composables/useChartExport";
 import { escapeHtml, warnIfSignificantDataLoss } from "@/utils/chart";
+import AccessibleDataTable from "@/components/AccessibleDataTable.vue";
 
 // Register only the ECharts modules we need (tree-shaking)
 use([
@@ -76,6 +77,20 @@ const headlineInsight = computed(() => {
   if (!richest || !poorest) return "";
   return `The ${richest.decile} decile holds ${richest.totalWealthBn.toLocaleString()}bn in total wealth, while the ${poorest.decile} decile has ${poorest.totalWealthBn.toLocaleString()}bn`;
 });
+
+/**
+ * Accessible data-table fallback (WCAG 1.1.1). Mirrors the single plotted series
+ * — total household wealth (£bn) per decile — using the same already-loaded,
+ * filtered, verbatim figures the chart draws, in the same poorest-to-richest order.
+ */
+const tableColumns = ["Decile", "Total wealth (£bn)"];
+const tableNumericColumns = ["Total wealth (£bn)"];
+const tableRows = computed(() =>
+  parsedData.value.map((d) => ({
+    Decile: d.decile,
+    "Total wealth (£bn)": d.totalWealthBn,
+  })),
+);
 
 const option = computed(() => {
   const data = parsedData.value;
@@ -195,6 +210,14 @@ const option = computed(() => {
         autoresize
       />
     </div>
+
+    <!-- Accessible data-table fallback (WCAG 1.1.1 non-text content). -->
+    <AccessibleDataTable
+      :rows="tableRows"
+      :columns="tableColumns"
+      :numeric-columns="tableNumericColumns"
+      caption="Total household wealth by decile in Great Britain (£bn), ordered from the poorest (1st) to the richest (10th) decile. Source: ONS Wealth and Assets Survey."
+    />
 
     <!-- Source citation -->
     <p class="text-sm text-[var(--wl-ink-muted)] mt-4 text-center">
