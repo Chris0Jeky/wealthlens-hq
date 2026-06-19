@@ -196,6 +196,21 @@ group). Each: real per-row cell-mapping test + 2 adversarial reviews.
 - [ ] WageStagChart — accessible data table (wage-stagnation.json)
 - [ ] WealthByDecileChart — accessible data table (wealth-by-decile.json)
 
+### Data-quality follow-ups surfaced during the a11y audit (2026-06-19)
+
+- [ ] **GdhiByRegionChart: the dataset labels mixed geographies as "UK regions".**
+  `gdhi-by-region.json` mixes true ITL1 regions (South East, Scotland) with
+  sub-regions that double-count (Wales + East Wales + West Wales and The Valleys)
+  and local authorities (Westminster, Camden, Blackpool). The chart title/aria
+  ("by Region") and the new table caption all call these "regions", overstating
+  comparability. Fix: either filter to standard ITL1 regions, or relabel as
+  "areas" and split the view. Own reviewed PR + cite the ONS source granularity.
+  (Surfaced by review on #420; the a11y table itself faithfully mirrors the chart.)
+- [x] **WealthByDecileChart: aria-label/docstring falsely claimed the poorest decile
+  has "net negative wealth" / is "highlighted in red"** while the committed ONS
+  data is +£13.9bn (positive) — fixed in #422 (gated the claim on a
+  `poorestIsNegative` computed; tooltip + bar colour were already conditional).
+
 ## Build: Charts and Visualisations
 
 - [ ] Build "Where Do You Fit in UK Wealth?" personal comparator calculator
