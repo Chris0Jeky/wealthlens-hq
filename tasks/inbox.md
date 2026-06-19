@@ -227,6 +227,16 @@ group). Each: real per-row cell-mapping test + 2 adversarial reviews.
   has "net negative wealth" / is "highlighted in red"** while the committed ONS
   data is +£13.9bn (positive) — fixed in #422 (gated the claim on a
   `poorestIsNegative` computed; tooltip + bar colour were already conditional).
+- [ ] **Frontend `.prettierrc` is stale / unenforced — reconcile it with the code.**
+  Surfaced 2026-06-19 (#430 review). `frontend/.prettierrc` declares
+  `semi: false, singleQuote: true`, but the entire committed codebase uses
+  **semicolons + double-quotes**, and `format:check` (`prettier --check`) runs
+  **nowhere in CI** — so prettier is effectively dead and the config lies about the
+  house style. Decide the canonical style (almost certainly semi + double-quote to
+  match the ~120 existing files), update `.prettierrc` to match, run `prettier
+  --write` once, and add `npm run format:check` to `ci-frontend.yml` so it stays
+  enforced. One reviewed PR (the `prettier --write` will be a large no-op-ish diff —
+  do it on a clean branch). Until then, hand-match each file's existing style.
 
 ## Build: Charts and Visualisations
 
