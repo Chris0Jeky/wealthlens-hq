@@ -23,6 +23,7 @@ import VChart from "vue-echarts";
 import { useChartData } from "@/composables/useChartData";
 import type { EChartsExportable } from "@/composables/useChartExport";
 import { escapeHtml, safeMinMax, warnIfSignificantDataLoss } from "@/utils/chart";
+import AccessibleDataTable from "@/components/AccessibleDataTable.vue";
 
 // Register only the ECharts modules we need (tree-shaking)
 use([
@@ -83,6 +84,25 @@ const rateRange = computed(() => safeMinMax(chartData.value.bankRate));
 
 /** CPI range for aria-label. */
 const cpiRange = computed(() => safeMinMax(chartData.value.cpi));
+
+/**
+ * Accessible data-table fallback (WCAG 1.1.1). Mirrors the two plotted line
+ * series — Bank Rate and CPI annual inflation — using the same already-loaded,
+ * filtered, verbatim figures the chart draws, in the same chronological order.
+ * chartData.value.bankRate / .cpi are post-filter Number() values (rows with a
+ * non-finite rate or CPI are already dropped by the chart's own filter), so the
+ * table never shows a row the chart omitted, nor a fabricated value.
+ */
+const tableColumns = ["Date", "Bank rate (%)", "CPI annual (%)"];
+const tableNumericColumns = ["Bank rate (%)", "CPI annual (%)"];
+const tableRows = computed<Record<string, string | number>[]>(() => {
+  const d = chartData.value;
+  return d.dates.map((date, i) => ({
+    Date: date,
+    "Bank rate (%)": d.bankRate[i],
+    "CPI annual (%)": d.cpi[i],
+  }));
+});
 
 const option = computed(() => {
   const data = chartData.value;
@@ -206,6 +226,14 @@ const option = computed(() => {
         autoresize
       />
     </div>
+
+    <!-- Accessible data-table fallback (WCAG 1.1.1 non-text content). -->
+    <AccessibleDataTable
+      :rows="tableRows"
+      :columns="tableColumns"
+      :numeric-columns="tableNumericColumns"
+      caption="Bank of England base rate (%) and CPI annual inflation rate (%) by date, in chronological order. Source: Bank of England (Bank Rate) and ONS (CPI)."
+    />
 
     <!-- Source citation -->
     <p class="text-sm text-[var(--wl-ink-muted)] mt-4 text-center">
