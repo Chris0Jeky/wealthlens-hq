@@ -23,6 +23,7 @@ import { useChartData } from "@/composables/useChartData";
 import type { EChartsExportable } from "@/composables/useChartExport";
 import { useDataStore } from "@/stores/data";
 import { escapeHtml, safeMinMax, warnIfSignificantDataLoss } from "@/utils/chart";
+import AccessibleDataTable from "@/components/AccessibleDataTable.vue";
 
 // Register only the ECharts modules we need (tree-shaking)
 use([
@@ -69,12 +70,30 @@ const prefersReducedMotion =
 const COLOR_PRODUCTIVITY = "#1a56db"; // Blue — ~7.2:1
 const COLOR_PAY = "#dc2626"; // Red — ~4.6:1
 
+/**
+ * Parse a raw dataset cell into a number, mapping missing values to NaN.
+ *
+ * Data honesty: `Number(null)` and `Number("")` both coerce to 0, which would
+ * silently turn a missing source cell into a fabricated figure (a phantom 0%
+ * gap). We map nullish/empty cells to NaN instead, so the accessible data table
+ * renders the missing-value placeholder ("—") via AccessibleDataTable rather
+ * than a misleading "0". Used here for the gap column, which the chart's own
+ * filter does not require (so a missing gap can still reach the table).
+ */
+function toNumberOrNaN(value: string | number | null): number {
+  return value != null && value !== "" ? Number(value) : NaN;
+}
+
 /** Sorted data extracted from rows. */
 const chartData = computed(() => {
   const mapped = rows.value.map((r) => ({
     year: Number(r.year),
     productivity: Number(r.productivity_index),
     pay: Number(r.pay_index),
+    // gap_pct is shown only in the accessible table, not plotted; it does not
+    // gate the chart's filter below. toNumberOrNaN keeps a missing gap as NaN
+    // so the table shows "—", never a fabricated 0%.
+    gap: toNumberOrNaN(r.gap_pct),
   }));
   const sorted = mapped
     .filter((r) => !isNaN(r.year) && !isNaN(r.productivity) && !isNaN(r.pay))
@@ -86,6 +105,7 @@ const chartData = computed(() => {
     years: sorted.map((r) => r.year),
     productivity: sorted.map((r) => r.productivity),
     pay: sorted.map((r) => r.pay),
+    gap: sorted.map((r) => r.gap),
   };
 });
 
@@ -100,6 +120,45 @@ const productivityRange = computed(() => safeMinMax(chartData.value.productivity
 
 /** Pay range for aria-label. */
 const payRange = computed(() => safeMinMax(chartData.value.pay));
+
+/**
+ * Accessible data-table fallback (WCAG 1.1.1). Mirrors the plotted series — the
+ * productivity and pay index per year — using the same already-loaded, verbatim,
+ * filtered-and-sorted figures the chart draws, plus the gap-vs-pay percentage
+ * carried alongside (see chartData). One row per plotted year, in chart order.
+ */
+const tableColumns = [
+  "Year",
+  "Productivity index",
+  "Pay index",
+  "Gap (%)",
+];
+const tableNumericColumns = ["Productivity index", "Pay index", "Gap (%)"];
+const tableRows = computed<Record<string, string | number>[]>(() => {
+  const d = chartData.value;
+  return d.years.map((year, i) => ({
+    // Year is a calendar year, deliberately kept OUT of tableNumericColumns so
+    // it renders "1997", not "1,997".
+    Year: year,
+    "Productivity index": d.productivity[i],
+    "Pay index": d.pay[i],
+    "Gap (%)": d.gap[i],
+  }));
+});
+
+/**
+ * Table caption — appends the illustrative-provenance hedge only when the data
+ * is actually illustrative (isIllustrative, set from the dataset metadata), so
+ * the caption stays consistent with the on-page caveat. It self-hides if a live
+ * ONS dataset is ever served (default OFF), mirroring the caveat.
+ */
+const tableCaption = computed(
+  () =>
+    "UK productivity index vs real-pay index by year (1997 = 100), with the productivity-vs-pay gap (%)." +
+    (isIllustrative.value
+      ? " Illustrative figures derived from ONS bulletins, not exact time-series values."
+      : ""),
+);
 
 const option = computed(() => {
   const data = chartData.value;
@@ -220,6 +279,14 @@ const option = computed(() => {
         autoresize
       />
     </div>
+
+    <!-- Accessible data-table fallback (WCAG 1.1.1 non-text content). -->
+    <AccessibleDataTable
+      :rows="tableRows"
+      :columns="tableColumns"
+      :numeric-columns="tableNumericColumns"
+      :caption="tableCaption"
+    />
 
     <!-- Data-honesty caveat — shown only when the pipeline used illustrative
          fallback data (data_type === "illustrative_fallback"). Default OFF. -->
