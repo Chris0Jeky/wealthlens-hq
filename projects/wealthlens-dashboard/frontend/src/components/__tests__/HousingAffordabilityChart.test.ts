@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mount } from "@vue/test-utils";
 import { createPinia, setActivePinia } from "pinia";
-import { ref, shallowRef } from "vue";
+import { ref, shallowRef, type Ref, type ShallowRef } from "vue";
 
 /**
  * HousingAffordabilityChart tests — focused on the ADDITION in the a11y slice:
@@ -19,9 +19,9 @@ import { ref, shallowRef } from "vue";
  * (mirroring the other chart tests) to drive rows/loading/error directly.
  */
 
-let mockRows: ReturnType<typeof shallowRef<Record<string, unknown>[]>>;
-let mockLoading: ReturnType<typeof ref>;
-let mockError: ReturnType<typeof ref>;
+let mockRows: ShallowRef<Record<string, unknown>[]>;
+let mockLoading: Ref<boolean>;
+let mockError: Ref<string | null>;
 
 vi.mock("@/composables/useChartData", () => ({
   useChartData: () => ({
@@ -53,7 +53,7 @@ vi.mock("echarts/components", () => ({
 import HousingAffordabilityChart from "@/components/HousingAffordabilityChart.vue";
 
 /** en-GB formatting that matches AccessibleDataTable's numeric cells. */
-const gb = (n: number): string => Number(n).toLocaleString("en-GB");
+const gb = (n: number): string => n.toLocaleString("en-GB");
 
 /**
  * Two regions, deliberately year-UNSORTED in source order, so the test proves
@@ -75,7 +75,7 @@ describe("HousingAffordabilityChart accessible data table", () => {
     setActivePinia(createPinia());
     mockRows = shallowRef<Record<string, unknown>[]>(HOUSING_ROWS);
     mockLoading = ref(false);
-    mockError = ref(null);
+    mockError = ref<string | null>(null);
 
     Object.defineProperty(window, "matchMedia", {
       writable: true,
@@ -169,12 +169,64 @@ describe("HousingAffordabilityChart accessible data table", () => {
     );
   });
 
+  it("drops rows with a null/empty ratio or year instead of fabricating 0", () => {
+    // Number(null) and Number("") are both 0, so a naive Number() coercion would
+    // silently invent a "year 0" / a 0 ratio. These rows must be DROPPED from
+    // BOTH chart and table — never rendered as "0". A genuine numeric 0 stays.
+    mockRows.value = [
+      { region: "London", year: 2010, ratio: 6.5 }, // valid → kept
+      { region: "London", year: 2011, ratio: null }, // null ratio → dropped
+      { region: "London", year: 2012, ratio: "" }, // empty ratio → dropped
+      { region: "London", year: null, ratio: 7.0 }, // null year → dropped
+      { region: "London", year: "", ratio: 7.5 }, // empty year → dropped
+      { region: "London", year: 2013, ratio: 0 }, // genuine 0 → kept as "0"
+    ];
+
+    const wrapper = mount(HousingAffordabilityChart);
+    const bodyRows = wrapper.findAll("tbody tr");
+    // Only the two real points survive (2010 / 6.5 and 2013 / 0).
+    expect(bodyRows).toHaveLength(2);
+
+    const cells = (i: number) =>
+      bodyRows[i].findAll("td").map((td) => td.text());
+    expect(cells(0)).toEqual(["London", "2010", gb(6.5)]);
+    // The genuine 0 ratio renders as "0" (not dropped, not "—").
+    expect(cells(1)).toEqual(["London", "2013", gb(0)]);
+
+    // No fabricated "year 0" leaked into the table from the null/empty rows.
+    const allYears = bodyRows.map((r) => r.findAll("td")[1].text());
+    expect(allYears).not.toContain("0");
+  });
+
+  it("coalesces duplicate (region, year) rows to a single last-wins point", () => {
+    // If the API returns two rows for the same region/year, the line series keeps
+    // only the last ratio (its per-year dataMap). The table must coalesce the
+    // same way so non-visual users do not see extra/stale points.
+    mockRows.value = [
+      { region: "London", year: 2020, ratio: 8.0 }, // superseded
+      { region: "London", year: 2020, ratio: 8.4 }, // last wins
+      { region: "London", year: 2021, ratio: 9.1 },
+    ];
+
+    const wrapper = mount(HousingAffordabilityChart);
+    const bodyRows = wrapper.findAll("tbody tr");
+    // Two duplicate 2020 rows collapse to one → 2 table rows total.
+    expect(bodyRows).toHaveLength(2);
+
+    const cells = (i: number) =>
+      bodyRows[i].findAll("td").map((td) => td.text());
+    expect(cells(0)).toEqual(["London", "2020", gb(8.4)]);
+    expect(cells(1)).toEqual(["London", "2021", gb(9.1)]);
+  });
+
   it("cites the registered ONS source in the table caption", () => {
     const wrapper = mount(HousingAffordabilityChart);
     const caption = wrapper.find("table caption").text();
     expect(caption).toContain(
-      "House price to workplace-based earnings ratio by UK region and year",
+      "House price to workplace-based earnings ratio by region (England and Wales) and year",
     );
+    // Geography is England and Wales only; the caption must not overstate "UK".
+    expect(caption).not.toContain("UK region");
     expect(caption).toContain("Source: ONS Housing Affordability.");
     // No truncation note when regions <= MAX_REGIONS.
     expect(caption).not.toContain("Showing the top");

@@ -68,27 +68,45 @@ const MAX_REGIONS = 8;
 
 /** Group data by region, returning sorted region names and their series. */
 const regionData = computed(() => {
-  const byRegion = new Map<string, { year: number; ratio: number }[]>();
+  // Accumulate per region in a year-keyed Map so a repeated (region, year) is
+  // coalesced (last row wins) — exactly how the series builder collapses
+  // duplicates into its per-year `dataMap`. Materialising the table from this
+  // same coalesced data keeps the accessible table and the plotted line in
+  // lockstep (no extra/stale points for non-visual users).
+  const byRegionMap = new Map<string, Map<number, number>>();
   let skippedRows = 0;
 
   for (const row of rows.value) {
     const region = String(row.region ?? "");
-    const year = Number(row.year);
-    const ratio = Number(row.ratio);
+    // Coerce nullish/empty values to NaN BEFORE Number(), because Number(null)
+    // and Number("") both return 0 — which would silently fabricate a "year 0"
+    // or a 0 ratio. Mapping them to NaN lets the guard below drop the row from
+    // BOTH the chart and the accessible table (a genuine numeric 0 still passes).
+    const year =
+      row.year == null || row.year === "" ? NaN : Number(row.year);
+    const ratio =
+      row.ratio == null || row.ratio === "" ? NaN : Number(row.ratio);
     if (!region || isNaN(year) || isNaN(ratio)) {
       skippedRows++;
       continue;
     }
 
-    if (!byRegion.has(region)) byRegion.set(region, []);
-    byRegion.get(region)!.push({ year, ratio });
+    if (!byRegionMap.has(region)) byRegionMap.set(region, new Map());
+    byRegionMap.get(region)!.set(year, ratio);
   }
 
-  warnIfSignificantDataLoss("housing-affordability", rows.value.length, rows.value.length - skippedRows);
+  // Count distinct (region, year) points kept, since duplicate years collapse.
+  let keptPoints = 0;
+  for (const yearMap of byRegionMap.values()) keptPoints += yearMap.size;
+  warnIfSignificantDataLoss("housing-affordability", rows.value.length, keptPoints);
 
-  // Sort each region's data by year
-  for (const data of byRegion.values()) {
+  // Materialise each region's coalesced data as a year-sorted array — the shape
+  // the chart series, allYears, ratioRange and the accessible table all consume.
+  const byRegion = new Map<string, { year: number; ratio: number }[]>();
+  for (const [region, yearMap] of byRegionMap) {
+    const data = Array.from(yearMap, ([year, ratio]) => ({ year, ratio }));
     data.sort((a, b) => a.year - b.year);
+    byRegion.set(region, data);
   }
 
   // If too many regions, pick the ones with the highest latest ratio
@@ -148,8 +166,9 @@ const ratioRange = computed(() => {
  * to the top MAX_REGIONS least-affordable regions, the table drops the same
  * regions and keeps the same legend/series order) and, within each region, the
  * year-sorted entries from `byRegion` (which already passed the chart's
- * region/year/ratio guards). The table therefore shows EXACTLY the points the
- * chart plots — no re-fetch, no recompute, no dropped/added rows.
+ * region/year/ratio guards AND had any duplicate (region, year) coalesced to a
+ * single last-wins point, exactly as the line series does). The table therefore
+ * shows EXACTLY the points the chart plots — no re-fetch, no extra/stale rows.
  *
  * "Year" is intentionally LEFT OUT of the numeric set so a calendar year renders
  * as "2008", not "2,008". "Price-to-earnings ratio" is locale-formatted via
@@ -176,15 +195,18 @@ const tableRows = computed(() => {
  * Table caption — cites the same registered source the chart shows (ONS Housing
  * Affordability), so the accessible fallback carries the same provenance as the
  * visual chart. Notes the top-MAX_REGIONS truncation only when it applies.
+ *
+ * Geography is described as "England and Wales": the ONS lower-quartile/median
+ * affordability dataset behind this chart covers English and Welsh regions only
+ * (no Scotland or Northern Ireland series), so a non-visual reader of the table
+ * gets the same coverage claim the plotted data supports.
  */
-const tableCaption = computed(
-  () =>
-    "House price to workplace-based earnings ratio by UK region and year." +
-    (regionData.value.tooManyRegions
-      ? ` Showing the top ${MAX_REGIONS} least-affordable regions (the same regions plotted).`
-      : "") +
-    " Source: ONS Housing Affordability.",
-);
+const tableCaption = computed(() => {
+  const truncationNote = regionData.value.tooManyRegions
+    ? ` Showing the top ${MAX_REGIONS} least-affordable regions (the same regions plotted).`
+    : "";
+  return `House price to workplace-based earnings ratio by region (England and Wales) and year.${truncationNote} Source: ONS Housing Affordability.`;
+});
 
 const option = computed(() => {
   const { byRegion, regionNames } = regionData.value;
