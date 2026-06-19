@@ -23,6 +23,7 @@ import VChart from "vue-echarts";
 import { useChartData } from "@/composables/useChartData";
 import type { EChartsExportable } from "@/composables/useChartExport";
 import { escapeHtml, safeMinMax, warnIfSignificantDataLoss } from "@/utils/chart";
+import AccessibleDataTable from "@/components/AccessibleDataTable.vue";
 
 // Register only the ECharts modules we need (tree-shaking)
 use([
@@ -50,12 +51,23 @@ const prefersReducedMotion =
 const COLOR_BANK_RATE = "#1a56db"; // Blue — ~7.2:1
 const COLOR_CPI = "#dc2626"; // Red — ~4.6:1
 
+/**
+ * Coerce a raw cell to a number, but treat null/undefined/empty-string as
+ * missing (NaN) rather than letting Number() fabricate a 0. Number(null) and
+ * Number("") both === 0, which would otherwise plot/table a real-looking 0.0
+ * for a blank source cell. A genuine numeric 0 (e.g. a 0% rate) is preserved.
+ */
+function toNumberOrNaN(v: unknown): number {
+  if (v == null || v === "") return NaN;
+  return Number(v);
+}
+
 /** Sorted data extracted from rows. */
 const chartData = computed(() => {
   const mapped = rows.value.map((r) => ({
     date: String(r.date ?? ""),
-    bankRate: Number(r.bank_rate),
-    cpi: Number(r.cpi_annual),
+    bankRate: toNumberOrNaN(r.bank_rate),
+    cpi: toNumberOrNaN(r.cpi_annual),
   }));
   const sorted = mapped
     .filter((r) => r.date && !isNaN(r.bankRate) && !isNaN(r.cpi))
@@ -65,10 +77,12 @@ const chartData = computed(() => {
 
   return {
     dates: sorted.map((r) => {
-      // Format date labels: extract year or year-month
+      // Format date labels: extract year-month. Use UTC accessors so an ISO date
+      // like "2008-01-01" (parsed as UTC midnight) yields the same YYYY-MM in
+      // every timezone — local getMonth() would shift it a month behind UTC.
       const d = new Date(r.date);
       if (isNaN(d.getTime())) return r.date;
-      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
     }),
     bankRate: sorted.map((r) => r.bankRate),
     cpi: sorted.map((r) => r.cpi),
@@ -83,6 +97,26 @@ const rateRange = computed(() => safeMinMax(chartData.value.bankRate));
 
 /** CPI range for aria-label. */
 const cpiRange = computed(() => safeMinMax(chartData.value.cpi));
+
+/**
+ * Accessible data-table fallback (WCAG 1.1.1). Mirrors the two plotted line
+ * series — Bank Rate and CPI annual inflation — using the same already-loaded,
+ * filtered, verbatim figures the chart draws, in the same chronological order.
+ * chartData.value.bankRate / .cpi are post-filter values produced by
+ * toNumberOrNaN() (null/empty/non-numeric rate or CPI become NaN and are dropped
+ * by the chart's own !isNaN filter), so the table never shows a row the chart
+ * omitted, nor a fabricated 0 for a missing source cell. A genuine 0 is kept.
+ */
+const tableColumns = ["Date", "Bank rate (%)", "CPI annual (%)"];
+const tableNumericColumns = ["Bank rate (%)", "CPI annual (%)"];
+const tableRows = computed<Record<string, string | number>[]>(() => {
+  const d = chartData.value;
+  return d.dates.map((date, i) => ({
+    Date: date,
+    "Bank rate (%)": d.bankRate[i],
+    "CPI annual (%)": d.cpi[i],
+  }));
+});
 
 const option = computed(() => {
   const data = chartData.value;
@@ -206,6 +240,14 @@ const option = computed(() => {
         autoresize
       />
     </div>
+
+    <!-- Accessible data-table fallback (WCAG 1.1.1 non-text content). -->
+    <AccessibleDataTable
+      :rows="tableRows"
+      :columns="tableColumns"
+      :numeric-columns="tableNumericColumns"
+      caption="Bank of England base rate (%) and CPI annual inflation rate (%) by date, in chronological order. Source: Bank of England (Bank Rate) and ONS (CPI)."
+    />
 
     <!-- Source citation -->
     <p class="text-sm text-[var(--wl-ink-muted)] mt-4 text-center">
