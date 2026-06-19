@@ -22,6 +22,7 @@ import VChart from "vue-echarts";
 import { useChartData } from "@/composables/useChartData";
 import type { EChartsExportable } from "@/composables/useChartExport";
 import { escapeHtml, safeMinMax, warnIfSignificantDataLoss } from "@/utils/chart";
+import AccessibleDataTable from "@/components/AccessibleDataTable.vue";
 
 // Register only the ECharts modules we need (tree-shaking)
 use([
@@ -137,6 +138,53 @@ const ratioRange = computed(() => {
   }
   return safeMinMax(allRatios);
 });
+
+/**
+ * Accessible data-table fallback (WCAG 1.1.1). Mirrors the plotted lines — one
+ * row per region per year data point — using the same already-loaded, verbatim
+ * figures and the same region/year ordering the chart draws.
+ *
+ * Faithfulness: we iterate `regionData.regionNames` (so when the chart truncates
+ * to the top MAX_REGIONS least-affordable regions, the table drops the same
+ * regions and keeps the same legend/series order) and, within each region, the
+ * year-sorted entries from `byRegion` (which already passed the chart's
+ * region/year/ratio guards). The table therefore shows EXACTLY the points the
+ * chart plots — no re-fetch, no recompute, no dropped/added rows.
+ *
+ * "Year" is intentionally LEFT OUT of the numeric set so a calendar year renders
+ * as "2008", not "2,008". "Price-to-earnings ratio" is locale-formatted via
+ * tableNumericColumns; any non-finite value would render as "—" (it cannot occur
+ * here because byRegion only holds rows that passed the chart's isNaN guards).
+ */
+const tableColumns = ["Region", "Year", "Price-to-earnings ratio"];
+const tableNumericColumns = ["Price-to-earnings ratio"];
+const tableRows = computed(() => {
+  const { byRegion, regionNames } = regionData.value;
+  // Iterate in the chart's region order; each region's entries are already
+  // year-sorted inside regionData, so this reproduces the chart's plotting
+  // order exactly.
+  return regionNames.flatMap((region) =>
+    (byRegion.get(region) ?? []).map((d) => ({
+      Region: region,
+      Year: d.year,
+      "Price-to-earnings ratio": d.ratio,
+    })),
+  );
+});
+
+/**
+ * Table caption — cites the same registered source the chart shows (ONS Housing
+ * Affordability), so the accessible fallback carries the same provenance as the
+ * visual chart. Notes the top-MAX_REGIONS truncation only when it applies.
+ */
+const tableCaption = computed(
+  () =>
+    "House price to workplace-based earnings ratio by UK region and year." +
+    (regionData.value.tooManyRegions
+      ? ` Showing the top ${MAX_REGIONS} least-affordable regions (the same regions plotted).`
+      : "") +
+    " Source: ONS Housing Affordability.",
+);
 
 const option = computed(() => {
   const { byRegion, regionNames } = regionData.value;
@@ -278,6 +326,14 @@ const option = computed(() => {
       Showing top {{ MAX_REGIONS }} least-affordable regions. Additional regions
       are available in the full dataset.
     </p>
+
+    <!-- Accessible data-table fallback (WCAG 1.1.1 non-text content). -->
+    <AccessibleDataTable
+      :rows="tableRows"
+      :columns="tableColumns"
+      :numeric-columns="tableNumericColumns"
+      :caption="tableCaption"
+    />
 
     <!-- Source citation -->
     <p class="text-sm text-[var(--wl-ink-muted)] mt-4 text-center">
