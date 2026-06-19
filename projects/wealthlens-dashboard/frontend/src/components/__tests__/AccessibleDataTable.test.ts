@@ -47,6 +47,20 @@ describe("AccessibleDataTable", () => {
     expect(nullCell.text()).toBe("—");
   });
 
+  it("non-finite numbers (NaN/Infinity) display as em-dash, not the literal 'NaN'", () => {
+    const wrapper = mount(AccessibleDataTable, {
+      props: {
+        rows: [{ year: 2020, region: "London", value: Number.NaN }],
+        columns: ["year", "region", "value"],
+        caption: "c",
+        numericColumns: ["value"],
+      },
+    });
+    const cells = wrapper.findAll("tbody td");
+    expect(cells[2].text()).toBe("—");
+    expect(wrapper.text()).not.toContain("NaN");
+  });
+
   it("details element is collapsed by default (no open attribute)", () => {
     const wrapper = mount(AccessibleDataTable, { props: defaultProps });
     const details = wrapper.find("details");

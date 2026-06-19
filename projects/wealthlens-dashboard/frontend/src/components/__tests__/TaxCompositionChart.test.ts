@@ -156,4 +156,42 @@ describe("TaxCompositionChart accessible table + illustrative caveat", () => {
     const caption = wrapper.find("table caption").text();
     expect(caption).toContain("Illustrative composite figures approximated from HMRC receipts");
   });
+
+  it("notes the illustrative provenance in the chart's aria-label too (and only when illustrative)", () => {
+    const wrapper = mount(TaxCompositionChart);
+    const label = wrapper.find("[role='img']").attributes("aria-label") ?? "";
+    expect(label).toContain("illustrative composite");
+
+    // Genuine data: the aria-label must NOT carry the illustrative hedge.
+    mockRows.value = TAX_ROWS.map((r) => ({ ...r, data_source: "hmrc-actual" }));
+    const real = mount(TaxCompositionChart);
+    const realLabel = real.find("[role='img']").attributes("aria-label") ?? "";
+    expect(realLabel).not.toContain("illustrative composite");
+  });
+
+  it("renders a malformed/missing numeric value as em-dash, never the literal 'NaN'", () => {
+    // A row with a missing work_pct still passes the chart's income-tax filter,
+    // so it reaches the table; Number(undefined) === NaN must show as "—".
+    mockRows.value = [
+      {
+        year: "2024-25",
+        income_tax_bn: 280.0,
+        nics_bn: 185.0,
+        cgt_bn: 16.0,
+        iht_bn: 8.0,
+        sdlt_bn: 13.0,
+        wealth_taxes_bn: 37.0,
+        total_selected_bn: 502.0,
+        wealth_pct: 7.4,
+        // work_pct intentionally omitted → Number(undefined) === NaN
+        data_source: "illustrative",
+      },
+    ];
+    const wrapper = mount(TaxCompositionChart);
+    const cells = wrapper.findAll("tbody tr")[0].findAll("td").map((td) => td.text());
+    // Columns: year, income, nics, cgt, iht, sdlt, work%, wealth%
+    expect(cells[6]).toBe("—"); // malformed Work taxes (%)
+    expect(cells[7]).toBe("7.4"); // valid Wealth taxes (%)
+    expect(wrapper.text()).not.toContain("NaN");
+  });
 });

@@ -27,6 +27,12 @@ function formatCell(
   if (value === null || value === undefined) {
     return "—";
   }
+  // A non-finite number (NaN/Infinity) means "no usable value"; render it as
+  // missing rather than the misleading literal "NaN" — so a malformed/suppressed
+  // source cell never reads as real data in the accessible fallback.
+  if (typeof value === "number" && !Number.isFinite(value)) {
+    return "—";
+  }
   if (
     typeof value === "number" &&
     props.numericColumns &&

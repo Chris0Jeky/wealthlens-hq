@@ -256,7 +256,7 @@ const option = computed(() => {
   <div v-else>
     <div
       role="img"
-      :aria-label="`Stacked bar chart showing UK tax revenue composition from ${chartData.years[0]} to ${chartData.years[chartData.years.length - 1]}. Taxes on work (income tax and NICs) make up approximately ${chartData.latestWorkPct.toFixed(0)}% of the total, while taxes on wealth (CGT, IHT, SDLT) account for just ${chartData.latestWealthPct.toFixed(0)}%.`"
+      :aria-label="`Stacked bar chart showing UK tax revenue composition from ${chartData.years[0]} to ${chartData.years[chartData.years.length - 1]}. Taxes on work (income tax and NICs) make up approximately ${chartData.latestWorkPct.toFixed(0)}% of the total, while taxes on wealth (CGT, IHT, SDLT) account for just ${chartData.latestWealthPct.toFixed(0)}%.${isIllustrative ? ' Figures are an illustrative composite approximated from HMRC receipts, not exact published values.' : ''}`"
       class="w-full"
     >
       <VChart
@@ -276,8 +276,9 @@ const option = computed(() => {
       caption="UK tax revenue composition by year: the five component taxes (£bn) and the share from taxes on work vs wealth (%). Illustrative composite figures approximated from HMRC receipts, not exact published values."
     />
 
-    <!-- Data-honesty caveat — the dataset is an illustrative composite; surface
-         that whenever any plotted row is marked illustrative. Default OFF. -->
+    <!-- Data-honesty caveat — rendered exactly when a plotted row is marked
+         illustrative (a positive signal). For the current composite dataset that
+         is always true; it would self-hide if genuine HMRC figures were served. -->
     <p
       v-if="isIllustrative"
       class="text-xs text-[var(--wl-ink-muted)] mt-2 text-center italic"
