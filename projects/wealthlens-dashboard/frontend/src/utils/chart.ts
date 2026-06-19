@@ -18,11 +18,25 @@ export function escapeHtml(str: string): string {
  * fabricated 0. A genuine numeric `0` passes through unchanged.
  *
  * Use this in every chart's parse step instead of bare `Number(...)`.
+ *
+ * Strictly accepts only `number` and non-blank numeric `string`. Everything else
+ * (null/undefined, blank/whitespace strings, booleans, arrays, objects, symbols)
+ * maps to NaN rather than relying on `Number()`'s quirks (`Number([])===0`,
+ * `Number(true)===1`, `Number(Symbol())` throws). Non-finite results (`Infinity`
+ * from `"1e309"`/`"Infinity"`) also map to NaN so the contract — a finite number
+ * or NaN — always holds and `!isNaN(...)` filters drop them.
  */
 export function toNumberOrNaN(value: unknown): number {
-  if (value === null || value === undefined) return NaN;
-  if (typeof value === "string" && value.trim() === "") return NaN;
-  return Number(value);
+  let n: number;
+  if (typeof value === "number") {
+    n = value;
+  } else if (typeof value === "string") {
+    const trimmed = value.trim();
+    n = trimmed === "" ? NaN : Number(trimmed);
+  } else {
+    return NaN; // null/undefined/boolean/array/object/symbol
+  }
+  return Number.isFinite(n) ? n : NaN; // reject Infinity/-Infinity/NaN
 }
 
 /** Safely compute min/max from a number array without spreading (stack-safe). */

@@ -143,8 +143,18 @@ const option = computed(() => {
   const top1 = top1Data.value;
   const top10 = top10Data.value;
 
-  // Use the longer year array for the x-axis (they should match)
-  const years = top10.years.length >= top1.years.length ? top10.years : top1.years;
+  // Align both series to a shared, sorted union of years. ECharts category-axis
+  // series consume their data array BY INDEX, so if a year is missing from one
+  // series (e.g. a null value was dropped) every later point in that series would
+  // otherwise render under the wrong year. Mapping each series onto the shared
+  // year list (null for a missing year → a gap) keeps both lines on the right x.
+  const top1ByYear = new Map(top1.years.map((y, i) => [y, top1.values[i]]));
+  const top10ByYear = new Map(top10.years.map((y, i) => [y, top10.values[i]]));
+  const years = Array.from(new Set([...top10.years, ...top1.years])).sort(
+    (a, b) => a - b,
+  );
+  const top10Values = years.map((y) => top10ByYear.get(y) ?? null);
+  const top1Values = years.map((y) => top1ByYear.get(y) ?? null);
 
   return {
     animation: !prefersReducedMotion,
@@ -207,7 +217,7 @@ const option = computed(() => {
       {
         name: "Top 10%",
         type: "line" as const,
-        data: top10.values,
+        data: top10Values,
         smooth: !prefersReducedMotion,
         lineStyle: { width: 2.5, color: COLOR_TOP_10 },
         itemStyle: { color: COLOR_TOP_10 },
@@ -217,7 +227,7 @@ const option = computed(() => {
       {
         name: "Top 1%",
         type: "line" as const,
-        data: top1.values,
+        data: top1Values,
         smooth: !prefersReducedMotion,
         lineStyle: { width: 2.5, color: COLOR_TOP_1 },
         itemStyle: { color: COLOR_TOP_1 },

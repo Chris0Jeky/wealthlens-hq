@@ -16,6 +16,25 @@ describe('toNumberOrNaN', () => {
     expect(toNumberOrNaN('abc')).toBeNaN()
   })
 
+  it('maps non-number/non-string types to NaN (no Number() quirks)', () => {
+    // Number([])===0, Number([5])===5, Number(true)===1, Number(Symbol()) throws —
+    // all must safely become NaN instead of a fabricated value or a crash.
+    expect(toNumberOrNaN(true)).toBeNaN()
+    expect(toNumberOrNaN(false)).toBeNaN()
+    expect(toNumberOrNaN([])).toBeNaN()
+    expect(toNumberOrNaN([5])).toBeNaN()
+    expect(toNumberOrNaN({})).toBeNaN()
+    expect(() => toNumberOrNaN(Symbol('x'))).not.toThrow()
+    expect(toNumberOrNaN(Symbol('x'))).toBeNaN()
+  })
+
+  it('rejects non-finite numbers (Infinity / overflow strings) as NaN', () => {
+    expect(toNumberOrNaN(Infinity)).toBeNaN()
+    expect(toNumberOrNaN(-Infinity)).toBeNaN()
+    expect(toNumberOrNaN('Infinity')).toBeNaN()
+    expect(toNumberOrNaN('1e309')).toBeNaN() // overflows to Infinity
+  })
+
   it('preserves a genuine numeric 0 (so a real zero is NOT dropped)', () => {
     expect(toNumberOrNaN(0)).toBe(0)
     expect(toNumberOrNaN('0')).toBe(0)

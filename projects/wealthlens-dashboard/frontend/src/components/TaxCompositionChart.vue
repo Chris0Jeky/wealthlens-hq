@@ -66,7 +66,19 @@ const chartData = computed(() => {
     workPct: toNumberOrNaN(r.work_pct),
     wealthPct: toNumberOrNaN(r.wealth_pct),
   }));
-  const sorted = mapped.filter((r) => r.year && !isNaN(r.incomeTax));
+  // Require ALL five plotted components to be finite: this is a stacked total, so
+  // one missing component would understate the stack and render "£NaNbn" in the
+  // tooltip total. Dropping the incomplete year keeps the stacked total honest
+  // (it also drops from the accessible table, which mirrors this same data).
+  const sorted = mapped.filter(
+    (r) =>
+      r.year &&
+      !isNaN(r.incomeTax) &&
+      !isNaN(r.nics) &&
+      !isNaN(r.cgt) &&
+      !isNaN(r.iht) &&
+      !isNaN(r.sdlt),
+  );
 
   warnIfSignificantDataLoss("tax-composition", mapped.length, sorted.length);
 
@@ -164,7 +176,9 @@ const option = computed(() => {
         let html = `<strong>${escapeHtml(String(params[0].axisValue))}</strong><br/>`;
         let total = 0;
         for (const p of params) {
-          if (typeof p.value !== "number") continue;
+          // Skip non-finite (NaN/Infinity) so a missing component never renders
+          // "£NaNbn" or poisons the running total. (typeof NaN === "number".)
+          if (!Number.isFinite(p.value)) continue;
           total += p.value;
           html += `${escapeHtml(String(p.seriesName))}: £${p.value.toFixed(1)}bn<br/>`;
         }

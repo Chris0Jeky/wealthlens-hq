@@ -202,4 +202,27 @@ describe("TaxCompositionChart accessible table + illustrative caveat", () => {
     expect(cells[7]).toBe("7.4"); // valid Wealth taxes (%)
     expect(wrapper.text()).not.toContain("NaN");
   });
+
+  it("DROPS a year missing a plotted component (no £NaN in the stacked total)", () => {
+    // Unlike a missing %, a missing PLOTTED component (e.g. nics) would distort the
+    // stacked total and render £NaNbn in the tooltip, so the whole year is dropped.
+    mockRows.value = [
+      {
+        year: "2018-19", income_tax_bn: 191.0, nics_bn: 137.0, cgt_bn: 9.2,
+        iht_bn: 5.4, sdlt_bn: 12.0, work_pct: 92.5, wealth_pct: 7.5,
+        data_source: "illustrative",
+      },
+      {
+        year: "2099-00", income_tax_bn: 200.0, nics_bn: null, cgt_bn: 10.0,
+        iht_bn: 6.0, sdlt_bn: 12.0, work_pct: 92.0, wealth_pct: 8.0,
+        data_source: "illustrative",
+      },
+    ];
+    const wrapper = mount(TaxCompositionChart);
+    const bodyRows = wrapper.findAll("tbody tr");
+    expect(bodyRows).toHaveLength(1); // the null-nics 2099 row is dropped
+    expect(bodyRows[0].findAll("td")[0].text()).toBe("2018-19");
+    expect(wrapper.text()).not.toContain("2099-00");
+    expect(wrapper.text()).not.toContain("NaN");
+  });
 });
