@@ -27,6 +27,7 @@ import {
 import VChart from "vue-echarts";
 import { useChartData } from "@/composables/useChartData";
 import { escapeHtml } from "@/utils/chart";
+import AccessibleDataTable from "@/components/AccessibleDataTable.vue";
 
 // Register only the ECharts modules we need (tree-shaking)
 use([
@@ -64,12 +65,27 @@ const PEAK_YEAR = 2008;
 const PEAK_VALUE = 520;
 const ANNUAL_GROWTH = 0.015;
 
+/**
+ * Coerce a raw cell to a finite number, treating nullish/blank cells as NaN.
+ *
+ * `Number(null)`, `Number(undefined)`, `Number("")` and `Number("   ")` all
+ * coerce to `0`, which would slip past an `isNaN` guard and fabricate a £0 wage
+ * for a missing data point. Mapping those cases to `NaN` first means the
+ * downstream `isNaN` filter drops the row instead. A genuine `0` (or `"0"`)
+ * still parses to `0` and is kept.
+ */
+const toNumber = (cell: string | number | null | undefined): number => {
+  if (cell === null || cell === undefined) return NaN;
+  if (typeof cell === "string" && cell.trim() === "") return NaN;
+  return Number(cell);
+};
+
 /** Sorted actual data from the store. */
 const actualData = computed(() => {
   return rows.value
     .map((r) => ({
-      year: Number(r.year),
-      value: Number(r.real_weekly),
+      year: toNumber(r.year),
+      value: toNumber(r.real_weekly),
     }))
     .filter((r) => !isNaN(r.year) && !isNaN(r.value))
     .sort((a, b) => a.year - b.year);
@@ -131,6 +147,28 @@ const latestYear = computed(() => {
   const data = actualData.value;
   return data.length > 0 ? data[data.length - 1].year : 2024;
 });
+
+/**
+ * Accessible data-table fallback (WCAG 1.1.1). Mirrors the solid "actual
+ * earnings" series the chart plots — median real weekly pay per year — using the
+ * same already-loaded, filtered, year-sorted, verbatim figures (`actualData`).
+ * The counterfactual/gap series are derived visual aids, not source data, so the
+ * table reports only the genuine ONS figures.
+ */
+const tableColumns = ["Year", "Real weekly pay (£)"];
+const tableNumericColumns = ["Real weekly pay (£)"];
+// `actualData` already coerces blank/nullish cells to NaN and drops them (see
+// `toNumber` + the isNaN filter), so every `d.value` here is a finite, verbatim
+// ONS figure — a missing pay value is dropped, not rendered as a fabricated £0.
+// Let TypeScript infer the exact `{ Year: number; "Real weekly pay (£)": number }`
+// row shape (assignable to AccessibleDataTable's DatasetRow[]) rather than
+// widening to Record<string, string | number>[].
+const tableRows = computed(() =>
+  actualData.value.map((d) => ({
+    Year: d.year,
+    "Real weekly pay (£)": d.value,
+  })),
+);
 
 const option = computed(() => {
   return {
@@ -307,6 +345,14 @@ const option = computed(() => {
         autoresize
       />
     </div>
+
+    <!-- Accessible data-table fallback (WCAG 1.1.1 non-text content). -->
+    <AccessibleDataTable
+      :rows="tableRows"
+      :columns="tableColumns"
+      :numeric-columns="tableNumericColumns"
+      caption="UK median real weekly earnings by year (£, 2024 prices, CPI-adjusted). Source: ONS Annual Survey of Hours and Earnings (ASHE)."
+    />
 
     <!-- Gap annotation -->
     <p

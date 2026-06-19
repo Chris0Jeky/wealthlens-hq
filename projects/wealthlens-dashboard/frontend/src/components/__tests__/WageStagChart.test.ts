@@ -218,4 +218,121 @@ describe("WageStagChart", () => {
       expect(wrapper.text()).toContain("No data available for this chart.");
     });
   });
+
+  /**
+   * Accessible data-table fallback (WCAG 1.1.1) — the a11y slice addition.
+   * Asserts the table mirrors the chart's plotted "actual earnings" series
+   * EXACTLY: same filtered, year-sorted rows; verbatim figures; correct
+   * per-row cell mapping; registered ONS ASHE source in the caption.
+   */
+  describe("accessible data table", () => {
+    /** en-GB locale formatting computed from the data, not hardcoded. */
+    const fmt = (n: number) => Number(n).toLocaleString("en-GB");
+
+    beforeEach(() => {
+      mockLoading.value = false;
+      mockError.value = null;
+      // Out-of-order rows: the chart sorts ascending by year, so the table must too.
+      mockRows.value = [
+        { year: 2008, real_weekly: 520 },
+        { year: 2000, real_weekly: 462 },
+        { year: 2024, real_weekly: 504 },
+      ];
+    });
+
+    it("renders the table with the chart's exact column headers", () => {
+      const wrapper = mount(WageStagChart);
+      expect(wrapper.text()).toContain("View data as table");
+      const headers = wrapper.findAll("thead th").map((th) => th.text());
+      expect(headers).toEqual(["Year", "Real weekly pay (£)"]);
+    });
+
+    it("cites the registered ONS ASHE source in the table caption", () => {
+      const wrapper = mount(WageStagChart);
+      const caption = wrapper.find("table caption").text();
+      expect(caption).toContain(
+        "Source: ONS Annual Survey of Hours and Earnings (ASHE).",
+      );
+    });
+
+    it("populates the table with VERBATIM, year-sorted per-row figures (correct cell mapping)", () => {
+      const wrapper = mount(WageStagChart);
+      const bodyRows = wrapper.findAll("tbody tr");
+      expect(bodyRows).toHaveLength(3);
+
+      const cells = (i: number) =>
+        bodyRows[i].findAll("td").map((td) => td.text());
+      // Ascending by year; per-CELL mapping so a column swap or re-sort fails here.
+      expect(cells(0)).toEqual(["2000", fmt(462)]);
+      expect(cells(1)).toEqual(["2008", fmt(520)]);
+      expect(cells(2)).toEqual(["2024", fmt(504)]);
+    });
+
+    it("drops a row with a missing pay value (mirrors the chart filter), never fabricating a figure", () => {
+      // A row whose real_weekly is missing fails the chart's isNaN(value)
+      // filter, so it is plotted nowhere — and must not appear in the table.
+      mockRows.value = [
+        { year: 2000, real_weekly: 462 },
+        { year: 2001 }, // real_weekly omitted → Number(undefined) === NaN → dropped
+        { year: 2002, real_weekly: 480 },
+      ];
+      const wrapper = mount(WageStagChart);
+      const bodyRows = wrapper.findAll("tbody tr");
+      expect(bodyRows).toHaveLength(2);
+      const years = bodyRows.map((r) => r.findAll("td")[0].text());
+      expect(years).toEqual(["2000", "2002"]);
+      // No fabricated "0" substituted for the dropped row, and no literal "NaN".
+      expect(wrapper.text()).not.toContain("NaN");
+    });
+
+    it("drops a row whose pay is null or blank, never fabricating a £0 (Number(null/'') === 0 guard)", () => {
+      // Regression guard: Number(null) === 0 and Number("") === 0 would slip past
+      // an isNaN check and render a fabricated £0 wage. The chart's toNumber()
+      // maps nullish/blank cells to NaN first, so these rows are dropped entirely
+      // — they must appear in neither the chart nor the table fallback.
+      const rowsWithNullPay: Record<string, unknown>[] = [
+        { year: 2000, real_weekly: 462 },
+        { year: 2001, real_weekly: null }, // null → NaN → dropped (not £0)
+        { year: 2002, real_weekly: "" }, // blank → NaN → dropped (not £0)
+        { year: 2003, real_weekly: "   " }, // whitespace → NaN → dropped (not £0)
+        { year: 2004, real_weekly: 480 },
+      ];
+      mockRows.value = rowsWithNullPay;
+      const wrapper = mount(WageStagChart);
+
+      const bodyRows = wrapper.findAll("tbody tr");
+      // Only the two rows with real, finite pay survive.
+      expect(bodyRows).toHaveLength(2);
+      const years = bodyRows.map((r) => r.findAll("td")[0].text());
+      expect(years).toEqual(["2000", "2004"]);
+      // The dropped years must not appear at all in the rendered table body.
+      expect(years).not.toContain("2001");
+      expect(years).not.toContain("2002");
+      expect(years).not.toContain("2003");
+      // No fabricated "0" pay cell and no literal "NaN" leaked into the output.
+      const payCells = bodyRows.map((r) => r.findAll("td")[1].text());
+      expect(payCells).toEqual([fmt(462), fmt(480)]);
+      expect(payCells).not.toContain("0");
+      expect(wrapper.text()).not.toContain("NaN");
+    });
+
+    it("keeps a genuine zero pay value, rendering it as '0' (not dropped)", () => {
+      // A real, finite 0 is valid data and must be preserved — only nullish/blank
+      // cells are dropped. This proves the fix distinguishes "missing" from "zero".
+      const rowsWithZeroPay: Record<string, unknown>[] = [
+        { year: 2000, real_weekly: 462 },
+        { year: 2001, real_weekly: 0 }, // genuine 0 → kept, rendered as "0"
+        { year: 2002, real_weekly: 480 },
+      ];
+      mockRows.value = rowsWithZeroPay;
+      const wrapper = mount(WageStagChart);
+
+      const bodyRows = wrapper.findAll("tbody tr");
+      expect(bodyRows).toHaveLength(3);
+      const cells = (i: number) => bodyRows[i].findAll("td").map((td) => td.text());
+      expect(cells(0)).toEqual(["2000", fmt(462)]);
+      expect(cells(1)).toEqual(["2001", fmt(0)]);
+      expect(cells(2)).toEqual(["2002", fmt(480)]);
+    });
+  });
 });
