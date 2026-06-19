@@ -142,18 +142,26 @@ describe("TaxCompositionChart accessible table + illustrative caveat", () => {
     );
   });
 
-  it("hides the caveat when the data is NOT illustrative (no crying wolf)", () => {
+  it("hides ALL illustrative provenance text when the data is NOT illustrative (no crying wolf)", () => {
     mockRows.value = TAX_ROWS.map((r) => ({ ...r, data_source: "hmrc-actual" }));
     const wrapper = mount(TaxCompositionChart);
     // The table still renders (a11y is unconditional)...
     expect(wrapper.text()).toContain("View data as table");
-    // ...but the illustrative caveat must NOT appear for genuine data.
-    expect(wrapper.text()).not.toContain("Illustrative composite. Approximated");
+    // ...but NO illustrative wording may appear anywhere — caveat, caption, or
+    // aria-label (case-insensitive, so a wording tweak can't let it false-pass).
+    expect(wrapper.text().toLowerCase()).not.toContain("illustrative");
+    const caption = wrapper.find("table caption").text();
+    expect(caption.toLowerCase()).not.toContain("illustrative");
+    const label = wrapper.find("[role='img']").attributes("aria-label") ?? "";
+    expect(label.toLowerCase()).not.toContain("illustrative");
   });
 
-  it("keeps the table caption honest about the illustrative provenance", () => {
+  it("keeps the table caption honest about the illustrative provenance (only when illustrative)", () => {
     const wrapper = mount(TaxCompositionChart);
     const caption = wrapper.find("table caption").text();
+    // Always describes the table content...
+    expect(caption).toContain("UK tax revenue composition by year");
+    // ...and adds the provenance hedge because this dataset is illustrative.
     expect(caption).toContain("Illustrative composite figures approximated from HMRC receipts");
   });
 

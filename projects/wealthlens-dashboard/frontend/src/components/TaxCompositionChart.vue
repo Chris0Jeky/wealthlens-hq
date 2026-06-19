@@ -129,6 +129,19 @@ const tableRows = computed(() => {
   }));
 });
 
+/**
+ * Table caption — appends the illustrative-provenance hedge only when the data is
+ * actually illustrative, so the caption stays consistent with the caveat and the
+ * aria-label (all three self-hide if genuine HMRC figures are ever served).
+ */
+const tableCaption = computed(
+  () =>
+    "UK tax revenue composition by year: the five component taxes (£bn) and the share from taxes on work vs wealth (%)." +
+    (isIllustrative.value
+      ? " Illustrative composite figures approximated from HMRC receipts, not exact published values."
+      : ""),
+);
+
 const option = computed(() => {
   const data = chartData.value;
 
@@ -273,7 +286,7 @@ const option = computed(() => {
       :rows="tableRows"
       :columns="tableColumns"
       :numeric-columns="tableNumericColumns"
-      caption="UK tax revenue composition by year: the five component taxes (£bn) and the share from taxes on work vs wealth (%). Illustrative composite figures approximated from HMRC receipts, not exact published values."
+      :caption="tableCaption"
     />
 
     <!-- Data-honesty caveat — rendered exactly when a plotted row is marked
