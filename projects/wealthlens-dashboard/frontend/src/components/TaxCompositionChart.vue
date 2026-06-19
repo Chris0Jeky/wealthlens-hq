@@ -22,7 +22,7 @@ import {
 import VChart from "vue-echarts";
 import { useChartData } from "@/composables/useChartData";
 import type { EChartsExportable } from "@/composables/useChartExport";
-import { escapeHtml, warnIfSignificantDataLoss } from "@/utils/chart";
+import { escapeHtml, toNumberOrNaN, warnIfSignificantDataLoss } from "@/utils/chart";
 import AccessibleDataTable from "@/components/AccessibleDataTable.vue";
 
 // Register only the ECharts modules we need (tree-shaking)
@@ -58,13 +58,13 @@ const COLOR_SDLT = "#b45309"; // Amber — ~4.7:1
 const chartData = computed(() => {
   const mapped = rows.value.map((r) => ({
     year: String(r.year ?? ""),
-    incomeTax: Number(r.income_tax_bn),
-    nics: Number(r.nics_bn),
-    cgt: Number(r.cgt_bn),
-    iht: Number(r.iht_bn),
-    sdlt: Number(r.sdlt_bn),
-    workPct: Number(r.work_pct),
-    wealthPct: Number(r.wealth_pct),
+    incomeTax: toNumberOrNaN(r.income_tax_bn),
+    nics: toNumberOrNaN(r.nics_bn),
+    cgt: toNumberOrNaN(r.cgt_bn),
+    iht: toNumberOrNaN(r.iht_bn),
+    sdlt: toNumberOrNaN(r.sdlt_bn),
+    workPct: toNumberOrNaN(r.work_pct),
+    wealthPct: toNumberOrNaN(r.wealth_pct),
   }));
   const sorted = mapped.filter((r) => r.year && !isNaN(r.incomeTax));
 

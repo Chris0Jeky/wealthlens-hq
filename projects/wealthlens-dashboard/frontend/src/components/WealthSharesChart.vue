@@ -30,7 +30,7 @@ import AccessibleDataTable from "@/components/AccessibleDataTable.vue";
 import { useChartData } from "@/composables/useChartData";
 import type { DatasetRow } from "@/stores/data";
 import type { EChartsExportable } from "@/composables/useChartExport";
-import { escapeHtml, safeMinMax, warnIfSignificantDataLoss } from "@/utils/chart";
+import { escapeHtml, safeMinMax, toNumberOrNaN, warnIfSignificantDataLoss } from "@/utils/chart";
 import { COLOR_TOP_10, COLOR_TOP_1 } from "@/config/chartColors";
 
 // Register only the ECharts modules we need (tree-shaking)
@@ -61,10 +61,10 @@ const prefersReducedMotion =
 function seriesFor(percentile: string): { years: number[]; values: number[] } {
   const matched = rows.value.filter((r) => r.percentile === percentile);
   const mapped = matched.map((r) => ({
-    year: Number(r.year),
+    year: toNumberOrNaN(r.year),
     // WID shares are fractions of 1 (0.57); convert to percent for display so
     // the axis/tooltip/aria-label/table all read e.g. 57%, not 0.57%.
-    value: Number(r.value) * 100,
+    value: toNumberOrNaN(r.value) * 100,
   }));
   const filtered = mapped
     .filter((r) => !isNaN(r.year) && !isNaN(r.value))

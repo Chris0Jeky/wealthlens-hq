@@ -7,6 +7,24 @@ export function escapeHtml(str: string): string {
     .replace(/"/g, "&quot;");
 }
 
+/**
+ * Coerce a raw dataset cell to a finite number, or NaN if it is missing/blank.
+ *
+ * Plain `Number()` is unsafe for chart data: `Number(null)`, `Number("")` and
+ * `Number("   ")` all return `0`, which silently fabricates a real data point
+ * (a £0 wage, a "year 0", a 0% share) from a missing or suppressed source cell.
+ * Mapping those to `NaN` lets the standard `!isNaN(...)` filter drop the row, so
+ * a missing cell is never plotted or shown in the accessible table as a
+ * fabricated 0. A genuine numeric `0` passes through unchanged.
+ *
+ * Use this in every chart's parse step instead of bare `Number(...)`.
+ */
+export function toNumberOrNaN(value: unknown): number {
+  if (value === null || value === undefined) return NaN;
+  if (typeof value === "string" && value.trim() === "") return NaN;
+  return Number(value);
+}
+
 /** Safely compute min/max from a number array without spreading (stack-safe). */
 export function safeMinMax(arr: number[]): { min: number; max: number } {
   if (arr.length === 0) return { min: 0, max: 0 };

@@ -22,7 +22,7 @@ import {
 import VChart from "vue-echarts";
 import { useChartData } from "@/composables/useChartData";
 import type { EChartsExportable } from "@/composables/useChartExport";
-import { escapeHtml, safeMinMax, warnIfSignificantDataLoss } from "@/utils/chart";
+import { escapeHtml, safeMinMax, toNumberOrNaN, warnIfSignificantDataLoss } from "@/utils/chart";
 import AccessibleDataTable from "@/components/AccessibleDataTable.vue";
 
 // Register only the ECharts modules we need (tree-shaking)
@@ -56,7 +56,7 @@ const COLOR_UK_AVG = "#b91c1c"; // Red-700 — ~5.7:1
 const chartData = computed(() => {
   const mapped = rows.value.map((r) => ({
     region: String(r.region ?? ""),
-    gdhi: Number(r.gdhi_per_head),
+    gdhi: toNumberOrNaN(r.gdhi_per_head),
     year: String(r.year ?? ""),
   }));
   const sorted = mapped
