@@ -22,7 +22,12 @@ import {
 import VChart from "vue-echarts";
 import { useChartData } from "@/composables/useChartData";
 import type { EChartsExportable } from "@/composables/useChartExport";
-import { escapeHtml, safeMinMax, warnIfSignificantDataLoss } from "@/utils/chart";
+import {
+  escapeHtml,
+  safeMinMax,
+  toNumberOrNaN,
+  warnIfSignificantDataLoss,
+} from "@/utils/chart";
 import AccessibleDataTable from "@/components/AccessibleDataTable.vue";
 
 // Register only the ECharts modules we need (tree-shaking)
@@ -51,19 +56,6 @@ const prefersReducedMotion =
 const COLOR_BOOMERS = "#1a56db"; // Blue — ~7.2:1
 const COLOR_GEN_X = "#047857"; // Green — ~5.5:1
 const COLOR_MILLENNIALS = "#dc2626"; // Red — ~4.6:1
-
-/**
- * Parse a raw dataset cell into a number, mapping missing values to NaN.
- *
- * Data honesty: `Number(null)` and `Number("")` both coerce to 0, which would
- * silently turn a missing source cell into a fabricated figure — year "0", or
- * £0 of wealth, or a phantom bar at age 0. We map nullish/empty cells to NaN
- * instead, so the chart's isNaN guards drop incomplete rows and the accessible
- * data table renders the missing-value placeholder ("—") rather than "0".
- */
-function toNumberOrNaN(value: string | number | null): number {
-  return value != null && value !== "" ? Number(value) : NaN;
-}
 
 /**
  * A single plotted data point for one generation at one age milestone.

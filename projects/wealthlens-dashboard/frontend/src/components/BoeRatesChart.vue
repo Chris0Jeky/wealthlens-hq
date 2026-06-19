@@ -22,7 +22,12 @@ import {
 import VChart from "vue-echarts";
 import { useChartData } from "@/composables/useChartData";
 import type { EChartsExportable } from "@/composables/useChartExport";
-import { escapeHtml, safeMinMax, warnIfSignificantDataLoss } from "@/utils/chart";
+import {
+  escapeHtml,
+  safeMinMax,
+  toNumberOrNaN,
+  warnIfSignificantDataLoss,
+} from "@/utils/chart";
 import AccessibleDataTable from "@/components/AccessibleDataTable.vue";
 
 // Register only the ECharts modules we need (tree-shaking)
@@ -51,19 +56,12 @@ const prefersReducedMotion =
 const COLOR_BANK_RATE = "#1a56db"; // Blue — ~7.2:1
 const COLOR_CPI = "#dc2626"; // Red — ~4.6:1
 
-/**
- * Coerce a raw cell to a number, but treat null/undefined/empty-string as
- * missing (NaN) rather than letting Number() fabricate a 0. Number(null) and
- * Number("") both === 0, which would otherwise plot/table a real-looking 0.0
- * for a blank source cell. A genuine numeric 0 (e.g. a 0% rate) is preserved.
- */
-function toNumberOrNaN(v: unknown): number {
-  if (v == null || v === "") return NaN;
-  return Number(v);
-}
-
 /** Sorted data extracted from rows. */
 const chartData = computed(() => {
+  // toNumberOrNaN: treat null/undefined/empty-string/non-finite cells as missing
+  // (NaN) rather than letting Number() fabricate a 0. Number(null) and Number("")
+  // both === 0, which would otherwise plot/table a real-looking 0.0 for a blank
+  // source cell. A genuine numeric 0 (e.g. a 0% rate) is preserved.
   const mapped = rows.value.map((r) => ({
     date: String(r.date ?? ""),
     bankRate: toNumberOrNaN(r.bank_rate),

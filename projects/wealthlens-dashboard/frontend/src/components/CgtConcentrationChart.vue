@@ -37,7 +37,7 @@ import AccessibleDataTable from "@/components/AccessibleDataTable.vue";
 import type { DatasetRow } from "@/stores/data";
 import { useChartData } from "@/composables/useChartData";
 import type { EChartsExportable } from "@/composables/useChartExport";
-import { escapeHtml, warnIfSignificantDataLoss } from "@/utils/chart";
+import { escapeHtml, toNumberOrNaN, warnIfSignificantDataLoss } from "@/utils/chart";
 
 // Register only the ECharts modules we need (tree-shaking). The y=x equality
 // reference line is drawn as an ordinary line series, so no MarkLineComponent.
@@ -73,27 +73,21 @@ const COLOR_LINE = "#dc2626";
 const COLOR_CURVE = "#1a56db";
 const COLOR_EQUALITY = "#6b7280";
 
-/**
- * Parse a numeric cell, treating null/undefined/empty as MISSING (NaN) rather
- * than 0. The real data has genuine nulls (e.g. a band with no cumulative
- * taxpayer figure), and Number(null) === 0 — which would fabricate a real data
- * point at the origin. Mapping missing values to NaN lets the downstream
- * isNaN() filters drop them instead of plotting a false (0, y) coordinate.
- */
-function toFiniteOrNaN(v: unknown): number {
-  if (v === null || v === undefined || v === "") return NaN;
-  return Number(v);
-}
-
 /** Parsed and sorted data rows. */
 const sortedData = computed(() => {
+  // toNumberOrNaN: treat null/undefined/empty/non-finite cells as MISSING (NaN)
+  // rather than 0. The real data has genuine nulls (e.g. a band with no
+  // cumulative taxpayer figure), and Number(null) === 0 — which would fabricate
+  // a real data point at the origin. Mapping missing values to NaN lets the
+  // downstream isNaN() filters drop them instead of plotting a false (0, y)
+  // coordinate.
   const mapped = rows.value.map((r) => ({
     gainBand: String(r.gain_band ?? ""),
-    bandLower: toFiniteOrNaN(r.band_lower),
-    shareOfGainsPct: toFiniteOrNaN(r.share_of_gains_pct),
-    cumulGainsFromTopPct: toFiniteOrNaN(r.cumul_gains_from_top_pct),
-    shareOfTaxpayersPct: toFiniteOrNaN(r.share_of_taxpayers_pct),
-    cumulTaxpayersFromTopPct: toFiniteOrNaN(r.cumul_taxpayers_from_top_pct),
+    bandLower: toNumberOrNaN(r.band_lower),
+    shareOfGainsPct: toNumberOrNaN(r.share_of_gains_pct),
+    cumulGainsFromTopPct: toNumberOrNaN(r.cumul_gains_from_top_pct),
+    shareOfTaxpayersPct: toNumberOrNaN(r.share_of_taxpayers_pct),
+    cumulTaxpayersFromTopPct: toNumberOrNaN(r.cumul_taxpayers_from_top_pct),
   }));
   const filtered = mapped
     .filter(
