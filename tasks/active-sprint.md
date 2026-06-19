@@ -2,25 +2,24 @@
 
 Last updated: 2026-06-19
 
-> **LATEST (2026-06-19 — session 9 autonomous loop, cycle 3):** main `5189ecf`.
-> **Two milestones COMPLETE on main:** (1) **Chart accessibility** — all **9** dashboard
-> charts now ship an `AccessibleDataTable` fallback (WCAG 1.1.1): TaxComposition #419,
-> gdhi #420, child-poverty #421, generational #423, wealth-by-decile #422, productivity-pay
-> #426, wage #424, boe-rates #425, housing #427 — each built via parallel worktree
-> fan-out + a 2-lens adversarial review. (2) **Systemic null→0 data-integrity fix** —
-> #428 added a shared, robust `toNumberOrNaN` (utils/chart.ts) and routed every chart's
-> parse step through it, so a missing/suppressed source cell is dropped/shown as "—"
-> instead of a fabricated 0; also fixed the stacked-total (TaxComposition) and
-> series-alignment (WealthShares) consequences the guard exposed. Reviews caught real
-> bugs throughout (a false "net negative wealth" aria-label, a wrong source citation,
-> several null→0 fabrications). Earlier in cycle 2: #415/#405/#417/#416/#418 merged.
-> **Dependabot still held for Chris (prod/major):** #390 fetch-metadata3, #402 vue-router5
-> (majors); #391 plotly, #396 uvicorn, #399 vue, #393 vue-i18n (prod); #394 pandas-stubs,
-> #397 mypy<3 (dev-major). **Loop on a 30-min cron (`keep going`).** Next autonomous
-> threads (see inbox): consolidate inline null-guards onto the shared helper (DRY); the
-> gdhi "UK regions" relabel (needs a granularity decision); `make pipeline-test` CSV
-> validation errors. Full state:
-> `../hq-private/projects/wealthlens/memories/session_notes/ORCHESTRATION.md` (session 9).
+> **SESSION 9 WRAPPED (2026-06-19).** main green; **only the 8 held Dependabot PRs are
+> open** (everything built this session is merged). **Shipped this session (16 PRs):**
+> cycle 2 — #415/#405/#417/#416/#418; **Chart accessibility (9/9 charts)** —
+> #419/#420/#421/#422/#423/#424/#425/#426/#427 each ship an `AccessibleDataTable`
+> fallback (WCAG 1.1.1), built via parallel worktree fan-outs + 2-lens adversarial
+> reviews; **systemic null→0 data-integrity fix** — #428 shared `toNumberOrNaN`
+> (utils/chart.ts) guarding every parser (missing cell → "—", never a fabricated 0) +
+> #430 consolidated the last 5 charts onto it + fixed the stacked-total/series-alignment
+> consequences; **#431** corrected the discredited wealth figures in the redesign mockups
+> (+ marked superseded); **#432** killed the compiled-`.js`-shadow footgun (`vue-tsc -b
+> --noEmit` + `clean:shadows` prebuild/pretest hooks). Reviews caught real bugs
+> throughout (false "net negative wealth" aria-label, wrong HBAI source citation, many
+> null→0 fabrications, a CI-breaking validate-on-gitignored-CSVs PR that was correctly
+> CLOSED). **Held for Chris (8):** #390 fetch-metadata3 & #402 vue-router5 (majors);
+> #391 plotly, #396 uvicorn, #399 vue, #393 vue-i18n (prod); #394 pandas-stubs, #397
+> mypy<3 (dev-major). **Open questions put to Chris at wrap-up** (Dependabot triage,
+> H1-02, docs data-array re-sync, prettier reconcile, gdhi granularity, cron fate).
+> Full state: `../hq-private/projects/wealthlens/memories/session_notes/ORCHESTRATION.md`.
 
 > **PRIOR (2026-06-13 — session 8 autonomous build loop):** 5 PRs merged to main,
 > each with a planning workflow + 2 independent adversarial-review lenses + green CI:
