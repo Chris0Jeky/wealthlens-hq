@@ -18,7 +18,7 @@ import { ref, shallowRef } from "vue";
 // Declared as const refs and mutated via `.value` in beforeEach, so the same
 // reactive containers are shared with the mocked composable across every test
 // (reassigning the refs would break that binding).
-const mockRows = shallowRef<any[]>([]);
+const mockRows = shallowRef<Record<string, unknown>[]>([]);
 const mockLoading = ref(false);
 const mockError = ref<string | null>(null);
 
