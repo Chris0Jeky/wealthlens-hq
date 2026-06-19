@@ -3,7 +3,7 @@
  * ChildPovertyChart — Horizontal bar chart showing child poverty rates
  * by UK region, with a reference line for the national average.
  *
- * Data source: DWP / HBAI (Households Below Average Income)
+ * Data source: DWP/HMRC Children in Low Income Families (local-area statistics)
  * Columns: region, child_poverty_pct, children_in_poverty, national_avg_pct, above_national_avg
  *
  * Accessibility: WCAG AA high-contrast colors, aria-label, keyboard tooltip.
@@ -23,6 +23,7 @@ import VChart from "vue-echarts";
 import { useChartData } from "@/composables/useChartData";
 import type { EChartsExportable } from "@/composables/useChartExport";
 import { escapeHtml, safeMinMax, warnIfSignificantDataLoss } from "@/utils/chart";
+import AccessibleDataTable from "@/components/AccessibleDataTable.vue";
 
 // Register only the ECharts modules we need (tree-shaking)
 use([
@@ -83,6 +84,54 @@ const hasData = computed(() => chartData.value.regions.length > 0);
 
 /** Poverty rate range for aria-label. */
 const povertyRange = computed(() => safeMinMax(chartData.value.values));
+
+/**
+ * Accessible data-table fallback (WCAG 1.1.1). Mirrors the plotted series — the
+ * child-poverty rate per region (same already-loaded, filtered, poverty-rate-
+ * descending order the bars use) plus the children-in-poverty count shown in the
+ * tooltip and the national-average reference line the chart draws. Figures are
+ * verbatim: it reuses chartData, never re-fetching or recomputing.
+ */
+const tableColumns = [
+  "Region",
+  "Child poverty (%)",
+  "Children in poverty",
+  "National average (%)",
+];
+const tableNumericColumns = tableColumns.filter((c) => c !== "Region");
+const tableRows = computed(() => {
+  const d = chartData.value;
+  return d.regions.map((region, i) => {
+    // Re-derive the children-in-poverty count from the raw row so a missing
+    // source value (null/undefined/"") stays missing instead of becoming 0.
+    // chartData parses it with Number(), and Number(null)===0 / Number("")===0,
+    // which would otherwise make AccessibleDataTable render "0" (claiming zero
+    // children in poverty) where the tooltip honestly shows "N/A". Mapping to
+    // null lets the table render "—", keeping the visual and the fallback honest.
+    const rawRow = rows.value.find((r) => String(r.region ?? "") === region);
+    const rawChildren = rawRow?.children_in_poverty;
+    const children: number | null =
+      rawChildren === null || rawChildren === undefined || rawChildren === ""
+        ? null
+        : Number(rawChildren);
+    return {
+      Region: region,
+      "Child poverty (%)": d.values[i],
+      "Children in poverty": children,
+      "National average (%)": d.nationalAvg,
+    };
+  });
+});
+
+/**
+ * Table caption — cites the same registered source the chart's footer credits
+ * (DWP/HMRC Children in Low Income Families, matching registries/sources.yml and
+ * the backend metadata) and notes the children-in-poverty counts are estimates
+ * (the tooltip prefixes them with "~"), so the accessible fallback is as honest
+ * as the visual and points at the same dataset.
+ */
+const tableCaption =
+  "Child poverty rate (%) by UK region, with the estimated number of children in poverty and the UK national-average rate (%). Source: DWP/HMRC Children in Low Income Families. Children-in-poverty figures are estimates.";
 
 const option = computed(() => {
   const data = chartData.value;
@@ -208,16 +257,24 @@ const option = computed(() => {
       />
     </div>
 
+    <!-- Accessible data-table fallback (WCAG 1.1.1 non-text content). -->
+    <AccessibleDataTable
+      :rows="tableRows"
+      :columns="tableColumns"
+      :numeric-columns="tableNumericColumns"
+      :caption="tableCaption"
+    />
+
     <!-- Source citation -->
     <p class="text-sm text-[var(--wl-ink-muted)] mt-4 text-center">
       Source:
       <a
-        href="https://www.gov.uk/government/collections/households-below-average-income-hbai--2"
+        href="https://www.gov.uk/government/statistics/children-in-low-income-families-local-area-statistics-2014-to-2023"
         target="_blank"
         rel="noopener"
         class="underline hover:text-[var(--wl-ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--wl-red)] rounded"
       >
-        DWP HBAI Statistics<span class="sr-only"> (opens in new tab)</span></a>, accessed 2026-05-14
+        DWP/HMRC Children in Low Income Families<span class="sr-only"> (opens in new tab)</span></a>, accessed 2026-05-16
     </p>
   </div>
 </template>
