@@ -5,8 +5,10 @@
  * Data source: ONS Wealth and Assets Survey
  * Columns: decile, total_wealth_bn (GBP billions)
  *
- * The 1st (poorest) decile has negative net wealth and is highlighted
- * in a warning color. All other bars use a standard WCAG AA compliant blue.
+ * Any decile whose net wealth is negative is highlighted in a warning color;
+ * all other bars use a standard WCAG AA compliant blue. (With the current ONS
+ * data every decile's total wealth is positive, so no bar is highlighted — the
+ * negative styling is a data-driven safeguard, not an assumption about a band.)
  *
  * Accessibility: WCAG AA high-contrast colors, aria-label, escapeHtml tooltips.
  */
@@ -23,6 +25,7 @@ import VChart from "vue-echarts";
 import { useChartData } from "@/composables/useChartData";
 import type { EChartsExportable } from "@/composables/useChartExport";
 import { escapeHtml, warnIfSignificantDataLoss } from "@/utils/chart";
+import AccessibleDataTable from "@/components/AccessibleDataTable.vue";
 
 // Register only the ECharts modules we need (tree-shaking)
 use([
@@ -76,6 +79,30 @@ const headlineInsight = computed(() => {
   if (!richest || !poorest) return "";
   return `The ${richest.decile} decile holds ${richest.totalWealthBn.toLocaleString()}bn in total wealth, while the ${poorest.decile} decile has ${poorest.totalWealthBn.toLocaleString()}bn`;
 });
+
+/**
+ * Only claim the "negative net wealth / red highlight" in the aria-label when the
+ * poorest decile's value is actually negative. The committed ONS data is positive
+ * (+£13.9bn), so the claim would otherwise describe a red bar that is never drawn.
+ */
+const poorestIsNegative = computed(() => {
+  const poorest = parsedData.value[0];
+  return poorest ? poorest.totalWealthBn < 0 : false;
+});
+
+/**
+ * Accessible data-table fallback (WCAG 1.1.1). Mirrors the single plotted series
+ * — total household wealth (£bn) per decile — using the same already-loaded,
+ * filtered, verbatim figures the chart draws, in the same poorest-to-richest order.
+ */
+const tableColumns = ["Decile", "Total wealth (£bn)"];
+const tableNumericColumns = ["Total wealth (£bn)"];
+const tableRows = computed(() =>
+  parsedData.value.map((d) => ({
+    Decile: d.decile,
+    "Total wealth (£bn)": d.totalWealthBn,
+  })),
+);
 
 const option = computed(() => {
   const data = parsedData.value;
@@ -184,7 +211,7 @@ const option = computed(() => {
   <div v-else>
     <div
       role="img"
-      :aria-label="`Bar chart showing total household wealth by decile in the UK. ${headlineInsight}. The poorest decile is highlighted in red to indicate net negative wealth.`"
+      :aria-label="`Bar chart showing total household wealth by decile in the UK. ${headlineInsight}.${poorestIsNegative ? ' The poorest decile is highlighted in red to indicate net negative wealth.' : ''}`"
       class="w-full"
     >
       <VChart
@@ -195,6 +222,14 @@ const option = computed(() => {
         autoresize
       />
     </div>
+
+    <!-- Accessible data-table fallback (WCAG 1.1.1 non-text content). -->
+    <AccessibleDataTable
+      :rows="tableRows"
+      :columns="tableColumns"
+      :numeric-columns="tableNumericColumns"
+      caption="Total household wealth by decile in Great Britain (£bn), ordered from the poorest (1st) to the richest (10th) decile. Source: ONS Wealth and Assets Survey."
+    />
 
     <!-- Source citation -->
     <p class="text-sm text-[var(--wl-ink-muted)] mt-4 text-center">
