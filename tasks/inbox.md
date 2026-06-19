@@ -41,9 +41,19 @@ Every concrete action item extracted from research. Triage into active-sprint, b
   any served scenario's provenance) so a served IHT caveat carries the source. Also:
   Gate-3 charitable 10% reduced-rate uses gross estate not the post-relief baseline
   amount (refine with Tier B).
-- [ ] **Clean up the gitignored compiled `.js` shadows** in `frontend/src` (they
-  shadow `.ts` locally because Vite resolves `.js` first — confused a local test
-  run; CI is unaffected). Add a `git clean`/predev step or stop emitting them.
+- [ ] **Clean up the compiled `.js` shadows** emitted by `vue-tsc -b`. Two
+  distinct footguns (both hit again 2026-06-19):
+  - `frontend/src/**/*.js` are GITIGNORED but Vite/vitest resolve `.js` before
+    `.ts`, so a STALE local shadow (e.g. `src/config/chartArticles.js`) makes a
+    local test import old code. CI is unaffected (no committed shadow). Workaround:
+    rebuild or `rm` the shadow before testing.
+  - `frontend/vite.config.js`, `frontend/vitest.config.js`, `frontend/scripts/*.js`
+    ARE TRACKED (they sit outside `src/`), so a `.ts` change leaves the tracked
+    `.js` stale unless regenerated and committed (Vite resolves `vite.config.js`
+    before `.ts`). Easy to ship an inconsistent pair.
+  - Root-cause fix options: set the build tsconfig to not emit (`noEmit`/separate
+    typecheck project), or stop tracking the config/scripts `.js` and gitignore
+    them + add a `predev`/`pretest` regen step. Pick one and apply repo-wide.
 
 ---
 
