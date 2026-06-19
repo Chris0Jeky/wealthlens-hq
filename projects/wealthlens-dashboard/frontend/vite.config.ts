@@ -15,18 +15,26 @@ export default defineConfig({
     chunkSizeWarningLimit: 600,
     rollupOptions: {
       output: {
-        manualChunks: {
-          // Heavy charting library — isolated so it only loads on chart routes
-          echarts: [
-            "echarts",
-            "echarts/core",
-            "echarts/renderers",
-            "echarts/charts",
-            "echarts/components",
-            "vue-echarts",
-          ],
-          // Framework core — cached across all routes
-          "vue-vendor": ["vue", "vue-router", "pinia"],
+        // Function form (not the object form): newer Rollup type definitions —
+        // pulled in transitively by recent esbuild/Vite bumps — only accept a
+        // `ManualChunksFunction`, so the object literal raised vite.config.ts
+        // TS2769. The function form is backward-compatible across Vite 6+ and
+        // unblocks the Vite/Rollup dependency upgrades. For the current
+        // dependency tree it yields the same two named chunks (echarts,
+        // vue-vendor) — the build output is byte-identical to the object form.
+        manualChunks(id) {
+          // Heavy charting library (incl. its private zrender renderer) —
+          // isolated so it only loads on chart routes. Check this before the
+          // framework rule so `vue-echarts` lands here, not in vue-vendor.
+          if (/[\\/]node_modules[\\/](echarts|zrender|vue-echarts)[\\/]/.test(id)) {
+            return "echarts";
+          }
+          // Framework core (Vue runtime + its @vue/* internals, router, Pinia)
+          // — cached across all routes.
+          if (/[\\/]node_modules[\\/](vue|@vue|vue-router|pinia)[\\/]/.test(id)) {
+            return "vue-vendor";
+          }
+          return undefined;
         },
       },
     },
