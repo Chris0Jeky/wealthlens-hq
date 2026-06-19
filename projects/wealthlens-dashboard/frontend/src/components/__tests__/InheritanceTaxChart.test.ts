@@ -61,6 +61,8 @@ const MOCK_IHT_DATA = {
   ],
   by_estate_size: [
     { band: "£325k-£500k", estates: 8900, tax_paid_m: 570 },
+    { band: "£500k-£1m", estates: 11200, tax_paid_m: 2100 },
+    { band: "Over £5m", estates: 500, tax_paid_m: 600 },
   ],
 };
 
@@ -185,6 +187,103 @@ describe("InheritanceTaxChart", () => {
     // Should not show loading or error
     expect(wrapper.text()).not.toContain("Loading chart data...");
     expect(wrapper.text()).not.toContain("Could not load");
+  });
+
+  it("defaults to the trend view (additive band view is opt-in)", async () => {
+    const wrapper = mount(InheritanceTaxChart);
+
+    await vi.waitFor(() => {
+      expect(wrapper.find(".vchart-stub").exists()).toBe(true);
+    });
+
+    // The two view tabs are present, with "Trend" selected by default.
+    const tabs = wrapper.findAll("[role='tab']");
+    expect(tabs).toHaveLength(2);
+    const trendTab = tabs.find((t) => t.text() === "Trend");
+    const bandTab = tabs.find((t) => t.text() === "By estate size");
+    expect(trendTab?.attributes("aria-selected")).toBe("true");
+    expect(bandTab?.attributes("aria-selected")).toBe("false");
+
+    // Default view renders the trend dual panel (donut + bar) and does NOT
+    // show the band view's data table.
+    expect(wrapper.findAll(".vchart-stub")).toHaveLength(2);
+    expect(wrapper.text()).not.toContain("View data as table");
+  });
+
+  it("renders the by-estate-size band view when its tab is activated", async () => {
+    const wrapper = mount(InheritanceTaxChart);
+
+    await vi.waitFor(() => {
+      expect(wrapper.find(".vchart-stub").exists()).toBe(true);
+    });
+
+    // Activate the "By estate size" tab.
+    const bandTab = wrapper
+      .findAll("[role='tab']")
+      .find((t) => t.text() === "By estate size");
+    expect(bandTab).toBeDefined();
+    await bandTab!.trigger("click");
+
+    // The band view shows a single bar chart plus the accessible data table.
+    expect(wrapper.findAll(".vchart-stub")).toHaveLength(1);
+    expect(wrapper.text()).toContain("View data as table");
+
+    // The table shows one row per band from by_estate_size (3 in the fixture).
+    // Assert per-row CELL MAPPING (column order: band, estates, IHT paid £m) —
+    // not just value presence — so a field/column swap in bandTableRows or a
+    // column reorder would fail here.
+    const bodyRows = wrapper.findAll("tbody tr");
+    expect(bodyRows).toHaveLength(3);
+    const cellTexts = (rowIdx: number) =>
+      bodyRows[rowIdx].findAll("td").map((td) => td.text());
+    expect(cellTexts(0)).toEqual(["£325k-£500k", "8,900", "570"]);
+    expect(cellTexts(1)).toEqual(["£500k-£1m", "11,200", "2,100"]);
+    expect(cellTexts(2)).toEqual(["Over £5m", "500", "600"]);
+  });
+
+  it("describes the band view with a data-driven aria-label (first and last band)", async () => {
+    const wrapper = mount(InheritanceTaxChart);
+
+    await vi.waitFor(() => {
+      expect(wrapper.find(".vchart-stub").exists()).toBe(true);
+    });
+
+    const bandTab = wrapper
+      .findAll("[role='tab']")
+      .find((t) => t.text() === "By estate size");
+    await bandTab!.trigger("click");
+
+    // The band view's role=img label reads the first and last band verbatim
+    // from the data (locale-formatted figures), so a regression in the
+    // aria-label logic (wrong band picked, broken interpolation) fails here.
+    const label = wrapper.find("[role='img']").attributes("aria-label");
+    expect(label).toContain(
+      '"£325k-£500k" band covers 8,900 estates paying £570m',
+    );
+    expect(label).toContain('"Over £5m" band covers 500 estates paying £600m');
+  });
+
+  it("falls back to a generic band aria-label when no estate-size bands exist", async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ ...MOCK_IHT_DATA, by_estate_size: [] }),
+    });
+    const wrapper = mount(InheritanceTaxChart);
+
+    await vi.waitFor(() => {
+      expect(wrapper.find(".vchart-stub").exists()).toBe(true);
+    });
+
+    const bandTab = wrapper
+      .findAll("[role='tab']")
+      .find((t) => t.text() === "By estate size");
+    await bandTab!.trigger("click");
+
+    // Empty bands → the guard fallback string, and the table renders no rows.
+    expect(wrapper.find("[role='img']").attributes("aria-label")).toBe(
+      "Bar chart of inheritance tax paid by estate size band.",
+    );
+    expect(wrapper.findAll("tbody tr")).toHaveLength(0);
   });
 
   it("has correct accessibility attributes", async () => {
