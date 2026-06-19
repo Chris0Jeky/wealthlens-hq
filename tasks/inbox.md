@@ -54,6 +54,16 @@ Every concrete action item extracted from research. Triage into active-sprint, b
   - Root-cause fix options: set the build tsconfig to not emit (`noEmit`/separate
     typecheck project), or stop tracking the config/scripts `.js` and gitignore
     them + add a `predev`/`pretest` regen step. Pick one and apply repo-wide.
+- [ ] **Sync the `docs/redesign/pages/` static prototypes to the corrected
+  wealth-shares figures** (surfaced by PR #416 review, 2026-06-19). `chart.html`
+  (lines ~466, 491, 495-502, 559, 562), `landing.jsx:119`, `landing.html:943`
+  still show the discredited `Top 1% 28%`, `Bottom 50% 6%`, `Postwar low (1980)
+  50%`, `never < 49%`, `now at 1910 levels`, `since 1980`. These are design
+  mockups (NOT built or deployed — the live page renders from
+  `src/config/chartArticles.ts`), so low severity, but `chart.html` is the
+  broadsheet design source-of-truth the live page mirrors; leaving it stale risks
+  re-introducing the bad numbers on a future re-sync. Update the copy or mark the
+  file superseded by `chartArticles.ts`.
 
 ---
 
