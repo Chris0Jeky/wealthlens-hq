@@ -19,8 +19,9 @@ export default defineConfig({
         // pulled in transitively by recent esbuild/Vite bumps — only accept a
         // `ManualChunksFunction`, so the object literal raised vite.config.ts
         // TS2769. The function form is backward-compatible across Vite 6+ and
-        // unblocks the Vite/Rollup dependency upgrades. Behaviour is unchanged:
-        // the same two manual chunks are produced.
+        // unblocks the Vite/Rollup dependency upgrades. For the current
+        // dependency tree it yields the same two named chunks (echarts,
+        // vue-vendor) — the build output is byte-identical to the object form.
         manualChunks(id) {
           // Heavy charting library (incl. its private zrender renderer) —
           // isolated so it only loads on chart routes. Check this before the
