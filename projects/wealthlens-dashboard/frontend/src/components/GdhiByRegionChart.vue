@@ -23,6 +23,7 @@ import VChart from "vue-echarts";
 import { useChartData } from "@/composables/useChartData";
 import type { EChartsExportable } from "@/composables/useChartExport";
 import { escapeHtml, safeMinMax, warnIfSignificantDataLoss } from "@/utils/chart";
+import AccessibleDataTable from "@/components/AccessibleDataTable.vue";
 
 // Register only the ECharts modules we need (tree-shaking)
 use([
@@ -56,6 +57,7 @@ const chartData = computed(() => {
   const mapped = rows.value.map((r) => ({
     region: String(r.region ?? ""),
     gdhi: Number(r.gdhi_per_head),
+    year: String(r.year ?? ""),
   }));
   const sorted = mapped
     .filter((r) => r.region && !isNaN(r.gdhi) && r.region !== "United Kingdom")
@@ -68,6 +70,9 @@ const chartData = computed(() => {
   const ukAvg = ukRow ? Number(ukRow.gdhi_per_head) : 0;
 
   return {
+    // The sorted/filtered objects themselves — the data-table maps over these
+    // directly, avoiding a separate parallel `years` array re-zipped by index.
+    sorted,
     regions: sorted.map((r) => r.region),
     values: sorted.map((r) => r.gdhi),
     ukAvg,
@@ -79,6 +84,29 @@ const hasData = computed(() => chartData.value.regions.length > 0);
 
 /** GDHI range for aria-label. */
 const gdhiRange = computed(() => safeMinMax(chartData.value.values));
+
+/**
+ * Accessible data-table fallback (WCAG 1.1.1). Mirrors the plotted series — one
+ * row per region, highest GDHI first, with the United Kingdom aggregate excluded
+ * exactly as the chart bars are — reusing the same already-loaded, verbatim
+ * figures the chart draws (no re-fetch, no recompute).
+ */
+const tableColumns = ["Region", "GDHI per head (£)", "Year"];
+const tableNumericColumns = ["GDHI per head (£)"];
+const tableRows = computed(() =>
+  chartData.value.sorted.map((r) => ({
+    Region: r.region,
+    "GDHI per head (£)": r.gdhi,
+    Year: r.year,
+  })),
+);
+
+/**
+ * Table caption — cites the same ONS Regional GDHI source the chart shows. These
+ * are official published ONS figures (no projection/illustrative caveat needed).
+ */
+const tableCaption =
+  "Gross Disposable Household Income per head (£) by UK region, highest first, from ONS Regional GDHI. Excludes the United Kingdom aggregate, which the chart shows as a reference line.";
 
 const option = computed(() => {
   const data = chartData.value;
@@ -190,6 +218,14 @@ const option = computed(() => {
         autoresize
       />
     </div>
+
+    <!-- Accessible data-table fallback (WCAG 1.1.1 non-text content). -->
+    <AccessibleDataTable
+      :rows="tableRows"
+      :columns="tableColumns"
+      :numeric-columns="tableNumericColumns"
+      :caption="tableCaption"
+    />
 
     <!-- Source citation -->
     <p class="text-sm text-[var(--wl-ink-muted)] mt-4 text-center">
