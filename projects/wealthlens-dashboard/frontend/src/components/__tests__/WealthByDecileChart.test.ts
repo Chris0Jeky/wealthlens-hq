@@ -1,6 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { mount } from "@vue/test-utils";
-import { createPinia, setActivePinia } from "pinia";
 import { ref, shallowRef } from "vue";
 
 /**
@@ -16,9 +15,12 @@ import { ref, shallowRef } from "vue";
  * (mirroring the other chart tests) to drive rows/loading/error directly.
  */
 
-let mockRows: ReturnType<typeof shallowRef>;
-let mockLoading: ReturnType<typeof ref>;
-let mockError: ReturnType<typeof ref>;
+// Declared as const refs and mutated via `.value` in beforeEach, so the same
+// reactive containers are shared with the mocked composable across every test
+// (reassigning the refs would break that binding).
+const mockRows = shallowRef<any[]>([]);
+const mockLoading = ref(false);
+const mockError = ref<string | null>(null);
 
 vi.mock("@/composables/useChartData", () => ({
   useChartData: () => ({
@@ -72,15 +74,15 @@ const fmt = (v: number): string => Number(v).toLocaleString("en-GB");
 describe("WealthByDecileChart accessible data table", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    setActivePinia(createPinia());
-    mockRows = shallowRef(DECILE_ROWS);
-    mockLoading = ref(false);
-    mockError = ref(null);
+    // Reset the shared refs to their default per-test state by mutating `.value`
+    // (not reassigning) so the mocked composable keeps the same containers.
+    mockRows.value = DECILE_ROWS;
+    mockLoading.value = false;
+    mockError.value = null;
 
-    Object.defineProperty(window, "matchMedia", {
-      writable: true,
-      configurable: true,
-      value: vi.fn().mockImplementation((query: string) => ({
+    vi.stubGlobal(
+      "matchMedia",
+      vi.fn().mockImplementation((query: string) => ({
         matches: false,
         media: query,
         onchange: null,
@@ -90,7 +92,12 @@ describe("WealthByDecileChart accessible data table", () => {
         removeEventListener: vi.fn(),
         dispatchEvent: vi.fn(),
       })),
-    });
+    );
+  });
+
+  afterEach(() => {
+    // Restore any globals stubbed via vi.stubGlobal to avoid cross-test pollution.
+    vi.unstubAllGlobals();
   });
 
   it("renders an accessible data table with the chart's column headers", () => {
