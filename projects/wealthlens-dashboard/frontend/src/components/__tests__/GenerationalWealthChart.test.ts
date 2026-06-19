@@ -186,6 +186,36 @@ describe("GenerationalWealthChart accessible data table", () => {
     expect(firstRowCells[4]).toBe("1994");
   });
 
+  it("renders a missing year_measured as '—', never the misleading year '0'", () => {
+    // Number(null)/Number("") both coerce to 0; a naive Number() parse would
+    // print the calendar year "0" for a missing source cell. We map nullish/
+    // empty cells to NaN so AccessibleDataTable renders the "—" placeholder.
+    // age/wealth stay present so the row is NOT dropped by the isNaN guard —
+    // this isolates the missing-year path. Projected? must still read "No".
+    mockRows = shallowRef([
+      {
+        generation: "Gen X",
+        birth_years: "1965-1980",
+        age_milestone: 50,
+        median_wealth_gbp: 210000,
+        year_measured: null,
+        projected: false,
+      },
+    ]);
+    const wrapper = mount(GenerationalWealthChart);
+    const cells = wrapper
+      .findAll("tbody tr")[0]
+      .findAll("td")
+      .map((td) => td.text());
+    // Columns: Generation, Birth years, Age, Median wealth (£), Year measured, Projected?
+    expect(cells[4]).toBe("—");
+    expect(cells[4]).not.toBe("0");
+    // The rest of the row is unaffected and Projected? behaviour is preserved.
+    expect(cells[0]).toBe("Gen X");
+    expect(cells[2]).toBe("50");
+    expect(cells[5]).toBe("No");
+  });
+
   it("keeps the table caption honest about the source and projected caveat", () => {
     const wrapper = mount(GenerationalWealthChart);
     const caption = wrapper.find("table caption").text();
