@@ -70,10 +70,11 @@ const chartData = computed(() => {
   const ukAvg = ukRow ? Number(ukRow.gdhi_per_head) : 0;
 
   return {
+    // The sorted/filtered objects themselves — the data-table maps over these
+    // directly, avoiding a separate parallel `years` array re-zipped by index.
+    sorted,
     regions: sorted.map((r) => r.region),
     values: sorted.map((r) => r.gdhi),
-    // Year carried per plotted row (same filter + sort) for the data-table fallback.
-    years: sorted.map((r) => r.year),
     ukAvg,
   };
 });
@@ -92,14 +93,13 @@ const gdhiRange = computed(() => safeMinMax(chartData.value.values));
  */
 const tableColumns = ["Region", "GDHI per head (£)", "Year"];
 const tableNumericColumns = ["GDHI per head (£)"];
-const tableRows = computed(() => {
-  const d = chartData.value;
-  return d.regions.map((region, i) => ({
-    Region: region,
-    "GDHI per head (£)": d.values[i],
-    Year: d.years[i],
-  }));
-});
+const tableRows = computed(() =>
+  chartData.value.sorted.map((r) => ({
+    Region: r.region,
+    "GDHI per head (£)": r.gdhi,
+    Year: r.year,
+  })),
+);
 
 /**
  * Table caption — cites the same ONS Regional GDHI source the chart shows. These
