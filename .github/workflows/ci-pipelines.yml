@@ -105,3 +105,11 @@ jobs:
           --ignore=automation/data-pipelines/tests/test_simulator_dashboards.py -q
         env:
           PYTHONPATH: automation/data-pipelines
+
+      # Validate the COMMITTED real datasets, not just the validator's unit tests
+      # above. validate.py runs the dtype / duplicate-row / value-range checks over
+      # the 9 processed CSVs and sys.exit(1)s on any error, so a data drift
+      # committed to a CSV fails CI here instead of only being caught by a local
+      # `make validate`. (The pipeline deps installed above provide pandas etc.)
+      - name: Validate committed datasets
+        run: python automation/data-pipelines/validate.py
