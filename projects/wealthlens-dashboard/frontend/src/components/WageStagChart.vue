@@ -65,12 +65,27 @@ const PEAK_YEAR = 2008;
 const PEAK_VALUE = 520;
 const ANNUAL_GROWTH = 0.015;
 
+/**
+ * Coerce a raw cell to a finite number, treating nullish/blank cells as NaN.
+ *
+ * `Number(null)`, `Number(undefined)`, `Number("")` and `Number("   ")` all
+ * coerce to `0`, which would slip past an `isNaN` guard and fabricate a £0 wage
+ * for a missing data point. Mapping those cases to `NaN` first means the
+ * downstream `isNaN` filter drops the row instead. A genuine `0` (or `"0"`)
+ * still parses to `0` and is kept.
+ */
+const toNumber = (cell: string | number | null | undefined): number => {
+  if (cell === null || cell === undefined) return NaN;
+  if (typeof cell === "string" && cell.trim() === "") return NaN;
+  return Number(cell);
+};
+
 /** Sorted actual data from the store. */
 const actualData = computed(() => {
   return rows.value
     .map((r) => ({
-      year: Number(r.year),
-      value: Number(r.real_weekly),
+      year: toNumber(r.year),
+      value: toNumber(r.real_weekly),
     }))
     .filter((r) => !isNaN(r.year) && !isNaN(r.value))
     .sort((a, b) => a.year - b.year);
@@ -142,12 +157,15 @@ const latestYear = computed(() => {
  */
 const tableColumns = ["Year", "Real weekly pay (£)"];
 const tableNumericColumns = ["Real weekly pay (£)"];
-const tableRows = computed<Record<string, string | number>[]>(() =>
+// `actualData` already coerces blank/nullish cells to NaN and drops them (see
+// `toNumber` + the isNaN filter), so every `d.value` here is a finite, verbatim
+// ONS figure — a missing pay value is dropped, not rendered as a fabricated £0.
+// Let TypeScript infer the exact `{ Year: number; "Real weekly pay (£)": number }`
+// row shape (assignable to AccessibleDataTable's DatasetRow[]) rather than
+// widening to Record<string, string | number>[].
+const tableRows = computed(() =>
   actualData.value.map((d) => ({
     Year: d.year,
-    // actualData already drops rows whose real_weekly is missing/non-numeric
-    // (its isNaN filter), so every value here is finite; AccessibleDataTable
-    // would render any non-finite value as "—" rather than a fabricated figure.
     "Real weekly pay (£)": d.value,
   })),
 );

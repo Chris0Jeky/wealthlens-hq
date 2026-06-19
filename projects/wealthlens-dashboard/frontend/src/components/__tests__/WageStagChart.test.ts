@@ -284,5 +284,55 @@ describe("WageStagChart", () => {
       // No fabricated "0" substituted for the dropped row, and no literal "NaN".
       expect(wrapper.text()).not.toContain("NaN");
     });
+
+    it("drops a row whose pay is null or blank, never fabricating a £0 (Number(null/'') === 0 guard)", () => {
+      // Regression guard: Number(null) === 0 and Number("") === 0 would slip past
+      // an isNaN check and render a fabricated £0 wage. The chart's toNumber()
+      // maps nullish/blank cells to NaN first, so these rows are dropped entirely
+      // — they must appear in neither the chart nor the table fallback.
+      const rowsWithNullPay: Record<string, unknown>[] = [
+        { year: 2000, real_weekly: 462 },
+        { year: 2001, real_weekly: null }, // null → NaN → dropped (not £0)
+        { year: 2002, real_weekly: "" }, // blank → NaN → dropped (not £0)
+        { year: 2003, real_weekly: "   " }, // whitespace → NaN → dropped (not £0)
+        { year: 2004, real_weekly: 480 },
+      ];
+      mockRows.value = rowsWithNullPay;
+      const wrapper = mount(WageStagChart);
+
+      const bodyRows = wrapper.findAll("tbody tr");
+      // Only the two rows with real, finite pay survive.
+      expect(bodyRows).toHaveLength(2);
+      const years = bodyRows.map((r) => r.findAll("td")[0].text());
+      expect(years).toEqual(["2000", "2004"]);
+      // The dropped years must not appear at all in the rendered table body.
+      expect(years).not.toContain("2001");
+      expect(years).not.toContain("2002");
+      expect(years).not.toContain("2003");
+      // No fabricated "0" pay cell and no literal "NaN" leaked into the output.
+      const payCells = bodyRows.map((r) => r.findAll("td")[1].text());
+      expect(payCells).toEqual([fmt(462), fmt(480)]);
+      expect(payCells).not.toContain("0");
+      expect(wrapper.text()).not.toContain("NaN");
+    });
+
+    it("keeps a genuine zero pay value, rendering it as '0' (not dropped)", () => {
+      // A real, finite 0 is valid data and must be preserved — only nullish/blank
+      // cells are dropped. This proves the fix distinguishes "missing" from "zero".
+      const rowsWithZeroPay: Record<string, unknown>[] = [
+        { year: 2000, real_weekly: 462 },
+        { year: 2001, real_weekly: 0 }, // genuine 0 → kept, rendered as "0"
+        { year: 2002, real_weekly: 480 },
+      ];
+      mockRows.value = rowsWithZeroPay;
+      const wrapper = mount(WageStagChart);
+
+      const bodyRows = wrapper.findAll("tbody tr");
+      expect(bodyRows).toHaveLength(3);
+      const cells = (i: number) => bodyRows[i].findAll("td").map((td) => td.text());
+      expect(cells(0)).toEqual(["2000", fmt(462)]);
+      expect(cells(1)).toEqual(["2001", fmt(0)]);
+      expect(cells(2)).toEqual(["2002", fmt(480)]);
+    });
   });
 });
