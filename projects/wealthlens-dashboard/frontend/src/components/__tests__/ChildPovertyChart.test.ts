@@ -142,11 +142,40 @@ describe("ChildPovertyChart accessible data table", () => {
     ]);
   });
 
-  it("captions the table with the DWP HBAI source and the estimate caveat", () => {
+  it("captions the table with the registered DWP/HMRC source and the estimate caveat", () => {
     const wrapper = mount(ChildPovertyChart);
     const caption = wrapper.find("table caption").text();
     expect(caption).toContain("Child poverty rate (%) by UK region");
-    expect(caption).toContain("Source: DWP HBAI");
+    // Must cite the REGISTERED source (registries/sources.yml + backend
+    // metadata), not the unrelated HBAI collection the chart used to credit.
+    expect(caption).toContain(
+      "Source: DWP/HMRC Children in Low Income Families",
+    );
+    expect(caption).not.toContain("HBAI");
     expect(caption).toContain("estimates");
+  });
+
+  it("renders a missing children-in-poverty count as —, not 0", () => {
+    // A null source value must NOT be coerced to 0 (which would falsely claim
+    // zero children in poverty). chartData parses with Number(), and
+    // Number(null)===0, so the table must re-derive from the raw row and map
+    // missing values to null so AccessibleDataTable renders the em-dash "—".
+    mockRows = shallowRef([
+      {
+        region: "North East",
+        child_poverty_pct: 38,
+        children_in_poverty: null,
+        national_avg_pct: 29.8,
+        above_national_avg: true,
+      },
+    ]);
+    const wrapper = mount(ChildPovertyChart);
+    const cells = wrapper
+      .findAll("tbody tr")[0]
+      .findAll("td")
+      .map((td) => td.text());
+    // Region, Child poverty (%), Children in poverty, National average (%)
+    expect(cells[2]).toBe("—");
+    expect(cells[2]).not.toBe("0");
   });
 });
