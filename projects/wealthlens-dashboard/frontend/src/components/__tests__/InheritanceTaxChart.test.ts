@@ -228,14 +228,62 @@ describe("InheritanceTaxChart", () => {
     expect(wrapper.findAll(".vchart-stub")).toHaveLength(1);
     expect(wrapper.text()).toContain("View data as table");
 
-    // The table shows one row per band from by_estate_size (3 in the fixture),
-    // with the verbatim band labels and locale-formatted figures.
+    // The table shows one row per band from by_estate_size (3 in the fixture).
+    // Assert per-row CELL MAPPING (column order: band, estates, IHT paid £m) —
+    // not just value presence — so a field/column swap in bandTableRows or a
+    // column reorder would fail here.
     const bodyRows = wrapper.findAll("tbody tr");
     expect(bodyRows).toHaveLength(3);
-    expect(wrapper.text()).toContain("£325k-£500k");
-    expect(wrapper.text()).toContain("Over £5m");
-    expect(wrapper.text()).toContain("11,200"); // estates, locale-formatted
-    expect(wrapper.text()).toContain("2,100"); // tax_paid_m, locale-formatted
+    const cellTexts = (rowIdx: number) =>
+      bodyRows[rowIdx].findAll("td").map((td) => td.text());
+    expect(cellTexts(0)).toEqual(["£325k-£500k", "8,900", "570"]);
+    expect(cellTexts(1)).toEqual(["£500k-£1m", "11,200", "2,100"]);
+    expect(cellTexts(2)).toEqual(["Over £5m", "500", "600"]);
+  });
+
+  it("describes the band view with a data-driven aria-label (first and last band)", async () => {
+    const wrapper = mount(InheritanceTaxChart);
+
+    await vi.waitFor(() => {
+      expect(wrapper.find(".vchart-stub").exists()).toBe(true);
+    });
+
+    const bandTab = wrapper
+      .findAll("[role='tab']")
+      .find((t) => t.text() === "By estate size");
+    await bandTab!.trigger("click");
+
+    // The band view's role=img label reads the first and last band verbatim
+    // from the data (locale-formatted figures), so a regression in the
+    // aria-label logic (wrong band picked, broken interpolation) fails here.
+    const label = wrapper.find("[role='img']").attributes("aria-label");
+    expect(label).toContain(
+      '"£325k-£500k" band covers 8,900 estates paying £570m',
+    );
+    expect(label).toContain('"Over £5m" band covers 500 estates paying £600m');
+  });
+
+  it("falls back to a generic band aria-label when no estate-size bands exist", async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ ...MOCK_IHT_DATA, by_estate_size: [] }),
+    });
+    const wrapper = mount(InheritanceTaxChart);
+
+    await vi.waitFor(() => {
+      expect(wrapper.find(".vchart-stub").exists()).toBe(true);
+    });
+
+    const bandTab = wrapper
+      .findAll("[role='tab']")
+      .find((t) => t.text() === "By estate size");
+    await bandTab!.trigger("click");
+
+    // Empty bands → the guard fallback string, and the table renders no rows.
+    expect(wrapper.find("[role='img']").attributes("aria-label")).toBe(
+      "Bar chart of inheritance tax paid by estate size band.",
+    );
+    expect(wrapper.findAll("tbody tr")).toHaveLength(0);
   });
 
   it("has correct accessibility attributes", async () => {

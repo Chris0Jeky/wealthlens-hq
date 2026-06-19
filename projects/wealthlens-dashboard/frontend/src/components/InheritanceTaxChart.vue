@@ -167,7 +167,7 @@ const views: Tab[] = [
   { id: "trend", label: "Trend" },
   { id: "bands", label: "By estate size" },
 ];
-const activeView = ref<string>("trend");
+const activeView = ref<"trend" | "bands">("trend");
 
 /** Donut chart option — 4.6% pay IHT vs 95.4% don't. */
 const donutOption = computed(() => {
@@ -432,8 +432,8 @@ const bandAriaLabel = computed(() => {
   const last = rows[rows.length - 1];
   return (
     `Bar chart of inheritance tax paid by estate size band, in pounds million. ` +
-    `The "${first.band}" band covers ${first.estates.toLocaleString()} estates paying £${first.tax_paid_m}m. ` +
-    `The "${last.band}" band covers ${last.estates.toLocaleString()} estates paying £${last.tax_paid_m}m.`
+    `The "${first.band}" band covers ${first.estates.toLocaleString()} estates paying £${first.tax_paid_m.toLocaleString()}m. ` +
+    `The "${last.band}" band covers ${last.estates.toLocaleString()} estates paying £${last.tax_paid_m.toLocaleString()}m.`
   );
 });
 </script>
