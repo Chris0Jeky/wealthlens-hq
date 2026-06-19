@@ -73,15 +73,21 @@ const COLOR_PAY = "#dc2626"; // Red — ~4.6:1
 /**
  * Parse a raw dataset cell into a number, mapping missing values to NaN.
  *
- * Data honesty: `Number(null)` and `Number("")` both coerce to 0, which would
- * silently turn a missing source cell into a fabricated figure (a phantom 0%
- * gap). We map nullish/empty cells to NaN instead, so the accessible data table
- * renders the missing-value placeholder ("—") via AccessibleDataTable rather
- * than a misleading "0". Used here for the gap column, which the chart's own
- * filter does not require (so a missing gap can still reach the table).
+ * Data honesty: `Number(null)`, `Number("")`, and `Number("   ")` all coerce to
+ * 0, which would silently turn a missing source cell into a fabricated figure (a
+ * phantom 0% gap). We map nullish/blank cells to NaN instead, so the accessible
+ * data table renders the missing-value placeholder ("—") via AccessibleDataTable
+ * rather than a misleading "0". We trim before the emptiness check so a
+ * whitespace-only cell counts as missing, not as 0. A genuine numeric 0 still
+ * parses to 0. `undefined` is accepted defensively (a row may omit the key
+ * entirely) and treated as missing. Used here for the gap column, which the
+ * chart's own filter does not require (so a missing gap can still reach the
+ * table).
  */
-function toNumberOrNaN(value: string | number | null): number {
-  return value != null && value !== "" ? Number(value) : NaN;
+function toNumberOrNaN(value: string | number | null | undefined): number {
+  if (value == null) return NaN;
+  if (typeof value === "string" && value.trim() === "") return NaN;
+  return Number(value);
 }
 
 /** Sorted data extracted from rows. */

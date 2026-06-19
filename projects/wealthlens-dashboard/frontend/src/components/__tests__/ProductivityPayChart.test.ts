@@ -65,13 +65,17 @@ import ProductivityPayChart from "@/components/ProductivityPayChart.vue";
 const gb = (n: number) => Number(n).toLocaleString("en-GB");
 
 /**
- * Representative rows deliberately supplied OUT of year order so the test
- * proves the table reproduces the chart's ascending-year sort, not input order.
+ * Representative rows taken VERBATIM from the real productivity-pay dataset
+ * (1997, 2008, 2020 rows of the pipeline output — see
+ * automation/data-pipelines/fetch_productivity_pay.py), deliberately supplied
+ * OUT of year order so the test proves the table reproduces the chart's
+ * ascending-year sort, not input order. Using real rows keeps the fixture from
+ * misleading a reader about what the dataset actually contains.
  */
 const PRODUCTIVITY_ROWS = [
   { year: 2020, productivity_index: 128.0, pay_index: 114.0, gap_pct: 12.3 },
   { year: 1997, productivity_index: 100.0, pay_index: 100.0, gap_pct: 0.0 },
-  { year: 2008, productivity_index: 120.5, pay_index: 113.2, gap_pct: 6.4 },
+  { year: 2008, productivity_index: 124.0, pay_index: 116.0, gap_pct: 6.9 },
 ];
 
 describe("ProductivityPayChart accessible data table", () => {
@@ -122,7 +126,7 @@ describe("ProductivityPayChart accessible data table", () => {
     // the index/gap columns are locale-formatted. Per-CELL assertions so a column
     // swap or a lost sort fails here.
     expect(cells(0)).toEqual(["1997", gb(100.0), gb(100.0), gb(0.0)]);
-    expect(cells(1)).toEqual(["2008", gb(120.5), gb(113.2), gb(6.4)]);
+    expect(cells(1)).toEqual(["2008", gb(124.0), gb(116.0), gb(6.9)]);
     expect(cells(2)).toEqual(["2020", gb(128.0), gb(114.0), gb(12.3)]);
   });
 
@@ -140,6 +144,27 @@ describe("ProductivityPayChart accessible data table", () => {
       .map((td) => td.text());
     // Columns: Year, Productivity index, Pay index, Gap (%)
     expect(cells).toEqual(["2015", gb(124.0), gb(113.5), "—"]);
+    expect(wrapper.text()).not.toContain("NaN");
+  });
+
+  it("drops a null / empty / whitespace gap_pct as em-dash but keeps a genuine 0", () => {
+    // Data honesty: Number(null) / Number("") / Number("   ") all coerce to 0 in
+    // JS. toNumberOrNaN must map each blank cell to NaN ("—") so the table never
+    // fabricates a 0% gap, while a real numeric 0 must still render as "0".
+    mockRows.value = [
+      { year: 2010, productivity_index: 123.0, pay_index: 112.0, gap_pct: null },
+      { year: 2011, productivity_index: 124.0, pay_index: 110.0, gap_pct: "" },
+      { year: 2012, productivity_index: 124.5, pay_index: 109.5, gap_pct: "   " },
+      // A genuine zero gap is real data, not missing — it must survive as "0".
+      { year: 2013, productivity_index: 125.0, pay_index: 125.0, gap_pct: 0 },
+    ];
+    const wrapper = mount(ProductivityPayChart);
+    const bodyRows = wrapper.findAll("tbody tr");
+    const gapCell = (i: number) => bodyRows[i].findAll("td")[3].text();
+    expect(gapCell(0)).toBe("—"); // 2010 null
+    expect(gapCell(1)).toBe("—"); // 2011 empty string
+    expect(gapCell(2)).toBe("—"); // 2012 whitespace-only
+    expect(gapCell(3)).toBe(gb(0)); // 2013 genuine zero stays "0"
     expect(wrapper.text()).not.toContain("NaN");
   });
 
