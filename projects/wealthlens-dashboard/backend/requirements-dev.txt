@@ -1,6 +1,6 @@
 # Dev/test dependencies for the dashboard backend
 -r requirements.txt
-pytest>=9.0.3
+pytest>=9.1.0
 pytest-cov>=7.1.0
 # Lint + type tools — required by `make backend-lint` / `make ci-quick`, which now
 # fail loudly. Pins match the root pyproject.toml [project.optional-dependencies].dev
