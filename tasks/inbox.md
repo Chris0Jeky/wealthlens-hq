@@ -41,19 +41,16 @@ Every concrete action item extracted from research. Triage into active-sprint, b
   any served scenario's provenance) so a served IHT caveat carries the source. Also:
   Gate-3 charitable 10% reduced-rate uses gross estate not the post-relief baseline
   amount (refine with Tier B).
-- [ ] **Clean up the compiled `.js` shadows** emitted by `vue-tsc -b`. Two
-  distinct footguns (both hit again 2026-06-19):
-  - `frontend/src/**/*.js` are GITIGNORED but Vite/vitest resolve `.js` before
-    `.ts`, so a STALE local shadow (e.g. `src/config/chartArticles.js`) makes a
-    local test import old code. CI is unaffected (no committed shadow). Workaround:
-    rebuild or `rm` the shadow before testing.
-  - `frontend/vite.config.js`, `frontend/vitest.config.js`, `frontend/scripts/*.js`
-    ARE TRACKED (they sit outside `src/`), so a `.ts` change leaves the tracked
-    `.js` stale unless regenerated and committed (Vite resolves `vite.config.js`
-    before `.ts`). Easy to ship an inconsistent pair.
-  - Root-cause fix options: set the build tsconfig to not emit (`noEmit`/separate
-    typecheck project), or stop tracking the config/scripts `.js` and gitignore
-    them + add a `predev`/`pretest` regen step. Pick one and apply repo-wide.
+- [x] **Clean up the compiled `.js` shadows** emitted by `vue-tsc -b` — **DONE in
+  PR #432** (2026-06-19). Root cause: `build` ran `vue-tsc -b` (composite BUILD mode
+  = emits) with no `noEmit`/`outDir`, writing a `.js` next to every `.ts`; Vite/vitest
+  resolve `.js` before `.ts` so the committed config shadows + gitignored `src/**/*.js`
+  shadows silently won and went stale. Fix: `build` → `vue-tsc -b --noEmit` (typecheck
+  still catches errors, emits nothing); deleted the 4 tracked shadows (vite.config.js,
+  vitest.config.js, scripts/*.js); gitignored them; added a `clean:shadows`
+  (`git clean -fX …`) `prebuild`/`pretest` hook so a dev's pre-existing stale shadows
+  are wiped before build/test. 2-lens reviewed (typecheck-still-catches-errors proven
+  by injection) + codex P2 (existing dev shadows) addressed.
 - [~] **Sync the `docs/redesign/pages/` static prototypes to the corrected
   wealth-shares figures** (surfaced by PR #416 review). **PROSE + STAT CARDS done in
   PR #431** (Top 1% 28→21, Postwar low 1980/50→~1990/52, removed "1910 levels",
