@@ -23,6 +23,7 @@ import VChart from "vue-echarts";
 import { useChartData } from "@/composables/useChartData";
 import type { EChartsExportable } from "@/composables/useChartExport";
 import { escapeHtml, safeMinMax, warnIfSignificantDataLoss } from "@/utils/chart";
+import AccessibleDataTable from "@/components/AccessibleDataTable.vue";
 
 // Register only the ECharts modules we need (tree-shaking)
 use([
@@ -83,6 +84,38 @@ const hasData = computed(() => chartData.value.regions.length > 0);
 
 /** Poverty rate range for aria-label. */
 const povertyRange = computed(() => safeMinMax(chartData.value.values));
+
+/**
+ * Accessible data-table fallback (WCAG 1.1.1). Mirrors the plotted series — the
+ * child-poverty rate per region (same already-loaded, filtered, poverty-rate-
+ * descending order the bars use) plus the children-in-poverty count shown in the
+ * tooltip and the national-average reference line the chart draws. Figures are
+ * verbatim: it reuses chartData, never re-fetching or recomputing.
+ */
+const tableColumns = [
+  "Region",
+  "Child poverty (%)",
+  "Children in poverty",
+  "National average (%)",
+];
+const tableNumericColumns = tableColumns.filter((c) => c !== "Region");
+const tableRows = computed(() => {
+  const d = chartData.value;
+  return d.regions.map((region, i) => ({
+    Region: region,
+    "Child poverty (%)": d.values[i],
+    "Children in poverty": d.children[i],
+    "National average (%)": d.nationalAvg,
+  }));
+});
+
+/**
+ * Table caption — cites the same DWP HBAI source the chart's footer credits and
+ * notes the children-in-poverty counts are estimates (the tooltip prefixes them
+ * with "~"), so the accessible fallback is as honest as the visual.
+ */
+const tableCaption =
+  "Child poverty rate (%) by UK region, with the estimated number of children in poverty and the UK national-average rate (%). Source: DWP HBAI. Children-in-poverty figures are estimates.";
 
 const option = computed(() => {
   const data = chartData.value;
@@ -207,6 +240,14 @@ const option = computed(() => {
         autoresize
       />
     </div>
+
+    <!-- Accessible data-table fallback (WCAG 1.1.1 non-text content). -->
+    <AccessibleDataTable
+      :rows="tableRows"
+      :columns="tableColumns"
+      :numeric-columns="tableNumericColumns"
+      :caption="tableCaption"
+    />
 
     <!-- Source citation -->
     <p class="text-sm text-[var(--wl-ink-muted)] mt-4 text-center">
