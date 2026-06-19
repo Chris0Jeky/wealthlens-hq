@@ -1,8 +1,23 @@
 # Active Sprint
 
-Last updated: 2026-06-13
+Last updated: 2026-06-19
 
-> **LATEST (2026-06-13 — session 8 autonomous build loop):** 5 PRs merged to main,
+> **LATEST (2026-06-19 — session 9 autonomous loop, cycle 1):** main `32ea724`.
+> **Merged:** #412 (WL-004 IHT by-estate-size band view, after 2 adversarial reviews
+> + all findings addressed) and 4 safe Dependabot dev bumps (#414 ruff, #395
+> eslint-plugin-vue, #413 pytest, #398 httpx). **Open + reviewed, aging for next
+> cycle:** #415 (vite manualChunks object→function form — fixes a pre-existing
+> TS2769 that was breaking the frontend build on dep-upgrade PRs #405/#401/#402) and
+> #416 (WL-009 / ACTION-REQUIRED #8 — corrected the wealth-shares stat cards + lede +
+> body + pullquote to the WID series the chart actually plots, every figure verified
+> against `wealth-shares.json`, with a new cross-file data-integrity guard test). Each
+> open PR has 2 independent adversarial reviews (all `approve`, all findings addressed)
+> + green CI. **Dependabot held for Chris:** majors #401 vite8, #402 vue-router5, #390
+> fetch-metadata3; prod bumps #391/#396/#399/#393; dev-major #394/#397. #405 esbuild
+> waits on #415 (its red build is the TS2769 #415 fixes). Full state:
+> `../hq-private/projects/wealthlens/memories/session_notes/ORCHESTRATION.md` (session 9).
+
+> **PRIOR (2026-06-13 — session 8 autonomous build loop):** 5 PRs merged to main,
 > each with a planning workflow + 2 independent adversarial-review lenses + green CI:
 > **#406** H1-01 (tag Hero #1 corpus slice: 8 sources in `registries/sources.yml`),
 > **#407** H1-12 (pure RRF fusion `retrieval/fuse_rrf.py` + 15 tests),
