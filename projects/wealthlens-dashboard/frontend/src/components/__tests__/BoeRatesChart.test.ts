@@ -18,9 +18,12 @@ import { ref, shallowRef } from "vue";
  * (mirroring the other chart tests) to drive rows/loading/error directly.
  */
 
-let mockRows: ReturnType<typeof shallowRef<Record<string, unknown>[]>>;
-let mockLoading: ReturnType<typeof ref>;
-let mockError: ReturnType<typeof ref>;
+// Declared once as const refs whose .value is reset in beforeEach, so the
+// reference identity stays stable across tests (no stale-ref risk if any code
+// caches the object returned by useChartData).
+const mockRows = shallowRef<Record<string, unknown>[]>([]);
+const mockLoading = ref(false);
+const mockError = ref<string | null>(null);
 
 vi.mock("@/composables/useChartData", () => ({
   useChartData: () => ({
@@ -54,12 +57,13 @@ import BoeRatesChart from "@/components/BoeRatesChart.vue";
 /**
  * Mirror the component's own date-label derivation so the expected labels stay
  * timezone-independent: it parses the ISO date and formats YYYY-MM from the
- * resulting Date (falling back to the raw string for an unparseable date).
+ * resulting Date using UTC accessors (falling back to the raw string for an
+ * unparseable date). UTC matches the component so the test passes in any tz.
  */
 function expectedDateLabel(iso: string): string {
   const d = new Date(iso);
   if (isNaN(d.getTime())) return iso;
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
 }
 
 /** en-GB locale formatting, computed (never hardcoded) — matches AccessibleDataTable. */
@@ -76,9 +80,9 @@ describe("BoeRatesChart accessible data table", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     setActivePinia(createPinia());
-    mockRows = shallowRef<Record<string, unknown>[]>(BOE_ROWS);
-    mockLoading = ref(false);
-    mockError = ref(null);
+    mockRows.value = BOE_ROWS;
+    mockLoading.value = false;
+    mockError.value = null;
 
     Object.defineProperty(window, "matchMedia", {
       writable: true,
@@ -148,13 +152,11 @@ describe("BoeRatesChart accessible data table", () => {
   });
 
   it("drops the SAME rows the chart drops (non-numeric bank_rate or cpi_annual)", () => {
-    // The chart's filter keeps only rows where Number(bank_rate) AND
-    // Number(cpi_annual) are both finite (its mapping does Number(...) then
+    // The chart's filter keeps only rows where the mapped bank_rate AND
+    // cpi_annual are both finite (mapping does toNumberOrNaN(...) then
     // !isNaN(...)). A row whose rate or CPI is omitted/non-numeric → NaN and is
     // excluded from the plot, so it must be excluded from the table too — never
-    // silently shown with a fabricated value. (Number(null)/Number("") === 0, so
-    // those would NOT be dropped; we use undefined/garbage to force NaN, exactly
-    // as the chart does.)
+    // silently shown with a fabricated value.
     mockRows.value = [
       { date: "2008-01-01", bank_rate: 5.5, cpi_annual: 3.6 },
       { date: "2009-01-01", cpi_annual: 2.2 }, // bank_rate undefined → NaN → dropped
@@ -172,5 +174,58 @@ describe("BoeRatesChart accessible data table", () => {
     expect(wrapper.text()).not.toContain(expectedDateLabel("2009-01-01"));
     expect(wrapper.text()).not.toContain(expectedDateLabel("2010-01-01"));
     expect(wrapper.text()).not.toContain("NaN");
+  });
+
+  it("DROPS rows with null/empty rate or CPI (no fabricated 0 from Number)", () => {
+    // Regression guard for the null→0 fabrication: Number(null) and Number("")
+    // both === 0, so without the toNumberOrNaN guard a blank source cell would be
+    // coerced to a fabricated 0 and KEPT (plotted AND tabled). The fix maps
+    // null/empty to NaN so the existing !isNaN filter drops the whole row from
+    // BOTH the chart and the table — consistently, never as a real-looking 0.
+    mockRows.value = [
+      { date: "2008-01-01", bank_rate: 5.5, cpi_annual: 3.6 },
+      { date: "2009-01-01", bank_rate: null, cpi_annual: 2.2 }, // null → NaN → dropped
+      { date: "2010-01-01", bank_rate: 1.0, cpi_annual: "" }, // empty → NaN → dropped
+    ];
+    const wrapper = mount(BoeRatesChart);
+    const bodyRows = wrapper.findAll("tbody tr");
+    // Only the fully-populated 2008 row survives.
+    expect(bodyRows).toHaveLength(1);
+    expect(bodyRows[0].findAll("td").map((td) => td.text())).toEqual([
+      expectedDateLabel("2008-01-01"),
+      gb(5.5),
+      gb(3.6),
+    ]);
+    // The dropped rows must not appear, and crucially must NOT render a "0".
+    expect(wrapper.text()).not.toContain(expectedDateLabel("2009-01-01"));
+    expect(wrapper.text()).not.toContain(expectedDateLabel("2010-01-01"));
+    expect(wrapper.text()).not.toContain("NaN");
+    // gb(0) is the locale string a fabricated 0 would have produced ("0").
+    expect(bodyRows[0].findAll("td").map((td) => td.text())).not.toContain(gb(0));
+  });
+
+  it("KEEPS a genuine 0 value and renders it as '0' (not dropped, not blank)", () => {
+    // A real 0 (e.g. a 0% CPI reading) is valid data: it must survive the filter
+    // and render as the locale string "0" — the null/empty guard must not strip
+    // legitimate zeros.
+    mockRows.value = [
+      { date: "2015-01-01", bank_rate: 0.5, cpi_annual: 0 }, // genuine 0% CPI
+      { date: "2016-01-01", bank_rate: 0, cpi_annual: 0.6 }, // genuine 0% rate
+    ];
+    const wrapper = mount(BoeRatesChart);
+    const bodyRows = wrapper.findAll("tbody tr");
+    expect(bodyRows).toHaveLength(2);
+    expect(bodyRows[0].findAll("td").map((td) => td.text())).toEqual([
+      expectedDateLabel("2015-01-01"),
+      gb(0.5),
+      gb(0), // genuine 0 renders as "0"
+    ]);
+    expect(bodyRows[1].findAll("td").map((td) => td.text())).toEqual([
+      expectedDateLabel("2016-01-01"),
+      gb(0), // genuine 0 renders as "0"
+      gb(0.6),
+    ]);
+    // A real 0 must never be rendered as the missing-value placeholder.
+    expect(wrapper.text()).not.toContain("—");
   });
 });
