@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, it, expect } from "vitest";
 import { chartConfigs } from "../chartArticles";
 import { COLOR_TOP_10, COLOR_TOP_1 } from "../chartColors";
@@ -43,12 +44,15 @@ describe("chartArticles: wealth-shares toolbar legend", () => {
  */
 describe("chartArticles: wealth-shares stat cards match the WID series", () => {
   type Row = { year: number; value: number; percentile: string };
-  // vitest runs with the frontend package dir as cwd, where the chart's data
-  // file lives under public/ — the same file WealthSharesChart.vue fetches.
-  const raw = readFileSync(
-    resolve(process.cwd(), "public/data/wealth-shares.json"),
-    "utf8",
+  // Resolve the data file relative to THIS test file (not process.cwd()), so the
+  // guard holds regardless of which directory the test runner is invoked from.
+  // From src/config/__tests__/ up to the package root is three levels; the chart
+  // loads the same file from public/data/wealth-shares.json.
+  const dataPath = resolve(
+    dirname(fileURLToPath(import.meta.url)),
+    "../../../public/data/wealth-shares.json",
   );
+  const raw = readFileSync(dataPath, "utf8");
   const rows: Row[] = JSON.parse(raw).data;
   const byPct = (p: string) =>
     rows.filter((r) => r.percentile === p).sort((a, b) => a.year - b.year);
