@@ -23,6 +23,7 @@ import VChart from "vue-echarts";
 import { useChartData } from "@/composables/useChartData";
 import type { EChartsExportable } from "@/composables/useChartExport";
 import { escapeHtml, safeMinMax, warnIfSignificantDataLoss } from "@/utils/chart";
+import AccessibleDataTable from "@/components/AccessibleDataTable.vue";
 
 // Register only the ECharts modules we need (tree-shaking)
 use([
@@ -51,17 +52,45 @@ const COLOR_BOOMERS = "#1a56db"; // Blue — ~7.2:1
 const COLOR_GEN_X = "#047857"; // Green — ~5.5:1
 const COLOR_MILLENNIALS = "#dc2626"; // Red — ~4.6:1
 
+/**
+ * Parse a raw dataset cell into a number, mapping missing values to NaN.
+ *
+ * Data honesty: `Number(null)` and `Number("")` both coerce to 0, which would
+ * silently turn a missing source cell into a fabricated figure — year "0", or
+ * £0 of wealth, or a phantom bar at age 0. We map nullish/empty cells to NaN
+ * instead, so the chart's isNaN guards drop incomplete rows and the accessible
+ * data table renders the missing-value placeholder ("—") rather than "0".
+ */
+function toNumberOrNaN(value: string | number | null): number {
+  return value != null && value !== "" ? Number(value) : NaN;
+}
+
+/**
+ * A single plotted data point for one generation at one age milestone.
+ * Carries birthYears and yearMeasured alongside the values the chart draws so
+ * the accessible data table can mirror the same rows verbatim (see tableRows).
+ */
+interface GenEntry {
+  age: number;
+  wealth: number;
+  projected: boolean;
+  birthYears: string;
+  yearMeasured: number;
+}
+
 /** Structured data by generation and age milestone. */
 const chartData = computed(() => {
   // Group by generation
-  const generations = new Map<string, { age: number; wealth: number; projected: boolean }[]>();
+  const generations = new Map<string, GenEntry[]>();
   const generationOrder: string[] = [];
   let skippedRows = 0;
 
   for (const row of rows.value) {
     const gen = String(row.generation ?? "");
-    const age = Number(row.age_milestone);
-    const wealth = Number(row.median_wealth_gbp);
+    // toNumberOrNaN: a missing age/wealth must NOT coerce to 0 (Number(null) === 0)
+    // and slip past the isNaN guard below as a phantom age-0 / £0 bar.
+    const age = toNumberOrNaN(row.age_milestone);
+    const wealth = toNumberOrNaN(row.median_wealth_gbp);
     const projected = Boolean(row.projected);
 
     if (!gen || isNaN(age) || isNaN(wealth)) {
@@ -73,7 +102,15 @@ const chartData = computed(() => {
       generations.set(gen, []);
       generationOrder.push(gen);
     }
-    generations.get(gen)!.push({ age, wealth, projected });
+    generations.get(gen)!.push({
+      age,
+      wealth,
+      projected,
+      birthYears: String(row.birth_years ?? ""),
+      // toNumberOrNaN keeps a missing year as NaN so the table renders "—"
+      // (not the misleading literal year "0") via AccessibleDataTable.
+      yearMeasured: toNumberOrNaN(row.year_measured),
+    });
   }
 
   warnIfSignificantDataLoss("generational-wealth", rows.value.length, rows.value.length - skippedRows);
@@ -111,6 +148,55 @@ function genColor(gen: string): string {
   if (gen.includes("X")) return COLOR_GEN_X;
   return COLOR_MILLENNIALS;
 }
+
+/**
+ * Accessible data-table fallback (WCAG 1.1.1). Mirrors the plotted bars — one
+ * row per generation per age milestone — using the same already-loaded,
+ * verbatim figures and the same generation/age ordering the chart draws.
+ *
+ * Data honesty: each row carries a "Projected?" cell (Yes/No) sourced from the
+ * same `projected` flag the chart uses to fade/dash a bar, so a projected
+ * estimate is never presented as a measured figure.
+ *
+ * "Median wealth (£)" is locale-formatted (en-GB thousands separators) via
+ * tableNumericColumns. "Year measured" is intentionally LEFT OUT of the numeric
+ * set: a calendar year must render as "1994", not "1,994".
+ */
+const tableColumns = [
+  "Generation",
+  "Birth years",
+  "Age",
+  "Median wealth (£)",
+  "Year measured",
+  "Projected?",
+];
+const tableNumericColumns = ["Median wealth (£)"];
+const tableRows = computed(() => {
+  const { generations, generationOrder } = chartData.value;
+  // Iterate in the chart's generation order; entries are already age-sorted
+  // inside chartData, so this reproduces the chart's plotting order exactly.
+  return generationOrder.flatMap((gen) => {
+    const entries = generations.get(gen) ?? [];
+    return entries.map((e) => ({
+      Generation: gen,
+      "Birth years": e.birthYears,
+      Age: e.age,
+      "Median wealth (£)": e.wealth,
+      "Year measured": e.yearMeasured,
+      "Projected?": e.projected ? "Yes" : "No",
+    }));
+  });
+});
+
+/**
+ * Table caption — cites the same source the chart shows and states the
+ * projected-values caveat, so the accessible fallback carries the same
+ * provenance and honesty as the visual chart.
+ */
+const tableCaption =
+  "Median total household wealth by generation at key age milestones (2022 real-term £). " +
+  "Projected estimates are flagged in the Projected? column and are not measured figures. " +
+  "Source: Resolution Foundation / ONS Wealth and Assets Survey.";
 
 const option = computed(() => {
   const { generations, generationOrder, ages } = chartData.value;
@@ -246,6 +332,14 @@ const option = computed(() => {
     <p class="text-sm text-[var(--wl-ink-muted)] mt-2 text-center italic">
       Faded bars indicate projected or estimated values based on current trends.
     </p>
+
+    <!-- Accessible data-table fallback (WCAG 1.1.1 non-text content). -->
+    <AccessibleDataTable
+      :rows="tableRows"
+      :columns="tableColumns"
+      :numeric-columns="tableNumericColumns"
+      :caption="tableCaption"
+    />
 
     <!-- Source citation -->
     <p class="text-sm text-[var(--wl-ink-muted)] mt-4 text-center">
