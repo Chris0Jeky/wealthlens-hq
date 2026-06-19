@@ -91,52 +91,59 @@ export const chartConfigs: Record<string, ChartConfig> = {
     ],
     pills: [
       { text: "Wealth", accent: true },
-      { text: "Historical · 1820–2023" },
+      { text: "Historical · 1820–2024" },
       { text: "United Kingdom" },
       /* Display date: human-readable format is intentional for UI pills */
       { text: "Updated 14 May 2026" },
     ],
     headline: "Who owns wealth in the UK?",
     headlineEmphasis: "Same lot, mostly.",
-    lede: 'For at least two centuries, the top 10% have held over <strong>half of all UK personal wealth</strong>. The post-war squeeze was real, but partial. The slide back has been steady since 1980. We\'re now at 1910 levels — without the empire to explain it.',
+    lede: 'For at least two centuries, the top 10% have held over <strong>half of all UK personal wealth</strong>. The post-war squeeze was real, but partial: concentration bottomed out near 52% around 1990. The slide back has been steady since, and the top 10% now hold over <strong>57%</strong> again, roughly back to early-1980s levels.',
     meta: [
       { label: "Source", value: "WID.world", href: "https://wid.world" },
       { label: "Series", value: "UK · Net personal wealth" },
-      { label: "Coverage", value: "1820 — 2023" },
+      { label: "Coverage", value: "1820 — 2024" },
       /* Display date: human-readable format is intentional for the meta card */
       { label: "Updated", value: "14 May 2026" },
       { label: "Licence", value: "CC-BY 4.0" },
       { label: "Data points", value: "22" },
       { label: "Chart ID", value: "WL-W-001" },
     ],
+    /*
+     * All four cards are grounded in the WID p90p100 / p99p100 series this page
+     * actually plots (public/data/wealth-shares.json, values ×100). Verified
+     * 2026-06-19: top 10% 2024 = 57.1%, top 1% 2024 = 21.3%, bottom 90% 2024 =
+     * 42.9% (= 100 − 57.1), all-time low = 51.6% in 1990. The previous "28%"
+     * top-1% and "1980 = 50%" cards were not supported by this series.
+     */
     stats: [
       {
         label: "The headline",
         value: "57",
         unit: "%",
         description:
-          "Share of UK personal wealth owned by the top 10% in 2023",
+          "Share of UK personal wealth owned by the top 10% in 2024",
         headline: true,
       },
       {
         label: "Top 1% alone",
-        value: "28",
+        value: "21",
         unit: "%",
-        description: "More than the bottom 70% combined",
+        description: "The wealthiest 1% own over a fifth of all personal wealth",
       },
       {
-        label: "Bottom 50%",
-        value: "6",
+        label: "Bottom 90%",
+        value: "43",
         unit: "%",
         description:
-          "Half the country splits one-sixteenth of the wealth",
+          "Nine in ten people share less than the top 10% holds alone",
       },
       {
-        label: "Postwar low (1980)",
-        value: "50",
+        label: "Postwar low (1990)",
+        value: "52",
         unit: "%",
         description:
-          "The least concentrated it's ever been — and still half",
+          "The least concentrated UK wealth has ever been, and still over half",
       },
     ],
     toolbar: {
@@ -167,13 +174,13 @@ export const chartConfigs: Record<string, ChartConfig> = {
         {
           heading: "What this chart shows",
           paragraphs: [
-            'The share of <em>net personal wealth</em> held by the top 10% and the top 1% in the United Kingdom, from 1820 to 2023. Net personal wealth is the sum of all financial assets (savings, investments, pensions) and non-financial assets (mainly housing) — minus debts.',
+            'The share of <em>net personal wealth</em> held by the top 10% and the top 1% in the United Kingdom, from 1820 to 2024. Net personal wealth is the sum of all financial assets (savings, investments, pensions) and non-financial assets (mainly housing) — minus debts.',
           ],
         },
         {
           heading: "",
           paragraphs: [
-            'The shape tells a story in three acts. From 1820 to 1914, the UK was the most unequal large economy in the world by some measures — a tiny aristocratic and capitalist class held almost 90% of all personal wealth. Two world wars, progressive taxation, and the postwar welfare settlement compressed this dramatically: by 1980, the bottom 50% held 8% of wealth, and the top 10% had fallen to 50%. Since then the curve has bent the other way.',
+            'The shape tells a story in three acts. From 1820 to 1914, the UK was the most unequal large economy in the world by some measures — a tiny aristocratic and capitalist class held more than 90% of all personal wealth. Two world wars, progressive taxation, and the postwar welfare settlement compressed this dramatically: the top 10% share fell from 58% in 1980 to an all-time low of around 52% by 1990. Since then the curve has bent the other way.',
           ],
         },
         {
@@ -185,7 +192,7 @@ export const chartConfigs: Record<string, ChartConfig> = {
         },
       ],
       pullQuote: {
-        text: 'In two hundred years of data, the top 10% have <strong>never</strong> held less than 49% of UK personal wealth. The post-war compression was real — but partial. Since 1980, the trend has been steady re-concentration.',
+        text: 'In two hundred years of data, the top 10% have <strong>never</strong> held less than 51% of UK personal wealth. The post-war compression was real — but partial. Since the early 1990s, the trend has been steady re-concentration.',
       },
     },
     methodology: `
@@ -203,7 +210,7 @@ export const chartConfigs: Record<string, ChartConfig> = {
           <tr><td>1820 – 1900</td><td>Estate multiplier</td><td>Moderate</td></tr>
           <tr><td>1900 – 1960</td><td>Estate multiplier + tax tabulations</td><td>High</td></tr>
           <tr><td>1960 – 2006</td><td>Tax tabulations + survey</td><td>High</td></tr>
-          <tr><td>2006 – 2023</td><td>WAS microdata + admin</td><td>Very high</td></tr>
+          <tr><td>2006 – 2024</td><td>WAS microdata + admin</td><td>Very high</td></tr>
         </tbody>
       </table>
       <p><strong>Known caveats:</strong> wealth at the very top is historically under-counted; offshore holdings are largely invisible to estate records; pension reform changes mean pre-2006 and post-2006 series are not strictly comparable for the bottom 50%.</p>
