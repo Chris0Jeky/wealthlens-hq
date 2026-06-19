@@ -178,4 +178,41 @@ describe("ChildPovertyChart accessible data table", () => {
     expect(cells[2]).toBe("—");
     expect(cells[2]).not.toBe("0");
   });
+
+  it("renders a missing national average as —, and omits it from the aria-label (not 'NaN%'/'0%')", () => {
+    // national_avg_pct via bare Number() would make a null read as a fabricated
+    // 0% in both the aria-label and the table column. toNumberOrNaN maps it to
+    // NaN so the table shows "—" and the aria-label drops the sentence entirely.
+    mockRows = shallowRef([
+      {
+        region: "North East",
+        child_poverty_pct: 38,
+        children_in_poverty: 185000,
+        national_avg_pct: null,
+        above_national_avg: true,
+      },
+    ]);
+    const wrapper = mount(ChildPovertyChart);
+    const cells = wrapper
+      .findAll("tbody tr")[0]
+      .findAll("td")
+      .map((td) => td.text());
+    expect(cells[3]).toBe("—"); // National average (%) column
+    const label = wrapper.find("[role='img']").attributes("aria-label") ?? "";
+    expect(label).not.toContain("NaN");
+    expect(label).not.toContain("national average is 0%");
+    expect(label).not.toContain("The national average is"); // sentence omitted
+  });
+
+  it("drops a region whose child-poverty rate is missing instead of plotting a fabricated 0%", () => {
+    mockRows = shallowRef([
+      { region: "North East", child_poverty_pct: 38, children_in_poverty: 185000, national_avg_pct: 29.8, above_national_avg: true },
+      { region: "Nowhere", child_poverty_pct: null, children_in_poverty: 1000, national_avg_pct: 29.8, above_national_avg: false },
+    ]);
+    const wrapper = mount(ChildPovertyChart);
+    const bodyRows = wrapper.findAll("tbody tr");
+    expect(bodyRows).toHaveLength(1);
+    expect(bodyRows[0].findAll("td")[0].text()).toBe("North East");
+    expect(wrapper.text()).not.toContain("Nowhere");
+  });
 });

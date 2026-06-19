@@ -22,7 +22,7 @@ import VChart from "vue-echarts";
 import { useChartData } from "@/composables/useChartData";
 import type { EChartsExportable } from "@/composables/useChartExport";
 import { useDataStore } from "@/stores/data";
-import { escapeHtml, safeMinMax, warnIfSignificantDataLoss } from "@/utils/chart";
+import { escapeHtml, safeMinMax, toNumberOrNaN, warnIfSignificantDataLoss } from "@/utils/chart";
 import AccessibleDataTable from "@/components/AccessibleDataTable.vue";
 
 // Register only the ECharts modules we need (tree-shaking)
@@ -70,35 +70,17 @@ const prefersReducedMotion =
 const COLOR_PRODUCTIVITY = "#1a56db"; // Blue — ~7.2:1
 const COLOR_PAY = "#dc2626"; // Red — ~4.6:1
 
-/**
- * Parse a raw dataset cell into a number, mapping missing values to NaN.
- *
- * Data honesty: `Number(null)`, `Number("")`, and `Number("   ")` all coerce to
- * 0, which would silently turn a missing source cell into a fabricated figure (a
- * phantom 0% gap). We map nullish/blank cells to NaN instead, so the accessible
- * data table renders the missing-value placeholder ("—") via AccessibleDataTable
- * rather than a misleading "0". We trim before the emptiness check so a
- * whitespace-only cell counts as missing, not as 0. A genuine numeric 0 still
- * parses to 0. `undefined` is accepted defensively (a row may omit the key
- * entirely) and treated as missing. Used here for the gap column, which the
- * chart's own filter does not require (so a missing gap can still reach the
- * table).
- */
-function toNumberOrNaN(value: string | number | null | undefined): number {
-  if (value == null) return NaN;
-  if (typeof value === "string" && value.trim() === "") return NaN;
-  return Number(value);
-}
-
 /** Sorted data extracted from rows. */
 const chartData = computed(() => {
+  // toNumberOrNaN (shared, utils/chart) maps nullish/blank cells to NaN instead
+  // of the 0 that bare Number() would fabricate, so a missing source cell drops
+  // from the chart and renders "—" in the accessible table — never a phantom 0.
+  // Applied to the plotted columns (year/productivity/pay, which gate the filter
+  // below) AND the table-only gap column.
   const mapped = rows.value.map((r) => ({
-    year: Number(r.year),
-    productivity: Number(r.productivity_index),
-    pay: Number(r.pay_index),
-    // gap_pct is shown only in the accessible table, not plotted; it does not
-    // gate the chart's filter below. toNumberOrNaN keeps a missing gap as NaN
-    // so the table shows "—", never a fabricated 0%.
+    year: toNumberOrNaN(r.year),
+    productivity: toNumberOrNaN(r.productivity_index),
+    pay: toNumberOrNaN(r.pay_index),
     gap: toNumberOrNaN(r.gap_pct),
   }));
   const sorted = mapped

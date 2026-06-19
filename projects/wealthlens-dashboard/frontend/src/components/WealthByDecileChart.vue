@@ -24,7 +24,7 @@ import {
 import VChart from "vue-echarts";
 import { useChartData } from "@/composables/useChartData";
 import type { EChartsExportable } from "@/composables/useChartExport";
-import { escapeHtml, warnIfSignificantDataLoss } from "@/utils/chart";
+import { escapeHtml, toNumberOrNaN, warnIfSignificantDataLoss } from "@/utils/chart";
 import AccessibleDataTable from "@/components/AccessibleDataTable.vue";
 
 // Register only the ECharts modules we need (tree-shaking)
@@ -59,7 +59,7 @@ const COLOR_NEGATIVE = "#b91c1c";
 const parsedData = computed(() => {
   const mapped = rows.value.map((r) => ({
     decile: String(r.decile ?? ""),
-    totalWealthBn: Number(r.total_wealth_bn),
+    totalWealthBn: toNumberOrNaN(r.total_wealth_bn),
   }));
   const filtered = mapped.filter((r) => r.decile && !isNaN(r.totalWealthBn));
 

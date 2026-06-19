@@ -22,7 +22,7 @@ import {
 import VChart from "vue-echarts";
 import { useChartData } from "@/composables/useChartData";
 import type { EChartsExportable } from "@/composables/useChartExport";
-import { escapeHtml, safeMinMax, warnIfSignificantDataLoss } from "@/utils/chart";
+import { escapeHtml, safeMinMax, toNumberOrNaN, warnIfSignificantDataLoss } from "@/utils/chart";
 import AccessibleDataTable from "@/components/AccessibleDataTable.vue";
 
 // Register only the ECharts modules we need (tree-shaking)
@@ -57,8 +57,8 @@ const COLOR_NATIONAL_AVG = "#374151"; // Dark gray for reference line
 const chartData = computed(() => {
   const mapped = rows.value.map((r) => ({
     region: String(r.region ?? ""),
-    povertyPct: Number(r.child_poverty_pct),
-    childrenInPoverty: Number(r.children_in_poverty),
+    povertyPct: toNumberOrNaN(r.child_poverty_pct),
+    childrenInPoverty: toNumberOrNaN(r.children_in_poverty),
     aboveAvg: Boolean(r.above_national_avg),
   }));
   const sorted = mapped
@@ -67,8 +67,12 @@ const chartData = computed(() => {
 
   warnIfSignificantDataLoss("child-poverty", mapped.length, sorted.length);
 
-  // Extract national average from the first row (all rows have same value)
-  const nationalAvg = rows.value.length > 0 ? Number(rows.value[0].national_avg_pct) : 0;
+  // Extract national average from the first row (all rows have same value).
+  // toNumberOrNaN (not bare Number) so a missing value is NaN, not a fabricated
+  // 0 — the markLine self-hides, the table shows "—", and the aria-label below
+  // omits the sentence rather than reading "NaN%".
+  const nationalAvg =
+    rows.value.length > 0 ? toNumberOrNaN(rows.value[0].national_avg_pct) : NaN;
 
   return {
     regions: sorted.map((r) => r.region),
@@ -245,7 +249,7 @@ const option = computed(() => {
   <div v-else>
     <div
       role="img"
-      :aria-label="`Bar chart showing child poverty rates across ${chartData.regions.length} UK regions. Rates range from ${povertyRange.min}% to ${povertyRange.max}%. The national average is ${chartData.nationalAvg}%. Regions above the national average are highlighted in red.`"
+      :aria-label="`Bar chart showing child poverty rates across ${chartData.regions.length} UK regions. Rates range from ${povertyRange.min}% to ${povertyRange.max}%.${Number.isFinite(chartData.nationalAvg) ? ` The national average is ${chartData.nationalAvg}%.` : ''} Regions above the national average are highlighted in red.`"
       class="w-full"
     >
       <VChart

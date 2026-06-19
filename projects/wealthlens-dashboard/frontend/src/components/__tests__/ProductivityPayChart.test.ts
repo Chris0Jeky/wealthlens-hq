@@ -195,4 +195,24 @@ describe("ProductivityPayChart accessible data table", () => {
     );
     expect(caption.toLowerCase()).not.toContain("illustrative");
   });
+
+  it("drops a row with a missing PLOTTED column (productivity/pay) instead of fabricating a 0", () => {
+    // The plotted columns gate the chart filter. Number(null)===0 would keep the
+    // row and plot/table a fabricated 0 index; toNumberOrNaN must map it to NaN so
+    // the row drops from BOTH the chart and the accessible table.
+    mockRows.value = [
+      { year: 2018, productivity_index: 126.0, pay_index: 113.0, gap_pct: 11.5 },
+      { year: 2019, productivity_index: null, pay_index: 113.5, gap_pct: 11.0 }, // missing productivity
+      { year: 2020, productivity_index: 128.0, pay_index: null, gap_pct: 12.3 }, // missing pay
+    ];
+    const wrapper = mount(ProductivityPayChart);
+    const bodyRows = wrapper.findAll("tbody tr");
+    // Only the fully-valid 2018 row survives; the two missing-plotted-column rows drop.
+    expect(bodyRows).toHaveLength(1);
+    expect(bodyRows[0].findAll("td")[0].text()).toBe("2018");
+    const tableText = bodyRows.map((r) => r.text()).join(" ");
+    expect(tableText).not.toContain("2019");
+    expect(tableText).not.toContain("2020");
+    expect(wrapper.text()).not.toContain("NaN");
+  });
 });
