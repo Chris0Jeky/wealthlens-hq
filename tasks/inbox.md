@@ -198,17 +198,18 @@ group). Each: real per-row cell-mapping test + 2 adversarial reviews.
 
 ### Data-quality follow-ups surfaced during the a11y audit (2026-06-19)
 
-- [ ] **Systemic null→0 fabrication in chart parsers — extract a shared
-  `toNumberOrNaN` and sweep every chart.** The idiom `Number(x)` + `!isNaN(x)`
-  used across chart components admits `null`/`""` as a fabricated **0**
-  (`Number(null) === 0`, `Number("") === 0`), so a missing/suppressed source cell
-  is silently plotted/tabled as 0 instead of dropped or shown as "—". Surfaced
-  repeatedly by the a11y data-table reviews and fixed PER-CHART so far (CGT #417,
-  child-poverty #421, generational-wealth #423, boe-rates/housing/wage batch-2).
-  ROOT-CAUSE FIX: add a shared `toNumberOrNaN(v)` to
-  `frontend/src/utils/chart.ts` (`v == null || v === "" ? NaN : Number(v)`), use it
-  in every chart's parse step, and audit the charts NOT touched by the a11y thread.
-  Own reviewed PR. Data-integrity guardrail: never present a fabricated 0.
+- [~] **Systemic null→0 fabrication in chart parsers — shared `toNumberOrNaN`
+  sweep.** DONE in **PR #428** (aging): added a robust shared `toNumberOrNaN` to
+  `frontend/src/utils/chart.ts` (strict types + non-finite rejection, unit-tested)
+  and routed every chart's parse step through it (the 4 that were still on bare
+  `Number()` — Gdhi/TaxComposition/WealthByDecile/WealthShares — plus ProductivityPay
+  + ChildPoverty, which a review caught as partially-guarded). Also fixed two
+  consequences the guard exposed: TaxComposition (stacked total) now drops a year
+  missing any plotted component (no £NaN total), and WealthShares aligns its two
+  series on a shared year union (no index-shift when a year is dropped). The a11y
+  thread had already fixed CGT #417 / child-poverty #421 / generational #423 /
+  boe+housing+wage (batch-2) inline. **Remaining:** consolidate those inline guards
+  onto the shared helper (DRY, optional).
 
 - [ ] **GdhiByRegionChart: the dataset labels mixed geographies as "UK regions".**
   `gdhi-by-region.json` mixes true ITL1 regions (South East, Scotland) with
