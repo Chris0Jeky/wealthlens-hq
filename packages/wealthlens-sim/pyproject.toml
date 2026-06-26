@@ -46,8 +46,14 @@ line-length = 120
 select = ["E", "F", "W", "I", "N", "UP", "B", "SIM", "RUF"]
 ignore = ["E501"]
 
+# mypy targets 3.12 (not the 3.11 floor) so it accepts modern third-party stubs:
+# unpinned numpy (>=1.26) now ships PEP 695 `type` aliases in its .pyi, which mypy
+# rejects as a syntax error when python_version < 3.12 (numpy/__init__.pyi:737:
+# "Type statement is only supported in Python 3.12 and greater"), aborting the whole
+# check. Targeting 3.12 fixes both matrix jobs. Source-level 3.11 compatibility is
+# still enforced by ruff (target-version = "py311") and the 3.11 pytest matrix job.
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.12"
 strict = true
 warn_return_any = true
 warn_unused_configs = true
