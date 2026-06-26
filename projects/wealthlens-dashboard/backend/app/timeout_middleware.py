@@ -15,12 +15,17 @@ that liveness probes always respond even under load.
 from __future__ import annotations
 
 import asyncio
+import logging
+import math
 import os
 
 from starlette.responses import JSONResponse
 from starlette.types import ASGIApp, Receive, Scope, Send
 
+logger = logging.getLogger(__name__)
+
 _EXEMPT_PATHS: frozenset[str] = frozenset({"/health", "/api/health/data"})
+_DEFAULT_TIMEOUT = 30.0
 
 
 class TimeoutMiddleware:
@@ -28,14 +33,20 @@ class TimeoutMiddleware:
 
     def __init__(self, app: ASGIApp, timeout_seconds: float | None = None) -> None:
         self.app = app
-        if timeout_seconds is not None:
-            self.timeout_seconds = timeout_seconds
+        # A non-positive timeout would 504 EVERY request, and a non-finite one
+        # (inf/nan) would break the guard entirely, so validate both the explicit
+        # arg and the REQUEST_TIMEOUT env var and fall back LOUDLY to the default
+        # — mirroring main.py's RATE_LIMIT_RPM flooring.
+        source: object = timeout_seconds if timeout_seconds is not None else os.environ.get("REQUEST_TIMEOUT", "30.0")
+        try:
+            parsed = float(source)  # type: ignore[arg-type]
+        except (ValueError, TypeError):
+            parsed = math.nan
+        if math.isfinite(parsed) and parsed > 0:
+            self.timeout_seconds = parsed
         else:
-            raw = os.environ.get("REQUEST_TIMEOUT", "30.0")
-            try:
-                self.timeout_seconds = float(raw)
-            except ValueError:
-                self.timeout_seconds = 30.0
+            logger.warning("Invalid request timeout %r; defaulting to %.1fs", source, _DEFAULT_TIMEOUT)
+            self.timeout_seconds = _DEFAULT_TIMEOUT
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] != "http":

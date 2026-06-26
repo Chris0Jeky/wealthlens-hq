@@ -98,8 +98,7 @@ DATASET_META: dict[str, dict[str, str]] = {
         "description": "UK productivity vs. real pay, indexed to 100 at 1997",
         "source": "ONS Labour Productivity (LZVD) & ONS AWE (KAB9) deflated by CPIH (L55O)",
         "source_url": (
-            "https://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/"
-            "labourproductivity/timeseries/lzvd/prdy"
+            "https://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/labourproductivity/timeseries/lzvd/prdy"
         ),
         "access_date": "2026-05-16",
     },
@@ -116,18 +115,13 @@ DATASET_META: dict[str, dict[str, str]] = {
     "tax-composition": {
         "description": "UK tax revenue composition: work taxes vs wealth taxes",
         "source": "HMRC Tax and NIC Receipts",
-        "source_url": (
-            "https://www.gov.uk/government/statistics/"
-            "hmrc-tax-and-nics-receipts-for-the-uk"
-        ),
+        "source_url": ("https://www.gov.uk/government/statistics/hmrc-tax-and-nics-receipts-for-the-uk"),
         "access_date": "2026-05-16",
     },
     "boe-rates": {
         "description": "Bank Rate and CPI annual inflation",
         "source": "Bank of England Interactive Analytical Database",
-        "source_url": (
-            "https://www.bankofengland.co.uk/boeapps/database/"
-        ),
+        "source_url": ("https://www.bankofengland.co.uk/boeapps/database/"),
         "access_date": "2026-05-16",
     },
     "child-poverty": {
@@ -149,8 +143,7 @@ DATASET_META: dict[str, dict[str, str]] = {
         "description": "Median real weekly earnings in 2024 prices",
         "source": "ONS Annual Survey of Hours and Earnings (ASHE), Table 1",
         "source_url": (
-            "https://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/"
-            "earningsandworkinghours/datasets/ashe1702"
+            "https://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/earningsandworkinghours/datasets/ashe1702"
         ),
         "access_date": "2026-05-16",
     },
@@ -222,11 +215,42 @@ def _build_metadata(dataset_name: str) -> dict[str, Any]:
         "source": meta["source"],
         "source_url": meta["source_url"],
         "access_date": meta["access_date"],
+        "available": True,
         "row_count": row_count,
         "columns": columns,
         "last_updated": last_updated,
         "data_type": data_type,
     }
+
+
+def _build_metadata_safe(dataset_name: str) -> dict[str, Any]:
+    """Per-dataset metadata that DEGRADES rather than failing the whole catalog.
+
+    The /metadata catalog must keep serving every dataset's source citations even
+    if one CSV is temporarily missing (a partial pipeline run) — source-citation
+    visibility is mission-critical. On a read failure this returns the static
+    citation fields with available=False, row_count=None, columns=[] (the
+    last_updated/data_type helpers already degrade to None), mirroring the
+    per-dataset degradation the freshness/health endpoints already use. The
+    single-dataset endpoint stays strict (503), so it never returns available=False.
+    """
+    try:
+        return _build_metadata(dataset_name)
+    except HTTPException:
+        logger.warning("metadata: %s unavailable; serving citation-only entry", dataset_name)
+        meta = DATASET_META[dataset_name]
+        return {
+            "name": dataset_name,
+            "description": meta["description"],
+            "source": meta["source"],
+            "source_url": meta["source_url"],
+            "access_date": meta["access_date"],
+            "available": False,
+            "row_count": None,
+            "columns": [],
+            "last_updated": _get_last_updated(dataset_name),
+            "data_type": _get_data_type(dataset_name),
+        }
 
 
 # --- Freshness tracking ---
@@ -315,9 +339,7 @@ def health_data() -> dict[str, Any]:
     else:
         status = "unavailable"
 
-    logger.info(
-        "Health check: %s (%d/%d datasets available)", status, available_count, total
-    )
+    logger.info("Health check: %s (%d/%d datasets available)", status, available_count, total)
 
     return {
         "status": status,
@@ -397,10 +419,15 @@ def all_datasets_metadata(response: Response) -> dict[str, list[dict[str, Any]]]
     """Return metadata with source citations for every dataset.
 
     Each entry includes the dataset description, data source name and URL,
-    access date, row count, and column names.
+    access date, row count, and column names. If a dataset's CSV is missing or
+    unreadable, that entry degrades to ``available: false`` (citations still
+    present, row_count null, columns empty) rather than failing the whole
+    catalog — see ``_build_metadata_safe``.
     """
     response.headers["Cache-Control"] = _CACHE_METADATA
-    return {"datasets": [_build_metadata(name) for name in DATASETS]}
+    # Build defensively: one missing/unreadable CSV must not 503 the whole catalog
+    # (and take down every other dataset's source citations with it).
+    return {"datasets": [_build_metadata_safe(name) for name in DATASETS]}
 
 
 @router.get(
@@ -466,8 +493,9 @@ _columns_cache: dict[str, dict[str, Any]] = {}
 _summary_cache: dict[str, dict[str, Any]] = {}
 
 
-@router.get("/{dataset_name}/summary", response_model=DatasetSummaryResponse,
-            summary="Summary statistics for a dataset")
+@router.get(
+    "/{dataset_name}/summary", response_model=DatasetSummaryResponse, summary="Summary statistics for a dataset"
+)
 def dataset_summary(
     dataset_name: str = Path(
         ...,
@@ -488,15 +516,17 @@ def dataset_summary(
     summaries = []
     for col in numeric_cols:
         series = df[col].dropna()
-        summaries.append({
-            "column": col,
-            "count": int(series.count()),
-            "mean": round(float(series.mean()), 4) if len(series) > 0 else None,
-            "std": round(float(series.std()), 4) if len(series) > 1 else None,
-            "min": round(float(series.min()), 4) if len(series) > 0 else None,
-            "max": round(float(series.max()), 4) if len(series) > 0 else None,
-            "median": round(float(series.median()), 4) if len(series) > 0 else None,
-        })
+        summaries.append(
+            {
+                "column": col,
+                "count": int(series.count()),
+                "mean": round(float(series.mean()), 4) if len(series) > 0 else None,
+                "std": round(float(series.std()), 4) if len(series) > 1 else None,
+                "min": round(float(series.min()), 4) if len(series) > 0 else None,
+                "max": round(float(series.max()), 4) if len(series) > 0 else None,
+                "median": round(float(series.median()), 4) if len(series) > 0 else None,
+            }
+        )
 
     result: dict[str, Any] = {
         "dataset": dataset_name,

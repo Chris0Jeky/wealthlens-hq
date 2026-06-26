@@ -65,6 +65,37 @@ class TestDatasetMetadata:
         resp = client.get("/api/data/nonexistent/metadata")
         assert resp.status_code == 404
 
+    def test_all_metadata_degrades_on_missing_csv_not_503(self, client: TestClient) -> None:
+        """One missing CSV must not 503 the whole catalog (or hide all citations)."""
+        missing = "wealth-shares"
+        (data_mod.DATA_DIR / data_mod.DATASETS[missing]).unlink()
+        data_mod._metadata_cache.clear()
+
+        resp = client.get("/api/data/metadata")
+        assert resp.status_code == 200  # whole catalog stays up
+        by_name = {d["name"]: d for d in resp.json()["datasets"]}
+        assert len(by_name) == len(data_mod.DATASETS)
+
+        # The missing dataset degrades but KEEPS its source citation.
+        gone = by_name[missing]
+        assert gone["available"] is False
+        assert gone["row_count"] is None
+        assert gone["columns"] == []
+        assert gone["source"] == "World Inequality Database"
+        assert gone["source_url"].startswith("http")
+
+        # A present dataset is still fully available.
+        present = next(d for n, d in by_name.items() if n != missing)
+        assert present["available"] is True
+        assert present["row_count"] == 5
+
+    def test_single_metadata_stays_strict_on_missing_csv(self, client: TestClient) -> None:
+        """The single-dataset endpoint still fails loudly (503) — only the catalog degrades."""
+        (data_mod.DATA_DIR / data_mod.DATASETS["wealth-shares"]).unlink()
+        data_mod._metadata_cache.clear()
+        resp = client.get("/api/data/wealth-shares/metadata")
+        assert resp.status_code == 503
+
     def test_metadata_includes_source_url(self, client: TestClient) -> None:
         resp = client.get("/api/data/wealth-shares/metadata")
         body = resp.json()

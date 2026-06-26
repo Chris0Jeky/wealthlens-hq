@@ -62,6 +62,15 @@ class TestRateLimitBasic:
         response = client.get("/test")
         assert response.status_code == 429
 
+    def test_health_with_trailing_slash_is_exempt(self) -> None:
+        # "/health/" is 307-redirected to "/health" (and the redirect is itself
+        # counted); both forms must be exempt — matching TimeoutMiddleware — so
+        # well beyond the limit never yields a 429. (Exact-match exemption missed
+        # the trailing-slash form.)
+        client = TestClient(_create_app(requests_per_minute=3))
+        for _ in range(10):
+            assert client.get("/health/").status_code == 200
+
     def test_429_includes_retry_after_header(self) -> None:
         client = TestClient(_create_app(requests_per_minute=1))
         client.get("/test")

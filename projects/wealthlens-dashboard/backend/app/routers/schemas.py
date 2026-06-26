@@ -25,8 +25,21 @@ class DatasetMetadataResponse(BaseModel):
     source: str
     source_url: str
     access_date: str
-    row_count: int = Field(ge=0)
-    columns: list[str]
+    available: bool = Field(
+        default=True,
+        description=(
+            "False when the dataset's CSV is missing/unreadable (e.g. a partial "
+            "pipeline run). Source citations are still served; row_count/columns "
+            "are null/empty. Always True from the single-dataset endpoint, which "
+            "503s instead."
+        ),
+    )
+    row_count: int | None = Field(
+        default=None,
+        ge=0,
+        description="Row count, or null when the dataset file is unavailable",
+    )
+    columns: list[str] = Field(default_factory=list)
     last_updated: str | None = Field(
         default=None,
         description="ISO 8601 datetime of last CSV file modification, or null if missing",
@@ -97,12 +110,8 @@ class DatasetColumnsResponse(BaseModel):
 class DatasetFreshnessEntry(BaseModel):
     """Freshness info for a single dataset."""
 
-    last_updated: str | None = Field(
-        description="ISO 8601 datetime of last file modification, or null if missing"
-    )
-    age_hours: float | None = Field(
-        ge=0, description="Hours since last update, or null if file missing"
-    )
+    last_updated: str | None = Field(description="ISO 8601 datetime of last file modification, or null if missing")
+    age_hours: float | None = Field(ge=0, description="Hours since last update, or null if file missing")
     status: Literal["fresh", "stale", "expired", "unknown"] = Field(
         description="fresh (<=7d), stale (<=30d), expired (>30d), unknown (missing)"
     )
