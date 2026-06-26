@@ -15,7 +15,10 @@ Last updated: 2026-06-26
 > **#397 mypy** → **adopted mypy 2.x repo-wide** via **#443** (cap `<2`→`<3` in
 > root/backend/analyst + added a `<3` ceiling to sim; fixes the CI-vs-local drift;
 > verified green on every package CI). **All 14 Dependabot PRs now drained; 0 open
-> PRs; main green across every workflow + deployed.** Full state:
+> PRs; main green across every workflow + deployed.** Also shipped **H1-07**
+> (#445): tabular-source rendering in the analyst's `slice_corpus.py` — citable
+> chunks from WAS/HMRC processed data, fail-closed data-honesty allowlist, full
+> provenance, 12-test lock, 2-lens adversarial review (all findings fixed). Full state:
 > `../hq-private/projects/wealthlens/memories/session_notes/ORCHESTRATION.md`.
 
 > **SESSION 9 WRAPPED (2026-06-19).** main green; **only the 8 held Dependabot PRs are
