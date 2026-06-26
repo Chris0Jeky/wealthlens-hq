@@ -70,3 +70,11 @@ def test_budget_config_fail_closed_default(monkeypatch: pytest.MonkeyPatch) -> N
     monkeypatch.setenv("BUDGET_MONTHLY_CAP_GBP", "ten pounds")
     with pytest.raises(ValueError, match="BUDGET_MONTHLY_CAP_GBP"):
         load_settings()
+
+    # float() accepts these (incl. mixed-case spellings — the realistic .env typo),
+    # but they would DEFEAT the cap (nan never trips the spend check; inf/negative/
+    # zero are nonsensical), so each must fail loudly.
+    for bad in ("nan", "NaN", "inf", "Infinity", "-inf", "1e400", "-5", "0", "0.0"):
+        monkeypatch.setenv("BUDGET_MONTHLY_CAP_GBP", bad)
+        with pytest.raises(ValueError, match="BUDGET_MONTHLY_CAP_GBP"):
+            load_settings()
