@@ -17,13 +17,7 @@ import pandas as pd
 
 logger = logging.getLogger(__name__)
 
-DATA_DIR = (
-    Path(__file__).resolve().parents[2]
-    / "projects"
-    / "wealthlens-dashboard"
-    / "data"
-    / "processed"
-)
+DATA_DIR = Path(__file__).resolve().parents[2] / "projects" / "wealthlens-dashboard" / "data" / "processed"
 
 CHECKS: list[dict] = [
     {
@@ -93,23 +87,43 @@ CHECKS: list[dict] = [
         # so a regenerated CSV that drops them is caught (and the totals get NONFINITE-
         # guarded). Downstream API/charts expose this CSV directly.
         "columns": {
-            "year", "income_tax_bn", "nics_bn", "cgt_bn", "iht_bn", "sdlt_bn",
-            "work_taxes_bn", "wealth_taxes_bn", "total_selected_bn",
-            "work_pct", "wealth_pct", "data_source",
+            "year",
+            "income_tax_bn",
+            "nics_bn",
+            "cgt_bn",
+            "iht_bn",
+            "sdlt_bn",
+            "work_taxes_bn",
+            "wealth_taxes_bn",
+            "total_selected_bn",
+            "work_pct",
+            "wealth_pct",
+            "data_source",
         },
         "min_rows": 3,
         "dtypes": {
-            "income_tax_bn": "float", "nics_bn": "float", "cgt_bn": "float",
-            "iht_bn": "float", "sdlt_bn": "float",
-            "work_taxes_bn": "float", "wealth_taxes_bn": "float", "total_selected_bn": "float",
-            "work_pct": "float", "wealth_pct": "float",
+            "income_tax_bn": "float",
+            "nics_bn": "float",
+            "cgt_bn": "float",
+            "iht_bn": "float",
+            "sdlt_bn": "float",
+            "work_taxes_bn": "float",
+            "wealth_taxes_bn": "float",
+            "total_selected_bn": "float",
+            "work_pct": "float",
+            "wealth_pct": "float",
         },
         "ranges": {
-            "income_tax_bn": (0.0, 2_000.0), "nics_bn": (0.0, 2_000.0),
-            "cgt_bn": (0.0, 200.0), "iht_bn": (0.0, 200.0), "sdlt_bn": (0.0, 200.0),
-            "work_taxes_bn": (0.0, 4_000.0), "wealth_taxes_bn": (0.0, 1_000.0),
+            "income_tax_bn": (0.0, 2_000.0),
+            "nics_bn": (0.0, 2_000.0),
+            "cgt_bn": (0.0, 200.0),
+            "iht_bn": (0.0, 200.0),
+            "sdlt_bn": (0.0, 200.0),
+            "work_taxes_bn": (0.0, 4_000.0),
+            "wealth_taxes_bn": (0.0, 1_000.0),
             "total_selected_bn": (0.0, 5_000.0),
-            "work_pct": (0.0, 100.0), "wealth_pct": (0.0, 100.0),
+            "work_pct": (0.0, 100.0),
+            "wealth_pct": (0.0, 100.0),
         },
         "unique_keys": ["year"],
     },
@@ -123,6 +137,18 @@ CHECKS: list[dict] = [
         "dtypes": {"bank_rate": "float", "cpi_annual": "float"},
         "ranges": {"bank_rate": (0.0, 50.0), "cpi_annual": (-10.0, 50.0)},
         "unique_keys": ["date"],
+        # Per-cell NaN in these is the HONEST "not published yet" value, NOT a leak:
+        # fetch_boe_rates.process keeps a row when EITHER series is present and writes
+        # None for the other (BoE publishes a month's bank rate before that month's
+        # CPI; an early bank_rate can be unfilled). test_pipeline_finite_cells asserts
+        # such NaN rows are published. nan_ok suppresses the per-cell NONFINITE flag for
+        # these columns ONLY (the column must still exist; an inf is still flagged) — but
+        # only up to max_nan_frac: a mostly-blank column is a broken series (e.g. a
+        # renamed live source code), not honest-missing, and must still fail. Honest
+        # missing is a few unpublished trailing months / a leading gap (well under half),
+        # so 50% is a safe ceiling.
+        "nan_ok": {"bank_rate", "cpi_annual"},
+        "max_nan_frac": 0.5,
     },
     {
         "file": "wage_stagnation.csv",
@@ -134,6 +160,37 @@ CHECKS: list[dict] = [
             "real_weekly": (0, 2_000),
         },
         "unique_keys": ["year"],
+    },
+    {
+        # Previously UNVALIDATED (CHECKS covered 9 of 11 pipeline outputs); the
+        # test_checks_cover_every_pipeline drift guard now keeps the list complete.
+        # above_national_avg is a bool flag (no numeric guard); the three numeric
+        # columns are range/finite-guarded.
+        "file": "child_poverty_by_region.csv",
+        "columns": {"region", "child_poverty_pct", "children_in_poverty", "national_avg_pct", "above_national_avg"},
+        "min_rows": 10,
+        "dtypes": {"child_poverty_pct": "float", "children_in_poverty": "numeric", "national_avg_pct": "float"},
+        "ranges": {
+            "child_poverty_pct": (0.0, 100.0),
+            "national_avg_pct": (0.0, 100.0),
+            "children_in_poverty": (0, 5_000_000),
+        },
+        "unique_keys": ["region"],
+    },
+    {
+        # Previously UNVALIDATED. generation/birth_years are labels and `projected`
+        # is a bool flag (no numeric guard); the three numeric columns are guarded.
+        # One row is one (generation, age-milestone) observation, so that pair is the key.
+        "file": "generational_wealth_gap.csv",
+        "columns": {"generation", "birth_years", "age_milestone", "median_wealth_gbp", "year_measured", "projected"},
+        "min_rows": 5,
+        "dtypes": {"age_milestone": "int", "median_wealth_gbp": "numeric", "year_measured": "int"},
+        "ranges": {
+            "age_milestone": (0, 120),
+            "median_wealth_gbp": (0, 5_000_000),
+            "year_measured": (1900, date.today().year + 5),
+        },
+        "unique_keys": ["generation", "age_milestone"],
     },
 ]
 
@@ -184,9 +241,7 @@ def validate_all() -> list[str]:
                     vals = pd.to_numeric(df[col], errors="coerce")
                     coerced_nan = int(vals.isna().sum() - df[col].isna().sum())
                     if coerced_nan > 0:
-                        errors.append(
-                            f"COERCE: {check['file']}.{col} has {coerced_nan} non-numeric values"
-                        )
+                        errors.append(f"COERCE: {check['file']}.{col} has {coerced_nan} non-numeric values")
                     below = int((vals < lo).sum())
                     above = int((vals > hi).sum())
                     if below > 0:
@@ -206,15 +261,33 @@ def validate_all() -> list[str]:
         numeric_cols = set(check.get("ranges", {})) | {
             col for col, kind in check.get("dtypes", {}).items() if kind in ("int", "float", "numeric")
         }
+        # nan_ok columns carry honest-missing NaN by design (see the boe_rates check),
+        # so an INDIVIDUAL blank there is expected, not a leak. But a column that is
+        # MOSTLY blank is a broken series (e.g. a renamed live source code), not
+        # honest-missing — that must still fail, else nan_ok would let an all-NaN
+        # bank_rate/cpi_annual validate clean (COLUMNS only checks existence; an
+        # all-NaN column is still float dtype and passes RANGE/COERCE/NULLS). So:
+        # tolerate per-cell blanks up to max_nan_frac of the column, flag beyond it.
+        # An inf is never legitimate, so it is still flagged for every numeric column.
+        nan_ok = check.get("nan_ok", set())
+        max_nan_frac = check.get("max_nan_frac", 0.5)
+        n_rows = len(df)
         for col in sorted(numeric_cols):
             if col in df.columns:
                 coerced = pd.to_numeric(df[col], errors="coerce")
-                blank = int(df[col].isna().sum())  # raw blank cells in the source column
+                raw_blank = int(df[col].isna().sum())
                 infinite = int(np.isinf(coerced).sum())
+                if col in nan_ok:
+                    if n_rows and raw_blank / n_rows > max_nan_frac:
+                        errors.append(
+                            f"NONFINITE: {check['file']}.{col} is {raw_blank}/{n_rows} blank "
+                            f"(> {max_nan_frac:.0%}); a tolerated column may be honest-missing, not wholesale-blank"
+                        )
+                    blank = 0  # individual honest-missing blanks are fine below the ceiling
+                else:
+                    blank = raw_blank
                 if blank + infinite > 0:
-                    errors.append(
-                        f"NONFINITE: {check['file']}.{col} has {blank + infinite} blank/infinite value(s)"
-                    )
+                    errors.append(f"NONFINITE: {check['file']}.{col} has {blank + infinite} blank/infinite value(s)")
 
         if "unique_keys" in check:
             keys = check["unique_keys"]
