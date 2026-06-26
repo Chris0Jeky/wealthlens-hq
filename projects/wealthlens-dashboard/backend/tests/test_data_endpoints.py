@@ -81,6 +81,8 @@ class TestDatasetMetadata:
         assert gone["available"] is False
         assert gone["row_count"] is None
         assert gone["columns"] == []
+        assert gone["last_updated"] is None  # file gone -> no mtime
+        assert gone["data_type"] is None  # no sidecar
         assert gone["source"] == "World Inequality Database"
         assert gone["source_url"].startswith("http")
 
@@ -88,6 +90,20 @@ class TestDatasetMetadata:
         present = next(d for n, d in by_name.items() if n != missing)
         assert present["available"] is True
         assert present["row_count"] == 5
+
+    def test_all_metadata_degrades_on_corrupt_csv_not_503(self, client: TestClient) -> None:
+        """A present-but-unreadable CSV degrades that entry too (not just missing)."""
+        corrupt = "wealth-shares"
+        (data_mod.DATA_DIR / data_mod.DATASETS[corrupt]).write_text("", encoding="utf-8")  # empty -> EmptyDataError
+        data_mod._metadata_cache.clear()
+
+        resp = client.get("/api/data/metadata")
+        assert resp.status_code == 200
+        by_name = {d["name"]: d for d in resp.json()["datasets"]}
+        bad = by_name[corrupt]
+        assert bad["available"] is False
+        assert bad["row_count"] is None
+        assert bad["source"] == "World Inequality Database"  # citation still served
 
     def test_single_metadata_stays_strict_on_missing_csv(self, client: TestClient) -> None:
         """The single-dataset endpoint still fails loudly (503) — only the catalog degrades."""

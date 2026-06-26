@@ -9,10 +9,16 @@ import asyncio
 from collections.abc import AsyncGenerator
 
 import pytest
-from app.timeout_middleware import TimeoutMiddleware
+from app.timeout_middleware import _DEFAULT_TIMEOUT, TimeoutMiddleware
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from starlette.responses import StreamingResponse
+from starlette.types import Receive, Scope, Send
+
+
+async def _noop_app(scope: Scope, receive: Receive, send: Send) -> None:
+    """Minimal ASGI app for unit-testing TimeoutMiddleware construction."""
+
 
 # ---------------------------------------------------------------------------
 # Test app with a deliberately short timeout for fast tests.
@@ -84,9 +90,20 @@ class TestInvalidTimeoutFallsBack:
         client = TestClient(_make_app(timeout=0))
         assert client.get("/fast").status_code == 200
 
-    def test_negative_explicit_timeout_does_not_504(self) -> None:
-        client = TestClient(_make_app(timeout=-5))
-        assert client.get("/fast").status_code == 200
+    @pytest.mark.parametrize("bad", [0.0, -5.0, float("inf"), float("nan")])
+    def test_invalid_explicit_timeout_resolves_to_default(self, bad: float) -> None:
+        # Assert the RESOLVED value, so the math.isfinite() guard is covered: a
+        # bare `> 0` check would leave inf as the timeout (disabling the guard).
+        mw = TimeoutMiddleware(_noop_app, timeout_seconds=bad)
+        assert mw.timeout_seconds == _DEFAULT_TIMEOUT
+
+    def test_valid_explicit_timeout_is_kept(self) -> None:
+        assert TimeoutMiddleware(_noop_app, timeout_seconds=2.5).timeout_seconds == 2.5
+
+    @pytest.mark.parametrize("bad", ["0", "-5", "inf", "nan", "abc", ""])
+    def test_invalid_env_timeout_resolves_to_default(self, bad: str, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setenv("REQUEST_TIMEOUT", bad)
+        assert TimeoutMiddleware(_noop_app).timeout_seconds == _DEFAULT_TIMEOUT
 
     def test_zero_env_timeout_does_not_504(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setenv("REQUEST_TIMEOUT", "0")

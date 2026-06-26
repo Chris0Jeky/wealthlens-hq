@@ -228,16 +228,26 @@ def _build_metadata_safe(dataset_name: str) -> dict[str, Any]:
 
     The /metadata catalog must keep serving every dataset's source citations even
     if one CSV is temporarily missing (a partial pipeline run) — source-citation
-    visibility is mission-critical. On a read failure this returns the static
-    citation fields with available=False, row_count=None, columns=[] (the
+    visibility is mission-critical. On ANY per-dataset failure this returns the
+    static citation fields with available=False, row_count=None, columns=[] (the
     last_updated/data_type helpers already degrade to None), mirroring the
     per-dataset degradation the freshness/health endpoints already use. The
     single-dataset endpoint stays strict (503), so it never returns available=False.
+
+    The catch is intentionally broad (any Exception, logged with traceback): the
+    whole point is that one dataset can never black out the catalog, so an
+    unexpected read-time error degrades just that entry rather than 503-ing all.
+
+    LIMITATION: row_count/columns are cached for a successfully-read dataset (see
+    _metadata_cache), so a CSV deleted *after* it was first read still reports
+    available=True until the cache is cleared or the process restarts — consistent
+    with the cache's documented restart-to-refresh contract. The uncached
+    /api/health/data endpoint always reflects current filesystem state.
     """
     try:
         return _build_metadata(dataset_name)
-    except HTTPException:
-        logger.warning("metadata: %s unavailable; serving citation-only entry", dataset_name)
+    except Exception:
+        logger.exception("metadata: %s unavailable; serving citation-only entry", dataset_name)
         meta = DATASET_META[dataset_name]
         return {
             "name": dataset_name,
