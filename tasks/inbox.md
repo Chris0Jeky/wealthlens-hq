@@ -276,15 +276,20 @@ group). Each: real per-row cell-mapping test + 2 adversarial reviews.
   data is +£13.9bn (positive) — fixed in #422 (gated the claim on a
   `poorestIsNegative` computed; tooltip + bar colour were already conditional).
 - [ ] **Frontend `.prettierrc` is stale / unenforced — reconcile it with the code.**
-  Surfaced 2026-06-19 (#430 review). `frontend/.prettierrc` declares
-  `semi: false, singleQuote: true`, but the entire committed codebase uses
-  **semicolons + double-quotes**, and `format:check` (`prettier --check`) runs
-  **nowhere in CI** — so prettier is effectively dead and the config lies about the
-  house style. Decide the canonical style (almost certainly semi + double-quote to
-  match the ~120 existing files), update `.prettierrc` to match, run `prettier
-  --write` once, and add `npm run format:check` to `ci-frontend.yml` so it stays
-  enforced. One reviewed PR (the `prettier --write` will be a large no-op-ish diff —
-  do it on a clean branch). Until then, hand-match each file's existing style.
+  Surfaced 2026-06-19 (#430 review); **premise corrected 2026-06-26 (session 11)
+  after actually running prettier.** `frontend/.prettierrc` declares
+  `semi: false, singleQuote: true, trailingComma: all`, and `format:check`
+  (`prettier --check`) runs **nowhere in CI** — so prettier is effectively dead.
+  The earlier note's premise was WRONG: the codebase does NOT use semicolons; a
+  sampled component is double-quote + **no semicolons** (e.g. `import { computed } from "vue"` with no `;`), so the config's `semi:false` matches but `singleQuote:true`
+  does NOT. **`npx prettier --check .` flags 314 files** — and critically that set
+  INCLUDES committed `public/data/*.json` data files (there is **no `.prettierignore`**),
+  which must NOT be reformatted by prettier. So this is NOT a clean slice: it needs
+  (1) a house-style decision (the real code is double-quote + no-semi, so likely
+  `semi:false, singleQuote:false`), (2) a `.prettierignore` excluding `public/data/`,
+  `dist/`, coverage, etc., and (3) a 300-file `prettier --write` churn + wiring
+  `format:check` into `ci-frontend.yml`. Do on a clean branch; confirm the JSON data
+  files are excluded BEFORE `--write`. Likely wants Chris's nod on the canonical style.
 
 ## Build: Charts and Visualisations
 

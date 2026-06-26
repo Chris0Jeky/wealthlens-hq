@@ -1,6 +1,24 @@
 # Active Sprint
 
-Last updated: 2026-06-26
+Last updated: 2026-06-27
+
+> **SESSION 11 (2026-06-26) — CHECKPOINT: 4 PRs merged, 0 open, main green.**
+> H1-08/H1-09 stayed infra-blocked (Docker daemon down, no report PDFs), so the
+> session shipped the seeded CGT enrichment then ran a 4-area offline-defect sweep
+> and fixed every confirmed finding. **Merged:** **#446** H1-07 CGT band-range +
+> cumulative-concentration chunks (serves golden G-007/G-008; data-honesty clamp,
+> 2-lens review caught + fixed a real "gains account for taxpayers" category error);
+> **#447** `validate.py` now covers all 11 datasets (+ a drift guard) and tolerates
+> BoE honest-missing NaN without admitting a wholesale-blank column; **#448** the
+> analyst spend-cap parser rejects nan/inf/non-positive (fail-closed, ADR-0002 —
+> nan would have let the cap never trip); **#449** `/api/data/metadata` degrades
+> per-dataset instead of 503-ing the whole citations catalog, plus a REQUEST_TIMEOUT
+> positive/finite floor and a rate-limit health-path trailing-slash exemption. Each:
+> 2 independent adversarial-review lenses + every gemini bot comment addressed +
+> green CI. **Next unblocked code work is still infra-gated** (H1-09 needs the local
+> Postgres+pgvector container; H1-08 needs the PDFs); otherwise another offline-defect
+> sweep or a Chris decision below. Full state:
+> `../hq-private/projects/wealthlens/memories/session_notes/ORCHESTRATION.md`.
 
 > **SESSION 10 (2026-06-26) — WRAPPED.** Found main CI was actually **RED**
 > (two scheduled jobs drifted after the 06-19 push): fixed the `CI Simulator`
