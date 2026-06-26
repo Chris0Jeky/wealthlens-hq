@@ -10,10 +10,12 @@ Last updated: 2026-06-26
 > one-at-a-time after a 14-agent changelog/usage/CI review (#439/#434/#437/#391/
 > #390/#440/#396/#435/#438/#433/#394/#436); **main green + deployed**. Shipped
 > **H1-02** golden-question reword + source_id mapping, zero answers (**#442**).
-> **2 PRs HELD for Chris** (⚑ decisions below): **#402** vue-router 4→5 (prod-runtime
-> core-router major — reviewed clean, recommend approve) and **#397** mypy `<3`
-> (contradicts the documented `mypy<2` cap; #392 was closed for the same reason —
-> recommend close). Full state:
+> Chris then decided the last two: **#402 vue-router 4→5 APPROVED** → landed via
+> **#444** (re-created clean after #402 went stale + dependabot wouldn't rebase);
+> **#397 mypy** → **adopted mypy 2.x repo-wide** via **#443** (cap `<2`→`<3` in
+> root/backend/analyst + added a `<3` ceiling to sim; fixes the CI-vs-local drift;
+> verified green on every package CI). **All 14 Dependabot PRs now drained; 0 open
+> PRs; main green across every workflow + deployed.** Full state:
 > `../hq-private/projects/wealthlens/memories/session_notes/ORCHESTRATION.md`.
 
 > **SESSION 9 WRAPPED (2026-06-19).** main green; **only the 8 held Dependabot PRs are
