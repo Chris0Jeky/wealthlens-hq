@@ -122,16 +122,26 @@ Every concrete action item extracted from research. Triage into active-sprint, b
 
 ## Hero #1 (Analyst) ingest follow-ups
 
-- [ ] **CGT tabular chunks: explicit band RANGES + a cumulative-concentration line**
-  (seeded 2026-06-26, from the H1-07 review). `ingest/slice_corpus.py` renders one
-  chunk per HMRC CGT size-of-gain band with that band's PER-BAND figures, labelled
-  "... in this band" so HMRC's "£X+" band name is not misread as an "above £X"
-  cumulative share. Two additive refinements would sharpen the concentration story
-  (golden G-007): (a) render each band as an explicit range (`band_lower[i]` to
-  `band_lower[i+1]`; last band "and above") instead of the bare "£X+"; (b) add a
-  clean cumulative line from `cumul_gains_from_top_pct` / `cumul_taxpayers_from_top_pct`
-  (handling the >100% rounding artefact on the low bands) so a citation can state
-  top-tail concentration directly. Small, additive; do after the live URL exists.
+- [x] **CGT tabular chunks: explicit band RANGES + a cumulative-concentration line**
+  (seeded 2026-06-26 from the H1-07 review; **DONE 2026-06-26, session 11**).
+  `ingest/slice_corpus.py` now (a) renders each HMRC CGT size-of-gain band as an
+  explicit half-open range (`band_lower[i]` "to under" `band_lower[i+1]`; top band
+  "and above"), and (b) appends a cumulative-from-the-top concentration clause
+  ("taxpayers with gains of £X and above accounted for Y% of all taxable gains and
+  made up Z% of all CGT taxpayers") from `cumul_*_from_top_pct`, clamped to <=100%
+  to absorb the rounding artefact (fail-closed beyond tolerance). Serves golden
+  G-007/G-008 (£1m+ = 60.9% of gains). 2-lens adversarial review + verification;
+  the cumulative-clause category error (gains-as-subject of the taxpayer share)
+  was caught and fixed. PR on branch `h1-cgt-band-ranges-cumulative`.
+- [ ] **CGT cumulative columns: cumsum the RAW (un-rounded) per-band shares**
+  (seeded 2026-06-26, session 11, from the above PR's re-review). `cumul_*_from_top_pct`
+  in `fetch_hmrc_stats.py` are cumulative sums of the 1-dp-rounded `share_of_*_pct`,
+  so the low bands overshoot 100 (£0+ = 100.1/100.6) and round to exactly 100.0 a
+  little early (£6,000+ taxpayers = 100.0 although the £0/£3,000 bands sit below it).
+  The analyst renderer faithfully clamps these to 100%, but the cleaner fix is
+  pipeline-side: compute the cumulative columns from the raw un-rounded shares
+  (round only at the end) so the low-band cumulatives are exact. Pipeline-only,
+  no fabrication; the SPA chart uses the same columns. Low severity.
 
 ---
 
