@@ -120,6 +120,21 @@ Every concrete action item extracted from research. Triage into active-sprint, b
 
 ---
 
+## Hero #1 (Analyst) ingest follow-ups
+
+- [ ] **CGT tabular chunks: explicit band RANGES + a cumulative-concentration line**
+  (seeded 2026-06-26, from the H1-07 review). `ingest/slice_corpus.py` renders one
+  chunk per HMRC CGT size-of-gain band with that band's PER-BAND figures, labelled
+  "... in this band" so HMRC's "£X+" band name is not misread as an "above £X"
+  cumulative share. Two additive refinements would sharpen the concentration story
+  (golden G-007): (a) render each band as an explicit range (`band_lower[i]` to
+  `band_lower[i+1]`; last band "and above") instead of the bare "£X+"; (b) add a
+  clean cumulative line from `cumul_gains_from_top_pct` / `cumul_taxpayers_from_top_pct`
+  (handling the >100% rounding artefact on the low bands) so a citation can state
+  top-tail concentration directly. Small, additive; do after the live URL exists.
+
+---
+
 ## Wave 13 candidates (seeded 2026-05-30, after the Wave 12 engine stack)
 
 The Wave 12 engine (synth→rules→engine→outputs) is built and merged through
