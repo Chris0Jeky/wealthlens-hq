@@ -106,12 +106,14 @@ def test_suppressed_cell_is_omitted_not_fabricated() -> None:
     assert "share of all CGT taxpayers" not in chunk.text
 
 
-def test_cgt_labels_scope_figures_to_the_band_not_cumulative() -> None:
-    """Per-band CGT figures are labelled 'in this band' so a '£X+' label is not
-    misread as an 'above £X' cumulative share."""
+def test_cgt_without_band_lower_falls_back_to_raw_label() -> None:
+    """Honest fallback path: a CGT row missing band_lower keeps its raw '£X+'
+    label (never a fabricated range), while per-band figures stay scoped 'in this
+    band'. Production rows always carry band_lower and render the explicit range
+    instead (see test_cgt_renders_explicit_band_ranges)."""
     rows = [
         {
-            "gain_band": "£6,000+",
+            "gain_band": "£6,000+",  # no band_lower key -> raw label retained
             "num_taxpayers_thousands": "61.0",
             "total_gains_millions": "461.0",
             "share_of_gains_pct": "0.7",
@@ -302,14 +304,16 @@ _CGT_TOP_BANDS = [
 
 
 def test_cgt_renders_explicit_band_ranges() -> None:
-    """A '£X+' band is rendered as an explicit range (top band: 'and above')."""
+    """A '£X+' band is rendered as a half-open range (top band: 'and above')."""
     chunks = {c.span: c for c in render_table_chunks(_CGT_TOP_BANDS, _CGT)}
 
-    # Middle bands read as [lower, next-lower); span still pins the RAW HMRC label.
+    # Middle bands read as [lower, next-lower) -> "to under"; span still pins the
+    # RAW HMRC label; per-band figures stay scoped "in this band".
     mid = chunks["gain_band=£1,000,000+"]
-    assert "Size-of-gain band £1,000,000 to £2,000,000:" in mid.text
-    assert mid.section == "Capital Gains Tax by size of gain: £1,000,000 to £2,000,000"
-    assert "Size-of-gain band £500,000 to £1,000,000:" in chunks["gain_band=£500,000+"].text
+    assert "Size-of-gain band £1,000,000 to under £2,000,000:" in mid.text
+    assert mid.section == "Capital Gains Tax by size of gain: £1,000,000 to under £2,000,000"
+    assert "share of all taxable gains in this band 10.2%" in mid.text
+    assert "Size-of-gain band £500,000 to under £1,000,000:" in chunks["gain_band=£500,000+"].text
 
     # The highest band is open-ended.
     top = chunks["gain_band=£5,000,000+"]
@@ -321,17 +325,19 @@ def test_cgt_cumulative_concentration_clause_serves_g008() -> None:
     """Each band carries the cumulative-from-the-top concentration figure.
 
     The £1,000,000+ chunk states the share of all gains going to gains above £1m
-    (golden G-008) directly and citably.
+    (golden G-008) directly and citably. The subject is the taxpayers, so the
+    gains share and the headcount share each read with correct grammar (never
+    "gains ... account for ... taxpayers").
     """
     chunks = {c.span: c for c in render_table_chunks(_CGT_TOP_BANDS, _CGT)}
 
     assert (
-        "Cumulatively, gains of £1,000,000 and above account for "
-        "60.9% of all taxable gains and 2.8% of all CGT taxpayers."
+        "Cumulatively, taxpayers with gains of £1,000,000 and above "
+        "accounted for 60.9% of all taxable gains and made up 2.8% of all CGT taxpayers."
     ) in chunks["gain_band=£1,000,000+"].text
     assert (
-        "Cumulatively, gains of £5,000,000 and above account for "
-        "36.1% of all taxable gains and 0.6% of all CGT taxpayers."
+        "Cumulatively, taxpayers with gains of £5,000,000 and above "
+        "accounted for 36.1% of all taxable gains and made up 0.6% of all CGT taxpayers."
     ) in chunks["gain_band=£5,000,000+"].text
 
 
@@ -359,14 +365,15 @@ def test_cgt_cumulative_rounding_overflow_clamped_and_suppressed_omitted() -> No
     chunks = {c.span: c for c in render_table_chunks(rows, _CGT)}
 
     # Both overshoots clamp to exactly 100% (no fabricated 100.1).
-    assert ("gains of £0 and above account for 100% of all taxable gains and 100% of all CGT taxpayers.") in chunks[
-        "gain_band=£0+"
-    ].text
+    assert (
+        "taxpayers with gains of £0 and above accounted for 100% of all taxable gains "
+        "and made up 100% of all CGT taxpayers."
+    ) in chunks["gain_band=£0+"].text
     assert "100.1" not in chunks["gain_band=£0+"].text
 
     # Suppressed taxpayer cumulative is dropped; the clause keeps only the gains share.
     band_3k = chunks["gain_band=£3,000+"].text
-    assert "gains of £3,000 and above account for 100% of all taxable gains." in band_3k
+    assert "taxpayers with gains of £3,000 and above accounted for 100% of all taxable gains." in band_3k
     assert "CGT taxpayers" not in band_3k  # neither per-band nor cumulative fabricated
 
 
@@ -386,10 +393,10 @@ def test_real_cgt_spec_enables_ranges_and_cumulative() -> None:
     """The shipped CGT spec is configured for both enrichments (locks production)."""
     assert _CGT.band_lower_column == "band_lower"
     assert _CGT.cumulative is not None
-    assert _CGT.cumulative.threshold_noun == "gains"
-    assert {c.column for c in _CGT.cumulative.columns} == {
-        "cumul_gains_from_top_pct",
-        "cumul_taxpayers_from_top_pct",
+    assert _CGT.cumulative.subject == "taxpayers with gains of"
+    assert {(c.column, c.verb) for c in _CGT.cumulative.columns} == {
+        ("cumul_gains_from_top_pct", "accounted for"),
+        ("cumul_taxpayers_from_top_pct", "made up"),
     }
     # WAS and receipts are wholly categorical: neither enrichment applies.
     assert _WAS.band_lower_column is None and _WAS.cumulative is None
@@ -409,5 +416,5 @@ def test_cumulative_spec_requires_a_band_lower_column() -> None:
             section_noun="band",
             value_columns=(ValueColumn("v", "label"),),
             access_date=date(2026, 1, 1),
-            cumulative=CumulativeSpec(threshold_noun="x", columns=(CumulativeColumn("c", "of all x"),)),
+            cumulative=CumulativeSpec(subject="x of", columns=(CumulativeColumn("c", "did", "of all x"),)),
         )

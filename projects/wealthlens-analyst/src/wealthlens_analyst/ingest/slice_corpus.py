@@ -29,13 +29,17 @@ Data-honesty guardrails baked into the tabular renderer:
 Size-threshold tables (HMRC CGT) get two extra, source-faithful renderings so a
 citation can state concentration directly (seeded follow-up from the H1-07
 review; serves golden G-007/G-008):
-- each band's label becomes an explicit RANGE — its lower bound to the next
-  band's lower bound, the top band reading "and above" — so HMRC's "£X+" band
-  name is never misread as an "above £X" cumulative threshold; and
-- a CUMULATIVE "gains of £X and above account for Y% of all taxable gains"
-  clause from the cumul_*_from_top columns, clamped to <=100% to absorb the
-  rounding artefact of summing already-rounded per-band shares (a value beyond
-  tolerance is OMITTED, not shown wrong — the same fail-closed posture).
+- each band's label becomes an explicit RANGE — its lower bound "to under" the
+  next band's lower bound (the bands are half-open), the top band reading "and
+  above" — so HMRC's "£X+" band name is never misread as an "above £X"
+  cumulative threshold; and
+- a CUMULATIVE concentration clause from the cumul_*_from_top columns, e.g.
+  "taxpayers with gains of £X and above accounted for Y% of all taxable gains
+  and made up Z% of all CGT taxpayers" — each share carries its own verb so a
+  money share and a headcount share are never grammatically conflated. Shares
+  are clamped to <=100% to absorb the rounding artefact of summing
+  already-rounded per-band shares (a value beyond tolerance is OMITTED, not
+  shown wrong — the same fail-closed posture).
 The span still pins the raw HMRC band label, so provenance stays faithful while
 the rendered text is unambiguous.
 
@@ -98,32 +102,38 @@ class ValueColumn:
 
 @dataclass(frozen=True)
 class CumulativeColumn:
-    """One cumulative-from-the-top share to fold into a size-band's chunk text.
+    """One cumulative-from-the-top share folded into a size-band's chunk text.
 
     For a size-threshold table (``TableSpec.band_lower_column`` set) this names a
-    column holding the share of the whole attributable to units at the band's
-    lower bound AND ABOVE — the direct top-tail concentration figure. ``of_label``
-    is the denominator phrase ("all taxable gains"); ``suffix`` is the unit ("%").
+    column holding a cumulative-from-the-top share. ``verb`` is the predicate that
+    correctly attaches the share to the clause subject — the population at the
+    threshold and above — so a money share and a headcount share are never
+    grammatically conflated (e.g. "accounted for" for the gains share, "made up"
+    for the taxpayer-count share). ``of_label`` is the denominator phrase
+    ("all taxable gains"); ``suffix`` is the unit ("%").
     """
 
     column: str
+    verb: str
     of_label: str
     suffix: str = "%"
 
 
 @dataclass(frozen=True)
 class CumulativeSpec:
-    """Render a "<noun> of £X and above account for …" clause for a band table.
+    """Render a cumulative-concentration clause for a size-threshold band table.
 
     Valid only when ``TableSpec.band_lower_column`` is set (the bands are size
-    thresholds). ``threshold_noun`` names the thing being thresholded ("gains" ->
-    "gains of £X and above"). Each column is a cumulative share clamped to
-    ``<= max_pct`` to absorb the rounding artefact of cumulative-summing
-    already-rounded per-band shares; a value beyond ``max_pct + tolerance`` is
-    OMITTED (fail-closed) rather than shown wrong.
+    thresholds). ``subject`` names the population at the threshold and above
+    ("taxpayers with gains of" -> "taxpayers with gains of £X and above"); each
+    column then states what that population did via its own ``verb``, so a money
+    share and a headcount share keep distinct, correct grammar. Each cumulative
+    share is clamped to ``<= max_pct`` to absorb the rounding artefact of
+    cumulative-summing already-rounded per-band shares; a value beyond
+    ``max_pct + tolerance`` is OMITTED (fail-closed) rather than shown wrong.
     """
 
-    threshold_noun: str
+    subject: str
     columns: tuple[CumulativeColumn, ...]
     max_pct: float = 100.0
     tolerance: float = 1.0
@@ -210,10 +220,13 @@ TABLE_SPECS: tuple[TableSpec, ...] = (
         # G-007 (concentration) and G-008 (share of gains above £1m).
         band_lower_column="band_lower",
         cumulative=CumulativeSpec(
-            threshold_noun="gains",
+            # Subject is the PEOPLE at the threshold and above; each column gets a
+            # verb that fits them, so "...made up 2.8% of all CGT taxpayers" is not
+            # rendered as the category error "gains ... account for ... taxpayers".
+            subject="taxpayers with gains of",
             columns=(
-                CumulativeColumn("cumul_gains_from_top_pct", "all taxable gains"),
-                CumulativeColumn("cumul_taxpayers_from_top_pct", "all CGT taxpayers"),
+                CumulativeColumn("cumul_gains_from_top_pct", "accounted for", "all taxable gains"),
+                CumulativeColumn("cumul_taxpayers_from_top_pct", "made up", "all CGT taxpayers"),
             ),
         ),
     ),
@@ -317,10 +330,16 @@ def _money(value: float, prefix: str) -> str:
 
 
 def _range_label(lower: float, upper: float | None, prefix: str) -> str:
-    """Render a band as an explicit range: "£X to £Y", or "£X and above" (top)."""
+    """Render a band as an explicit range, or "£X and above" for the top band.
+
+    The bands are half-open [lower, upper) (the per-band figure covers gains at or
+    above ``lower`` and below the next band's lower bound), so the closed end is
+    spelled "to under £Y" — HMRC's own band-table convention — to avoid implying
+    £Y is included.
+    """
     if upper is None:
         return f"{_money(lower, prefix)} and above"
-    return f"{_money(lower, prefix)} to {_money(upper, prefix)}"
+    return f"{_money(lower, prefix)} to under {_money(upper, prefix)}"
 
 
 def _join_clauses(parts: list[str]) -> str:
@@ -357,15 +376,18 @@ def _next_bound_map(rows: list[Mapping[str, str]], band_lower_column: str | None
 
 
 def _cumulative_clause(row: Mapping[str, str], spec: TableSpec, bound: float | None) -> str:
-    """Render the cumulative "<noun> of £X and above account for …" clause.
+    """Render the cumulative "<subject> £X and above <verb> Y% of …" clause.
 
-    Empty string when the table has no cumulative spec, the band has no parseable
-    lower bound, or every cumulative cell is missing/suppressed/out-of-tolerance.
+    Each column supplies its own verb so the share attaches to the subject with
+    correct grammar (the gains share and the taxpayer-count share never share one
+    verb). Empty string when the table has no cumulative spec, the band has no
+    parseable lower bound, or every cumulative cell is missing/suppressed/
+    out-of-tolerance.
     """
     if spec.cumulative is None or bound is None:
         return ""
     parts = [
-        f"{value}{cc.suffix} of {cc.of_label}"
+        f"{cc.verb} {value}{cc.suffix} of {cc.of_label}"
         for cc in spec.cumulative.columns
         if (value := _clean_cumulative_pct(row.get(cc.column), spec.cumulative.max_pct, spec.cumulative.tolerance))
         is not None
@@ -373,9 +395,7 @@ def _cumulative_clause(row: Mapping[str, str], spec: TableSpec, bound: float | N
     if not parts:
         return ""
     threshold = _money(bound, spec.band_range_prefix)
-    return (
-        f" Cumulatively, {spec.cumulative.threshold_noun} of {threshold} and above account for {_join_clauses(parts)}."
-    )
+    return f" Cumulatively, {spec.cumulative.subject} {threshold} and above {_join_clauses(parts)}."
 
 
 def render_table_chunks(rows: Iterable[Mapping[str, str]], spec: TableSpec) -> list[Chunk]:
