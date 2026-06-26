@@ -232,7 +232,10 @@ def test_response_model_single_metadata():
     assert resp.status_code == 200
     parsed = DatasetMetadataResponse(**resp.json())
     assert parsed.name == "wealth-shares"
-    assert parsed.row_count >= 0
+    # The CSV is present here, so the entry is available with a concrete row_count
+    # (row_count is int | None only for the degraded/unavailable catalog entry).
+    assert parsed.available is True
+    assert parsed.row_count is not None and parsed.row_count >= 0
 
 
 def test_response_model_all_metadata():
@@ -253,5 +256,7 @@ def test_response_model_all_metadata():
     parsed = AllDatasetsMetadataResponse(**resp.json())
     assert len(parsed.datasets) == len(data_module.DATASETS)
     for ds in parsed.datasets:
-        assert ds.row_count >= 0
+        # All CSVs are present in this fixture, so every entry is available.
+        assert ds.available is True
+        assert ds.row_count is not None and ds.row_count >= 0
         assert len(ds.columns) > 0

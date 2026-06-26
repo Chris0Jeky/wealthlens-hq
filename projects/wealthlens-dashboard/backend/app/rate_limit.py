@@ -48,7 +48,11 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         return [t for t in hits if t > cutoff]
 
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
-        if request.url.path in EXEMPT_PATHS:
+        # Normalise a trailing slash before the exemption check so "/health/"
+        # (FastAPI 307-redirects it to "/health", and that redirect is itself
+        # counted) is exempt too — matching TimeoutMiddleware. rstrip("/") maps
+        # "/" -> "" which is not in the set, so the root path is unaffected.
+        if request.url.path.rstrip("/") in EXEMPT_PATHS:
             return await call_next(request)
 
         client_ip = self._get_client_ip(request)
