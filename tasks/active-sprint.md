@@ -1,6 +1,20 @@
 # Active Sprint
 
-Last updated: 2026-06-19
+Last updated: 2026-06-26
+
+> **SESSION 10 (2026-06-26) — in progress.** Found main CI was actually **RED**
+> (two scheduled jobs drifted after the 06-19 push): fixed the `CI Simulator`
+> mypy/numpy PEP695 break (**#441**, `python_version=3.12`); diagnosed + seeded
+> the `Weekly Data Update` failure (upstream ONS drift — validate.py correctly
+> blocked bad data; network/decision-blocked). **Drained 12 of 14 Dependabot PRs**
+> one-at-a-time after a 14-agent changelog/usage/CI review (#439/#434/#437/#391/
+> #390/#440/#396/#435/#438/#433/#394/#436); **main green + deployed**. Shipped
+> **H1-02** golden-question reword + source_id mapping, zero answers (**#442**).
+> **2 PRs HELD for Chris** (⚑ decisions below): **#402** vue-router 4→5 (prod-runtime
+> core-router major — reviewed clean, recommend approve) and **#397** mypy `<3`
+> (contradicts the documented `mypy<2` cap; #392 was closed for the same reason —
+> recommend close). Full state:
+> `../hq-private/projects/wealthlens/memories/session_notes/ORCHESTRATION.md`.
 
 > **SESSION 9 WRAPPED (2026-06-19).** main green; **only the 8 held Dependabot PRs are
 > open** (everything built this session is merged). **Shipped this session (16 PRs):**
