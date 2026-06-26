@@ -384,6 +384,7 @@ def test_clean_cumulative_pct_clamps_overflow_and_omits_out_of_tolerance() -> No
     assert _clean_cumulative_pct("100.0", 100.0, 1.0) == "100"  # exactly the ceiling
     assert _clean_cumulative_pct("60.9", 100.0, 1.0) == "60.9"  # in range untouched
     assert _clean_cumulative_pct("101.5", 100.0, 1.0) is None  # beyond tolerance -> omit
+    assert _clean_cumulative_pct("-5", 100.0, 1.0) is None  # negative is impossible -> omit
     assert _clean_cumulative_pct("", 100.0, 1.0) is None  # blank -> omit
     assert _clean_cumulative_pct(None, 100.0, 1.0) is None
     assert _clean_cumulative_pct("n/a", 100.0, 1.0) is None  # non-numeric -> omit

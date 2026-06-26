@@ -308,10 +308,12 @@ def _clean_cumulative_pct(raw: str | None, max_pct: float, tolerance: float) -> 
     already-rounded per-band shares overshoots slightly (~100.1/100.6%). A value
     in ``(max_pct, max_pct + tolerance]`` is clamped to ``max_pct``; a value
     beyond that is OMITTED (returns None) rather than shown wrong — the same
-    fail-closed posture as the honesty allowlist. Blank/missing/non-finite -> None.
+    fail-closed posture as the honesty allowlist. A cumulative share also cannot
+    be NEGATIVE (it is a sum of non-negative per-band shares), so a negative value
+    is a corruption/anomaly and is likewise OMITTED. Blank/missing/non-finite -> None.
     """
     value = _parse_float(raw)
-    if value is None:
+    if value is None or value < 0.0:
         return None
     if value > max_pct:
         if value > max_pct + tolerance:
