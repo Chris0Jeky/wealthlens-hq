@@ -26,6 +26,19 @@ Data-honesty guardrails baked into the tabular renderer:
   column — is SKIPPED, so the analyst never cites fabricated or unverified
   figures as official facts. (This mirrors the spend cap's fail-closed posture.)
 
+Size-threshold tables (HMRC CGT) get two extra, source-faithful renderings so a
+citation can state concentration directly (seeded follow-up from the H1-07
+review; serves golden G-007/G-008):
+- each band's label becomes an explicit RANGE — its lower bound to the next
+  band's lower bound, the top band reading "and above" — so HMRC's "£X+" band
+  name is never misread as an "above £X" cumulative threshold; and
+- a CUMULATIVE "gains of £X and above account for Y% of all taxable gains"
+  clause from the cumul_*_from_top columns, clamped to <=100% to absorb the
+  rounding artefact of summing already-rounded per-band shares (a value beyond
+  tolerance is OMITTED, not shown wrong — the same fail-closed posture).
+The span still pins the raw HMRC band label, so provenance stays faithful while
+the rendered text is unambiguous.
+
 Entrypoint: `make ingest-slice` (fetch -> chunk -> write -> FTS -> embed),
 wired in task H1-09.
 """
@@ -84,6 +97,39 @@ class ValueColumn:
 
 
 @dataclass(frozen=True)
+class CumulativeColumn:
+    """One cumulative-from-the-top share to fold into a size-band's chunk text.
+
+    For a size-threshold table (``TableSpec.band_lower_column`` set) this names a
+    column holding the share of the whole attributable to units at the band's
+    lower bound AND ABOVE — the direct top-tail concentration figure. ``of_label``
+    is the denominator phrase ("all taxable gains"); ``suffix`` is the unit ("%").
+    """
+
+    column: str
+    of_label: str
+    suffix: str = "%"
+
+
+@dataclass(frozen=True)
+class CumulativeSpec:
+    """Render a "<noun> of £X and above account for …" clause for a band table.
+
+    Valid only when ``TableSpec.band_lower_column`` is set (the bands are size
+    thresholds). ``threshold_noun`` names the thing being thresholded ("gains" ->
+    "gains of £X and above"). Each column is a cumulative share clamped to
+    ``<= max_pct`` to absorb the rounding artefact of cumulative-summing
+    already-rounded per-band shares; a value beyond ``max_pct + tolerance`` is
+    OMITTED (fail-closed) rather than shown wrong.
+    """
+
+    threshold_noun: str
+    columns: tuple[CumulativeColumn, ...]
+    max_pct: float = 100.0
+    tolerance: float = 1.0
+
+
+@dataclass(frozen=True)
 class TableSpec:
     """How to render one processed tabular source into citable chunks."""
 
@@ -104,6 +150,22 @@ class TableSpec:
     # the table has no honesty flag (it is wholly official, e.g. ONS WAS / HMRC).
     honesty_flag_column: str | None = None
     official_markers: tuple[str, ...] = ("live", "official")
+    # Size-threshold tables (HMRC CGT) only; both default OFF so wholly
+    # categorical tables (ONS WAS deciles, HMRC receipts by year) are unaffected.
+    # When band_lower_column is set, each band's displayed label becomes an
+    # explicit numeric range (its lower bound to the next band's lower bound; the
+    # top band reads "and above"), formatted with band_range_prefix. When
+    # cumulative is set, a cumulative-from-the-top concentration clause is
+    # appended to each band's chunk.
+    band_lower_column: str | None = None
+    band_range_prefix: str = "£"
+    cumulative: CumulativeSpec | None = None
+
+    def __post_init__(self) -> None:
+        # The cumulative clause is anchored on each band's lower bound, so it
+        # needs the lower-bound column to know the "£X and above" threshold.
+        if self.cumulative is not None and self.band_lower_column is None:
+            raise ValueError(f"TableSpec {self.source_id!r}: cumulative rendering requires band_lower_column")
 
 
 # The frozen tabular slice: the analyst_corpus tabular sources in
@@ -128,14 +190,12 @@ TABLE_SPECS: tuple[TableSpec, ...] = (
         period="HMRC Capital Gains Tax statistics, 2025 edition",
         section_column="gain_band",
         section_noun="size-of-gain band",
-        # Figures are PER BAND (incremental for that size-of-gain band), not
-        # cumulative — the "£X+" label is HMRC's own band name (built from the
-        # band's lower bound), so the labels say "in this band" to stop a reader
-        # treating an incremental band share as an "above £X" cumulative one. The
-        # cumulative concentration columns (cumul_*_from_top_pct) are intentionally
-        # NOT rendered: on the low bands they round to >100%, which reads as an
-        # error. Richer band-range labels + a clean cumulative line are seeded as
-        # a follow-up in tasks/inbox.md.
+        # Per-band columns are INCREMENTAL for the band [band_lower[i],
+        # band_lower[i+1]) (fetch_hmrc_stats.process: share = band gains / total),
+        # so they are labelled "in this band". The displayed band label is an
+        # explicit RANGE (band_lower_column below) so HMRC's "£X+" band name is
+        # not misread as "above £X". The cumulative top-tail concentration is
+        # rendered separately, from the cumul_*_from_top columns (see cumulative=).
         value_columns=(
             ValueColumn("num_taxpayers_thousands", "taxpayers with gains in this band", suffix=" thousand"),
             ValueColumn("total_gains_millions", "total gains in this band", prefix="£", suffix="m"),
@@ -143,6 +203,19 @@ TABLE_SPECS: tuple[TableSpec, ...] = (
             ValueColumn("share_of_taxpayers_pct", "share of all CGT taxpayers in this band", suffix="%"),
         ),
         access_date=date(2026, 5, 16),  # registries/sources.yml: hmrc-cgt-statistics
+        # Explicit band ranges + a cumulative-from-the-top concentration clause.
+        # cumul_*_from_top_pct are cumulative sums of the 1-dp per-band shares, so
+        # the low bands round to ~100.1/100.6%; the CumulativeSpec clamp absorbs
+        # that (and omits anything beyond tolerance). Directly serves golden
+        # G-007 (concentration) and G-008 (share of gains above £1m).
+        band_lower_column="band_lower",
+        cumulative=CumulativeSpec(
+            threshold_noun="gains",
+            columns=(
+                CumulativeColumn("cumul_gains_from_top_pct", "all taxable gains"),
+                CumulativeColumn("cumul_taxpayers_from_top_pct", "all CGT taxpayers"),
+            ),
+        ),
     ),
     TableSpec(
         source_id="hmrc-tax-receipts",
@@ -171,15 +244,12 @@ TABLE_SPECS: tuple[TableSpec, ...] = (
 )
 
 
-def _clean_number(raw: str | None) -> str | None:
-    """Parse one CSV cell into a display number, or None if it is not usable.
+def _parse_float(raw: str | None) -> float | None:
+    """Parse one CSV cell into a finite float, or None if it is not usable.
 
-    Returns None for blank/missing/non-numeric/non-finite cells so the caller
-    OMITS them — a suppressed cell must never become a fabricated 0. A genuine
-    "0" parses to "0"; a sub-microunit non-zero keeps its value rather than
-    rounding to "0". Float-repr noise (100.10000000000001) is rounded away,
-    thousands separators in the input are tolerated, and thousands separators are
-    added to the output for readability.
+    Returns None for blank/missing/non-numeric/non-finite cells (so a suppressed
+    cell is never coerced into a number). Thousands separators in the input are
+    tolerated.
     """
     if raw is None:
         return None
@@ -190,16 +260,74 @@ def _clean_number(raw: str | None) -> str | None:
         value = float(text)
     except ValueError:
         return None
-    if not math.isfinite(value):
-        return None
+    return value if math.isfinite(value) else None
+
+
+def _format_number(value: float) -> str:
+    """Format a finite float for display: noise rounded, thousands grouped.
+
+    A genuine "0" stays "0"; a sub-microunit non-zero keeps significant figures
+    rather than collapsing to "0" (which would assert a zero the source did not
+    have). Float-repr noise (100.10000000000001) is rounded away.
+    """
     rounded = round(value, 6)  # strip float-repr noise
     if rounded == 0 and value != 0:
-        # Genuine sub-microunit non-zero: keep significant figures rather than
-        # collapse to "0", which would assert a zero the source did not have.
         return f"{value:g}"
     if rounded == int(rounded):
         return f"{int(rounded):,}"
     return f"{rounded:,}"
+
+
+def _clean_number(raw: str | None) -> str | None:
+    """Parse one CSV cell into a display number, or None if it is not usable.
+
+    None for blank/missing/non-numeric/non-finite cells so the caller OMITS them
+    — a suppressed cell must never become a fabricated 0.
+    """
+    value = _parse_float(raw)
+    return None if value is None else _format_number(value)
+
+
+def _clean_cumulative_pct(raw: str | None, max_pct: float, tolerance: float) -> str | None:
+    """Format a cumulative-share cell, clamping the rounding overflow to max_pct.
+
+    A cumulative share of a whole cannot exceed ``max_pct`` (100%), but summing
+    already-rounded per-band shares overshoots slightly (~100.1/100.6%). A value
+    in ``(max_pct, max_pct + tolerance]`` is clamped to ``max_pct``; a value
+    beyond that is OMITTED (returns None) rather than shown wrong — the same
+    fail-closed posture as the honesty allowlist. Blank/missing/non-finite -> None.
+    """
+    value = _parse_float(raw)
+    if value is None:
+        return None
+    if value > max_pct:
+        if value > max_pct + tolerance:
+            return None  # beyond rounding tolerance -> a real anomaly, omit
+        value = max_pct  # absorb the cumulative-rounding overflow
+    return _format_number(value)
+
+
+def _money(value: float, prefix: str) -> str:
+    """Format a whole-pound bound as a grouped currency string ("£1,000,000").
+
+    HMRC band bounds are whole pounds; round() (no ndigits) returns an int, which
+    formats with a thousands separator.
+    """
+    return f"{prefix}{round(value):,}"
+
+
+def _range_label(lower: float, upper: float | None, prefix: str) -> str:
+    """Render a band as an explicit range: "£X to £Y", or "£X and above" (top)."""
+    if upper is None:
+        return f"{_money(lower, prefix)} and above"
+    return f"{_money(lower, prefix)} to {_money(upper, prefix)}"
+
+
+def _join_clauses(parts: list[str]) -> str:
+    """Join fragments in British list style: "a", "a and b", "a, b and c"."""
+    if len(parts) <= 1:
+        return "".join(parts)
+    return f"{', '.join(parts[:-1])} and {parts[-1]}"
 
 
 def _statement(column: ValueColumn, value: str) -> str:
@@ -213,6 +341,43 @@ def _capitalise_first(text: str) -> str:
     return text[:1].upper() + text[1:]
 
 
+def _next_bound_map(rows: list[Mapping[str, str]], band_lower_column: str | None) -> dict[float, float]:
+    """Map each band's lower bound to the next-higher bound (its upper edge).
+
+    Built from ALL parseable bounds in the table (independent of row order or
+    which rows get chunked), so a band's upper edge is the next band's lower
+    edge in the source — exactly HMRC's band structure. The highest bound has no
+    successor (it is the open-ended "and above" band). Returns {} when the table
+    has no bound column.
+    """
+    if band_lower_column is None:
+        return {}
+    bounds = sorted({b for row in rows if (b := _parse_float(row.get(band_lower_column))) is not None})
+    return {lower: bounds[i + 1] for i, lower in enumerate(bounds) if i + 1 < len(bounds)}
+
+
+def _cumulative_clause(row: Mapping[str, str], spec: TableSpec, bound: float | None) -> str:
+    """Render the cumulative "<noun> of £X and above account for …" clause.
+
+    Empty string when the table has no cumulative spec, the band has no parseable
+    lower bound, or every cumulative cell is missing/suppressed/out-of-tolerance.
+    """
+    if spec.cumulative is None or bound is None:
+        return ""
+    parts = [
+        f"{value}{cc.suffix} of {cc.of_label}"
+        for cc in spec.cumulative.columns
+        if (value := _clean_cumulative_pct(row.get(cc.column), spec.cumulative.max_pct, spec.cumulative.tolerance))
+        is not None
+    ]
+    if not parts:
+        return ""
+    threshold = _money(bound, spec.band_range_prefix)
+    return (
+        f" Cumulatively, {spec.cumulative.threshold_noun} of {threshold} and above account for {_join_clauses(parts)}."
+    )
+
+
 def render_table_chunks(rows: Iterable[Mapping[str, str]], spec: TableSpec) -> list[Chunk]:
     """Render one processed tabular source into citable chunks (one per band).
 
@@ -220,11 +385,18 @@ def render_table_chunks(rows: Iterable[Mapping[str, str]], spec: TableSpec) -> l
     available statistic with its units. Missing cells are omitted (never
     fabricated as 0); rows that are not from a known-official data_source are
     skipped (fail-closed). ``span`` is disambiguated if a band label repeats.
+
+    Size-threshold tables (band_lower_column set) render the band as an explicit
+    range and append a cumulative top-tail concentration clause; the span still
+    pins the raw band label so provenance stays faithful.
     """
+    row_list = list(rows)  # materialised: we look ahead for each band's upper bound
+    next_bound = _next_bound_map(row_list, spec.band_lower_column)
+
     chunks: list[Chunk] = []
     skipped_unofficial = 0
     seen_bands: dict[str, int] = {}
-    for row in rows:
+    for row in row_list:
         band = (row.get(spec.section_column) or "").strip()
         if not band:
             continue  # not a data row (blank band label)
@@ -243,8 +415,21 @@ def render_table_chunks(rows: Iterable[Mapping[str, str]], spec: TableSpec) -> l
         if not statements:
             continue  # every value in this row was missing/suppressed
 
-        # span pins the exact row; disambiguate if a band label ever repeats so
-        # two chunks never share (source_id, document_id, span).
+        # The band's lower bound (size-threshold tables only); drives both the
+        # explicit range label and the cumulative clause's "£X and above".
+        bound = _parse_float(row.get(spec.band_lower_column)) if spec.band_lower_column else None
+
+        # Displayed label: an explicit range when we have a bound, else the raw
+        # band label (honest fallback — never a fabricated range).
+        display_band = band
+        if bound is not None:
+            display_band = _range_label(bound, next_bound.get(bound), spec.band_range_prefix)
+
+        cumulative_clause = _cumulative_clause(row, spec, bound)
+
+        # span pins the exact row (the RAW band label, faithful to the source);
+        # disambiguate if a band label ever repeats so two chunks never share
+        # (source_id, document_id, span).
         occurrence = seen_bands.get(band, 0) + 1
         seen_bands[band] = occurrence
         span = f"{spec.section_column}={band}"
@@ -253,14 +438,15 @@ def render_table_chunks(rows: Iterable[Mapping[str, str]], spec: TableSpec) -> l
 
         text = (
             f"{spec.table_label} ({spec.period}). "
-            f"{_capitalise_first(spec.section_noun)} {band}: "
+            f"{_capitalise_first(spec.section_noun)} {display_band}: "
             f"{'; '.join(statements)}."
+            f"{cumulative_clause}"
         )
         chunks.append(
             Chunk(
                 source_id=spec.source_id,
                 document_id=spec.document_id,
-                section=f"{spec.table_label}: {band}",
+                section=f"{spec.table_label}: {display_band}",
                 page=None,
                 span=span,
                 text=text,

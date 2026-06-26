@@ -14,9 +14,16 @@ from __future__ import annotations
 from datetime import date
 from pathlib import Path
 
+import pytest
+
 from wealthlens_analyst.ingest.slice_corpus import (
     TABLE_SPECS,
     Chunk,
+    CumulativeColumn,
+    CumulativeSpec,
+    TableSpec,
+    ValueColumn,
+    _clean_cumulative_pct,
     _clean_number,
     collect_tabular_chunks,
     render_table_chunks,
@@ -239,3 +246,168 @@ def test_table_specs_are_wellformed() -> None:
         # A table with an honesty flag must define a non-empty official allowlist.
         if spec.honesty_flag_column is not None:
             assert spec.official_markers
+        # A cumulative clause is anchored on the band's lower bound.
+        if spec.cumulative is not None:
+            assert spec.band_lower_column is not None
+            assert spec.cumulative.columns  # at least one cumulative column to render
+
+
+# --- CGT size-band enrichments: explicit ranges + cumulative concentration -----
+# (H1-07 follow-up; serves golden G-007 concentration / G-008 share above £1m.)
+
+# Four real, CONSECUTIVE HMRC bands so the rendered ranges match the source table.
+# Values verbatim from projects/.../data/processed/hmrc_cgt_concentration.csv.
+_CGT_TOP_BANDS = [
+    {
+        "gain_band": "£500,000+",
+        "band_lower": "500000.0",
+        "num_taxpayers_thousands": "8.0",
+        "total_gains_millions": "5705.0",
+        "share_of_gains_pct": "9.1",
+        "share_of_taxpayers_pct": "2.2",
+        "cumul_gains_from_top_pct": "70.0",
+        "cumul_taxpayers_from_top_pct": "5.0",
+    },
+    {
+        "gain_band": "£1,000,000+",
+        "band_lower": "1000000.0",
+        "num_taxpayers_thousands": "5.0",
+        "total_gains_millions": "6390.0",
+        "share_of_gains_pct": "10.2",
+        "share_of_taxpayers_pct": "1.4",
+        "cumul_gains_from_top_pct": "60.900000000000006",
+        "cumul_taxpayers_from_top_pct": "2.8",
+    },
+    {
+        "gain_band": "£2,000,000+",
+        "band_lower": "2000000.0",
+        "num_taxpayers_thousands": "3.0",
+        "total_gains_millions": "9189.0",
+        "share_of_gains_pct": "14.6",
+        "share_of_taxpayers_pct": "0.8",
+        "cumul_gains_from_top_pct": "50.7",
+        "cumul_taxpayers_from_top_pct": "1.4",
+    },
+    {
+        "gain_band": "£5,000,000+",
+        "band_lower": "5000000.0",
+        "num_taxpayers_thousands": "2.0",
+        "total_gains_millions": "22714.0",
+        "share_of_gains_pct": "36.1",
+        "share_of_taxpayers_pct": "0.6",
+        "cumul_gains_from_top_pct": "36.1",
+        "cumul_taxpayers_from_top_pct": "0.6",
+    },
+]
+
+
+def test_cgt_renders_explicit_band_ranges() -> None:
+    """A '£X+' band is rendered as an explicit range (top band: 'and above')."""
+    chunks = {c.span: c for c in render_table_chunks(_CGT_TOP_BANDS, _CGT)}
+
+    # Middle bands read as [lower, next-lower); span still pins the RAW HMRC label.
+    mid = chunks["gain_band=£1,000,000+"]
+    assert "Size-of-gain band £1,000,000 to £2,000,000:" in mid.text
+    assert mid.section == "Capital Gains Tax by size of gain: £1,000,000 to £2,000,000"
+    assert "Size-of-gain band £500,000 to £1,000,000:" in chunks["gain_band=£500,000+"].text
+
+    # The highest band is open-ended.
+    top = chunks["gain_band=£5,000,000+"]
+    assert "Size-of-gain band £5,000,000 and above:" in top.text
+    assert top.section == "Capital Gains Tax by size of gain: £5,000,000 and above"
+
+
+def test_cgt_cumulative_concentration_clause_serves_g008() -> None:
+    """Each band carries the cumulative-from-the-top concentration figure.
+
+    The £1,000,000+ chunk states the share of all gains going to gains above £1m
+    (golden G-008) directly and citably.
+    """
+    chunks = {c.span: c for c in render_table_chunks(_CGT_TOP_BANDS, _CGT)}
+
+    assert (
+        "Cumulatively, gains of £1,000,000 and above account for "
+        "60.9% of all taxable gains and 2.8% of all CGT taxpayers."
+    ) in chunks["gain_band=£1,000,000+"].text
+    assert (
+        "Cumulatively, gains of £5,000,000 and above account for "
+        "36.1% of all taxable gains and 0.6% of all CGT taxpayers."
+    ) in chunks["gain_band=£5,000,000+"].text
+
+
+def test_cgt_cumulative_rounding_overflow_clamped_and_suppressed_omitted() -> None:
+    """The low bands' >100% cumulative (a rounding artefact) clamps to 100%, and a
+    suppressed cumulative cell is omitted, never fabricated."""
+    rows = [
+        {  # real £0+ row: both cumulatives overshoot 100 from 1-dp cumsum rounding
+            "gain_band": "£0+",
+            "band_lower": "0.0",
+            "total_gains_millions": "1.0",
+            "share_of_gains_pct": "0.0",
+            "cumul_gains_from_top_pct": "100.10000000000001",
+            "cumul_taxpayers_from_top_pct": "100.6",
+        },
+        {  # real £3,000+ row: taxpayer cumulative suppressed by HMRC
+            "gain_band": "£3,000+",
+            "band_lower": "3000.0",
+            "total_gains_millions": "1.0",
+            "share_of_gains_pct": "0.0",
+            "cumul_gains_from_top_pct": "100.10000000000001",
+            "cumul_taxpayers_from_top_pct": "",
+        },
+    ]
+    chunks = {c.span: c for c in render_table_chunks(rows, _CGT)}
+
+    # Both overshoots clamp to exactly 100% (no fabricated 100.1).
+    assert ("gains of £0 and above account for 100% of all taxable gains and 100% of all CGT taxpayers.") in chunks[
+        "gain_band=£0+"
+    ].text
+    assert "100.1" not in chunks["gain_band=£0+"].text
+
+    # Suppressed taxpayer cumulative is dropped; the clause keeps only the gains share.
+    band_3k = chunks["gain_band=£3,000+"].text
+    assert "gains of £3,000 and above account for 100% of all taxable gains." in band_3k
+    assert "CGT taxpayers" not in band_3k  # neither per-band nor cumulative fabricated
+
+
+def test_clean_cumulative_pct_clamps_overflow_and_omits_out_of_tolerance() -> None:
+    """Clamp the rounding overflow to the ceiling; omit a genuine anomaly."""
+    assert _clean_cumulative_pct("100.6", 100.0, 1.0) == "100"  # rounding artefact -> clamp
+    assert _clean_cumulative_pct("100.10000000000001", 100.0, 1.0) == "100"
+    assert _clean_cumulative_pct("100.0", 100.0, 1.0) == "100"  # exactly the ceiling
+    assert _clean_cumulative_pct("60.9", 100.0, 1.0) == "60.9"  # in range untouched
+    assert _clean_cumulative_pct("101.5", 100.0, 1.0) is None  # beyond tolerance -> omit
+    assert _clean_cumulative_pct("", 100.0, 1.0) is None  # blank -> omit
+    assert _clean_cumulative_pct(None, 100.0, 1.0) is None
+    assert _clean_cumulative_pct("n/a", 100.0, 1.0) is None  # non-numeric -> omit
+
+
+def test_real_cgt_spec_enables_ranges_and_cumulative() -> None:
+    """The shipped CGT spec is configured for both enrichments (locks production)."""
+    assert _CGT.band_lower_column == "band_lower"
+    assert _CGT.cumulative is not None
+    assert _CGT.cumulative.threshold_noun == "gains"
+    assert {c.column for c in _CGT.cumulative.columns} == {
+        "cumul_gains_from_top_pct",
+        "cumul_taxpayers_from_top_pct",
+    }
+    # WAS and receipts are wholly categorical: neither enrichment applies.
+    assert _WAS.band_lower_column is None and _WAS.cumulative is None
+    assert _RECEIPTS.band_lower_column is None and _RECEIPTS.cumulative is None
+
+
+def test_cumulative_spec_requires_a_band_lower_column() -> None:
+    """A cumulative clause without a lower-bound column is a construction error."""
+    with pytest.raises(ValueError, match="band_lower_column"):
+        TableSpec(
+            source_id="bad",
+            csv_name="bad.csv",
+            document_id="d",
+            table_label="T",
+            period="P",
+            section_column="band",
+            section_noun="band",
+            value_columns=(ValueColumn("v", "label"),),
+            access_date=date(2026, 1, 1),
+            cumulative=CumulativeSpec(threshold_noun="x", columns=(CumulativeColumn("c", "of all x"),)),
+        )
