@@ -26,8 +26,8 @@ dependencies = [
 dev = [
     "pytest>=9.0.3",
     "ruff>=0.4",
-    # Repo convention caps mypy <2 (root pyproject); mypy 2.1 exists but we match the monorepo.
-    "mypy>=1.10,<2",
+    # Repo convention: adopt mypy 2.x, cap at the next major (<3); match the monorepo (root pyproject).
+    "mypy>=1.10,<3",
     # jsonschema sits in dev (not only evals) so CI's single `[dev]` install
     # covers the golden-set deterministic checks without pulling ragas.
     "jsonschema>=4.26.0",

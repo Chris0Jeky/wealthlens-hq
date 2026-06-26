@@ -32,7 +32,9 @@ dependencies = [
 dev = [
     "pytest>=8.0",
     "pytest-cov>=6.0",
-    "mypy>=1.14",
+    # Cap at the next major (<3): mypy 2.x is in use; a future mypy 3.0 must not
+    # silently redden the scheduled ci-sim run (cf. the numpy stub drift it caught).
+    "mypy>=1.14,<3",
     "ruff>=0.4",
     "hypothesis>=6.90",
     "types-PyYAML>=6.0",

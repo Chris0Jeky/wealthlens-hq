@@ -9,9 +9,10 @@ readme = "README.md"
 [project.optional-dependencies]
 dev = [
     "ruff>=0.4",
-    # Upper-capped at the next major for the same reason as the stub caps below: a
-    # mypy major can tighten checks and turn a gate red on an unrelated PR.
-    "mypy>=1.10,<2",
+    # Adopt the current mypy 2.x line; still upper-capped at the NEXT major for the
+    # same reason as the stub caps below: a mypy major can tighten checks and turn a
+    # gate red on an unrelated PR (so 2.x is in, 3.x waits for a deliberate bump).
+    "mypy>=1.10,<3",
     "pytest>=9.0.3",
     "bandit>=1.7",
     # Upper-capped at the next major: a stub MAJOR can tighten annotations and turn

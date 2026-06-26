@@ -6,9 +6,9 @@ pytest-cov>=7.1.0
 # fail loudly. Pins match the root pyproject.toml [project.optional-dependencies].dev
 # extra so a clean checkout running `make install && make ci-quick` works offline.
 ruff>=0.15.20
-# Upper-cap mypy (like the stub pins below) so a future major can't newly fail the
-# now-stricter backend gate without a deliberate bump.
-mypy>=1.10,<2
+# Adopt mypy 2.x; still upper-capped (like the stub pins below) so the NEXT major
+# can't newly fail the now-stricter backend gate without a deliberate bump.
+mypy>=1.10,<3
 # pandas-stubs: backend modules import pandas and it is NOT in the mypy
 # ignore-missing-imports overrides, so `mypy .` needs the stubs to pass.
 pandas-stubs>=3.0.3.260530
