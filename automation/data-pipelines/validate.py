@@ -141,9 +141,14 @@ CHECKS: list[dict] = [
         # fetch_boe_rates.process keeps a row when EITHER series is present and writes
         # None for the other (BoE publishes a month's bank rate before that month's
         # CPI; an early bank_rate can be unfilled). test_pipeline_finite_cells asserts
-        # such NaN rows are published. nan_ok suppresses the NONFINITE blank-cell flag
-        # for these columns ONLY (the column must still exist; an inf is still flagged).
+        # such NaN rows are published. nan_ok suppresses the per-cell NONFINITE flag for
+        # these columns ONLY (the column must still exist; an inf is still flagged) — but
+        # only up to max_nan_frac: a mostly-blank column is a broken series (e.g. a
+        # renamed live source code), not honest-missing, and must still fail. Honest
+        # missing is a few unpublished trailing months / a leading gap (well under half),
+        # so 50% is a safe ceiling.
         "nan_ok": {"bank_rate", "cpi_annual"},
+        "max_nan_frac": 0.5,
     },
     {
         "file": "wage_stagnation.csv",
@@ -257,14 +262,30 @@ def validate_all() -> list[str]:
             col for col, kind in check.get("dtypes", {}).items() if kind in ("int", "float", "numeric")
         }
         # nan_ok columns carry honest-missing NaN by design (see the boe_rates check),
-        # so a blank there is expected, not a leak — skip the blank count for them.
+        # so an INDIVIDUAL blank there is expected, not a leak. But a column that is
+        # MOSTLY blank is a broken series (e.g. a renamed live source code), not
+        # honest-missing — that must still fail, else nan_ok would let an all-NaN
+        # bank_rate/cpi_annual validate clean (COLUMNS only checks existence; an
+        # all-NaN column is still float dtype and passes RANGE/COERCE/NULLS). So:
+        # tolerate per-cell blanks up to max_nan_frac of the column, flag beyond it.
         # An inf is never legitimate, so it is still flagged for every numeric column.
         nan_ok = check.get("nan_ok", set())
+        max_nan_frac = check.get("max_nan_frac", 0.5)
+        n_rows = len(df)
         for col in sorted(numeric_cols):
             if col in df.columns:
                 coerced = pd.to_numeric(df[col], errors="coerce")
-                blank = 0 if col in nan_ok else int(df[col].isna().sum())  # raw blank source cells
+                raw_blank = int(df[col].isna().sum())
                 infinite = int(np.isinf(coerced).sum())
+                if col in nan_ok:
+                    if n_rows and raw_blank / n_rows > max_nan_frac:
+                        errors.append(
+                            f"NONFINITE: {check['file']}.{col} is {raw_blank}/{n_rows} blank "
+                            f"(> {max_nan_frac:.0%}); a tolerated column may be honest-missing, not wholesale-blank"
+                        )
+                    blank = 0  # individual honest-missing blanks are fine below the ceiling
+                else:
+                    blank = raw_blank
                 if blank + infinite > 0:
                     errors.append(f"NONFINITE: {check['file']}.{col} has {blank + infinite} blank/infinite value(s)")
 

@@ -20,11 +20,17 @@ def test_checks_cover_every_pipeline() -> None:
 
     CHECKS once drifted from the pipeline set (child_poverty + generational_wealth
     were never validated). Each fetch_*.py emits exactly one processed CSV, so the
-    CHECKS file set must be 1:1 with the pipelines — this guard keeps it that way.
-    (If a pipeline ever emits multiple CSVs, update this guard deliberately.)
+    CHECKS file count must equal the pipeline count — this guard keeps it that way.
+
+    NOTE: this is a COUNT-based proxy (CHECKS keys on output CSV names, pipelines are
+    fetch_*.py with no programmatic name mapping), so it catches a MISSING check (the
+    drift that occurred) but not a count-preserving rename/swap; the per-check
+    test_valid_file_passes plus `make validate` on the real tree cover filename
+    correctness. (If a pipeline ever emits 0 or >1 CSVs, update this guard.)
     """
     files = [c["file"] for c in CHECKS]
     assert len(files) == len(set(files)), f"duplicate file in CHECKS: {files}"
+    assert all(f.endswith(".csv") for f in files), f"non-CSV file in CHECKS: {files}"
     n_pipelines = len(list(PIPELINE_DIR.glob("fetch_*.py")))
     assert len(files) == n_pipelines, (
         f"{n_pipelines} fetch_*.py pipelines but {len(files)} validate CHECKS — "
@@ -153,6 +159,28 @@ class TestValidateAll:
         # inf cpi -> still flagged (a non-finite that is never legitimate).
         inf_errors = _write_with_cpi("inf")
         assert any("NONFINITE" in e and "boe_rates" in e and "cpi_annual" in e for e in inf_errors), inf_errors
+
+    def test_nan_ok_column_rejects_a_wholesale_blank_column(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A nan_ok column tolerates honest-missing cells but NOT a mostly/all-blank
+        column — a renamed/broken live BoE series would NaN out the whole column, and
+        that must still fail (else nan_ok would let an empty primary series pass)."""
+        monkeypatch.setattr("validate.DATA_DIR", tmp_path)
+        boe = next(c for c in CHECKS if c["file"] == "boe_rates.csv")
+        cols = sorted(boe["columns"])
+        idx = cols.index("bank_rate")
+        for check in CHECKS:
+            (tmp_path / check["file"]).write_text(self._synth_valid_csv(check))
+        # Blank out EVERY bank_rate cell (a wholesale series failure).
+        lines = self._synth_valid_csv(boe).splitlines()
+        for i in range(1, len(lines)):
+            cells = lines[i].split(",")
+            cells[idx] = ""
+            lines[i] = ",".join(cells)
+        (tmp_path / boe["file"]).write_text("\n".join(lines) + "\n")
+        errors = validate_all()
+        assert any("NONFINITE" in e and "boe_rates" in e and "bank_rate" in e for e in errors), errors
 
     @staticmethod
     def _synth_valid_csv(check: dict) -> str:
