@@ -10,30 +10,31 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from run_all import SCRIPTS
 from validate import CHECKS, validate_all
-
-PIPELINE_DIR = Path(__file__).resolve().parent.parent
 
 
 def test_checks_cover_every_pipeline() -> None:
-    """Every fetch_*.py pipeline output must have a validate CHECK.
+    """Every pipeline output must have a validate CHECK.
 
     CHECKS once drifted from the pipeline set (child_poverty + generational_wealth
-    were never validated). Each fetch_*.py emits exactly one processed CSV, so the
+    were never validated). Each pipeline emits exactly one processed CSV, so the
     CHECKS file count must equal the pipeline count — this guard keeps it that way.
 
-    NOTE: this is a COUNT-based proxy (CHECKS keys on output CSV names, pipelines are
-    fetch_*.py with no programmatic name mapping), so it catches a MISSING check (the
-    drift that occurred) but not a count-preserving rename/swap; the per-check
-    test_valid_file_passes plus `make validate` on the real tree cover filename
-    correctness. (If a pipeline ever emits 0 or >1 CSVs, update this guard.)
+    Anchored on run_all.SCRIPTS (the canonical pipeline list, which test_run_all
+    separately holds equal to the fetch_*.py set) rather than re-globbing fetch_*.py
+    here, so a future fetch_* HELPER module can't false-fail this test. It is a
+    COUNT-based proxy (CHECKS keys on CSV names; pipelines have no programmatic name
+    mapping), so it catches a MISSING check (the drift that occurred) but not a
+    count-preserving rename/swap — the per-check test_valid_file_passes plus
+    `make validate` on the real tree cover filename correctness. (If a pipeline ever
+    emits 0 or >1 CSVs, update this guard.)
     """
     files = [c["file"] for c in CHECKS]
     assert len(files) == len(set(files)), f"duplicate file in CHECKS: {files}"
     assert all(f.endswith(".csv") for f in files), f"non-CSV file in CHECKS: {files}"
-    n_pipelines = len(list(PIPELINE_DIR.glob("fetch_*.py")))
-    assert len(files) == n_pipelines, (
-        f"{n_pipelines} fetch_*.py pipelines but {len(files)} validate CHECKS — "
+    assert len(files) == len(SCRIPTS), (
+        f"{len(SCRIPTS)} pipelines in run_all.SCRIPTS but {len(files)} validate CHECKS — "
         "every pipeline output must be validated (CHECKS drifted from the pipeline set)"
     )
 
