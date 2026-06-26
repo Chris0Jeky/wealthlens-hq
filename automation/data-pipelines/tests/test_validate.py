@@ -12,6 +12,25 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from validate import CHECKS, validate_all
 
+PIPELINE_DIR = Path(__file__).resolve().parent.parent
+
+
+def test_checks_cover_every_pipeline() -> None:
+    """Every fetch_*.py pipeline output must have a validate CHECK.
+
+    CHECKS once drifted from the pipeline set (child_poverty + generational_wealth
+    were never validated). Each fetch_*.py emits exactly one processed CSV, so the
+    CHECKS file set must be 1:1 with the pipelines — this guard keeps it that way.
+    (If a pipeline ever emits multiple CSVs, update this guard deliberately.)
+    """
+    files = [c["file"] for c in CHECKS]
+    assert len(files) == len(set(files)), f"duplicate file in CHECKS: {files}"
+    n_pipelines = len(list(PIPELINE_DIR.glob("fetch_*.py")))
+    assert len(files) == n_pipelines, (
+        f"{n_pipelines} fetch_*.py pipelines but {len(files)} validate CHECKS — "
+        "every pipeline output must be validated (CHECKS drifted from the pipeline set)"
+    )
+
 
 class TestValidateAll:
     """Test validate_all against synthetic data."""
@@ -79,8 +98,7 @@ class TestValidateAll:
         # Robust against CHECKS reordering: require a ranged column that is not also a
         # unique key (so the corruption hits the non-finite guard, not the dupes path).
         target = next(
-            c for c in CHECKS
-            if c.get("ranges") and any(col not in c.get("unique_keys", []) for col in c["ranges"])
+            c for c in CHECKS if c.get("ranges") and any(col not in c.get("unique_keys", []) for col in c["ranges"])
         )
         keys = target.get("unique_keys", [])
         numeric_col = next(c for c in target["ranges"] if c not in keys)
@@ -103,6 +121,38 @@ class TestValidateAll:
     def test_nonfinite_inf_value_reported(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         file, col, errors = self._write_all_valid_then_corrupt(tmp_path, monkeypatch, "inf")
         assert any("NONFINITE" in e and file in e and col in e for e in errors), errors
+
+    def test_nan_ok_column_tolerates_blank_but_still_flags_inf(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A nan_ok column's blank is honest-missing (no NONFINITE); an inf still fails.
+
+        boe_rates.cpi_annual is published-late: fetch_boe_rates writes a row with a
+        bank rate before that month's CPI exists. validate.py must NOT fail on that
+        honest NaN, but an inf is never legitimate.
+        """
+        monkeypatch.setattr("validate.DATA_DIR", tmp_path)
+        boe = next(c for c in CHECKS if c["file"] == "boe_rates.csv")
+        assert "cpi_annual" in boe.get("nan_ok", set())  # contract under test
+        cols = sorted(boe["columns"])
+        idx = cols.index("cpi_annual")
+
+        def _write_with_cpi(value: str) -> list[str]:
+            for check in CHECKS:
+                (tmp_path / check["file"]).write_text(self._synth_valid_csv(check))
+            lines = self._synth_valid_csv(boe).splitlines()
+            cells = lines[1].split(",")
+            cells[idx] = value
+            lines[1] = ",".join(cells)
+            (tmp_path / boe["file"]).write_text("\n".join(lines) + "\n")
+            return validate_all()
+
+        # Blank cpi -> honest-missing -> NOT flagged.
+        blank_errors = _write_with_cpi("")
+        assert not any("NONFINITE" in e and "boe_rates" in e and "cpi_annual" in e for e in blank_errors), blank_errors
+        # inf cpi -> still flagged (a non-finite that is never legitimate).
+        inf_errors = _write_with_cpi("inf")
+        assert any("NONFINITE" in e and "boe_rates" in e and "cpi_annual" in e for e in inf_errors), inf_errors
 
     @staticmethod
     def _synth_valid_csv(check: dict) -> str:
