@@ -94,6 +94,29 @@ Every concrete action item extracted from research. Triage into active-sprint, b
   `freshnessContract.test.ts`). LESSON: `make validate` passes locally only because the
   dev tree has the gitignored CSVs; always check git-tracked vs gitignored before wiring
   a script into CI.
+- [ ] **`Weekly Data Update` (`weekly-data-update.yml`) is RED on main — upstream
+  ONS source drift, not a code regression** (diagnosed 2026-06-26, session 10).
+  The scheduled job re-fetches live data and `validate.py` correctly REJECTED it,
+  so nothing bad was committed (the committed CSVs + deployed SPA are fine — this is
+  the data-integrity backstop working). Two distinct upstream breakages:
+  1. **`ons_wealth_by_decile.csv` collapsed to 2 rows (expected ≥10) with negative
+     values.** `fetch_ons_wealth.py` parses ONS Total Wealth "Table 2.2"; the live
+     workbook layout/sheet changed so the parser now extracts almost nothing. Needs
+     the LIVE XLSX to re-derive the row/column offsets (a blind edit risks shipping
+     bad wealth-by-decile data). Source: `ons-was-wealth` in `registries/sources.yml`.
+  2. **`ons_gdhi_by_region.csv` has 233 duplicate `region` rows.**
+     `fetch_ons_gdhi._filter_to_leaf_itl_level()` bails to "return as-is" when ITL
+     code detection drifts (`tl_mask.sum() < 5`), leaving aggregate+leaf rows that
+     duplicate region names. This is the SAME dataset as the open geography-decision
+     item below ("GdhiByRegionChart: the dataset labels mixed geographies as 'UK
+     regions'") — fixing it needs Chris's call on which ITL level to show (ITL1
+     nations/regions vs ITL3 sub-regions) AND a parser hardening that fails-loud (or
+     drops dupes) instead of silently keeping aggregates.
+  **Do NOT loosen `validate.py` to make the job green** — the validation is correct;
+  the fetchers need repair against the live sources. Both require network access to
+  the live ONS files. Defensive add when fixing: a post-parse dedup/row-count guard
+  in each fetcher so a future layout drift triggers the cited-fallback path rather
+  than emitting malformed data.
 
 ---
 
