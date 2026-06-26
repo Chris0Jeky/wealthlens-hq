@@ -8,6 +8,7 @@ See `.env.example` for the full variable list.
 
 from __future__ import annotations
 
+import math
 import os
 from dataclasses import dataclass
 
@@ -47,13 +48,22 @@ def _parse_budget_cap(raw: str | None) -> float | None:
     typo as "no cap" would block all spend with no explanation (confusing) —
     and silently treating it as "unlimited" would be dangerous. So: clear
     startup error, no guessing.
+
+    A cap must be a POSITIVE, FINITE number. ``float()`` alone accepts "nan",
+    "inf" and negatives, which would defeat the cap — "nan" is the worst, because
+    every ``spend < nan`` comparison is False, so the middleware would never trip
+    and spend would be unbounded. Reject all of those loudly here (the sole
+    validation seam), matching the fail-closed posture (ADR 0002).
     """
     if not raw:
         return None  # not configured -> fail-closed (middleware blocks spend)
     try:
-        return float(raw)
+        cap = float(raw)
     except ValueError as exc:
         raise ValueError(f"BUDGET_MONTHLY_CAP_GBP must be numeric, got {raw!r}") from exc
+    if not math.isfinite(cap) or cap <= 0:
+        raise ValueError(f"BUDGET_MONTHLY_CAP_GBP must be a positive, finite number, got {raw!r}")
+    return cap
 
 
 def load_settings() -> Settings:
