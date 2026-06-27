@@ -355,8 +355,12 @@ def main() -> None:
     # data-contract validation only covers the CSV-pipeline datasets.
     STATIC_DATASETS = ("inheritance-tax", "wage-stagnation")
     for slug in STATIC_DATASETS:
+        if slug in available:
+            continue
         sidecar = OUT_DIR / f"{slug}-metadata.json"
-        if slug in available or not sidecar.exists():
+        if not sidecar.exists():
+            # Fail loud rather than silently dropping a routed chart from provenance.
+            errors.append(f"  SKIP static {slug}: {sidecar} not found")
             continue
         m = json.loads(sidecar.read_text(encoding="utf-8"))
         STATIC_META[slug] = {
@@ -368,6 +372,8 @@ def main() -> None:
             "access_date": m.get("access_date", m.get("last_updated", "")),
             "row_count": m.get("row_count", 0),
             "columns": m.get("columns", []),
+            # Schema parity with the CSV-pipeline metadata (which carries data_type).
+            "data_type": m.get("data_type"),
         }
 
     # Dataset listing (CSV-pipeline datasets only — what the data API can serve)
