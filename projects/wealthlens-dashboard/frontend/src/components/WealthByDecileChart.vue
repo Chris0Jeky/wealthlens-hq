@@ -202,7 +202,7 @@ const option = computed(() => {
   <div v-else>
     <div
       role="img"
-      :aria-label="`Bar chart showing total household wealth by decile in the UK. ${headlineInsight}.${poorestIsNegative ? ' The poorest decile is highlighted in red to indicate net negative wealth.' : ''}`"
+      :aria-label="`Bar chart showing total household wealth by decile in Great Britain. ${headlineInsight}.${poorestIsNegative ? ' The poorest decile is highlighted in red to indicate net negative wealth.' : ''}`"
       class="w-full"
     >
       <VChart ref="chart" class="w-full" style="height: 480px" :option="option" autoresize />
