@@ -142,6 +142,17 @@ Every concrete action item extracted from research. Triage into active-sprint, b
   pipeline-side: compute the cumulative columns from the raw un-rounded shares
   (round only at the end) so the low-band cumulatives are exact. Pipeline-only,
   no fabrication; the SPA chart uses the same columns. Low severity.
+- [ ] **H1-08 prerequisite: give `Chunk` an explicit `kind` discriminator**
+  (seeded 2026-06-27, session 12, from the H1-09 review). The ingestion gate
+  (`validate_chunk_provenance`) infers source type from `page is None`
+  (None → tabular, requires section; page set → document, requires page>=1).
+  This is sound for the tabular-only slice today, but it cannot require
+  page-*presence* for a future document chunk that dropped its page (it would
+  pass as tabular with a NULL page locator). When the H1-08 PDF producer lands,
+  either guarantee `page` is always set on document chunks OR add an explicit
+  `kind: Literal["tabular","document"]` field to `Chunk` so the gate asserts
+  page-presence for documents. Latent until H1-08; no current code path can
+  construct the offending chunk. Low severity.
 
 ---
 

@@ -27,6 +27,10 @@ depends_on = None
 
 
 def upgrade() -> None:
+    # NB: the INSERTABLE columns below are hand-mirrored by db.chunks_table (the
+    # ingestion write path, H1-09) — CI has no Postgres to reflect against. Keep
+    # the two in sync; a unit test couples db.chunks_table to the write path's
+    # row projection so they cannot drift apart silently.
     op.create_table(
         "chunks",
         sa.Column("chunk_id", sa.BigInteger(), sa.Identity(always=True), primary_key=True),

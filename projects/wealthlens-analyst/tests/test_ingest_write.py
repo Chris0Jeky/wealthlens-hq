@@ -16,6 +16,7 @@ from datetime import date
 
 import pytest
 
+from wealthlens_analyst.db import chunks_table
 from wealthlens_analyst.ingest.slice_corpus import (
     TABLE_SPECS,
     Chunk,
@@ -164,3 +165,13 @@ def test_chunk_row_omits_server_managed_columns() -> None:
     assert "chunk_id" not in row
     assert "ts" not in row
     assert "created_at" not in row
+
+
+def test_chunks_table_mirror_matches_the_row_projection() -> None:
+    """db.chunks_table and _chunk_to_row are hand-maintained mirrors of migration
+    0001_chunks' insertable columns (CI has no Postgres to reflect against). Couple
+    them so they cannot drift apart silently — a schema change must move both."""
+    table_columns = {column.name for column in chunks_table.columns}
+    assert table_columns == set(_chunk_to_row(_tabular_chunk()))
+    # Server-managed columns are excluded from the write path on both sides.
+    assert {"chunk_id", "ts", "created_at"}.isdisjoint(table_columns)
