@@ -490,7 +490,7 @@ export const chartConfigs: Record<string, ChartConfig> = {
       {
         domain: "Work & Pay · UK",
         title: "Productivity vs pay — the growing divergence",
-        finding: "Pay has lagged <b>~19 points</b> behind productivity since 1997.",
+        finding: "Pay has lagged <b>~21 points</b> behind productivity since 1997.",
         to: "/charts/productivity-pay",
         sparkType: "line",
       },
@@ -735,7 +735,7 @@ export const chartConfigs: Record<string, ChartConfig> = {
         {
           heading: "What this chart shows",
           paragraphs: [
-            "Two monthly series: the <em>Bank of England official Bank Rate</em> (the interest rate the BoE charges to commercial banks, which directly influences mortgage and savings rates) and the <em>CPI annual inflation rate</em> (the 12-month percentage change in consumer prices). Together they show how monetary policy responds to — and sometimes lags behind — price pressures.",
+            "Two series, sampled as annual snapshots (denser through 2020–24): the <em>Bank of England official Bank Rate</em> (the interest rate the BoE charges to commercial banks, which directly influences mortgage and savings rates) and the <em>CPI annual inflation rate</em> (the 12-month percentage change in consumer prices). Together they show how monetary policy responds to — and sometimes lags behind — price pressures.",
           ],
         },
         {
