@@ -20,7 +20,7 @@
  *
  * All calculation is client-side. No personal data is stored or transmitted.
  */
-import { ref, computed } from "vue";
+import { ref, computed } from "vue"
 import {
   simulateWealthTax,
   formatRevenue,
@@ -31,7 +31,7 @@ import {
   SIMULATOR_SOURCES,
   type WealthTaxBand,
   type PresetScenario,
-} from "@/utils/wealthTaxSimulator";
+} from "@/utils/wealthTaxSimulator"
 
 // ============================================================
 // SLIDER OPTIONS
@@ -39,16 +39,15 @@ import {
 
 /** Threshold steps for the slider (log-like steps) */
 const THRESHOLD_STEPS = [
-  500_000, 750_000, 1_000_000, 1_500_000, 2_000_000, 3_000_000,
-  5_000_000, 7_500_000, 10_000_000,
-] as const;
+  500_000, 750_000, 1_000_000, 1_500_000, 2_000_000, 3_000_000, 5_000_000, 7_500_000, 10_000_000,
+] as const
 
 /** Rate steps for the slider */
-const RATE_STEPS = [0.001, 0.0025, 0.005, 0.01, 0.015, 0.02, 0.03, 0.05] as const;
+const RATE_STEPS = [0.001, 0.0025, 0.005, 0.01, 0.015, 0.02, 0.03, 0.05] as const
 
 /** Format a rate as a percentage string */
 function formatRate(rate: number): string {
-  return `${(rate * 100).toFixed(rate * 100 < 1 ? 2 : rate * 100 % 1 === 0 ? 0 : 1)}%`;
+  return `${(rate * 100).toFixed(rate * 100 < 1 ? 2 : (rate * 100) % 1 === 0 ? 0 : 1)}%`
 }
 
 // ============================================================
@@ -56,19 +55,19 @@ function formatRate(rate: number): string {
 // ============================================================
 
 interface BandState {
-  thresholdIndex: number;
-  rateIndex: number;
+  thresholdIndex: number
+  rateIndex: number
 }
 
-const MAX_BANDS = 3;
+const MAX_BANDS = 3
 
 /** Active bands as slider index positions */
 const bands = ref<BandState[]>([
   { thresholdIndex: 4, rateIndex: 3 }, // £2m, 1%
-]);
+])
 
 /** Active preset name (null if user has modified sliders) */
-const activePreset = ref<string | null>(null);
+const activePreset = ref<string | null>(null)
 
 // ============================================================
 // COMPUTED
@@ -80,49 +79,53 @@ const taxBands = computed<WealthTaxBand[]>(() =>
     threshold: THRESHOLD_STEPS[b.thresholdIndex],
     rate: RATE_STEPS[b.rateIndex],
   })),
-);
+)
 
 /** Simulation results */
-const results = computed(() => simulateWealthTax(taxBands.value));
+const results = computed(() => simulateWealthTax(taxBands.value))
 
 /** Spending comparison text */
-const spendingText = computed(() =>
-  getSpendingComparison(results.value.annualRevenue),
-);
+const spendingText = computed(() => getSpendingComparison(results.value.annualRevenue))
 
 /** Whether the add-band button should be shown */
-const canAddBand = computed(() => bands.value.length < MAX_BANDS);
+const canAddBand = computed(() => bands.value.length < MAX_BANDS)
 
 // ============================================================
 // ACTIONS
 // ============================================================
 
 function addBand() {
-  if (!canAddBand.value) return;
+  if (!canAddBand.value) return
   // Default new band: next threshold step above the last band, same rate
-  const lastBand = bands.value[bands.value.length - 1];
-  const nextThreshold = Math.min(lastBand.thresholdIndex + 2, THRESHOLD_STEPS.length - 1);
-  const nextRate = Math.min(lastBand.rateIndex + 1, RATE_STEPS.length - 1);
-  bands.value.push({ thresholdIndex: nextThreshold, rateIndex: nextRate });
-  activePreset.value = null;
+  const lastBand = bands.value[bands.value.length - 1]
+  const nextThreshold = Math.min(lastBand.thresholdIndex + 2, THRESHOLD_STEPS.length - 1)
+  const nextRate = Math.min(lastBand.rateIndex + 1, RATE_STEPS.length - 1)
+  bands.value.push({ thresholdIndex: nextThreshold, rateIndex: nextRate })
+  activePreset.value = null
 }
 
 function removeBand(index: number) {
-  if (bands.value.length <= 1) return;
-  bands.value.splice(index, 1);
-  activePreset.value = null;
+  if (bands.value.length <= 1) return
+  bands.value.splice(index, 1)
+  activePreset.value = null
 }
 
 function applyPreset(preset: PresetScenario) {
   bands.value = preset.bands.map((b) => ({
-    thresholdIndex: Math.max(0, THRESHOLD_STEPS.findIndex((t) => t === b.threshold)),
-    rateIndex: Math.max(0, RATE_STEPS.findIndex((r) => r === b.rate)),
-  }));
-  activePreset.value = preset.name;
+    thresholdIndex: Math.max(
+      0,
+      THRESHOLD_STEPS.findIndex((t) => t === b.threshold),
+    ),
+    rateIndex: Math.max(
+      0,
+      RATE_STEPS.findIndex((r) => r === b.rate),
+    ),
+  }))
+  activePreset.value = preset.name
 }
 
 function onSliderChange() {
-  activePreset.value = null;
+  activePreset.value = null
 }
 </script>
 
@@ -136,13 +139,11 @@ function onSliderChange() {
         <em>Revenue Simulator</em>
       </h1>
       <p class="sim__lede">
-        How much could a UK wealth tax raise? Adjust the thresholds and
-        rates below to explore different scenarios. The model uses ONS
-        wealth distribution data and a Pareto approximation.
+        How much could a UK wealth tax raise? Adjust the thresholds and rates below to explore
+        different scenarios. The model uses ONS wealth distribution data and a Pareto approximation.
       </p>
       <p class="sim__privacy">
-        All calculation happens in your browser. No data is stored or
-        transmitted.
+        All calculation happens in your browser. No data is stored or transmitted.
       </p>
     </header>
 
@@ -170,12 +171,7 @@ function onSliderChange() {
     <section class="sim__bands" aria-label="Tax band configuration">
       <h2 class="sim__section-heading">Configure tax bands</h2>
 
-      <div
-        v-for="(band, i) in bands"
-        :key="i"
-        class="sim__band"
-        :aria-label="`Tax band ${i + 1}`"
-      >
+      <div v-for="(band, i) in bands" :key="i" class="sim__band" :aria-label="`Tax band ${i + 1}`">
         <div class="sim__band-header">
           <span class="sim__band-number">Band {{ i + 1 }}</span>
           <button
@@ -242,11 +238,7 @@ function onSliderChange() {
       </div>
 
       <!-- Add band button -->
-      <button
-        v-if="canAddBand"
-        class="wl-btn wl-btn--ghost sim__add-band"
-        @click="addBand"
-      >
+      <button v-if="canAddBand" class="wl-btn wl-btn--ghost sim__add-band" @click="addBand">
         + Add band ({{ bands.length }}/{{ MAX_BANDS }})
       </button>
     </section>
@@ -280,9 +272,7 @@ function onSliderChange() {
         </div>
         <div class="sim__stat">
           <span class="sim__stat-label">Revenue as % of GDP</span>
-          <span class="sim__stat-value wl-num">
-            {{ results.revenueAsPercentGDP }}%
-          </span>
+          <span class="sim__stat-value wl-num"> {{ results.revenueAsPercentGDP }}% </span>
         </div>
       </div>
 
@@ -314,11 +304,7 @@ function onSliderChange() {
             :key="source.url"
             class="sim__source-item"
           >
-            <a
-              :href="source.url"
-              target="_blank"
-              rel="noopener"
-            >
+            <a :href="source.url" target="_blank" rel="noopener">
               {{ source.label }}
             </a>
             <span>Accessed {{ source.accessDate }}</span>

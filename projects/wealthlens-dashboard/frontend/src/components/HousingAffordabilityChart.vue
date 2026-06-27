@@ -8,41 +8,29 @@
  *
  * Accessibility: WCAG AA high-contrast colors, aria-label, escapeHtml tooltips.
  */
-import { computed, ref } from "vue";
-import { use } from "echarts/core";
-import { CanvasRenderer } from "echarts/renderers";
-import { LineChart } from "echarts/charts";
+import { computed, ref } from "vue"
+import { use } from "echarts/core"
+import { CanvasRenderer } from "echarts/renderers"
+import { LineChart } from "echarts/charts"
 import {
   GridComponent,
   TooltipComponent,
   TitleComponent,
   LegendComponent,
-} from "echarts/components";
-import VChart from "vue-echarts";
-import { useChartData } from "@/composables/useChartData";
-import type { EChartsExportable } from "@/composables/useChartExport";
-import {
-  escapeHtml,
-  safeMinMax,
-  toNumberOrNaN,
-  warnIfSignificantDataLoss,
-} from "@/utils/chart";
-import AccessibleDataTable from "@/components/AccessibleDataTable.vue";
+} from "echarts/components"
+import VChart from "vue-echarts"
+import { useChartData } from "@/composables/useChartData"
+import type { EChartsExportable } from "@/composables/useChartExport"
+import { escapeHtml, safeMinMax, toNumberOrNaN, warnIfSignificantDataLoss } from "@/utils/chart"
+import AccessibleDataTable from "@/components/AccessibleDataTable.vue"
 
 // Register only the ECharts modules we need (tree-shaking)
-use([
-  CanvasRenderer,
-  LineChart,
-  GridComponent,
-  TooltipComponent,
-  TitleComponent,
-  LegendComponent,
-]);
+use([CanvasRenderer, LineChart, GridComponent, TooltipComponent, TitleComponent, LegendComponent])
 
-const { rows, loading, error } = useChartData("housing-affordability");
-const chart = ref<EChartsExportable | null>(null);
+const { rows, loading, error } = useChartData("housing-affordability")
+const chart = ref<EChartsExportable | null>(null)
 
-defineExpose({ chart });
+defineExpose({ chart })
 
 /**
  * Respect prefers-reduced-motion (WCAG 2.3.3).
@@ -50,8 +38,7 @@ defineExpose({ chart });
  * requested reduced motion in their OS settings.
  */
 const prefersReducedMotion =
-  typeof window !== "undefined" &&
-  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches
 
 /**
  * WCAG AA high-contrast colors against white (#fff).
@@ -66,10 +53,10 @@ const REGION_COLORS = [
   "#0e7490", // Cyan   — ~4.8:1
   "#be185d", // Pink   — ~5.2:1
   "#4338ca", // Indigo — ~7.0:1
-];
+]
 
 /** Maximum number of region lines to display before grouping. */
-const MAX_REGIONS = 8;
+const MAX_REGIONS = 8
 
 /** Group data by region, returning sorted region names and their series. */
 const regionData = computed(() => {
@@ -78,86 +65,86 @@ const regionData = computed(() => {
   // duplicates into its per-year `dataMap`. Materialising the table from this
   // same coalesced data keeps the accessible table and the plotted line in
   // lockstep (no extra/stale points for non-visual users).
-  const byRegionMap = new Map<string, Map<number, number>>();
+  const byRegionMap = new Map<string, Map<number, number>>()
 
   for (const row of rows.value) {
-    const region = String(row.region ?? "");
+    const region = String(row.region ?? "")
     // toNumberOrNaN: coerce nullish/empty/non-finite values to NaN, because
     // Number(null) and Number("") both return 0 — which would silently fabricate
     // a "year 0" or a 0 ratio. Mapping them to NaN lets the guard below drop the
     // row from BOTH the chart and the accessible table (a genuine numeric 0 still
     // passes).
-    const year = toNumberOrNaN(row.year);
-    const ratio = toNumberOrNaN(row.ratio);
+    const year = toNumberOrNaN(row.year)
+    const ratio = toNumberOrNaN(row.ratio)
     if (!region || isNaN(year) || isNaN(ratio)) {
-      continue;
+      continue
     }
 
-    if (!byRegionMap.has(region)) byRegionMap.set(region, new Map());
-    byRegionMap.get(region)!.set(year, ratio);
+    if (!byRegionMap.has(region)) byRegionMap.set(region, new Map())
+    byRegionMap.get(region)!.set(year, ratio)
   }
 
   // Count distinct (region, year) points kept, since duplicate years collapse.
-  let keptPoints = 0;
-  for (const yearMap of byRegionMap.values()) keptPoints += yearMap.size;
-  warnIfSignificantDataLoss("housing-affordability", rows.value.length, keptPoints);
+  let keptPoints = 0
+  for (const yearMap of byRegionMap.values()) keptPoints += yearMap.size
+  warnIfSignificantDataLoss("housing-affordability", rows.value.length, keptPoints)
 
   // Materialise each region's coalesced data as a year-sorted array — the shape
   // the chart series, allYears, ratioRange and the accessible table all consume.
-  const byRegion = new Map<string, { year: number; ratio: number }[]>();
+  const byRegion = new Map<string, { year: number; ratio: number }[]>()
   for (const [region, yearMap] of byRegionMap) {
-    const data = Array.from(yearMap, ([year, ratio]) => ({ year, ratio }));
-    data.sort((a, b) => a.year - b.year);
-    byRegion.set(region, data);
+    const data = Array.from(yearMap, ([year, ratio]) => ({ year, ratio }))
+    data.sort((a, b) => a.year - b.year)
+    byRegion.set(region, data)
   }
 
   // If too many regions, pick the ones with the highest latest ratio
-  let regionNames = Array.from(byRegion.keys());
-  let tooManyRegions = false;
+  let regionNames = Array.from(byRegion.keys())
+  let tooManyRegions = false
 
   if (regionNames.length > MAX_REGIONS) {
-    tooManyRegions = true;
+    tooManyRegions = true
     // Rank by latest ratio (descending) to show most unaffordable regions
     regionNames.sort((a, b) => {
-      const aData = byRegion.get(a)!;
-      const bData = byRegion.get(b)!;
-      const aLatest = aData[aData.length - 1]?.ratio ?? 0;
-      const bLatest = bData[bData.length - 1]?.ratio ?? 0;
-      return bLatest - aLatest;
-    });
-    regionNames = regionNames.slice(0, MAX_REGIONS);
+      const aData = byRegion.get(a)!
+      const bData = byRegion.get(b)!
+      const aLatest = aData[aData.length - 1]?.ratio ?? 0
+      const bLatest = bData[bData.length - 1]?.ratio ?? 0
+      return bLatest - aLatest
+    })
+    regionNames = regionNames.slice(0, MAX_REGIONS)
   }
 
-  return { byRegion, regionNames, tooManyRegions };
-});
+  return { byRegion, regionNames, tooManyRegions }
+})
 
 /** Unique sorted years across all displayed regions. */
 const allYears = computed(() => {
-  const yearSet = new Set<number>();
-  const { byRegion, regionNames } = regionData.value;
+  const yearSet = new Set<number>()
+  const { byRegion, regionNames } = regionData.value
   for (const name of regionNames) {
     for (const d of byRegion.get(name) ?? []) {
-      yearSet.add(d.year);
+      yearSet.add(d.year)
     }
   }
-  return Array.from(yearSet).sort((a, b) => a - b);
-});
+  return Array.from(yearSet).sort((a, b) => a - b)
+})
 
-const yearRange = computed(() => safeMinMax(allYears.value));
+const yearRange = computed(() => safeMinMax(allYears.value))
 
-const hasData = computed(() => regionData.value.regionNames.length > 0);
+const hasData = computed(() => regionData.value.regionNames.length > 0)
 
 /** Overall ratio range across all displayed regions (for aria-label). */
 const ratioRange = computed(() => {
-  const allRatios: number[] = [];
-  const { byRegion, regionNames } = regionData.value;
+  const allRatios: number[] = []
+  const { byRegion, regionNames } = regionData.value
   for (const name of regionNames) {
     for (const d of byRegion.get(name) ?? []) {
-      allRatios.push(d.ratio);
+      allRatios.push(d.ratio)
     }
   }
-  return safeMinMax(allRatios);
-});
+  return safeMinMax(allRatios)
+})
 
 /**
  * Accessible data-table fallback (WCAG 1.1.1). Mirrors the plotted lines — one
@@ -177,10 +164,10 @@ const ratioRange = computed(() => {
  * tableNumericColumns; any non-finite value would render as "—" (it cannot occur
  * here because byRegion only holds rows that passed the chart's isNaN guards).
  */
-const tableColumns = ["Region", "Year", "Price-to-earnings ratio"];
-const tableNumericColumns = ["Price-to-earnings ratio"];
+const tableColumns = ["Region", "Year", "Price-to-earnings ratio"]
+const tableNumericColumns = ["Price-to-earnings ratio"]
 const tableRows = computed(() => {
-  const { byRegion, regionNames } = regionData.value;
+  const { byRegion, regionNames } = regionData.value
   // Iterate in the chart's region order; each region's entries are already
   // year-sorted inside regionData, so this reproduces the chart's plotting
   // order exactly.
@@ -190,8 +177,8 @@ const tableRows = computed(() => {
       Year: d.year,
       "Price-to-earnings ratio": d.ratio,
     })),
-  );
-});
+  )
+})
 
 /**
  * Table caption — cites the same registered source the chart shows (ONS Housing
@@ -206,23 +193,23 @@ const tableRows = computed(() => {
 const tableCaption = computed(() => {
   const truncationNote = regionData.value.tooManyRegions
     ? ` Showing the top ${MAX_REGIONS} least-affordable regions (the same regions plotted).`
-    : "";
-  return `House price to workplace-based earnings ratio by region (England and Wales) and year.${truncationNote} Source: ONS Housing Affordability.`;
-});
+    : ""
+  return `House price to workplace-based earnings ratio by region (England and Wales) and year.${truncationNote} Source: ONS Housing Affordability.`
+})
 
 const option = computed(() => {
-  const { byRegion, regionNames } = regionData.value;
-  const years = allYears.value;
+  const { byRegion, regionNames } = regionData.value
+  const years = allYears.value
 
   // Build a year->ratio lookup for each region for aligned data
   const series = regionNames.map((region, idx) => {
-    const dataMap = new Map<number, number>();
+    const dataMap = new Map<number, number>()
     for (const d of byRegion.get(region) ?? []) {
-      dataMap.set(d.year, d.ratio);
+      dataMap.set(d.year, d.ratio)
     }
     // Align to the shared year axis; null for missing years
-    const data = years.map((y) => dataMap.get(y) ?? null);
-    const color = REGION_COLORS[idx % REGION_COLORS.length];
+    const data = years.map((y) => dataMap.get(y) ?? null)
+    const color = REGION_COLORS[idx % REGION_COLORS.length]
 
     return {
       name: region,
@@ -234,8 +221,8 @@ const option = computed(() => {
       symbol: "circle",
       symbolSize: 4,
       connectNulls: true,
-    };
-  });
+    }
+  })
 
   return {
     animation: !prefersReducedMotion,
@@ -253,20 +240,19 @@ const option = computed(() => {
       axisPointer: { type: "cross" as const },
       formatter: (
         params: Array<{
-          seriesName: string;
-          value: number | null;
-          axisValue: string;
+          seriesName: string
+          value: number | null
+          axisValue: string
         }>,
       ) => {
-        if (!Array.isArray(params) || params.length === 0) return "";
-        let html = `<strong>${escapeHtml(String(params[0].axisValue))}</strong><br/>`;
+        if (!Array.isArray(params) || params.length === 0) return ""
+        let html = `<strong>${escapeHtml(String(params[0].axisValue))}</strong><br/>`
         for (const p of params) {
-          if (p.value == null) continue;
-          const val =
-            typeof p.value === "number" ? p.value.toFixed(1) : String(p.value);
-          html += `${escapeHtml(String(p.seriesName))}: ${escapeHtml(val)}<br/>`;
+          if (p.value == null) continue
+          const val = typeof p.value === "number" ? p.value.toFixed(1) : String(p.value)
+          html += `${escapeHtml(String(p.seriesName))}: ${escapeHtml(val)}<br/>`
         }
-        return html;
+        return html
       },
     },
     legend: {
@@ -303,13 +289,18 @@ const option = computed(() => {
       },
     },
     series,
-  };
-});
+  }
+})
 </script>
 
 <template>
   <!-- Loading state -->
-  <div v-if="loading" class="flex items-center justify-center py-20" role="status" aria-live="polite">
+  <div
+    v-if="loading"
+    class="flex items-center justify-center py-20"
+    role="status"
+    aria-live="polite"
+  >
     <p class="text-[var(--wl-ink-muted)] text-lg">Loading chart data...</p>
   </div>
 
@@ -333,13 +324,7 @@ const option = computed(() => {
       :aria-label="`Line chart showing house-price-to-earnings ratios by region from ${yearRange.min} to ${yearRange.max}. Ratios range from ${ratioRange.min.toFixed(1)} to ${ratioRange.max.toFixed(1)} across ${regionData.regionNames.length} regions.`"
       class="w-full"
     >
-      <VChart
-        ref="chart"
-        class="w-full"
-        style="height: 480px"
-        :option="option"
-        autoresize
-      />
+      <VChart ref="chart" class="w-full" style="height: 480px" :option="option" autoresize />
     </div>
 
     <!-- Note when regions are truncated -->
@@ -347,8 +332,8 @@ const option = computed(() => {
       v-if="regionData.tooManyRegions"
       class="text-sm text-[var(--wl-ink-muted)] mt-2 text-center italic"
     >
-      Showing top {{ MAX_REGIONS }} least-affordable regions. Additional regions
-      are available in the full dataset.
+      Showing top {{ MAX_REGIONS }} least-affordable regions. Additional regions are available in
+      the full dataset.
     </p>
 
     <!-- Accessible data-table fallback (WCAG 1.1.1 non-text content). -->
@@ -368,7 +353,8 @@ const option = computed(() => {
         rel="noopener"
         class="underline hover:text-[var(--wl-ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--wl-red)] rounded"
       >
-        ONS Housing Affordability<span class="sr-only"> (opens in new tab)</span></a>, accessed 2026-05-14
+        ONS Housing Affordability<span class="sr-only"> (opens in new tab)</span></a
+      >, accessed 2026-05-14
     </p>
   </div>
 </template>

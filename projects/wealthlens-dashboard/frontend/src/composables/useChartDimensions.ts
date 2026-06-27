@@ -1,4 +1,4 @@
-import { ref, onMounted, onUnmounted, type Ref } from 'vue'
+import { ref, onMounted, onUnmounted, type Ref } from "vue"
 
 export interface ChartDimensions {
   width: number
@@ -9,9 +9,9 @@ const MIN_HEIGHT = 200
 const MAX_HEIGHT = 600
 const ASPECT_RATIO = 0.5
 
-export function useChartDimensions(
-  containerRef: Ref<HTMLElement | null>,
-): { dimensions: Ref<ChartDimensions> } {
+export function useChartDimensions(containerRef: Ref<HTMLElement | null>): {
+  dimensions: Ref<ChartDimensions>
+} {
   const dimensions = ref<ChartDimensions>({ width: 0, height: MIN_HEIGHT })
   let observer: ResizeObserver | null = null
 
@@ -23,7 +23,7 @@ export function useChartDimensions(
   onMounted(() => {
     const el = containerRef.value
     if (!el) return
-    if (typeof ResizeObserver === 'undefined') return
+    if (typeof ResizeObserver === "undefined") return
 
     observer = new ResizeObserver((entries) => {
       for (const entry of entries) {

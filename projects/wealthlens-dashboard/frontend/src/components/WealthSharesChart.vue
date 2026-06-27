@@ -15,38 +15,31 @@
  * Accessibility: WCAG AA high-contrast colors, aria-label, keyboard tooltip,
  * and an AccessibleDataTable fallback (WCAG 1.1.1 non-text content).
  */
-import { computed, ref } from "vue";
-import { use } from "echarts/core";
-import { CanvasRenderer } from "echarts/renderers";
-import { LineChart } from "echarts/charts";
+import { computed, ref } from "vue"
+import { use } from "echarts/core"
+import { CanvasRenderer } from "echarts/renderers"
+import { LineChart } from "echarts/charts"
 import {
   GridComponent,
   TooltipComponent,
   TitleComponent,
   LegendComponent,
-} from "echarts/components";
-import VChart from "vue-echarts";
-import AccessibleDataTable from "@/components/AccessibleDataTable.vue";
-import { useChartData } from "@/composables/useChartData";
-import type { DatasetRow } from "@/stores/data";
-import type { EChartsExportable } from "@/composables/useChartExport";
-import { escapeHtml, safeMinMax, toNumberOrNaN, warnIfSignificantDataLoss } from "@/utils/chart";
-import { COLOR_TOP_10, COLOR_TOP_1 } from "@/config/chartColors";
+} from "echarts/components"
+import VChart from "vue-echarts"
+import AccessibleDataTable from "@/components/AccessibleDataTable.vue"
+import { useChartData } from "@/composables/useChartData"
+import type { DatasetRow } from "@/stores/data"
+import type { EChartsExportable } from "@/composables/useChartExport"
+import { escapeHtml, safeMinMax, toNumberOrNaN, warnIfSignificantDataLoss } from "@/utils/chart"
+import { COLOR_TOP_10, COLOR_TOP_1 } from "@/config/chartColors"
 
 // Register only the ECharts modules we need (tree-shaking)
-use([
-  CanvasRenderer,
-  LineChart,
-  GridComponent,
-  TooltipComponent,
-  TitleComponent,
-  LegendComponent,
-]);
+use([CanvasRenderer, LineChart, GridComponent, TooltipComponent, TitleComponent, LegendComponent])
 
-const { rows, loading, error } = useChartData("wealth-shares");
-const chart = ref<EChartsExportable | null>(null);
+const { rows, loading, error } = useChartData("wealth-shares")
+const chart = ref<EChartsExportable | null>(null)
 
-defineExpose({ chart });
+defineExpose({ chart })
 
 /**
  * Respect prefers-reduced-motion (WCAG 2.3.3).
@@ -54,28 +47,27 @@ defineExpose({ chart });
  * requested reduced motion in their OS settings.
  */
 const prefersReducedMotion =
-  typeof window !== "undefined" &&
-  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches
 
 /** Extract sorted year+value pairs for a given percentile key. */
 function seriesFor(percentile: string): { years: number[]; values: number[] } {
-  const matched = rows.value.filter((r) => r.percentile === percentile);
+  const matched = rows.value.filter((r) => r.percentile === percentile)
   const mapped = matched.map((r) => ({
     year: toNumberOrNaN(r.year),
     // WID shares are fractions of 1 (0.57); convert to percent for display so
     // the axis/tooltip/aria-label/table all read e.g. 57%, not 0.57%.
     value: toNumberOrNaN(r.value) * 100,
-  }));
+  }))
   const filtered = mapped
     .filter((r) => !isNaN(r.year) && !isNaN(r.value))
-    .sort((a, b) => a.year - b.year);
+    .sort((a, b) => a.year - b.year)
 
-  warnIfSignificantDataLoss(`wealth-shares[${percentile}]`, mapped.length, filtered.length);
+  warnIfSignificantDataLoss(`wealth-shares[${percentile}]`, mapped.length, filtered.length)
 
   return {
     years: filtered.map((r) => r.year),
     values: filtered.map((r) => r.value),
-  };
+  }
 }
 
 // Series colours come from the shared single source of truth so the toolbar
@@ -83,31 +75,26 @@ function seriesFor(percentile: string): { years: number[]; values: number[] } {
 // COLOR_TOP_10 = #1a56db (blue, top 10%), COLOR_TOP_1 = #dc2626 (red, top 1%).
 
 /** Pre-computed series data for top 1% and top 10%. */
-const top1Data = computed(() => seriesFor("p99p100"));
-const top10Data = computed(() => seriesFor("p90p100"));
+const top1Data = computed(() => seriesFor("p99p100"))
+const top10Data = computed(() => seriesFor("p90p100"))
 
 /** True when the API returned actual data to display. */
-const hasData = computed(
-  () => top1Data.value.years.length > 0 || top10Data.value.years.length > 0,
-);
+const hasData = computed(() => top1Data.value.years.length > 0 || top10Data.value.years.length > 0)
 
 /** Year range across all series, with empty-array guards. */
 const yearRange = computed(() => {
-  const years = [
-    ...top1Data.value.years,
-    ...top10Data.value.years,
-  ];
-  return safeMinMax(years);
-});
+  const years = [...top1Data.value.years, ...top10Data.value.years]
+  return safeMinMax(years)
+})
 
 /** Safe min/max for top 10% series values. */
-const top10Range = computed(() => safeMinMax(top10Data.value.values));
+const top10Range = computed(() => safeMinMax(top10Data.value.values))
 
 /** Safe min/max for top 1% series values. */
-const top1Range = computed(() => safeMinMax(top1Data.value.values));
+const top1Range = computed(() => safeMinMax(top1Data.value.values))
 
 /** Column headers for the accessible data-table fallback. */
-const tableColumns = ["Year", "Top 1% share", "Top 10% share"];
+const tableColumns = ["Year", "Top 1% share", "Top 10% share"]
 
 /**
  * One row per year for the AccessibleDataTable fallback (WCAG 1.1.1).
@@ -116,8 +103,8 @@ const tableColumns = ["Year", "Top 1% share", "Top 10% share"];
  * series leaves the other cell null, which the table renders as a dash placeholder.
  */
 const tableRows = computed<DatasetRow[]>(() => {
-  const byYear = new Map<number, DatasetRow>();
-  const fmt = (v: number): string => `${v.toFixed(1)}%`;
+  const byYear = new Map<number, DatasetRow>()
+  const fmt = (v: number): string => `${v.toFixed(1)}%`
   const add = (
     series: { years: number[]; values: number[] },
     key: "Top 1% share" | "Top 10% share",
@@ -127,34 +114,30 @@ const tableRows = computed<DatasetRow[]>(() => {
         Year: year,
         "Top 1% share": null,
         "Top 10% share": null,
-      };
-      row[key] = fmt(series.values[i]);
-      byYear.set(year, row);
-    });
-  };
-  add(top1Data.value, "Top 1% share");
-  add(top10Data.value, "Top 10% share");
-  return [...byYear.values()].sort(
-    (a, b) => (a.Year as number) - (b.Year as number),
-  );
-});
+      }
+      row[key] = fmt(series.values[i])
+      byYear.set(year, row)
+    })
+  }
+  add(top1Data.value, "Top 1% share")
+  add(top10Data.value, "Top 10% share")
+  return [...byYear.values()].sort((a, b) => (a.Year as number) - (b.Year as number))
+})
 
 const option = computed(() => {
-  const top1 = top1Data.value;
-  const top10 = top10Data.value;
+  const top1 = top1Data.value
+  const top10 = top10Data.value
 
   // Align both series to a shared, sorted union of years. ECharts category-axis
   // series consume their data array BY INDEX, so if a year is missing from one
   // series (e.g. a null value was dropped) every later point in that series would
   // otherwise render under the wrong year. Mapping each series onto the shared
   // year list (null for a missing year → a gap) keeps both lines on the right x.
-  const top1ByYear = new Map(top1.years.map((y, i) => [y, top1.values[i]]));
-  const top10ByYear = new Map(top10.years.map((y, i) => [y, top10.values[i]]));
-  const years = Array.from(new Set([...top10.years, ...top1.years])).sort(
-    (a, b) => a - b,
-  );
-  const top10Values = years.map((y) => top10ByYear.get(y) ?? null);
-  const top1Values = years.map((y) => top1ByYear.get(y) ?? null);
+  const top1ByYear = new Map(top1.years.map((y, i) => [y, top1.values[i]]))
+  const top10ByYear = new Map(top10.years.map((y, i) => [y, top10.values[i]]))
+  const years = Array.from(new Set([...top10.years, ...top1.years])).sort((a, b) => a - b)
+  const top10Values = years.map((y) => top10ByYear.get(y) ?? null)
+  const top1Values = years.map((y) => top1ByYear.get(y) ?? null)
 
   return {
     animation: !prefersReducedMotion,
@@ -171,13 +154,13 @@ const option = computed(() => {
       trigger: "axis" as const,
       axisPointer: { type: "cross" as const },
       formatter: (params: Array<{ seriesName: string; value: number; axisValue: string }>) => {
-        if (!Array.isArray(params) || params.length === 0) return "";
-        let html = `<strong>${escapeHtml(String(params[0].axisValue))}</strong><br/>`;
+        if (!Array.isArray(params) || params.length === 0) return ""
+        let html = `<strong>${escapeHtml(String(params[0].axisValue))}</strong><br/>`
         for (const p of params) {
-          const pct = typeof p.value === "number" ? p.value.toFixed(1) : String(p.value);
-          html += `${escapeHtml(String(p.seriesName))}: ${escapeHtml(pct)}%<br/>`;
+          const pct = typeof p.value === "number" ? p.value.toFixed(1) : String(p.value)
+          html += `${escapeHtml(String(p.seriesName))}: ${escapeHtml(pct)}%<br/>`
         }
-        return html;
+        return html
       },
     },
     legend: {
@@ -235,13 +218,18 @@ const option = computed(() => {
         symbolSize: 4,
       },
     ],
-  };
-});
+  }
+})
 </script>
 
 <template>
   <!-- Loading state -->
-  <div v-if="loading" class="flex items-center justify-center py-20" role="status" aria-live="polite">
+  <div
+    v-if="loading"
+    class="flex items-center justify-center py-20"
+    role="status"
+    aria-live="polite"
+  >
     <p class="text-[var(--wl-ink-muted)] text-lg">Loading chart data...</p>
   </div>
 
@@ -265,13 +253,7 @@ const option = computed(() => {
       :aria-label="`Line chart showing UK wealth concentration from ${yearRange.min} to ${yearRange.max}. The top 10 percent held between ${Math.round(top10Range.min)}% and ${Math.round(top10Range.max)}% of total wealth. The top 1 percent held between ${Math.round(top1Range.min)}% and ${Math.round(top1Range.max)}% of total wealth.`"
       class="w-full"
     >
-      <VChart
-        ref="chart"
-        class="w-full"
-        style="height: 480px"
-        :option="option"
-        autoresize
-      />
+      <VChart ref="chart" class="w-full" style="height: 480px" :option="option" autoresize />
     </div>
 
     <!-- Source citation — visible text, not just tooltip (WCAG AA) -->
@@ -283,7 +265,8 @@ const option = computed(() => {
         rel="noopener"
         class="underline hover:text-[var(--wl-ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--wl-red)] rounded"
       >
-        World Inequality Database (wid.world)<span class="sr-only"> (opens in new tab)</span></a>, accessed 2026-05-14
+        World Inequality Database (wid.world)<span class="sr-only"> (opens in new tab)</span></a
+      >, accessed 2026-05-14
     </p>
 
     <!-- Accessible data-table fallback (WCAG 1.1.1 non-text content). -->

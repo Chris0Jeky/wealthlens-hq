@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, afterEach } from 'vitest'
-import { mount } from '@vue/test-utils'
-import { defineComponent } from 'vue'
-import { useReducedMotion } from '@/composables/useReducedMotion'
+import { describe, it, expect, vi, afterEach } from "vitest"
+import { mount } from "@vue/test-utils"
+import { defineComponent } from "vue"
+import { useReducedMotion } from "@/composables/useReducedMotion"
 
 function createComponent() {
   return defineComponent({
@@ -9,11 +9,11 @@ function createComponent() {
       const { prefersReducedMotion } = useReducedMotion()
       return { prefersReducedMotion }
     },
-    template: '<div>{{ prefersReducedMotion }}</div>',
+    template: "<div>{{ prefersReducedMotion }}</div>",
   })
 }
 
-describe('useReducedMotion', () => {
+describe("useReducedMotion", () => {
   let listeners: Map<string, (e: MediaQueryListEvent) => void>
   let mockMatches: boolean
 
@@ -22,7 +22,7 @@ describe('useReducedMotion', () => {
     listeners = new Map()
 
     vi.stubGlobal(
-      'matchMedia',
+      "matchMedia",
       vi.fn().mockImplementation(() => ({
         matches: mockMatches,
         addEventListener: (event: string, fn: (e: MediaQueryListEvent) => void) => {
@@ -39,26 +39,26 @@ describe('useReducedMotion', () => {
     vi.unstubAllGlobals()
   })
 
-  it('returns false when user has no motion preference', () => {
+  it("returns false when user has no motion preference", () => {
     setupMatchMedia(false)
     const wrapper = mount(createComponent())
     expect(wrapper.vm.prefersReducedMotion).toBe(false)
     wrapper.unmount()
   })
 
-  it('returns true when user prefers reduced motion', () => {
+  it("returns true when user prefers reduced motion", () => {
     setupMatchMedia(true)
     const wrapper = mount(createComponent())
     expect(wrapper.vm.prefersReducedMotion).toBe(true)
     wrapper.unmount()
   })
 
-  it('reacts to media query changes', () => {
+  it("reacts to media query changes", () => {
     setupMatchMedia(false)
     const wrapper = mount(createComponent())
     expect(wrapper.vm.prefersReducedMotion).toBe(false)
 
-    const handler = listeners.get('change')
+    const handler = listeners.get("change")
     expect(handler).toBeDefined()
     handler!({ matches: true } as MediaQueryListEvent)
     expect(wrapper.vm.prefersReducedMotion).toBe(true)
@@ -68,16 +68,16 @@ describe('useReducedMotion', () => {
     wrapper.unmount()
   })
 
-  it('cleans up listener on unmount', () => {
+  it("cleans up listener on unmount", () => {
     setupMatchMedia(false)
     const wrapper = mount(createComponent())
-    expect(listeners.has('change')).toBe(true)
+    expect(listeners.has("change")).toBe(true)
     wrapper.unmount()
-    expect(listeners.has('change')).toBe(false)
+    expect(listeners.has("change")).toBe(false)
   })
 
-  it('returns false when matchMedia is undefined', () => {
-    vi.stubGlobal('matchMedia', undefined)
+  it("returns false when matchMedia is undefined", () => {
+    vi.stubGlobal("matchMedia", undefined)
     const wrapper = mount(createComponent())
     expect(wrapper.vm.prefersReducedMotion).toBe(false)
     wrapper.unmount()

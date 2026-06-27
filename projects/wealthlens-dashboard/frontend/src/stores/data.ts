@@ -1,14 +1,10 @@
-import { defineStore } from 'pinia'
-import { ref } from 'vue'
-import type {
-  DatasetRow,
-  FreshnessResponse,
-  DatasetFreshnessEntry,
-} from '@/types/api'
-import { fetchWithRetry } from '@/utils/fetchWithRetry'
+import { defineStore } from "pinia"
+import { ref } from "vue"
+import type { DatasetRow, FreshnessResponse, DatasetFreshnessEntry } from "@/types/api"
+import { fetchWithRetry } from "@/utils/fetchWithRetry"
 
 // Re-export so existing component imports from '@/stores/data' keep working.
-export type { DatasetRow, DatasetFreshnessEntry } from '@/types/api'
+export type { DatasetRow, DatasetFreshnessEntry } from "@/types/api"
 
 export interface DatasetMetadata {
   name: string
@@ -32,8 +28,8 @@ export interface PaginatedResponse {
   total_pages: number
 }
 
-const STATIC_MODE = import.meta.env.VITE_STATIC_DATA === 'true'
-const API_BASE = '/api/data'
+const STATIC_MODE = import.meta.env.VITE_STATIC_DATA === "true"
+const API_BASE = "/api/data"
 const STATIC_BASE = `${import.meta.env.BASE_URL}data`
 
 async function request<T>(path: string): Promise<T> {
@@ -42,7 +38,7 @@ async function request<T>(path: string): Promise<T> {
   try {
     res = await fetchWithRetry(url, undefined, STATIC_MODE ? 0 : 3)
   } catch {
-    throw new Error('Could not reach the server')
+    throw new Error("Could not reach the server")
   }
   if (!res.ok) {
     throw new Error(`HTTP ${res.status}`)
@@ -50,13 +46,13 @@ async function request<T>(path: string): Promise<T> {
   try {
     return (await res.json()) as T
   } catch {
-    throw new Error('Response was not valid JSON')
+    throw new Error("Response was not valid JSON")
   }
 }
 
 function toStaticUrl(apiPath: string): string {
-  if (apiPath === '/') return `${STATIC_BASE}/datasets.json`
-  if (apiPath === '/metadata') return `${STATIC_BASE}/all-metadata.json`
+  if (apiPath === "/") return `${STATIC_BASE}/datasets.json`
+  if (apiPath === "/metadata") return `${STATIC_BASE}/all-metadata.json`
 
   const metaMatch = apiPath.match(/^\/([a-z0-9-]+)\/metadata$/)
   if (metaMatch) return `${STATIC_BASE}/${metaMatch[1]}-metadata.json`
@@ -94,20 +90,21 @@ export function adaptStaticFreshness(
   for (const [slug, entry] of Object.entries(flat ?? {})) {
     const ts = entry?.last_updated ? Date.parse(entry.last_updated) : NaN
     if (Number.isNaN(ts)) {
-      out[slug] = { last_updated: entry?.last_updated ?? null, age_hours: null, status: 'unknown' }
+      out[slug] = { last_updated: entry?.last_updated ?? null, age_hours: null, status: "unknown" }
       continue
     }
     const ageHours = Math.max(0, (now - ts) / 3_600_000)
     out[slug] = {
       last_updated: entry.last_updated ?? null,
       age_hours: Math.round(ageHours * 10) / 10,
-      status: ageHours <= FRESH_MAX_HOURS ? 'fresh' : ageHours <= STALE_MAX_HOURS ? 'stale' : 'expired',
+      status:
+        ageHours <= FRESH_MAX_HOURS ? "fresh" : ageHours <= STALE_MAX_HOURS ? "stale" : "expired",
     }
   }
   return out
 }
 
-export const useDataStore = defineStore('data', () => {
+export const useDataStore = defineStore("data", () => {
   const datasets = ref<string[]>([])
   const metadata = ref<Map<string, DatasetMetadata>>(new Map())
   const freshness = ref<Record<string, DatasetFreshnessEntry>>({})
@@ -118,20 +115,16 @@ export const useDataStore = defineStore('data', () => {
     loading.value = true
     error.value = null
     try {
-      const json = await request<{ datasets: string[] }>('/')
+      const json = await request<{ datasets: string[] }>("/")
       datasets.value = json.datasets
     } catch (e) {
-      error.value = e instanceof Error ? e.message : 'Failed to fetch datasets'
+      error.value = e instanceof Error ? e.message : "Failed to fetch datasets"
     } finally {
       loading.value = false
     }
   }
 
-  async function fetchDataset(
-    name: string,
-    page = 1,
-    limit = 100,
-  ): Promise<PaginatedResponse> {
+  async function fetchDataset(name: string, page = 1, limit = 100): Promise<PaginatedResponse> {
     if (STATIC_MODE) {
       return request<PaginatedResponse>(`/${name}`)
     }
@@ -147,7 +140,7 @@ export const useDataStore = defineStore('data', () => {
   }
 
   async function fetchAllMetadata(): Promise<DatasetMetadata[]> {
-    const json = await request<{ datasets: DatasetMetadata[] }>('/metadata')
+    const json = await request<{ datasets: DatasetMetadata[] }>("/metadata")
     for (const m of json.datasets) {
       metadata.value.set(m.name, m)
     }
@@ -162,16 +155,19 @@ export const useDataStore = defineStore('data', () => {
       // and the badges work off ONE curated file (otherwise static mode regresses the
       // indicators: a flat file has no `.datasets` key).
       if (STATIC_MODE) {
-        const flat = await request<StaticFreshnessFile>('/freshness')
+        const flat = await request<StaticFreshnessFile>("/freshness")
         const adapted = adaptStaticFreshness(flat)
         freshness.value = adapted
         return adapted
       }
-      const json = await request<FreshnessResponse>('/freshness')
+      const json = await request<FreshnessResponse>("/freshness")
       freshness.value = json.datasets
       return json.datasets
     } catch (e) {
-      console.warn('[WealthLens] Failed to load dataset freshness:', e instanceof Error ? e.message : e)
+      console.warn(
+        "[WealthLens] Failed to load dataset freshness:",
+        e instanceof Error ? e.message : e,
+      )
       return {}
     }
   }

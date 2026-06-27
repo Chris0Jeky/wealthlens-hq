@@ -13,8 +13,8 @@
  */
 
 defineProps<{
-  chartId?: string;
-}>();
+  chartId?: string
+}>()
 </script>
 
 <template>
@@ -23,7 +23,13 @@ defineProps<{
     <span class="share-bar__label">Share</span>
     <button class="share-bar__btn" type="button" aria-label="Copy link to chart">
       <!-- clipboard icon -->
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+      <svg
+        viewBox="0 0 16 16"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.5"
+        aria-hidden="true"
+      >
         <rect x="5" y="5" width="8" height="9" rx="1" />
         <path d="M3 11V3a1 1 0 0 1 1-1h6" />
       </svg>
@@ -31,7 +37,13 @@ defineProps<{
     </button>
     <button class="share-bar__btn" type="button" aria-label="Get embed code">
       <!-- code icon -->
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+      <svg
+        viewBox="0 0 16 16"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.5"
+        aria-hidden="true"
+      >
         <path d="M5 4L1 8l4 4M11 4l4 4-4 4" />
       </svg>
       Embed
@@ -40,19 +52,37 @@ defineProps<{
     <!-- Download section -->
     <span class="share-bar__label share-bar__label--sep">Download</span>
     <button class="share-bar__btn" type="button" aria-label="Download PNG">
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+      <svg
+        viewBox="0 0 16 16"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.5"
+        aria-hidden="true"
+      >
         <path d="M8 2v8m0 0L5 7m3 3l3-3M2 12v1a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-1" />
       </svg>
       PNG
     </button>
     <button class="share-bar__btn" type="button" aria-label="Download SVG">
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+      <svg
+        viewBox="0 0 16 16"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.5"
+        aria-hidden="true"
+      >
         <path d="M8 2v8m0 0L5 7m3 3l3-3M2 12v1a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-1" />
       </svg>
       SVG
     </button>
     <button class="share-bar__btn" type="button" aria-label="Download CSV data">
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+      <svg
+        viewBox="0 0 16 16"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.5"
+        aria-hidden="true"
+      >
         <path d="M8 2v8m0 0L5 7m3 3l3-3M2 12v1a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-1" />
       </svg>
       CSV
@@ -68,9 +98,7 @@ defineProps<{
     <button class="share-bar__btn" type="button" aria-label="Share on LinkedIn">
       &rarr; LinkedIn
     </button>
-    <button class="share-bar__btn" type="button" aria-label="Share on X">
-      &rarr; X
-    </button>
+    <button class="share-bar__btn" type="button" aria-label="Share on X">&rarr; X</button>
 
     <!-- Append slot for additional toolbar controls -->
     <slot name="append" />

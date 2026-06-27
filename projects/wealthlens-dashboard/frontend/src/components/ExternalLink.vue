@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed } from "vue"
 
 const props = defineProps<{
   href: string
@@ -7,7 +7,7 @@ const props = defineProps<{
 
 const safeHref = computed(() => {
   if (/^https?:\/\//i.test(props.href)) return props.href
-  return '#'
+  return "#"
 })
 </script>
 

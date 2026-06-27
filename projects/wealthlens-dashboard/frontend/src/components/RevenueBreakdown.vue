@@ -9,8 +9,8 @@
  * number is the source of truth, the bar is aria-hidden). Both inputs are optional
  * so a partial payload degrades gracefully.
  */
-import { computed, useId } from 'vue'
-import type { Interval } from '@/types/simulator'
+import { computed, useId } from "vue"
+import type { Interval } from "@/types/simulator"
 
 const props = defineProps<{
   byDecile?: Interval[]
@@ -19,18 +19,18 @@ const props = defineProps<{
   unit?: string
 }>()
 
-const cur = computed(() => props.currency ?? '£')
-const unit = computed(() => props.unit ?? 'bn')
+const cur = computed(() => props.currency ?? "£")
+const unit = computed(() => props.unit ?? "bn")
 
 // Guard non-finite defensively: the value crosses an unvalidated JSON boundary, so
 // a malformed Interval renders an em dash rather than "£NaNbn".
 function fmt(n: number): string {
-  return Number.isFinite(n) ? `${cur.value}${n.toFixed(2)}${unit.value}` : '—'
+  return Number.isFinite(n) ? `${cur.value}${n.toFixed(2)}${unit.value}` : "—"
 }
 
 // Compact range, currency + unit shown once: "£12.50–24.06bn".
 function fmtRange(iv: Interval): string {
-  if (!Number.isFinite(iv.low) || !Number.isFinite(iv.high)) return '—'
+  if (!Number.isFinite(iv.low) || !Number.isFinite(iv.high)) return "—"
   return `${cur.value}${iv.low.toFixed(2)}–${iv.high.toFixed(2)}${unit.value}`
 }
 
@@ -38,10 +38,10 @@ const headingId = useId()
 
 // Keys are the engine Nation enum values (underscored, e.g. "northern_ireland").
 const NATION_NAMES: Record<string, string> = {
-  england: 'England',
-  scotland: 'Scotland',
-  wales: 'Wales',
-  northern_ireland: 'Northern Ireland',
+  england: "England",
+  scotland: "Scotland",
+  wales: "Wales",
+  northern_ireland: "Northern Ireland",
 }
 
 // Nations sorted by central revenue, largest first. Null/undefined entries are
@@ -68,7 +68,7 @@ const deciles = computed(() => {
     key: i,
     label:
       full && i === 0
-        ? 'Decile 1 (least wealthy)'
+        ? "Decile 1 (least wealthy)"
         : full && i === arr.length - 1
           ? `Decile ${arr.length} (wealthiest)`
           : `Decile ${i + 1}`,
@@ -116,8 +116,7 @@ const deciles = computed(() => {
     <template v-if="deciles.length">
       <h3 class="mt-5 text-sm font-semibold text-wl-ink">By wealth decile</h3>
       <p class="mt-1 text-sm text-wl-ink-muted">
-        How the revenue falls across the population, from the least to the most
-        wealthy tenth.
+        How the revenue falls across the population, from the least to the most wealthy tenth.
       </p>
       <table class="mt-2 w-full text-sm">
         <caption class="sr-only">

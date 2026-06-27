@@ -10,56 +10,52 @@
  * URL: https://www.gov.uk/income-tax-rates
  * Accessed: 2026-05-17
  */
-import { ref, computed } from "vue";
-import {
-  calculateEffectiveRate,
-  formatPercent,
-  type EffectiveRates,
-} from "@/utils/taxCalculator";
+import { ref, computed } from "vue"
+import { calculateEffectiveRate, formatPercent, type EffectiveRates } from "@/utils/taxCalculator"
 
-const salaryInput = ref("");
-const hasCalculated = ref(false);
+const salaryInput = ref("")
+const hasCalculated = ref(false)
 
 const parsedSalary = computed(() => {
-  const cleaned = salaryInput.value.replace(/[£,\s]/g, "");
-  if (cleaned === "") return null;
-  const num = Number(cleaned);
-  return Number.isFinite(num) && num >= 0 ? num : null;
-});
+  const cleaned = salaryInput.value.replace(/[£,\s]/g, "")
+  if (cleaned === "") return null
+  const num = Number(cleaned)
+  return Number.isFinite(num) && num >= 0 ? num : null
+})
 
-const isValid = computed(() => parsedSalary.value !== null);
+const isValid = computed(() => parsedSalary.value !== null)
 
 const results = computed((): EffectiveRates | null => {
-  if (!hasCalculated.value || parsedSalary.value === null) return null;
-  return calculateEffectiveRate(parsedSalary.value);
-});
+  if (!hasCalculated.value || parsedSalary.value === null) return null
+  return calculateEffectiveRate(parsedSalary.value)
+})
 
 function applyPreset(value: number) {
-  salaryInput.value = value.toLocaleString("en-GB");
-  hasCalculated.value = false;
+  salaryInput.value = value.toLocaleString("en-GB")
+  hasCalculated.value = false
 }
 
 function calculate() {
   if (isValid.value) {
-    hasCalculated.value = true;
+    hasCalculated.value = true
   }
 }
 
 function onKeydown(e: KeyboardEvent) {
   if (e.key === "Enter") {
-    calculate();
+    calculate()
   }
 }
 
 function reset() {
-  salaryInput.value = "";
-  hasCalculated.value = false;
+  salaryInput.value = ""
+  hasCalculated.value = false
 }
 
 function formatGBP(value: number): string {
-  const abs = Math.abs(value);
-  const formatted = abs.toLocaleString("en-GB", { maximumFractionDigits: 0 });
-  return `${value < 0 ? "-" : ""}£${formatted}`;
+  const abs = Math.abs(value)
+  const formatted = abs.toLocaleString("en-GB", { maximumFractionDigits: 0 })
+  return `${value < 0 ? "-" : ""}£${formatted}`
 }
 </script>
 
@@ -73,26 +69,21 @@ function formatGBP(value: number): string {
         <em>tax rate?</em>
       </h1>
       <p class="calc__lede">
-        Enter your annual gross salary to see your effective income tax and
-        National Insurance rates — and how they compare to capital gains tax
-        rates paid on investment profits.
+        Enter your annual gross salary to see your effective income tax and National Insurance rates
+        — and how they compare to capital gains tax rates paid on investment profits.
       </p>
       <p class="calc__privacy">
-        All calculation happens in your browser. No data is stored or
-        transmitted.
+        All calculation happens in your browser. No data is stored or transmitted.
       </p>
     </header>
 
     <!-- Input section -->
     <section class="calc__input-section" aria-label="Salary input">
-      <label for="salary-input" class="calc__label">
-        Your annual gross salary
-      </label>
+      <label for="salary-input" class="calc__label"> Your annual gross salary </label>
       <p id="salary-input-help" class="calc__help">
         Enter your total annual salary before tax. This calculates
-        <strong>employee</strong> income tax for England, Wales, and Northern
-        Ireland, plus Class 1 National Insurance. Scottish Income Tax uses
-        different bands and is outside this calculator.
+        <strong>employee</strong> income tax for England, Wales, and Northern Ireland, plus Class 1
+        National Insurance. Scottish Income Tax uses different bands and is outside this calculator.
       </p>
 
       <div class="calc__input-row">
@@ -108,48 +99,28 @@ function formatGBP(value: number): string {
           :aria-invalid="salaryInput.length > 0 && !isValid ? 'true' : undefined"
           @keydown="onKeydown"
         />
-        <button
-          class="wl-btn wl-btn--red calc__btn"
-          :disabled="!isValid"
-          @click="calculate"
-        >
+        <button class="wl-btn wl-btn--red calc__btn" :disabled="!isValid" @click="calculate">
           Calculate
         </button>
       </div>
 
-      <p
-        v-if="salaryInput.length > 0 && !isValid"
-        class="calc__error"
-        role="alert"
-      >
+      <p v-if="salaryInput.length > 0 && !isValid" class="calc__error" role="alert">
         Please enter a valid positive number.
       </p>
 
       <!-- Quick presets -->
       <div class="calc__presets" role="group" aria-label="Salary presets">
         <p class="calc__presets-label">Quick estimates:</p>
-        <button
-          class="wl-btn wl-btn--ghost wl-btn--sm"
-          @click="applyPreset(25_000)"
-        >
+        <button class="wl-btn wl-btn--ghost wl-btn--sm" @click="applyPreset(25_000)">
           &pound;25,000
         </button>
-        <button
-          class="wl-btn wl-btn--ghost wl-btn--sm"
-          @click="applyPreset(50_000)"
-        >
+        <button class="wl-btn wl-btn--ghost wl-btn--sm" @click="applyPreset(50_000)">
           &pound;50,000
         </button>
-        <button
-          class="wl-btn wl-btn--ghost wl-btn--sm"
-          @click="applyPreset(80_000)"
-        >
+        <button class="wl-btn wl-btn--ghost wl-btn--sm" @click="applyPreset(80_000)">
           &pound;80,000
         </button>
-        <button
-          class="wl-btn wl-btn--ghost wl-btn--sm"
-          @click="applyPreset(150_000)"
-        >
+        <button class="wl-btn wl-btn--ghost wl-btn--sm" @click="applyPreset(150_000)">
           &pound;150,000
         </button>
       </div>
@@ -192,7 +163,12 @@ function formatGBP(value: number): string {
       <!-- Tax breakdown table -->
       <div class="calc__breakdown">
         <h2 class="calc__breakdown-heading">Income tax breakdown</h2>
-        <div class="calc__table-wrap" role="region" aria-label="Income tax bands table" tabindex="0">
+        <div
+          class="calc__table-wrap"
+          role="region"
+          aria-label="Income tax bands table"
+          tabindex="0"
+        >
           <table class="calc__table">
             <thead>
               <tr>
@@ -213,7 +189,9 @@ function formatGBP(value: number): string {
             <tfoot>
               <tr>
                 <td colspan="3"><strong>Total income tax</strong></td>
-                <td class="wl-num"><strong>{{ formatGBP(results.incomeTax.totalTax) }}</strong></td>
+                <td class="wl-num">
+                  <strong>{{ formatGBP(results.incomeTax.totalTax) }}</strong>
+                </td>
               </tr>
             </tfoot>
           </table>
@@ -223,7 +201,12 @@ function formatGBP(value: number): string {
       <!-- NI breakdown -->
       <div class="calc__breakdown">
         <h2 class="calc__breakdown-heading">National Insurance breakdown</h2>
-        <div class="calc__table-wrap" role="region" aria-label="National Insurance bands table" tabindex="0">
+        <div
+          class="calc__table-wrap"
+          role="region"
+          aria-label="National Insurance bands table"
+          tabindex="0"
+        >
           <table class="calc__table">
             <thead>
               <tr>
@@ -244,7 +227,9 @@ function formatGBP(value: number): string {
             <tfoot>
               <tr>
                 <td colspan="3"><strong>Total National Insurance</strong></td>
-                <td class="wl-num"><strong>{{ formatGBP(results.nationalInsurance.totalNI) }}</strong></td>
+                <td class="wl-num">
+                  <strong>{{ formatGBP(results.nationalInsurance.totalNI) }}</strong>
+                </td>
               </tr>
             </tfoot>
           </table>
@@ -257,20 +242,19 @@ function formatGBP(value: number): string {
         <div class="calc__comparison-card">
           <p class="calc__comparison-text">
             If this {{ formatGBP(parsedSalary ?? 0) }} were received as
-            <strong>capital gains</strong> instead of earned income, you'd pay
-            an effective rate of just
+            <strong>capital gains</strong> instead of earned income, you'd pay an effective rate of
+            just
             <span class="calc__comparison-rate wl-num">
               {{ formatPercent(results.capitalGainsComparison.effectiveRate) }}
             </span>
             — compared to your combined income tax + NI rate of
             <span class="calc__comparison-rate wl-num">
-              {{ formatPercent(results.combinedRate) }}
-            </span>.
+              {{ formatPercent(results.combinedRate) }} </span
+            >.
           </p>
           <p class="calc__comparison-note">
-            Capital gains tax (2026-27): 18% basic rate / 24% higher rate,
-            with a £3,000 annual exempt amount. This comparison uses general
-            asset rates (not carried interest).
+            Capital gains tax (2026-27): 18% basic rate / 24% higher rate, with a £3,000 annual
+            exempt amount. This comparison uses general asset rates (not carried interest).
           </p>
         </div>
       </div>
@@ -278,16 +262,11 @@ function formatGBP(value: number): string {
       <!-- Source citation -->
       <div class="calc__source">
         <span class="wl-source">
-          HMRC Income Tax rates, National Insurance rates, and Capital Gains
-          Tax rates for the 2026-27 tax year. Income Tax calculations use
-          England, Wales, and Northern Ireland bands.
+          HMRC Income Tax rates, National Insurance rates, and Capital Gains Tax rates for the
+          2026-27 tax year. Income Tax calculations use England, Wales, and Northern Ireland bands.
         </span>
         <p class="calc__source-detail">
-          <a
-            href="https://www.gov.uk/income-tax-rates"
-            target="_blank"
-            rel="noopener"
-          >
+          <a href="https://www.gov.uk/income-tax-rates" target="_blank" rel="noopener">
             Income Tax rates
           </a>
           &middot;
@@ -299,11 +278,7 @@ function formatGBP(value: number): string {
             NI rates
           </a>
           &middot;
-          <a
-            href="https://www.gov.uk/capital-gains-tax/rates"
-            target="_blank"
-            rel="noopener"
-          >
+          <a href="https://www.gov.uk/capital-gains-tax/rates" target="_blank" rel="noopener">
             CGT rates
           </a>
           &middot; Accessed 2026-05-17
@@ -311,9 +286,7 @@ function formatGBP(value: number): string {
       </div>
 
       <!-- Reset -->
-      <button class="wl-btn wl-btn--ghost calc__reset" @click="reset">
-        Try another salary
-      </button>
+      <button class="wl-btn wl-btn--ghost calc__reset" @click="reset">Try another salary</button>
     </section>
   </div>
 </template>

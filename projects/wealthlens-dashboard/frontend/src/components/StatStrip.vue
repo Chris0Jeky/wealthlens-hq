@@ -14,23 +14,20 @@
  */
 
 export interface StatItem {
-  label: string;
-  value: string;
-  unit?: string;
-  description: string;
-  headline?: boolean;
+  label: string
+  value: string
+  unit?: string
+  description: string
+  headline?: boolean
 }
 
 defineProps<{
-  stats: StatItem[];
-}>();
+  stats: StatItem[]
+}>()
 </script>
 
 <template>
-  <section
-    class="stat-strip"
-    aria-label="Key statistics"
-  >
+  <section class="stat-strip" aria-label="Key statistics">
     <div
       v-for="(stat, i) in stats"
       :key="i"

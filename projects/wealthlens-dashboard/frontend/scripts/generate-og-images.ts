@@ -16,25 +16,25 @@
  * Output: public/og/<chart-slug>.png + public/og/og-default.png
  */
 
-import satori from "satori";
-import { Resvg } from "@resvg/resvg-js";
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from "fs";
-import { resolve, join, dirname } from "path";
-import { fileURLToPath } from "url";
-import { OG_METADATA, type OgMetadataEntry } from "../src/constants/ogMetadata";
-import { VALID_CHART_NAMES } from "../src/constants/charts";
+import satori from "satori"
+import { Resvg } from "@resvg/resvg-js"
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from "fs"
+import { resolve, join, dirname } from "path"
+import { fileURLToPath } from "url"
+import { OG_METADATA, type OgMetadataEntry } from "../src/constants/ogMetadata"
+import { VALID_CHART_NAMES } from "../src/constants/charts"
 
 // --- Configuration ---
 
-type SatoriNode = Parameters<typeof satori>[0];
+type SatoriNode = Parameters<typeof satori>[0]
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
 
-const WIDTH = 1200;
-const HEIGHT = 630;
-const OUTPUT_DIR = resolve(__dirname, "../public/og");
-const FONTS_DIR = resolve(__dirname, "fonts");
+const WIDTH = 1200
+const HEIGHT = 630
+const OUTPUT_DIR = resolve(__dirname, "../public/og")
+const FONTS_DIR = resolve(__dirname, "fonts")
 
 // Colors matching broadsheet newspaper design
 const COLORS = {
@@ -45,7 +45,7 @@ const COLORS = {
   accent: "#cc0000",
   footer: "#555555",
   footerBg: "#f0eeeb",
-};
+}
 
 // --- Font loading ---
 
@@ -71,13 +71,13 @@ const FONT_FILES = [
     style: "normal",
     source: "@fontsource/playfair-display@5.2.8 latin-700-normal.ttf",
   },
-] as const;
+] as const
 
 function toArrayBuffer(buffer: Buffer): ArrayBuffer {
   return buffer.buffer.slice(
     buffer.byteOffset,
     buffer.byteOffset + buffer.byteLength,
-  ) as ArrayBuffer;
+  ) as ArrayBuffer
 }
 
 /**
@@ -89,15 +89,13 @@ function toArrayBuffer(buffer: Buffer): ArrayBuffer {
 async function loadFonts(): Promise<
   Array<{ name: string; data: ArrayBuffer; weight: number; style: string }>
 > {
-  const missingFonts = FONT_FILES.filter(
-    (font) => !existsSync(join(FONTS_DIR, font.filename)),
-  );
+  const missingFonts = FONT_FILES.filter((font) => !existsSync(join(FONTS_DIR, font.filename)))
   if (missingFonts.length > 0) {
-    const missing = missingFonts.map((font) => font.filename).join(", ");
+    const missing = missingFonts.map((font) => font.filename).join(", ")
     throw new Error(
       `Missing vendored OG font files in ${FONTS_DIR}: ${missing}. ` +
         "Restore the committed fonts before running generate:og.",
-    );
+    )
   }
 
   return FONT_FILES.map((font) => ({
@@ -105,7 +103,7 @@ async function loadFonts(): Promise<
     data: toArrayBuffer(readFileSync(join(FONTS_DIR, font.filename))),
     weight: font.weight,
     style: font.style,
-  }));
+  }))
 }
 
 // --- Image generation ---
@@ -242,7 +240,7 @@ function buildChartLayout(metadata: OgMetadataEntry): SatoriNode {
         },
       ],
     },
-  } as SatoriNode;
+  } as SatoriNode
 }
 
 /**
@@ -352,7 +350,7 @@ function buildDefaultLayout(): SatoriNode {
         },
       ],
     },
-  } as SatoriNode;
+  } as SatoriNode
 }
 
 /**
@@ -371,66 +369,64 @@ async function renderToPng(
       weight: f.weight as 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900,
       style: f.style as "normal" | "italic",
     })),
-  });
+  })
 
   const resvg = new Resvg(svg, {
     fitTo: { mode: "width", value: WIDTH },
-  });
-  const pngData = resvg.render();
-  return Buffer.from(pngData.asPng());
+  })
+  const pngData = resvg.render()
+  return Buffer.from(pngData.asPng())
 }
 
 // --- Main ---
 
 async function main() {
-  console.log("=== WealthLens OG Image Generator ===\n");
+  console.log("=== WealthLens OG Image Generator ===\n")
 
   // Ensure output directory exists
   if (!existsSync(OUTPUT_DIR)) {
-    mkdirSync(OUTPUT_DIR, { recursive: true });
+    mkdirSync(OUTPUT_DIR, { recursive: true })
   }
 
   // Load fonts
-  console.log("Loading fonts...");
-  const fonts = await loadFonts();
-  console.log("Fonts loaded.\n");
+  console.log("Loading fonts...")
+  const fonts = await loadFonts()
+  console.log("Fonts loaded.\n")
 
-  let generated = 0;
+  let generated = 0
 
   // Generate images for each chart
   for (const chartName of VALID_CHART_NAMES) {
-    const metadata = OG_METADATA[chartName];
+    const metadata = OG_METADATA[chartName]
     if (!metadata) {
-      console.warn(
-        `WARNING: No OG metadata for chart "${chartName}" - skipping`,
-      );
-      continue;
+      console.warn(`WARNING: No OG metadata for chart "${chartName}" - skipping`)
+      continue
     }
 
-    const layout = buildChartLayout(metadata);
-    const png = await renderToPng(layout, fonts);
-    const outputPath = join(OUTPUT_DIR, `${chartName}.png`);
-    writeFileSync(outputPath, png);
+    const layout = buildChartLayout(metadata)
+    const png = await renderToPng(layout, fonts)
+    const outputPath = join(OUTPUT_DIR, `${chartName}.png`)
+    writeFileSync(outputPath, png)
 
-    const sizeKb = (png.length / 1024).toFixed(1);
-    console.log(`  Generated: ${chartName}.png (${sizeKb} KB)`);
-    generated++;
+    const sizeKb = (png.length / 1024).toFixed(1)
+    console.log(`  Generated: ${chartName}.png (${sizeKb} KB)`)
+    generated++
   }
 
   // Generate default OG image
-  const defaultLayout = buildDefaultLayout();
-  const defaultPng = await renderToPng(defaultLayout, fonts);
-  const defaultOutputPath = join(OUTPUT_DIR, "og-default.png");
-  writeFileSync(defaultOutputPath, defaultPng);
+  const defaultLayout = buildDefaultLayout()
+  const defaultPng = await renderToPng(defaultLayout, fonts)
+  const defaultOutputPath = join(OUTPUT_DIR, "og-default.png")
+  writeFileSync(defaultOutputPath, defaultPng)
 
-  const defaultSizeKb = (defaultPng.length / 1024).toFixed(1);
-  console.log(`  Generated: og-default.png (${defaultSizeKb} KB)`);
-  generated++;
+  const defaultSizeKb = (defaultPng.length / 1024).toFixed(1)
+  console.log(`  Generated: og-default.png (${defaultSizeKb} KB)`)
+  generated++
 
-  console.log(`\nDone! Generated ${generated} OG images in ${OUTPUT_DIR}`);
+  console.log(`\nDone! Generated ${generated} OG images in ${OUTPUT_DIR}`)
 }
 
 main().catch((error) => {
-  console.error("Error generating OG images:", error);
-  process.exit(1);
-});
+  console.error("Error generating OG images:", error)
+  process.exit(1)
+})

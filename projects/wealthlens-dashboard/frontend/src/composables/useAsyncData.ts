@@ -1,4 +1,4 @@
-import { ref, type Ref } from 'vue'
+import { ref, type Ref } from "vue"
 
 export interface AsyncState<T> {
   data: Ref<T | null>
@@ -18,7 +18,7 @@ export function useAsyncData<T>(fetcher: () => Promise<T>): AsyncState<T> {
     try {
       data.value = await fetcher()
     } catch (e) {
-      error.value = e instanceof Error ? e.message : 'An unexpected error occurred'
+      error.value = e instanceof Error ? e.message : "An unexpected error occurred"
     } finally {
       loading.value = false
     }

@@ -21,27 +21,23 @@
  * an accessible tab group, and an AccessibleDataTable fallback for the
  * concentration curve (WCAG 1.1.1 non-text content).
  */
-import { computed, ref } from "vue";
-import { use } from "echarts/core";
-import { CanvasRenderer } from "echarts/renderers";
-import { BarChart, LineChart } from "echarts/charts";
+import { computed, ref } from "vue"
+import { use } from "echarts/core"
+import { CanvasRenderer } from "echarts/renderers"
+import { BarChart, LineChart } from "echarts/charts"
 import {
   GridComponent,
   TooltipComponent,
   TitleComponent,
   LegendComponent,
-} from "echarts/components";
-import VChart from "vue-echarts";
-import TabGroup, { type Tab } from "@/components/TabGroup.vue";
-import AccessibleDataTable from "@/components/AccessibleDataTable.vue";
-import type { DatasetRow } from "@/stores/data";
-import { useChartData } from "@/composables/useChartData";
-import type { EChartsExportable } from "@/composables/useChartExport";
-import {
-  escapeHtml,
-  toNumberOrNaN,
-  warnIfSignificantDataLoss,
-} from "@/utils/chart";
+} from "echarts/components"
+import VChart from "vue-echarts"
+import TabGroup, { type Tab } from "@/components/TabGroup.vue"
+import AccessibleDataTable from "@/components/AccessibleDataTable.vue"
+import type { DatasetRow } from "@/stores/data"
+import { useChartData } from "@/composables/useChartData"
+import type { EChartsExportable } from "@/composables/useChartExport"
+import { escapeHtml, toNumberOrNaN, warnIfSignificantDataLoss } from "@/utils/chart"
 
 // Register only the ECharts modules we need (tree-shaking). The y=x equality
 // reference line is drawn as an ordinary line series, so no MarkLineComponent.
@@ -53,29 +49,28 @@ use([
   TooltipComponent,
   TitleComponent,
   LegendComponent,
-]);
+])
 
-const { rows, loading, error } = useChartData("cgt-concentration");
-const chart = ref<EChartsExportable | null>(null);
+const { rows, loading, error } = useChartData("cgt-concentration")
+const chart = ref<EChartsExportable | null>(null)
 
-defineExpose({ chart });
+defineExpose({ chart })
 
 /**
  * Respect prefers-reduced-motion (WCAG 2.3.3).
  * Disables ECharts animations when the user has requested reduced motion.
  */
 const prefersReducedMotion =
-  typeof window !== "undefined" &&
-  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches
 
 // WCAG AA high-contrast colors against white
 // #1a56db (blue) contrast ratio ~7.2:1 — share of gains bars / concentration curve
 // #dc2626 (red)  contrast ratio ~4.6:1 — cumulative line
 // #6b7280 (gray) contrast ratio ~4.8:1 — equality reference line (dashed)
-const COLOR_BARS = "#1a56db";
-const COLOR_LINE = "#dc2626";
-const COLOR_CURVE = "#1a56db";
-const COLOR_EQUALITY = "#6b7280";
+const COLOR_BARS = "#1a56db"
+const COLOR_LINE = "#dc2626"
+const COLOR_CURVE = "#1a56db"
+const COLOR_EQUALITY = "#6b7280"
 
 /** Parsed and sorted data rows. */
 const sortedData = computed(() => {
@@ -92,7 +87,7 @@ const sortedData = computed(() => {
     cumulGainsFromTopPct: toNumberOrNaN(r.cumul_gains_from_top_pct),
     shareOfTaxpayersPct: toNumberOrNaN(r.share_of_taxpayers_pct),
     cumulTaxpayersFromTopPct: toNumberOrNaN(r.cumul_taxpayers_from_top_pct),
-  }));
+  }))
   const filtered = mapped
     .filter(
       (r) =>
@@ -101,26 +96,26 @@ const sortedData = computed(() => {
         !isNaN(r.shareOfGainsPct) &&
         !isNaN(r.cumulGainsFromTopPct),
     )
-    .sort((a, b) => a.bandLower - b.bandLower);
+    .sort((a, b) => a.bandLower - b.bandLower)
 
-  warnIfSignificantDataLoss("cgt-concentration", mapped.length, filtered.length);
+  warnIfSignificantDataLoss("cgt-concentration", mapped.length, filtered.length)
 
-  return filtered;
-});
+  return filtered
+})
 
-const hasData = computed(() => sortedData.value.length > 0);
+const hasData = computed(() => sortedData.value.length > 0)
 
 /**
  * Build a headline insight for the aria-label.
  * Finds the highest-band entry and reports cumulative gains from top.
  */
 const headlineInsight = computed(() => {
-  const data = sortedData.value;
-  if (data.length === 0) return "";
+  const data = sortedData.value
+  if (data.length === 0) return ""
   // The last entry (highest band) has the cumulative stat from the top
-  const top = data[data.length - 1];
-  return `${top.cumulGainsFromTopPct.toFixed(0)}% of capital gains go to taxpayers with gains of ${top.gainBand} or more`;
-});
+  const top = data[data.length - 1]
+  return `${top.cumulGainsFromTopPct.toFixed(0)}% of capital gains go to taxpayers with gains of ${top.gainBand} or more`
+})
 
 /**
  * Additive view toggle. Defaults to "bands" so the existing dual-axis view is
@@ -130,14 +125,14 @@ const headlineInsight = computed(() => {
 const views: Tab[] = [
   { id: "bands", label: "By gain band" },
   { id: "curve", label: "Concentration curve" },
-];
-const activeView = ref<"bands" | "curve">("bands");
+]
+const activeView = ref<"bands" | "curve">("bands")
 
 const option = computed(() => {
-  const data = sortedData.value;
-  const labels = data.map((d) => d.gainBand);
-  const shareValues = data.map((d) => d.shareOfGainsPct);
-  const cumulValues = data.map((d) => d.cumulGainsFromTopPct);
+  const data = sortedData.value
+  const labels = data.map((d) => d.gainBand)
+  const shareValues = data.map((d) => d.shareOfGainsPct)
+  const cumulValues = data.map((d) => d.cumulGainsFromTopPct)
 
   return {
     animation: !prefersReducedMotion,
@@ -155,19 +150,18 @@ const option = computed(() => {
       axisPointer: { type: "shadow" as const },
       formatter: (
         params: Array<{
-          seriesName: string;
-          value: number;
-          axisValue: string;
+          seriesName: string
+          value: number
+          axisValue: string
         }>,
       ) => {
-        if (!Array.isArray(params) || params.length === 0) return "";
-        let html = `<strong>${escapeHtml(String(params[0].axisValue))}</strong><br/>`;
+        if (!Array.isArray(params) || params.length === 0) return ""
+        let html = `<strong>${escapeHtml(String(params[0].axisValue))}</strong><br/>`
         for (const p of params) {
-          const val =
-            typeof p.value === "number" ? p.value.toFixed(1) : String(p.value);
-          html += `${escapeHtml(String(p.seriesName))}: ${escapeHtml(val)}%<br/>`;
+          const val = typeof p.value === "number" ? p.value.toFixed(1) : String(p.value)
+          html += `${escapeHtml(String(p.seriesName))}: ${escapeHtml(val)}%<br/>`
         }
-        return html;
+        return html
       },
     },
     legend: {
@@ -235,8 +229,8 @@ const option = computed(() => {
         symbolSize: 6,
       },
     ],
-  };
-});
+  }
+})
 
 /**
  * Concentration-curve (Lorenz) points.
@@ -261,45 +255,44 @@ const option = computed(() => {
  * value is preserved verbatim in the accessible data table below. We never clamp
  * silently — see clampPct() and the table, which always shows the real figure.
  */
-const CLAMP_MAX = 100;
+const CLAMP_MAX = 100
 function clampPctForDisplay(v: number): number {
   // Clamp ONLY the >100 rounding artifact for plotting; the table keeps the raw
   // value. Note: more than one near-100 band can clamp to the same (100, 100)
   // corner and so plot as coincident points — that is expected, and the raw,
   // distinct figures remain visible in the accessible data table below.
-  return v > CLAMP_MAX ? CLAMP_MAX : v;
+  return v > CLAMP_MAX ? CLAMP_MAX : v
 }
 
 const curvePoints = computed(() => {
-  return sortedData.value
-    .map((d) => ({
-      gainBand: d.gainBand,
-      // Raw, verbatim values (used for the table + tooltip text).
-      taxpayersFromTop: d.cumulTaxpayersFromTopPct,
-      gainsFromTop: d.cumulGainsFromTopPct,
-    }))
-    // Drop any band whose cumulative figures are missing/non-finite (the real
-    // data has a band with a null taxpayer count) so we never plot a fabricated
-    // point. Such a band still appears in the default "by gain band" view.
-    .filter(
-      (p) =>
-        Number.isFinite(p.taxpayersFromTop) && Number.isFinite(p.gainsFromTop),
-    )
-    // Order from the top band (small cumulative taxpayer share) downwards.
-    .sort((a, b) => a.taxpayersFromTop - b.taxpayersFromTop);
-});
+  return (
+    sortedData.value
+      .map((d) => ({
+        gainBand: d.gainBand,
+        // Raw, verbatim values (used for the table + tooltip text).
+        taxpayersFromTop: d.cumulTaxpayersFromTopPct,
+        gainsFromTop: d.cumulGainsFromTopPct,
+      }))
+      // Drop any band whose cumulative figures are missing/non-finite (the real
+      // data has a band with a null taxpayer count) so we never plot a fabricated
+      // point. Such a band still appears in the default "by gain band" view.
+      .filter((p) => Number.isFinite(p.taxpayersFromTop) && Number.isFinite(p.gainsFromTop))
+      // Order from the top band (small cumulative taxpayer share) downwards.
+      .sort((a, b) => a.taxpayersFromTop - b.taxpayersFromTop)
+  )
+})
 
-const hasCurveData = computed(() => curvePoints.value.length > 0);
+const hasCurveData = computed(() => curvePoints.value.length > 0)
 
 /** ECharts option for the concentration curve (numeric x/y, with equality line). */
 const curveOption = computed(() => {
-  const pts = curvePoints.value;
+  const pts = curvePoints.value
   // [x, y] pairs; x and y are the verbatim cumulative shares, clamped only for
   // the >100 rounding artifact so the line stays within the 0–100 plot box.
   const seriesData = pts.map((p) => [
     clampPctForDisplay(p.taxpayersFromTop),
     clampPctForDisplay(p.gainsFromTop),
-  ]);
+  ])
 
   return {
     animation: !prefersReducedMotion,
@@ -317,15 +310,15 @@ const curveOption = computed(() => {
       formatter: (params: { dataIndex?: number } | null | undefined) => {
         // ECharts can invoke the formatter with no/partial params in some event
         // contexts (and in tests with mocked instances); guard before indexing.
-        if (!params || params.dataIndex === undefined) return "";
-        const p = pts[params.dataIndex];
-        if (!p) return "";
+        if (!params || params.dataIndex === undefined) return ""
+        const p = pts[params.dataIndex]
+        if (!p) return ""
         // Show the raw, verbatim values in the tooltip (not the clamped ones).
         return (
           `<strong>${escapeHtml(p.gainBand)} or more</strong><br/>` +
           `Cumulative taxpayers from top: ${escapeHtml(p.taxpayersFromTop.toFixed(1))}%<br/>` +
           `Cumulative gains from top: ${escapeHtml(p.gainsFromTop.toFixed(1))}%`
-        );
+        )
       },
     },
     legend: {
@@ -393,15 +386,15 @@ const curveOption = computed(() => {
         silent: true,
       },
     ],
-  };
-});
+  }
+})
 
 /** Column headers for the concentration-curve accessible data-table fallback. */
 const curveTableColumns = [
   "Gain band (or more)",
   "Cumulative taxpayers from top (%)",
   "Cumulative gains from top (%)",
-];
+]
 
 /**
  * One row per gain band for the AccessibleDataTable fallback (WCAG 1.1.1).
@@ -413,8 +406,8 @@ const curveTableRows = computed<DatasetRow[]>(() => {
     "Gain band (or more)": p.gainBand,
     "Cumulative taxpayers from top (%)": p.taxpayersFromTop,
     "Cumulative gains from top (%)": p.gainsFromTop,
-  }));
-});
+  }))
+})
 
 /**
  * Descriptive aria-label for the concentration-curve view (role=img). Reads the
@@ -422,11 +415,11 @@ const curveTableRows = computed<DatasetRow[]>(() => {
  * users get the same headline the curve conveys. No derived statistics.
  */
 const curveAriaLabel = computed(() => {
-  const pts = curvePoints.value;
+  const pts = curvePoints.value
   if (pts.length === 0) {
-    return "Concentration curve of capital gains against taxpayers.";
+    return "Concentration curve of capital gains against taxpayers."
   }
-  const top = pts[0];
+  const top = pts[0]
   return (
     `Concentration curve plotting the cumulative share of capital gains against ` +
     `the cumulative share of taxpayers, both measured from the top down. ` +
@@ -435,13 +428,18 @@ const curveAriaLabel = computed(() => {
     `(those in the "${top.gainBand} or more" band) account for ` +
     `${top.gainsFromTop.toFixed(1)}% of all gains. A dashed equality line marks ` +
     `where gains would be evenly distributed.`
-  );
-});
+  )
+})
 </script>
 
 <template>
   <!-- Loading state -->
-  <div v-if="loading" class="flex items-center justify-center py-20" role="status" aria-live="polite">
+  <div
+    v-if="loading"
+    class="flex items-center justify-center py-20"
+    role="status"
+    aria-live="polite"
+  >
     <p class="text-[var(--wl-ink-muted)] text-lg">Loading chart data...</p>
   </div>
 
@@ -472,13 +470,7 @@ const curveAriaLabel = computed(() => {
           :aria-label="`Dual-axis chart showing capital gains concentration by gain band. ${headlineInsight}. Bars show each band's share of total gains; red line shows cumulative concentration from the top.`"
           class="w-full"
         >
-          <VChart
-            ref="chart"
-            class="w-full"
-            style="height: 480px"
-            :option="option"
-            autoresize
-          />
+          <VChart ref="chart" class="w-full" style="height: 480px" :option="option" autoresize />
         </div>
       </template>
 
@@ -528,7 +520,8 @@ const curveAriaLabel = computed(() => {
         rel="noopener"
         class="underline hover:text-[var(--wl-ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--wl-red)] rounded"
       >
-        HMRC Capital Gains Tax Statistics<span class="sr-only"> (opens in new tab)</span></a>, accessed 2026-05-14
+        HMRC Capital Gains Tax Statistics<span class="sr-only"> (opens in new tab)</span></a
+      >, accessed 2026-05-14
     </p>
   </div>
 </template>

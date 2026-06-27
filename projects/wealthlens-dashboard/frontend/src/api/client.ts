@@ -1,4 +1,4 @@
-const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000'
+const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000"
 
 export interface DatasetMeta {
   name: string
@@ -45,11 +45,11 @@ async function fetchJson<T>(path: string): Promise<T> {
 
 export const api = {
   listDatasets(): Promise<{ datasets: string[] }> {
-    return fetchJson('/api/data/')
+    return fetchJson("/api/data/")
   },
 
   getMetadata(): Promise<{ datasets: DatasetMeta[] }> {
-    return fetchJson('/api/data/metadata')
+    return fetchJson("/api/data/metadata")
   },
 
   getDatasetMetadata(name: string): Promise<DatasetMeta> {
@@ -65,6 +65,6 @@ export const api = {
   },
 
   health(): Promise<HealthResponse> {
-    return fetchJson('/health')
+    return fetchJson("/health")
   },
 }

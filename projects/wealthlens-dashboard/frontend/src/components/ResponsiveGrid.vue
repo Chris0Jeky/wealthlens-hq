@@ -4,7 +4,7 @@ withDefaults(
     minWidth?: string
     gap?: string
   }>(),
-  { minWidth: '280px', gap: '1.5rem' },
+  { minWidth: "280px", gap: "1.5rem" },
 )
 </script>
 

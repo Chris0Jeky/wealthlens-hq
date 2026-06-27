@@ -17,135 +17,145 @@
   /* === FRONT PAGE (default light theme) === */
 
   /* Paper — newsprint surfaces */
-  --wl-paper:        #F4EFE6;  /* newsprint cream */
-  --wl-paper-tint:   #ECE6DA;  /* slightly darker section bg */
-  --wl-paper-deep:   #E2DBCC;  /* card edges, rules */
+  --wl-paper: #f4efe6; /* newsprint cream */
+  --wl-paper-tint: #ece6da; /* slightly darker section bg */
+  --wl-paper-deep: #e2dbcc; /* card edges, rules */
 
   /* Ink — text hierarchy */
-  --wl-ink:          #111111;  /* near-black ink — headings */
-  --wl-ink-body:     #1A1A1A;  /* body text */
-  --wl-ink-muted:    #5A5550;  /* secondary text */
+  --wl-ink: #111111; /* near-black ink — headings */
+  --wl-ink-body: #1a1a1a; /* body text */
+  --wl-ink-muted: #5a5550; /* secondary text */
   /* tertiary text — WCAG AA (>=4.5:1) on the paper surfaces ONLY (paper/tint/deep/card).
      Do NOT use on --wl-bg-dark/--wl-card-dark (inverted dark surfaces) — it fails there. */
-  --wl-ink-faint:    #615C54;
+  --wl-ink-faint: #615c54;
 
   /* Rules — horizontal dividers */
-  --wl-rule:         #D8D1C1;
-  --wl-rule-strong:  #B8B0A0;
+  --wl-rule: #d8d1c1;
+  --wl-rule-strong: #b8b0a0;
 
   /* Surfaces — semantic aliases for backgrounds */
-  --wl-bg:           var(--wl-paper);
-  --wl-bg-muted:     var(--wl-paper-tint);
-  --wl-bg-section:   var(--wl-paper-tint);
-  --wl-bg-dark:      #0E0D0B;
-  --wl-card:         #FBF8F1;
-  --wl-card-dark:    #161412;
+  --wl-bg: var(--wl-paper);
+  --wl-bg-muted: var(--wl-paper-tint);
+  --wl-bg-section: var(--wl-paper-tint);
+  --wl-bg-dark: #0e0d0b;
+  --wl-card: #fbf8f1;
+  --wl-card-dark: #161412;
 
   /* Brand — pillar-box red is THE colour.
      Blue tokens are aliased to ink so legacy references stay on-brand. */
-  --wl-red:          #C8161D;
-  --wl-red-deep:     #951013;
-  --wl-red-soft:     #F0D8D8;
-  --wl-red-ink:      #5A0A0C;
+  --wl-red: #c8161d;
+  --wl-red-deep: #951013;
+  --wl-red-soft: #f0d8d8;
+  --wl-red-ink: #5a0a0c;
 
   /* Legacy blue aliases — mapped away from blue */
-  --wl-blue:         var(--wl-ink);
-  --wl-blue-ink:     #000000;
-  --wl-blue-soft:    var(--wl-paper-deep);
+  --wl-blue: var(--wl-ink);
+  --wl-blue-ink: #000000;
+  --wl-blue-soft: var(--wl-paper-deep);
 
   /* Hyperlinks — on-brand (no blue) + WCAG AA. These alias the theme's ink and
      red, so they inherit each theme's values automatically (var() resolves at
      use-time): ink gives the maximum, always-AA text contrast, an underline
      identifies the link without relying on colour (WCAG 1.4.1), and red is the
      brand hover accent. Used by ExternalLink. */
-  --wl-link:         var(--wl-ink);
-  --wl-link-hover:   var(--wl-red);
+  --wl-link: var(--wl-ink);
+  --wl-link-hover: var(--wl-red);
 
   /* Categorical palette — used sparingly on multi-series charts */
-  --wl-gold:         #B8861F;
-  --wl-gold-soft:    #EFE2BE;
-  --wl-teal:         #2F6B5E;
-  --okabe-blue:      #2B4C6F;
-  --okabe-vermil:    #B5481F;
-  --okabe-green:     #2F6B5E;
-  --okabe-pink:      #8E3A52;
-  --okabe-yellow:    #B8861F;
-  --okabe-sky:       #6B8AA7;
-  --okabe-orange:    #B5481F;
+  --wl-gold: #b8861f;
+  --wl-gold-soft: #efe2be;
+  --wl-teal: #2f6b5e;
+  --okabe-blue: #2b4c6f;
+  --okabe-vermil: #b5481f;
+  --okabe-green: #2f6b5e;
+  --okabe-pink: #8e3a52;
+  --okabe-yellow: #b8861f;
+  --okabe-sky: #6b8aa7;
+  --okabe-orange: #b5481f;
 
   /* Typography — font stacks */
   --wl-serif: "Newsreader", "Source Serif Pro", Georgia, "Times New Roman", serif;
-  --wl-sans:  "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
-  --wl-mono:  "IBM Plex Mono", "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --wl-sans:
+    "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
+  --wl-mono:
+    "IBM Plex Mono", "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
   /* Geometry — crisp, low radii. Newsprint doesn't round. */
-  --wl-radius:       3px;
-  --wl-radius-sm:    2px;
-  --wl-radius-lg:    4px;
-  --wl-shadow-sm:    0 1px 0 rgba(17,17,17,0.06);
-  --wl-shadow:       0 1px 2px rgba(17,17,17,0.08);
-  --wl-shadow-lg:    0 8px 24px rgba(17,17,17,0.10), 0 2px 6px rgba(17,17,17,0.06);
+  --wl-radius: 3px;
+  --wl-radius-sm: 2px;
+  --wl-radius-lg: 4px;
+  --wl-shadow-sm: 0 1px 0 rgba(17, 17, 17, 0.06);
+  --wl-shadow: 0 1px 2px rgba(17, 17, 17, 0.08);
+  --wl-shadow-lg: 0 8px 24px rgba(17, 17, 17, 0.1), 0 2px 6px rgba(17, 17, 17, 0.06);
 
   /* Layout */
-  --wl-max:          1280px;
+  --wl-max: 1280px;
 }
 
 /* === LATE EDITION (dark theme) === */
 [data-theme="dark"] {
-  --wl-paper:        #1a1a1a;
-  --wl-paper-tint:   #222222;
-  --wl-paper-deep:   #2a2a2a;
-  --wl-bg:           #1a1a1a;
-  --wl-bg-muted:     #2a2a2a;
-  --wl-bg-section:   #2a2a2a;
-  --wl-card:         #242424;
-  --wl-ink:          #e8e8e8;
-  --wl-ink-body:     #ccc;
-  --wl-ink-muted:    #999;
-  --wl-ink-faint:    #929292;  /* WCAG AA (>=4.5:1) on all dark surfaces */
-  --wl-rule:         #333;
-  --wl-rule-strong:  #444;
-  --wl-red:          #ef4444;
-  --wl-red-deep:     #dc2626;
-  --wl-red-soft:     #2a1010;
-  --wl-teal:         #5AB89D;
-  --wl-blue:         var(--wl-ink);
-  --wl-blue-ink:     #FFFFFF;
-  --wl-blue-soft:    #2a2a2a;
-  --wl-shadow-sm:    0 1px 0 rgba(0,0,0,0.5);
-  --wl-shadow:       0 1px 2px rgba(0,0,0,0.5);
-  --wl-shadow-lg:    0 8px 24px rgba(0,0,0,0.6), 0 2px 6px rgba(0,0,0,0.4);
+  --wl-paper: #1a1a1a;
+  --wl-paper-tint: #222222;
+  --wl-paper-deep: #2a2a2a;
+  --wl-bg: #1a1a1a;
+  --wl-bg-muted: #2a2a2a;
+  --wl-bg-section: #2a2a2a;
+  --wl-card: #242424;
+  --wl-ink: #e8e8e8;
+  --wl-ink-body: #ccc;
+  --wl-ink-muted: #999;
+  --wl-ink-faint: #929292; /* WCAG AA (>=4.5:1) on all dark surfaces */
+  --wl-rule: #333;
+  --wl-rule-strong: #444;
+  --wl-red: #ef4444;
+  --wl-red-deep: #dc2626;
+  --wl-red-soft: #2a1010;
+  --wl-teal: #5ab89d;
+  --wl-blue: var(--wl-ink);
+  --wl-blue-ink: #ffffff;
+  --wl-blue-soft: #2a2a2a;
+  --wl-shadow-sm: 0 1px 0 rgba(0, 0, 0, 0.5);
+  --wl-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --wl-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.6), 0 2px 6px rgba(0, 0, 0, 0.4);
 }
 
 /* === STARK (pure white / pillar-box red) === */
 [data-theme="stark"] {
-  --wl-paper:        #FFFFFF;
-  --wl-paper-tint:   #F4F4F4;
-  --wl-paper-deep:   #E8E8E8;
-  --wl-bg:           #FFFFFF;
-  --wl-bg-muted:     #F4F4F4;
-  --wl-bg-section:   #F4F4F4;
-  --wl-card:         #FFFFFF;
-  --wl-ink:          #000000;
-  --wl-ink-body:     #0A0A0A;
-  --wl-ink-muted:    #555555;
-  --wl-ink-faint:    #656565;  /* WCAG AA (>=4.5:1) on all stark surfaces */
-  --wl-rule:         #E0E0E0;
-  --wl-rule-strong:  #BBBBBB;
-  --wl-red:          #DA0000;
-  --wl-red-deep:     #9F0000;
-  --wl-red-soft:     #FBE5E5;
-  --wl-blue:         #000000;
-  --wl-blue-ink:     #000000;
-  --wl-blue-soft:    #F4F4F4;
+  --wl-paper: #ffffff;
+  --wl-paper-tint: #f4f4f4;
+  --wl-paper-deep: #e8e8e8;
+  --wl-bg: #ffffff;
+  --wl-bg-muted: #f4f4f4;
+  --wl-bg-section: #f4f4f4;
+  --wl-card: #ffffff;
+  --wl-ink: #000000;
+  --wl-ink-body: #0a0a0a;
+  --wl-ink-muted: #555555;
+  --wl-ink-faint: #656565; /* WCAG AA (>=4.5:1) on all stark surfaces */
+  --wl-rule: #e0e0e0;
+  --wl-rule-strong: #bbbbbb;
+  --wl-red: #da0000;
+  --wl-red-deep: #9f0000;
+  --wl-red-soft: #fbe5e5;
+  --wl-blue: #000000;
+  --wl-blue-ink: #000000;
+  --wl-blue-soft: #f4f4f4;
 }
 
 /* ---------------------------------------------------------------------------
    Resets — minimal, opinionated baseline
    --------------------------------------------------------------------------- */
 
-*, *::before, *::after { box-sizing: border-box; }
-html, body { margin: 0; padding: 0; }
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
 body {
   background: var(--wl-bg);
   color: var(--wl-ink-body);
@@ -155,8 +165,12 @@ body {
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
-button { font-family: inherit; }
-a { color: inherit; }
+button {
+  font-family: inherit;
+}
+a {
+  color: inherit;
+}
 
 /* ---------------------------------------------------------------------------
    Type scale — broadsheet-inspired hierarchy
@@ -233,7 +247,10 @@ a { color: inherit; }
   border-radius: var(--wl-radius);
   cursor: pointer;
   text-decoration: none;
-  transition: background 0.12s ease, transform 0.05s ease, color 0.12s ease;
+  transition:
+    background 0.12s ease,
+    transform 0.05s ease,
+    color 0.12s ease;
   letter-spacing: -0.005em;
 }
 .wl-btn:hover {
@@ -309,6 +326,21 @@ a { color: inherit; }
 }
 
 /* Hairline rules — broadsheet dividers */
-.wl-rule       { border: 0; height: 1px; background: var(--wl-rule);   margin: 0; }
-.wl-rule-thick { border: 0; height: 4px; background: var(--wl-ink);    margin: 0; }
-.wl-rule-red   { border: 0; height: 4px; background: var(--wl-red);    margin: 0; }
+.wl-rule {
+  border: 0;
+  height: 1px;
+  background: var(--wl-rule);
+  margin: 0;
+}
+.wl-rule-thick {
+  border: 0;
+  height: 4px;
+  background: var(--wl-ink);
+  margin: 0;
+}
+.wl-rule-red {
+  border: 0;
+  height: 4px;
+  background: var(--wl-red);
+  margin: 0;
+}

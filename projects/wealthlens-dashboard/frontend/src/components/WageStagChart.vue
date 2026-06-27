@@ -12,10 +12,10 @@
  * Data source: ONS Annual Survey of Hours and Earnings (ASHE), Table 1
  * Accessibility: WCAG AA high-contrast colors, aria-label, keyboard tooltip.
  */
-import { computed } from "vue";
-import { use } from "echarts/core";
-import { CanvasRenderer } from "echarts/renderers";
-import { LineChart } from "echarts/charts";
+import { computed } from "vue"
+import { use } from "echarts/core"
+import { CanvasRenderer } from "echarts/renderers"
+import { LineChart } from "echarts/charts"
 import {
   GridComponent,
   TooltipComponent,
@@ -23,11 +23,11 @@ import {
   LegendComponent,
   MarkPointComponent,
   MarkLineComponent,
-} from "echarts/components";
-import VChart from "vue-echarts";
-import { useChartData } from "@/composables/useChartData";
-import { escapeHtml, toNumberOrNaN } from "@/utils/chart";
-import AccessibleDataTable from "@/components/AccessibleDataTable.vue";
+} from "echarts/components"
+import VChart from "vue-echarts"
+import { useChartData } from "@/composables/useChartData"
+import { escapeHtml, toNumberOrNaN } from "@/utils/chart"
+import AccessibleDataTable from "@/components/AccessibleDataTable.vue"
 
 // Register only the ECharts modules we need (tree-shaking)
 use([
@@ -39,9 +39,9 @@ use([
   LegendComponent,
   MarkPointComponent,
   MarkLineComponent,
-]);
+])
 
-const { rows, loading, error } = useChartData("wage-stagnation");
+const { rows, loading, error } = useChartData("wage-stagnation")
 
 /**
  * Respect prefers-reduced-motion (WCAG 2.3.3).
@@ -49,21 +49,20 @@ const { rows, loading, error } = useChartData("wage-stagnation");
  * requested reduced motion in their OS settings.
  */
 const prefersReducedMotion =
-  typeof window !== "undefined" &&
-  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches
 
 // WCAG AA high-contrast colors against white background
 // #1a56db (blue) contrast ratio ~6.2:1 — actual earnings line
 // #dc2626 (red)  contrast ratio ~4.8:1 — counterfactual line
 // rgba(220,38,38,0.08) — shaded area below counterfactual line (subtle)
-const COLOR_ACTUAL = "#1a56db";
-const COLOR_COUNTERFACTUAL = "#dc2626";
-const COLOR_GAP_FILL = "rgba(220, 38, 38, 0.08)";
+const COLOR_ACTUAL = "#1a56db"
+const COLOR_COUNTERFACTUAL = "#dc2626"
+const COLOR_GAP_FILL = "rgba(220, 38, 38, 0.08)"
 
 /** Peak year for the counterfactual start. */
-const PEAK_YEAR = 2008;
-const PEAK_VALUE = 520;
-const ANNUAL_GROWTH = 0.015;
+const PEAK_YEAR = 2008
+const PEAK_VALUE = 520
+const ANNUAL_GROWTH = 0.015
 
 /** Sorted actual data from the store. */
 const actualData = computed(() => {
@@ -78,17 +77,17 @@ const actualData = computed(() => {
       value: toNumberOrNaN(r.real_weekly),
     }))
     .filter((r) => !isNaN(r.year) && !isNaN(r.value))
-    .sort((a, b) => a.year - b.year);
-});
+    .sort((a, b) => a.year - b.year)
+})
 
 /** Whether valid data is available. */
-const hasData = computed(() => actualData.value.length > 0);
+const hasData = computed(() => actualData.value.length > 0)
 
 /** All years for the x-axis. */
-const years = computed(() => actualData.value.map((d) => d.year));
+const years = computed(() => actualData.value.map((d) => d.year))
 
 /** Actual values aligned with years. */
-const actualValues = computed(() => actualData.value.map((d) => d.value));
+const actualValues = computed(() => actualData.value.map((d) => d.value))
 
 /**
  * Counterfactual series: 1.5% annual growth (observed 2000-2008 real wage CAGR) from the 2008 peak.
@@ -96,47 +95,47 @@ const actualValues = computed(() => actualData.value.map((d) => d.value));
  */
 const counterfactualValues = computed(() => {
   return years.value.map((year) => {
-    if (year < PEAK_YEAR) return null;
-    const elapsed = year - PEAK_YEAR;
-    return Math.round(PEAK_VALUE * Math.pow(1 + ANNUAL_GROWTH, elapsed));
-  });
-});
+    if (year < PEAK_YEAR) return null
+    const elapsed = year - PEAK_YEAR
+    return Math.round(PEAK_VALUE * Math.pow(1 + ANNUAL_GROWTH, elapsed))
+  })
+})
 
 /** Difference between counterfactual and actual, used to shade only the gap. */
 const gapValues = computed(() => {
   return counterfactualValues.value.map((counterfactual, index) => {
-    if (counterfactual == null) return null;
-    return Math.max(0, counterfactual - actualValues.value[index]);
-  });
-});
+    if (counterfactual == null) return null
+    return Math.max(0, counterfactual - actualValues.value[index])
+  })
+})
 
 /** The gap in pounds per week between counterfactual and actual in 2024. */
 const weeklyGap = computed(() => {
-  const data = actualData.value;
-  if (data.length === 0) return 0;
-  const latest = data[data.length - 1];
+  const data = actualData.value
+  if (data.length === 0) return 0
+  const latest = data[data.length - 1]
   const counterfactual2024 = Math.round(
     PEAK_VALUE * Math.pow(1 + ANNUAL_GROWTH, latest.year - PEAK_YEAR),
-  );
-  return counterfactual2024 - latest.value;
-});
+  )
+  return counterfactual2024 - latest.value
+})
 
 /** Annual gap in thousands. */
 const annualGapK = computed(() => {
-  return Math.round((weeklyGap.value * 52) / 1000);
-});
+  return Math.round((weeklyGap.value * 52) / 1000)
+})
 
 /** Latest actual value for aria-label. */
 const latestValue = computed(() => {
-  const data = actualData.value;
-  return data.length > 0 ? data[data.length - 1].value : 0;
-});
+  const data = actualData.value
+  return data.length > 0 ? data[data.length - 1].value : 0
+})
 
 /** Latest year. */
 const latestYear = computed(() => {
-  const data = actualData.value;
-  return data.length > 0 ? data[data.length - 1].year : 2024;
-});
+  const data = actualData.value
+  return data.length > 0 ? data[data.length - 1].year : 2024
+})
 
 /**
  * Accessible data-table fallback (WCAG 1.1.1). Mirrors the solid "actual
@@ -145,8 +144,8 @@ const latestYear = computed(() => {
  * The counterfactual/gap series are derived visual aids, not source data, so the
  * table reports only the genuine ONS figures.
  */
-const tableColumns = ["Year", "Real weekly pay (£)"];
-const tableNumericColumns = ["Real weekly pay (£)"];
+const tableColumns = ["Year", "Real weekly pay (£)"]
+const tableNumericColumns = ["Real weekly pay (£)"]
 // `actualData` already coerces blank/nullish cells to NaN and drops them (see
 // `toNumberOrNaN` + the isNaN filter), so every `d.value` here is a finite, verbatim
 // ONS figure — a missing pay value is dropped, not rendered as a fabricated £0.
@@ -158,7 +157,7 @@ const tableRows = computed(() =>
     Year: d.year,
     "Real weekly pay (£)": d.value,
   })),
-);
+)
 
 const option = computed(() => {
   return {
@@ -182,19 +181,19 @@ const option = computed(() => {
       axisPointer: { type: "cross" as const },
       formatter: (
         params: Array<{
-          seriesName: string;
-          value: number | null;
-          axisValue: string;
+          seriesName: string
+          value: number | null
+          axisValue: string
         }>,
       ) => {
-        if (!Array.isArray(params) || params.length === 0) return "";
-        let html = `<strong>${escapeHtml(String(params[0].axisValue))}</strong><br/>`;
+        if (!Array.isArray(params) || params.length === 0) return ""
+        let html = `<strong>${escapeHtml(String(params[0].axisValue))}</strong><br/>`
         for (const p of params) {
-          if (p.value == null) continue;
-          const val = `£${p.value}`;
-          html += `${escapeHtml(String(p.seriesName))}: ${escapeHtml(val)}/week<br/>`;
+          if (p.value == null) continue
+          const val = `£${p.value}`
+          html += `${escapeHtml(String(p.seriesName))}: ${escapeHtml(val)}/week<br/>`
         }
-        return html;
+        return html
       },
     },
     legend: {
@@ -291,8 +290,8 @@ const option = computed(() => {
         z: 1,
       },
     ],
-  };
-});
+  }
+})
 </script>
 
 <template>
@@ -316,9 +315,7 @@ const option = computed(() => {
 
   <!-- No data state -->
   <div v-else-if="!hasData" class="py-10 text-center" role="status">
-    <p class="text-[var(--wl-ink-muted)] text-lg">
-      No data available for this chart.
-    </p>
+    <p class="text-[var(--wl-ink-muted)] text-lg">No data available for this chart.</p>
   </div>
 
   <!-- Chart -->
@@ -328,12 +325,7 @@ const option = computed(() => {
       :aria-label="`Line chart showing UK median real weekly earnings from 2000 to ${latestYear}. The 2008 peak was £${PEAK_VALUE} per week. By ${latestYear}, actual earnings were £${latestValue} per week — £${weeklyGap} per week less than if pre-crisis growth had continued, a gap of approximately £${annualGapK},000 per year.`"
       class="w-full"
     >
-      <VChart
-        class="w-full"
-        style="height: 480px"
-        :option="option"
-        autoresize
-      />
+      <VChart class="w-full" style="height: 480px" :option="option" autoresize />
     </div>
 
     <!-- Accessible data-table fallback (WCAG 1.1.1 non-text content). -->
@@ -345,10 +337,7 @@ const option = computed(() => {
     />
 
     <!-- Gap annotation -->
-    <p
-      class="text-center text-lg font-semibold text-[var(--wl-red)] mt-4"
-      aria-hidden="true"
-    >
+    <p class="text-center text-lg font-semibold text-[var(--wl-red)] mt-4" aria-hidden="true">
       £{{ weeklyGap }}/week gap = ~£{{ annualGapK }},000/year lost
     </p>
 

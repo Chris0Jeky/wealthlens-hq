@@ -26,21 +26,21 @@
 /** A single band of a progressive wealth tax */
 export interface WealthTaxBand {
   /** Threshold above which this rate applies (GBP) */
-  threshold: number;
+  threshold: number
   /** Tax rate as a decimal, e.g. 0.01 = 1% */
-  rate: number;
+  rate: number
 }
 
 /** Results from a wealth tax simulation */
 export interface SimulationResult {
   /** Estimated annual revenue in GBP */
-  annualRevenue: number;
+  annualRevenue: number
   /** Number of households affected (wealth above lowest threshold) */
-  affectedHouseholds: number;
+  affectedHouseholds: number
   /** Average tax per affected household in GBP */
-  averageTaxPerHousehold: number;
+  averageTaxPerHousehold: number
   /** Revenue as a percentage of UK GDP */
-  revenueAsPercentGDP: number;
+  revenueAsPercentGDP: number
 }
 
 // ============================================================
@@ -51,33 +51,33 @@ export interface SimulationResult {
  * Total UK personal wealth (approximate, 2020).
  * Source: ONS Wealth and Assets Survey Round 7
  */
-export const TOTAL_UK_WEALTH = 15_200_000_000_000; // £15.2 trillion
+export const TOTAL_UK_WEALTH = 15_200_000_000_000 // £15.2 trillion
 
 /**
  * UK GDP 2023 (approximate).
  * Source: ONS National Accounts
  */
-export const UK_GDP = 2_300_000_000_000; // £2.3 trillion
+export const UK_GDP = 2_300_000_000_000 // £2.3 trillion
 
 /**
  * Total UK households (approximate).
  * Source: ONS Families and Households
  */
-export const TOTAL_HOUSEHOLDS = 28_100_000; // 28.1 million
+export const TOTAL_HOUSEHOLDS = 28_100_000 // 28.1 million
 
 /**
  * Pareto alpha parameter for UK wealth distribution.
  * Estimated from ONS WAS data — lower alpha means heavier tail.
  * A value of ~1.5 is consistent with empirical UK wealth data.
  */
-export const PARETO_ALPHA = 1.5;
+export const PARETO_ALPHA = 1.5
 
 /**
  * Minimum wealth level for Pareto model (scale parameter).
  * We use £250,000 as a reasonable lower bound for the Pareto
  * tail fitting, based on the approximate median being around this level.
  */
-export const PARETO_XMIN = 250_000;
+export const PARETO_XMIN = 250_000
 
 /**
  * Wealth distribution reference points used for estimating affected
@@ -94,9 +94,9 @@ export const PARETO_XMIN = 250_000;
  * Accessed: 2026-05-17
  */
 export const WEALTH_THRESHOLDS: ReadonlyArray<{
-  threshold: number;
-  householdsAbove: number;
-  wealthAbove: number;
+  threshold: number
+  householdsAbove: number
+  wealthAbove: number
 }> = [
   { threshold: 250_000, householdsAbove: 15_537_000, wealthAbove: 12_217_000_000_000 },
   { threshold: 500_000, householdsAbove: 8_246_000, wealthAbove: 9_679_000_000_000 },
@@ -104,7 +104,7 @@ export const WEALTH_THRESHOLDS: ReadonlyArray<{
   { threshold: 2_000_000, householdsAbove: 626_000, wealthAbove: 3_006_000_000_000 },
   { threshold: 5_000_000, householdsAbove: 83_000, wealthAbove: 1_514_000_000_000 },
   { threshold: 10_000_000, householdsAbove: 22_000, wealthAbove: 1_113_000_000_000 },
-];
+]
 
 // ============================================================
 // HELPER FUNCTIONS
@@ -120,38 +120,36 @@ export const WEALTH_THRESHOLDS: ReadonlyArray<{
  * We interpolate between known empirical data points for better accuracy.
  */
 export function estimateHouseholdsAbove(threshold: number): number {
-  if (threshold <= 0) return TOTAL_HOUSEHOLDS;
+  if (threshold <= 0) return TOTAL_HOUSEHOLDS
   if (threshold < PARETO_XMIN) {
     // Linear interpolation from all households to the first empirical anchor.
-    const firstPoint = WEALTH_THRESHOLDS[0];
-    const fraction = threshold / PARETO_XMIN;
-    return Math.round(
-      TOTAL_HOUSEHOLDS + fraction * (firstPoint.householdsAbove - TOTAL_HOUSEHOLDS),
-    );
+    const firstPoint = WEALTH_THRESHOLDS[0]
+    const fraction = threshold / PARETO_XMIN
+    return Math.round(TOTAL_HOUSEHOLDS + fraction * (firstPoint.householdsAbove - TOTAL_HOUSEHOLDS))
   }
 
   // Find bracketing known thresholds
-  const points = WEALTH_THRESHOLDS;
-  const exactPoint = points.find((point) => point.threshold === threshold);
-  if (exactPoint) return exactPoint.householdsAbove;
+  const points = WEALTH_THRESHOLDS
+  const exactPoint = points.find((point) => point.threshold === threshold)
+  if (exactPoint) return exactPoint.householdsAbove
 
   for (let i = 0; i < points.length - 1; i++) {
     if (threshold >= points[i].threshold && threshold <= points[i + 1].threshold) {
       // Log-linear interpolation between known points
       const logRatio =
         Math.log(threshold / points[i].threshold) /
-        Math.log(points[i + 1].threshold / points[i].threshold);
+        Math.log(points[i + 1].threshold / points[i].threshold)
       const logHouseholds =
         Math.log(points[i].householdsAbove) +
-        logRatio * (Math.log(points[i + 1].householdsAbove) - Math.log(points[i].householdsAbove));
-      return Math.round(Math.exp(logHouseholds));
+        logRatio * (Math.log(points[i + 1].householdsAbove) - Math.log(points[i].householdsAbove))
+      return Math.round(Math.exp(logHouseholds))
     }
   }
 
   // Above highest known point: extrapolate with Pareto
-  const lastPoint = points[points.length - 1];
-  const ratio = lastPoint.threshold / threshold;
-  return Math.max(1, Math.round(lastPoint.householdsAbove * Math.pow(ratio, PARETO_ALPHA)));
+  const lastPoint = points[points.length - 1]
+  const ratio = lastPoint.threshold / threshold
+  return Math.max(1, Math.round(lastPoint.householdsAbove * Math.pow(ratio, PARETO_ALPHA)))
 }
 
 /**
@@ -165,36 +163,36 @@ export function estimateHouseholdsAbove(threshold: number): number {
  * We use empirical data points for interpolation where available.
  */
 export function estimateWealthAbove(threshold: number): number {
-  if (threshold <= 0) return TOTAL_UK_WEALTH;
+  if (threshold <= 0) return TOTAL_UK_WEALTH
   if (threshold < PARETO_XMIN) {
     // Linear interpolation from all wealth to the first empirical anchor.
-    const firstPoint = WEALTH_THRESHOLDS[0];
-    const fraction = threshold / PARETO_XMIN;
-    return TOTAL_UK_WEALTH + fraction * (firstPoint.wealthAbove - TOTAL_UK_WEALTH);
+    const firstPoint = WEALTH_THRESHOLDS[0]
+    const fraction = threshold / PARETO_XMIN
+    return TOTAL_UK_WEALTH + fraction * (firstPoint.wealthAbove - TOTAL_UK_WEALTH)
   }
 
   // Find bracketing known thresholds
-  const points = WEALTH_THRESHOLDS;
-  const exactPoint = points.find((point) => point.threshold === threshold);
-  if (exactPoint) return exactPoint.wealthAbove;
+  const points = WEALTH_THRESHOLDS
+  const exactPoint = points.find((point) => point.threshold === threshold)
+  if (exactPoint) return exactPoint.wealthAbove
 
   for (let i = 0; i < points.length - 1; i++) {
     if (threshold >= points[i].threshold && threshold <= points[i + 1].threshold) {
       // Log-linear interpolation between known points
       const logRatio =
         Math.log(threshold / points[i].threshold) /
-        Math.log(points[i + 1].threshold / points[i].threshold);
+        Math.log(points[i + 1].threshold / points[i].threshold)
       const logWealth =
         Math.log(points[i].wealthAbove) +
-        logRatio * (Math.log(points[i + 1].wealthAbove) - Math.log(points[i].wealthAbove));
-      return Math.exp(logWealth);
+        logRatio * (Math.log(points[i + 1].wealthAbove) - Math.log(points[i].wealthAbove))
+      return Math.exp(logWealth)
     }
   }
 
   // Above highest known point: Pareto extrapolation
-  const lastPoint = points[points.length - 1];
-  const ratio = lastPoint.threshold / threshold;
-  return lastPoint.wealthAbove * Math.pow(ratio, PARETO_ALPHA - 1);
+  const lastPoint = points[points.length - 1]
+  const ratio = lastPoint.threshold / threshold
+  return lastPoint.wealthAbove * Math.pow(ratio, PARETO_ALPHA - 1)
 }
 
 /**
@@ -204,10 +202,10 @@ export function estimateWealthAbove(threshold: number): number {
  * of households.
  */
 export function estimateExcessWealth(threshold: number): number {
-  const totalAbove = estimateWealthAbove(threshold);
-  const households = estimateHouseholdsAbove(threshold);
-  const exemptPortion = threshold * households;
-  return Math.max(0, totalAbove - exemptPortion);
+  const totalAbove = estimateWealthAbove(threshold)
+  const households = estimateHouseholdsAbove(threshold)
+  const exemptPortion = threshold * households
+  return Math.max(0, totalAbove - exemptPortion)
 }
 
 // ============================================================
@@ -231,51 +229,50 @@ export function simulateWealthTax(bands: WealthTaxBand[]): SimulationResult {
       affectedHouseholds: 0,
       averageTaxPerHousehold: 0,
       revenueAsPercentGDP: 0,
-    };
+    }
   }
 
   // Sort bands by threshold ascending
-  const sorted = [...bands].sort((a, b) => a.threshold - b.threshold);
+  const sorted = [...bands].sort((a, b) => a.threshold - b.threshold)
 
-  let totalRevenue = 0;
+  let totalRevenue = 0
 
   // For each band, calculate revenue from the marginal rate applied
   // to wealth in that band's range
   for (let i = 0; i < sorted.length; i++) {
-    const band = sorted[i];
-    const nextThreshold = i < sorted.length - 1 ? sorted[i + 1].threshold : Infinity;
+    const band = sorted[i]
+    const nextThreshold = i < sorted.length - 1 ? sorted[i + 1].threshold : Infinity
 
-    if (band.rate <= 0) continue;
+    if (band.rate <= 0) continue
 
     // Excess wealth above this band's threshold
-    const excessAboveThis = estimateExcessWealth(band.threshold);
+    const excessAboveThis = estimateExcessWealth(band.threshold)
 
     // Excess wealth above the next band's threshold (which will be taxed at a higher rate)
-    const excessAboveNext =
-      nextThreshold === Infinity ? 0 : estimateExcessWealth(nextThreshold);
+    const excessAboveNext = nextThreshold === Infinity ? 0 : estimateExcessWealth(nextThreshold)
 
     // Wealth in this band = excess above this threshold minus excess above next
     // But we also need to account for the number of households at each level
     // Simplified: revenue from this band's marginal rate on its slice
-    const wealthInBand = excessAboveThis - excessAboveNext;
-    const revenueFromBand = wealthInBand * band.rate;
+    const wealthInBand = excessAboveThis - excessAboveNext
+    const revenueFromBand = wealthInBand * band.rate
 
-    totalRevenue += revenueFromBand;
+    totalRevenue += revenueFromBand
   }
 
   // Affected households are those above the lowest threshold
-  const lowestThreshold = sorted[0].threshold;
-  const affectedHouseholds = estimateHouseholdsAbove(lowestThreshold);
+  const lowestThreshold = sorted[0].threshold
+  const affectedHouseholds = estimateHouseholdsAbove(lowestThreshold)
 
-  const averageTax = affectedHouseholds > 0 ? totalRevenue / affectedHouseholds : 0;
-  const revenueAsPercentGDP = (totalRevenue / UK_GDP) * 100;
+  const averageTax = affectedHouseholds > 0 ? totalRevenue / affectedHouseholds : 0
+  const revenueAsPercentGDP = (totalRevenue / UK_GDP) * 100
 
   return {
     annualRevenue: Math.round(totalRevenue),
     affectedHouseholds,
     averageTaxPerHousehold: Math.round(averageTax),
     revenueAsPercentGDP: Math.round(revenueAsPercentGDP * 100) / 100,
-  };
+  }
 }
 
 // ============================================================
@@ -287,17 +284,17 @@ export function simulateWealthTax(bands: WealthTaxBand[]): SimulationResult {
  * e.g. 45_000_000_000 -> "£45 billion"
  */
 export function formatRevenue(value: number): string {
-  const abs = Math.abs(value);
+  const abs = Math.abs(value)
   if (abs >= 1_000_000_000_000) {
-    return `£${(value / 1_000_000_000_000).toFixed(1)} trillion`;
+    return `£${(value / 1_000_000_000_000).toFixed(1)} trillion`
   }
   if (abs >= 1_000_000_000) {
-    return `£${(value / 1_000_000_000).toFixed(1)} billion`;
+    return `£${(value / 1_000_000_000).toFixed(1)} billion`
   }
   if (abs >= 1_000_000) {
-    return `£${(value / 1_000_000).toFixed(1)} million`;
+    return `£${(value / 1_000_000).toFixed(1)} million`
   }
-  return `£${value.toLocaleString("en-GB")}`;
+  return `£${value.toLocaleString("en-GB")}`
 }
 
 /**
@@ -306,12 +303,12 @@ export function formatRevenue(value: number): string {
  */
 export function formatHouseholds(value: number): string {
   if (value >= 1_000_000) {
-    return `${(value / 1_000_000).toFixed(1)} million`;
+    return `${(value / 1_000_000).toFixed(1)} million`
   }
   if (value >= 1_000) {
-    return `${(value / 1_000).toFixed(0)},000`;
+    return `${(value / 1_000).toFixed(0)},000`
   }
-  return value.toLocaleString("en-GB");
+  return value.toLocaleString("en-GB")
 }
 
 /**
@@ -320,15 +317,13 @@ export function formatHouseholds(value: number): string {
  */
 export function formatThreshold(value: number): string {
   if (value >= 1_000_000) {
-    const millions = value / 1_000_000;
-    return millions === Math.floor(millions)
-      ? `£${millions}m`
-      : `£${millions.toFixed(1)}m`;
+    const millions = value / 1_000_000
+    return millions === Math.floor(millions) ? `£${millions}m` : `£${millions.toFixed(1)}m`
   }
   if (value >= 1_000) {
-    return `£${(value / 1_000).toFixed(0)}k`;
+    return `£${(value / 1_000).toFixed(0)}k`
   }
-  return `£${value}`;
+  return `£${value}`
 }
 
 // ============================================================
@@ -342,10 +337,10 @@ export function formatThreshold(value: number): string {
  * the display label.
  */
 export const SPENDING_COMPARISONS: ReadonlyArray<{
-  label: string;
-  annualCost: number;
-  sourceUrl: string;
-  accessDate: string;
+  label: string
+  annualCost: number
+  sourceUrl: string
+  accessDate: string
 }> = [
   {
     label: "NHS England resource budget",
@@ -374,7 +369,7 @@ export const SPENDING_COMPARISONS: ReadonlyArray<{
       "https://ifs.org.uk/articles/benefits-and-costs-expanding-access-free-school-meals-will-grow-over-time",
     accessDate: "2026-05-17",
   },
-];
+]
 
 /**
  * Returns the best spending comparison for a given revenue figure.
@@ -382,23 +377,23 @@ export const SPENDING_COMPARISONS: ReadonlyArray<{
  */
 export function getSpendingComparison(revenue: number): string | null {
   // Sort by cost descending to find the largest fundable item
-  const sorted = [...SPENDING_COMPARISONS].sort((a, b) => b.annualCost - a.annualCost);
+  const sorted = [...SPENDING_COMPARISONS].sort((a, b) => b.annualCost - a.annualCost)
   for (const item of sorted) {
     if (revenue >= item.annualCost) {
-      const multiple = revenue / item.annualCost;
+      const multiple = revenue / item.annualCost
       if (multiple >= 1.5) {
-        return `${multiple.toFixed(1)}x the annual cost of ${item.label}`;
+        return `${multiple.toFixed(1)}x the annual cost of ${item.label}`
       }
-      return `Enough to fund ${item.label}`;
+      return `Enough to fund ${item.label}`
     }
   }
   // If less than smallest item, show as fraction of smallest
-  const smallest = SPENDING_COMPARISONS[SPENDING_COMPARISONS.length - 1];
+  const smallest = SPENDING_COMPARISONS[SPENDING_COMPARISONS.length - 1]
   if (revenue > 0) {
-    const percent = Math.round((revenue / smallest.annualCost) * 100);
-    return `${percent}% of the cost of ${smallest.label}`;
+    const percent = Math.round((revenue / smallest.annualCost) * 100)
+    return `${percent}% of the cost of ${smallest.label}`
   }
-  return null;
+  return null
 }
 
 // ============================================================
@@ -406,9 +401,9 @@ export function getSpendingComparison(revenue: number): string | null {
 // ============================================================
 
 export interface PresetScenario {
-  name: string;
-  description: string;
-  bands: WealthTaxBand[];
+  name: string
+  description: string
+  bands: WealthTaxBand[]
 }
 
 export const PRESET_SCENARIOS: readonly PresetScenario[] = [
@@ -434,7 +429,7 @@ export const PRESET_SCENARIOS: readonly PresetScenario[] = [
       { threshold: 10_000_000, rate: 0.03 },
     ],
   },
-];
+]
 
 // ============================================================
 // CITATION
@@ -448,7 +443,8 @@ export const SIMULATOR_SOURCES = {
       accessDate: "2026-05-16",
     },
     {
-      label: "Advani, Hughson and Tarrant (2021), Revenue and distributional modelling for a UK wealth tax",
+      label:
+        "Advani, Hughson and Tarrant (2021), Revenue and distributional modelling for a UK wealth tax",
       url: "https://doi.org/10.1111/1475-5890.12280",
       accessDate: "2026-05-17",
     },
@@ -460,4 +456,4 @@ export const SIMULATOR_SOURCES = {
   ],
   disclaimer:
     "This is a simplified model for illustration. Actual revenue would depend on behavioral responses, avoidance, and implementation details.",
-} as const;
+} as const

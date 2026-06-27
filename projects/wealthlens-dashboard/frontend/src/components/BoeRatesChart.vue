@@ -9,52 +9,39 @@
  *
  * Accessibility: WCAG AA high-contrast colors, aria-label, keyboard tooltip.
  */
-import { computed, ref } from "vue";
-import { use } from "echarts/core";
-import { CanvasRenderer } from "echarts/renderers";
-import { LineChart } from "echarts/charts";
+import { computed, ref } from "vue"
+import { use } from "echarts/core"
+import { CanvasRenderer } from "echarts/renderers"
+import { LineChart } from "echarts/charts"
 import {
   GridComponent,
   TooltipComponent,
   TitleComponent,
   LegendComponent,
-} from "echarts/components";
-import VChart from "vue-echarts";
-import { useChartData } from "@/composables/useChartData";
-import type { EChartsExportable } from "@/composables/useChartExport";
-import {
-  escapeHtml,
-  safeMinMax,
-  toNumberOrNaN,
-  warnIfSignificantDataLoss,
-} from "@/utils/chart";
-import AccessibleDataTable from "@/components/AccessibleDataTable.vue";
+} from "echarts/components"
+import VChart from "vue-echarts"
+import { useChartData } from "@/composables/useChartData"
+import type { EChartsExportable } from "@/composables/useChartExport"
+import { escapeHtml, safeMinMax, toNumberOrNaN, warnIfSignificantDataLoss } from "@/utils/chart"
+import AccessibleDataTable from "@/components/AccessibleDataTable.vue"
 
 // Register only the ECharts modules we need (tree-shaking)
-use([
-  CanvasRenderer,
-  LineChart,
-  GridComponent,
-  TooltipComponent,
-  TitleComponent,
-  LegendComponent,
-]);
+use([CanvasRenderer, LineChart, GridComponent, TooltipComponent, TitleComponent, LegendComponent])
 
-const { rows, loading, error } = useChartData("boe-rates");
-const chart = ref<EChartsExportable | null>(null);
+const { rows, loading, error } = useChartData("boe-rates")
+const chart = ref<EChartsExportable | null>(null)
 
-defineExpose({ chart });
+defineExpose({ chart })
 
 /**
  * Respect prefers-reduced-motion (WCAG 2.3.3).
  */
 const prefersReducedMotion =
-  typeof window !== "undefined" &&
-  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches
 
 // WCAG AA high-contrast colors
-const COLOR_BANK_RATE = "#1a56db"; // Blue — ~7.2:1
-const COLOR_CPI = "#dc2626"; // Red — ~4.6:1
+const COLOR_BANK_RATE = "#1a56db" // Blue — ~7.2:1
+const COLOR_CPI = "#dc2626" // Red — ~4.6:1
 
 /** Sorted data extracted from rows. */
 const chartData = computed(() => {
@@ -66,35 +53,35 @@ const chartData = computed(() => {
     date: String(r.date ?? ""),
     bankRate: toNumberOrNaN(r.bank_rate),
     cpi: toNumberOrNaN(r.cpi_annual),
-  }));
+  }))
   const sorted = mapped
     .filter((r) => r.date && !isNaN(r.bankRate) && !isNaN(r.cpi))
-    .sort((a, b) => a.date.localeCompare(b.date));
+    .sort((a, b) => a.date.localeCompare(b.date))
 
-  warnIfSignificantDataLoss("boe-rates", mapped.length, sorted.length);
+  warnIfSignificantDataLoss("boe-rates", mapped.length, sorted.length)
 
   return {
     dates: sorted.map((r) => {
       // Format date labels: extract year-month. Use UTC accessors so an ISO date
       // like "2008-01-01" (parsed as UTC midnight) yields the same YYYY-MM in
       // every timezone — local getMonth() would shift it a month behind UTC.
-      const d = new Date(r.date);
-      if (isNaN(d.getTime())) return r.date;
-      return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+      const d = new Date(r.date)
+      if (isNaN(d.getTime())) return r.date
+      return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`
     }),
     bankRate: sorted.map((r) => r.bankRate),
     cpi: sorted.map((r) => r.cpi),
-  };
-});
+  }
+})
 
 /** True when the API returned actual data to display. */
-const hasData = computed(() => chartData.value.dates.length > 0);
+const hasData = computed(() => chartData.value.dates.length > 0)
 
 /** Bank rate range for aria-label. */
-const rateRange = computed(() => safeMinMax(chartData.value.bankRate));
+const rateRange = computed(() => safeMinMax(chartData.value.bankRate))
 
 /** CPI range for aria-label. */
-const cpiRange = computed(() => safeMinMax(chartData.value.cpi));
+const cpiRange = computed(() => safeMinMax(chartData.value.cpi))
 
 /**
  * Accessible data-table fallback (WCAG 1.1.1). Mirrors the two plotted line
@@ -105,19 +92,19 @@ const cpiRange = computed(() => safeMinMax(chartData.value.cpi));
  * by the chart's own !isNaN filter), so the table never shows a row the chart
  * omitted, nor a fabricated 0 for a missing source cell. A genuine 0 is kept.
  */
-const tableColumns = ["Date", "Bank rate (%)", "CPI annual (%)"];
-const tableNumericColumns = ["Bank rate (%)", "CPI annual (%)"];
+const tableColumns = ["Date", "Bank rate (%)", "CPI annual (%)"]
+const tableNumericColumns = ["Bank rate (%)", "CPI annual (%)"]
 const tableRows = computed<Record<string, string | number>[]>(() => {
-  const d = chartData.value;
+  const d = chartData.value
   return d.dates.map((date, i) => ({
     Date: date,
     "Bank rate (%)": d.bankRate[i],
     "CPI annual (%)": d.cpi[i],
-  }));
-});
+  }))
+})
 
 const option = computed(() => {
-  const data = chartData.value;
+  const data = chartData.value
 
   return {
     animation: !prefersReducedMotion,
@@ -134,13 +121,13 @@ const option = computed(() => {
       trigger: "axis" as const,
       axisPointer: { type: "cross" as const },
       formatter: (params: Array<{ seriesName: string; value: number; axisValue: string }>) => {
-        if (!Array.isArray(params) || params.length === 0) return "";
-        let html = `<strong>${escapeHtml(String(params[0].axisValue))}</strong><br/>`;
+        if (!Array.isArray(params) || params.length === 0) return ""
+        let html = `<strong>${escapeHtml(String(params[0].axisValue))}</strong><br/>`
         for (const p of params) {
-          const val = typeof p.value === "number" ? p.value.toFixed(2) : String(p.value);
-          html += `${escapeHtml(String(p.seriesName))}: ${escapeHtml(val)}%<br/>`;
+          const val = typeof p.value === "number" ? p.value.toFixed(2) : String(p.value)
+          html += `${escapeHtml(String(p.seriesName))}: ${escapeHtml(val)}%<br/>`
         }
-        return html;
+        return html
       },
     },
     legend: {
@@ -200,13 +187,18 @@ const option = computed(() => {
         symbolSize: 4,
       },
     ],
-  };
-});
+  }
+})
 </script>
 
 <template>
   <!-- Loading state -->
-  <div v-if="loading" class="flex items-center justify-center py-20" role="status" aria-live="polite">
+  <div
+    v-if="loading"
+    class="flex items-center justify-center py-20"
+    role="status"
+    aria-live="polite"
+  >
     <p class="text-[var(--wl-ink-muted)] text-lg">Loading chart data...</p>
   </div>
 
@@ -230,13 +222,7 @@ const option = computed(() => {
       :aria-label="`Line chart showing Bank of England base rate and CPI inflation from ${chartData.dates[0]} to ${chartData.dates[chartData.dates.length - 1]}. Bank rate ranged from ${rateRange.min.toFixed(2)}% to ${rateRange.max.toFixed(2)}%. CPI inflation ranged from ${cpiRange.min.toFixed(1)}% to ${cpiRange.max.toFixed(1)}%.`"
       class="w-full"
     >
-      <VChart
-        ref="chart"
-        class="w-full"
-        style="height: 480px"
-        :option="option"
-        autoresize
-      />
+      <VChart ref="chart" class="w-full" style="height: 480px" :option="option" autoresize />
     </div>
 
     <!-- Accessible data-table fallback (WCAG 1.1.1 non-text content). -->
@@ -256,14 +242,17 @@ const option = computed(() => {
         rel="noopener"
         class="underline hover:text-[var(--wl-ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--wl-red)] rounded"
       >
-        Bank of England<span class="sr-only"> (opens in new tab)</span></a> /
+        Bank of England<span class="sr-only"> (opens in new tab)</span></a
+      >
+      /
       <a
         href="https://www.ons.gov.uk/economy/inflationandpriceindices"
         target="_blank"
         rel="noopener"
         class="underline hover:text-[var(--wl-ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--wl-red)] rounded"
       >
-        ONS CPI<span class="sr-only"> (opens in new tab)</span></a>, accessed 2026-05-14
+        ONS CPI<span class="sr-only"> (opens in new tab)</span></a
+      >, accessed 2026-05-14
     </p>
   </div>
 </template>

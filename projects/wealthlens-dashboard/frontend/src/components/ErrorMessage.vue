@@ -12,12 +12,8 @@ defineEmits<{
 </script>
 
 <template>
-  <div
-    class="w-full text-center py-10"
-    aria-live="assertive"
-    aria-atomic="true"
-  >
-    <p class="text-red-600 font-medium mb-2">{{ title ?? 'Failed to load data' }}</p>
+  <div class="w-full text-center py-10" aria-live="assertive" aria-atomic="true">
+    <p class="text-red-600 font-medium mb-2">{{ title ?? "Failed to load data" }}</p>
     <p class="text-sm text-gray-600 mb-4">{{ message }}</p>
     <button
       v-if="retryable"

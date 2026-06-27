@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, useId } from 'vue'
+import { computed, useId } from "vue"
 
 const props = withDefaults(
   defineProps<{
@@ -7,9 +7,9 @@ const props = withDefaults(
     max?: number
     label?: string
     showPercent?: boolean
-    size?: 'sm' | 'md' | 'lg'
+    size?: "sm" | "md" | "lg"
   }>(),
-  { max: 100, showPercent: false, size: 'md' },
+  { max: 100, showPercent: false, size: "md" },
 )
 
 const uid = useId()
@@ -24,10 +24,10 @@ const clampedValue = computed(() => {
   return Math.min(props.max, Math.max(0, props.value))
 })
 
-const heightClass: Record<'sm' | 'md' | 'lg', string> = {
-  sm: 'h-1',
-  md: 'h-2',
-  lg: 'h-4',
+const heightClass: Record<"sm" | "md" | "lg", string> = {
+  sm: "h-1",
+  md: "h-2",
+  lg: "h-4",
 }
 </script>
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, nextTick, useId, onMounted } from 'vue'
+import { ref, watch, nextTick, useId, onMounted } from "vue"
 
 const props = withDefaults(
   defineProps<{
@@ -9,7 +9,7 @@ const props = withDefaults(
     cancelLabel?: string
     destructive?: boolean
   }>(),
-  { confirmLabel: 'Confirm', cancelLabel: 'Cancel', destructive: false },
+  { confirmLabel: "Confirm", cancelLabel: "Cancel", destructive: false },
 )
 
 const emit = defineEmits<{
@@ -52,16 +52,16 @@ watch(
 )
 
 function handleCancel() {
-  emit('cancel')
+  emit("cancel")
 }
 
 function handleConfirm() {
-  emit('confirm')
+  emit("confirm")
 }
 
 function handleNativeCancel(e: Event) {
   e.preventDefault()
-  emit('cancel')
+  emit("cancel")
 }
 </script>
 
@@ -75,16 +75,10 @@ function handleNativeCancel(e: Event) {
     @cancel="handleNativeCancel"
   >
     <div class="p-6">
-      <h2
-        :id="titleId"
-        class="text-lg font-semibold text-gray-900 dark:text-white mb-2"
-      >
+      <h2 :id="titleId" class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
         {{ title }}
       </h2>
-      <div
-        :id="descId"
-        class="text-sm text-gray-600 dark:text-gray-400 mb-6"
-      >
+      <div :id="descId" class="text-sm text-gray-600 dark:text-gray-400 mb-6">
         <slot />
       </div>
       <div class="flex justify-end gap-3">

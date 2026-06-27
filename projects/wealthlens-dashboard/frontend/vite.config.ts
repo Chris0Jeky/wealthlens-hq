@@ -1,14 +1,14 @@
-import { defineConfig } from 'vite'
-import vue from '@vitejs/plugin-vue'
-import tailwindcss from '@tailwindcss/vite'
-import { resolve } from 'path'
+import { defineConfig } from "vite"
+import vue from "@vitejs/plugin-vue"
+import tailwindcss from "@tailwindcss/vite"
+import { resolve } from "path"
 
 export default defineConfig({
-  base: '/wealthlens-hq/',
+  base: "/wealthlens-hq/",
   plugins: [vue(), tailwindcss()],
   resolve: {
     alias: {
-      '@': resolve(__dirname, 'src'),
+      "@": resolve(__dirname, "src"),
     },
   },
   build: {
@@ -27,14 +27,14 @@ export default defineConfig({
           // isolated so it only loads on chart routes. Check this before the
           // framework rule so `vue-echarts` lands here, not in vue-vendor.
           if (/[\\/]node_modules[\\/](echarts|zrender|vue-echarts)[\\/]/.test(id)) {
-            return "echarts";
+            return "echarts"
           }
           // Framework core (Vue runtime + its @vue/* internals, router, Pinia)
           // — cached across all routes.
           if (/[\\/]node_modules[\\/](vue|@vue|vue-router|pinia)[\\/]/.test(id)) {
-            return "vue-vendor";
+            return "vue-vendor"
           }
-          return undefined;
+          return undefined
         },
       },
     },
@@ -42,8 +42,8 @@ export default defineConfig({
   server: {
     port: 3000,
     proxy: {
-      '/api': {
-        target: 'http://127.0.0.1:8000',
+      "/api": {
+        target: "http://127.0.0.1:8000",
         changeOrigin: true,
       },
     },

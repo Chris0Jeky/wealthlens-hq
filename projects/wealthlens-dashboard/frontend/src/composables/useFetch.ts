@@ -1,4 +1,4 @@
-import { ref, shallowRef, watch, type Ref } from 'vue'
+import { ref, shallowRef, watch, type Ref } from "vue"
 
 export interface UseFetchOptions {
   immediate?: boolean
@@ -28,7 +28,7 @@ export function useFetch<T = unknown>(
       abortController.abort()
     }
 
-    const resolvedUrl = typeof url === 'string' ? url : url.value
+    const resolvedUrl = typeof url === "string" ? url : url.value
     if (!resolvedUrl) {
       // No URL (e.g. a reactive id was cleared) — hold off rather than fetch('')
       // against the page origin, which returns the app's HTML with ok=true and then
@@ -71,16 +71,16 @@ export function useFetch<T = unknown>(
         data.value = parsed
       }
     } catch (e) {
-      if (e instanceof DOMException && e.name === 'AbortError') return
+      if (e instanceof DOMException && e.name === "AbortError") return
       if (!isCurrent()) return
-      error.value = e instanceof Error ? e.message : 'Unknown error'
+      error.value = e instanceof Error ? e.message : "Unknown error"
       data.value = null
     } finally {
       if (isCurrent()) loading.value = false
     }
   }
 
-  if (typeof url !== 'string') {
+  if (typeof url !== "string") {
     watch(url, () => {
       execute()
     })

@@ -1,27 +1,32 @@
 <script setup lang="ts">
-import { ref } from "vue";
-import { useIntersectionObserver } from "@/composables/useIntersectionObserver";
+import { ref } from "vue"
+import { useIntersectionObserver } from "@/composables/useIntersectionObserver"
 
 const props = defineProps<{
-  src: string;
-  alt: string;
-  width?: number;
-  height?: number;
-}>();
+  src: string
+  alt: string
+  width?: number
+  height?: number
+}>()
 
-const imgRef = ref<HTMLImageElement | null>(null);
-const loaded = ref(false);
-const failed = ref(false);
+const imgRef = ref<HTMLImageElement | null>(null)
+const loaded = ref(false)
+const failed = ref(false)
 
 function finishLoading() {
-  loaded.value = true;
+  loaded.value = true
+}
+
+function handleError() {
+  failed.value = true
+  finishLoading()
 }
 
 const { isVisible: inView } = useIntersectionObserver(imgRef, {
   rootMargin: "200px",
   threshold: 0,
   once: true,
-});
+})
 </script>
 
 <template>
@@ -35,7 +40,7 @@ const { isVisible: inView } = useIntersectionObserver(imgRef, {
     :aria-busy="!loaded"
     loading="lazy"
     @load="finishLoading"
-    @error="failed = true; finishLoading()"
+    @error="handleError"
   />
 </template>
 

@@ -4,7 +4,7 @@ export function escapeHtml(str: string): string {
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+    .replace(/"/g, "&quot;")
 }
 
 /**
@@ -27,28 +27,28 @@ export function escapeHtml(str: string): string {
  * or NaN — always holds and `!isNaN(...)` filters drop them.
  */
 export function toNumberOrNaN(value: unknown): number {
-  let n: number;
+  let n: number
   if (typeof value === "number") {
-    n = value;
+    n = value
   } else if (typeof value === "string") {
-    const trimmed = value.trim();
-    n = trimmed === "" ? NaN : Number(trimmed);
+    const trimmed = value.trim()
+    n = trimmed === "" ? NaN : Number(trimmed)
   } else {
-    return NaN; // null/undefined/boolean/array/object/symbol
+    return NaN // null/undefined/boolean/array/object/symbol
   }
-  return Number.isFinite(n) ? n : NaN; // reject Infinity/-Infinity/NaN
+  return Number.isFinite(n) ? n : NaN // reject Infinity/-Infinity/NaN
 }
 
 /** Safely compute min/max from a number array without spreading (stack-safe). */
 export function safeMinMax(arr: number[]): { min: number; max: number } {
-  if (arr.length === 0) return { min: 0, max: 0 };
-  let min = arr[0];
-  let max = arr[0];
+  if (arr.length === 0) return { min: 0, max: 0 }
+  let min = arr[0]
+  let max = arr[0]
   for (let i = 1; i < arr.length; i++) {
-    if (arr[i] < min) min = arr[i];
-    if (arr[i] > max) max = arr[i];
+    if (arr[i] < min) min = arr[i]
+    if (arr[i] > max) max = arr[i]
   }
-  return { min, max };
+  return { min, max }
 }
 
 /**
@@ -67,13 +67,13 @@ export function warnIfSignificantDataLoss(
   validRows: number,
   threshold = 0.2,
 ): void {
-  if (totalRows === 0) return;
-  const dropped = totalRows - validRows;
-  const dropRate = dropped / totalRows;
+  if (totalRows === 0) return
+  const dropped = totalRows - validRows
+  const dropRate = dropped / totalRows
   if (dropRate > threshold) {
     console.warn(
       `[WealthLens] Dataset "${datasetName}": ${dropped}/${totalRows} rows (${(dropRate * 100).toFixed(1)}%) were filtered out due to invalid/NaN values. ` +
         `This may indicate changed column names or malformed data.`,
-    );
+    )
   }
 }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useDarkMode } from '@/composables/useDarkMode'
+import { useDarkMode } from "@/composables/useDarkMode"
 
 const { isDark, toggle } = useDarkMode()
 </script>

@@ -22,12 +22,20 @@ defineProps<{
       </p>
     </header>
 
-    <div v-if="error" role="alert" class="rounded-md bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-4 text-sm text-red-700 dark:text-red-300">
+    <div
+      v-if="error"
+      role="alert"
+      class="rounded-md bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-4 text-sm text-red-700 dark:text-red-300"
+    >
       {{ error }}
     </div>
 
     <div v-else-if="loading" class="flex items-center justify-center py-12" aria-busy="true">
-      <div class="motion-safe:animate-spin h-8 w-8 rounded-full border-4 border-gray-200 dark:border-gray-600 border-t-blue-600 dark:border-t-blue-400" role="status" aria-label="Loading chart" />
+      <div
+        class="motion-safe:animate-spin h-8 w-8 rounded-full border-4 border-gray-200 dark:border-gray-600 border-t-blue-600 dark:border-t-blue-400"
+        role="status"
+        aria-label="Loading chart"
+      />
     </div>
 
     <div v-else>

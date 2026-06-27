@@ -8,12 +8,12 @@
 
 /** Dataset source citation used in the template. */
 interface DatasetSource {
-  name: string;
-  description: string;
-  source: string;
-  sourceUrl: string;
-  accessDate: string;
-  updateFrequency: string;
+  name: string
+  description: string
+  source: string
+  sourceUrl: string
+  accessDate: string
+  updateFrequency: string
 }
 
 /**
@@ -51,8 +51,7 @@ const datasets: DatasetSource[] = [
     name: "cgt-concentration",
     description: "Capital gains by size of gain",
     source: "HMRC",
-    sourceUrl:
-      "https://www.gov.uk/government/statistics/capital-gains-tax-statistics",
+    sourceUrl: "https://www.gov.uk/government/statistics/capital-gains-tax-statistics",
     accessDate: "2026-05-14",
     updateFrequency: "Annual",
   },
@@ -78,8 +77,7 @@ const datasets: DatasetSource[] = [
     name: "tax-composition",
     description: "UK tax revenue composition: work taxes vs wealth taxes",
     source: "HMRC Tax and NIC Receipts",
-    sourceUrl:
-      "https://www.gov.uk/government/statistics/hmrc-tax-and-nics-receipts-for-the-uk",
+    sourceUrl: "https://www.gov.uk/government/statistics/hmrc-tax-and-nics-receipts-for-the-uk",
     accessDate: "2026-05-16",
     updateFrequency: "Monthly",
   },
@@ -108,7 +106,7 @@ const datasets: DatasetSource[] = [
     accessDate: "2026-05-16",
     updateFrequency: "Biennial",
   },
-];
+]
 </script>
 
 <template>
@@ -130,9 +128,8 @@ const datasets: DatasetSource[] = [
       <header class="methodology-header">
         <h1 class="methodology-title">Methodology</h1>
         <p class="methodology-subtitle">
-          How we collect, validate, and present UK wealth inequality data.
-          Every number on this site traces back to a named, dated, publicly
-          available source.
+          How we collect, validate, and present UK wealth inequality data. Every number on this site
+          traces back to a named, dated, publicly available source.
         </p>
       </header>
 
@@ -149,36 +146,36 @@ const datasets: DatasetSource[] = [
           <li class="pipeline-step">
             <strong class="step-label">Fetch</strong>
             <span class="step-desc">
-              Automated Python scripts download raw data files from government
-              and academic sources (ONS, HMRC, WID, BoE, Resolution Foundation).
+              Automated Python scripts download raw data files from government and academic sources
+              (ONS, HMRC, WID, BoE, Resolution Foundation).
             </span>
           </li>
           <li class="pipeline-step">
             <strong class="step-label">Validate</strong>
             <span class="step-desc">
-              Column presence, data types, and expected ranges are checked.
-              Malformed or missing files halt the pipeline with a clear error.
+              Column presence, data types, and expected ranges are checked. Malformed or missing
+              files halt the pipeline with a clear error.
             </span>
           </li>
           <li class="pipeline-step">
             <strong class="step-label">Process</strong>
             <span class="step-desc">
-              Raw data is cleaned, normalised, and written to standardised CSV
-              files. No modelling, extrapolation, or adjustment is applied.
+              Raw data is cleaned, normalised, and written to standardised CSV files. No modelling,
+              extrapolation, or adjustment is applied.
             </span>
           </li>
           <li class="pipeline-step">
             <strong class="step-label">Serve</strong>
             <span class="step-desc">
-              The FastAPI backend reads processed CSVs and exposes them as
-              paginated JSON endpoints with full metadata and source citations.
+              The FastAPI backend reads processed CSVs and exposes them as paginated JSON endpoints
+              with full metadata and source citations.
             </span>
           </li>
           <li class="pipeline-step">
             <strong class="step-label">Render</strong>
             <span class="step-desc">
-              The Vue 3 frontend fetches data from the API and renders
-              interactive, accessible, mobile-responsive charts.
+              The Vue 3 frontend fetches data from the API and renders interactive, accessible,
+              mobile-responsive charts.
             </span>
           </li>
         </ol>
@@ -191,16 +188,11 @@ const datasets: DatasetSource[] = [
         <span class="wl-eyebrow">Provenance</span>
         <h2 id="sources-heading" class="section-heading">Source Citations</h2>
         <p class="section-body">
-          All 10 datasets are sourced from official government and academic
-          publications. Each entry below documents the source name, URL,
-          access date, and update frequency.
+          All 10 datasets are sourced from official government and academic publications. Each entry
+          below documents the source name, URL, access date, and update frequency.
         </p>
         <div class="sources-grid">
-          <article
-            v-for="ds in datasets"
-            :key="ds.name"
-            class="source-card"
-          >
+          <article v-for="ds in datasets" :key="ds.name" class="source-card">
             <h3 class="source-card__name">{{ ds.name }}</h3>
             <p class="source-card__desc">{{ ds.description }}</p>
             <dl class="source-card__meta">
@@ -216,7 +208,8 @@ const datasets: DatasetSource[] = [
                     target="_blank"
                     rel="noopener noreferrer"
                     class="source-card__link"
-                  >{{ ds.sourceUrl }}</a>
+                    >{{ ds.sourceUrl }}</a
+                  >
                 </dd>
               </div>
               <div class="source-card__row">
@@ -243,27 +236,25 @@ const datasets: DatasetSource[] = [
         </p>
         <ul class="quality-list">
           <li>
-            <strong>Column validation</strong> — expected columns must be present
-            with correct names. Missing or renamed columns halt the pipeline.
+            <strong>Column validation</strong> — expected columns must be present with correct
+            names. Missing or renamed columns halt the pipeline.
           </li>
           <li>
-            <strong>NaN handling</strong> — null and missing values are explicitly
-            detected. They are preserved as <code>null</code> in JSON responses
-            rather than silently dropped or filled.
+            <strong>NaN handling</strong> — null and missing values are explicitly detected. They
+            are preserved as <code>null</code> in JSON responses rather than silently dropped or
+            filled.
           </li>
           <li>
-            <strong>Type enforcement</strong> — numeric columns are verified as
-            numeric; date columns as valid dates. Type mismatches are logged and
-            rejected.
+            <strong>Type enforcement</strong> — numeric columns are verified as numeric; date
+            columns as valid dates. Type mismatches are logged and rejected.
           </li>
           <li>
-            <strong>Row count checks</strong> — datasets with zero rows or
-            unexpectedly low row counts trigger warnings.
+            <strong>Row count checks</strong> — datasets with zero rows or unexpectedly low row
+            counts trigger warnings.
           </li>
           <li>
-            <strong>Encoding safety</strong> — all files are read as UTF-8.
-            Encoding errors are caught and reported rather than producing garbled
-            output.
+            <strong>Encoding safety</strong> — all files are read as UTF-8. Encoding errors are
+            caught and reported rather than producing garbled output.
           </li>
         </ul>
       </section>
@@ -275,40 +266,35 @@ const datasets: DatasetSource[] = [
         <span class="wl-eyebrow">Caveats</span>
         <h2 id="limitations-heading" class="section-heading">Limitations</h2>
         <p class="section-body">
-          No dataset is perfect. Users should be aware of the following
-          limitations when interpreting the charts:
+          No dataset is perfect. Users should be aware of the following limitations when
+          interpreting the charts:
         </p>
         <ul class="limitations-list">
           <li>
-            <strong>Survey sample sizes</strong> — the Wealth and Assets Survey
-            samples approximately 20,000 households. Extreme wealth is
-            systematically underrepresented because the very wealthy are less
-            likely to respond.
+            <strong>Survey sample sizes</strong> — the Wealth and Assets Survey samples
+            approximately 20,000 households. Extreme wealth is systematically underrepresented
+            because the very wealthy are less likely to respond.
           </li>
           <li>
-            <strong>Time lag</strong> — official statistics are published months
-            or years after the period they cover. The most recent data point may
-            be 1-3 years old.
+            <strong>Time lag</strong> — official statistics are published months or years after the
+            period they cover. The most recent data point may be 1-3 years old.
           </li>
           <li>
-            <strong>Wealth measurement difficulties</strong> — wealth held in
-            trusts, offshore accounts, or complex structures may not appear in
-            survey or administrative data.
+            <strong>Wealth measurement difficulties</strong> — wealth held in trusts, offshore
+            accounts, or complex structures may not appear in survey or administrative data.
           </li>
           <li>
-            <strong>Self-reported data biases</strong> — household surveys rely
-            on self-reporting. Respondents may underestimate or overestimate
-            their assets and liabilities.
+            <strong>Self-reported data biases</strong> — household surveys rely on self-reporting.
+            Respondents may underestimate or overestimate their assets and liabilities.
           </li>
           <li>
-            <strong>Geographic coverage varies</strong> — some datasets cover
-            Great Britain only (excluding Northern Ireland), others cover the
-            full United Kingdom, and some are England and Wales only.
+            <strong>Geographic coverage varies</strong> — some datasets cover Great Britain only
+            (excluding Northern Ireland), others cover the full United Kingdom, and some are England
+            and Wales only.
           </li>
           <li>
-            <strong>Definitional differences</strong> — "wealth" is defined
-            differently across sources (net financial wealth vs. total wealth
-            including property and pensions).
+            <strong>Definitional differences</strong> — "wealth" is defined differently across
+            sources (net financial wealth vs. total wealth including property and pensions).
           </li>
         </ul>
       </section>
@@ -320,17 +306,15 @@ const datasets: DatasetSource[] = [
         <span class="wl-eyebrow">Freshness</span>
         <h2 id="schedule-heading" class="section-heading">Update Schedule</h2>
         <p class="section-body">
-          The data pipeline runs automatically every week via GitHub Actions.
-          Each run fetches the latest available data from all 10 sources,
-          validates it, and updates the processed CSV files. If a source has
-          not published new data since the last run, the existing file is
+          The data pipeline runs automatically every week via GitHub Actions. Each run fetches the
+          latest available data from all 10 sources, validates it, and updates the processed CSV
+          files. If a source has not published new data since the last run, the existing file is
           retained unchanged.
         </p>
         <p class="section-body">
-          Pipeline run logs are publicly visible in the repository's Actions
-          tab. Failed runs trigger alerts and do not update any data files,
-          ensuring stale-but-correct data is always preferred over fresh-but-broken
-          data.
+          Pipeline run logs are publicly visible in the repository's Actions tab. Failed runs
+          trigger alerts and do not update any data files, ensuring stale-but-correct data is always
+          preferred over fresh-but-broken data.
         </p>
       </section>
 
@@ -340,34 +324,29 @@ const datasets: DatasetSource[] = [
       <section class="methodology-section" aria-labelledby="verification-heading">
         <span class="wl-eyebrow">Trust but verify</span>
         <h2 id="verification-heading" class="section-heading">Verification</h2>
-        <p class="section-body">
-          Every claim on this site can be independently verified:
-        </p>
+        <p class="section-body">Every claim on this site can be independently verified:</p>
         <ul class="verification-list">
           <li>
-            <strong>Check the source data</strong> — every chart links to the
-            original government or academic publication. Click through and
-            compare the numbers yourself.
+            <strong>Check the source data</strong> — every chart links to the original government or
+            academic publication. Click through and compare the numbers yourself.
           </li>
           <li>
-            <strong>Read the pipeline code</strong> — all data processing scripts
-            are open source at
+            <strong>Read the pipeline code</strong> — all data processing scripts are open source at
             <a
               href="https://github.com/Chris0Jeky/wealthlens-hq/tree/main/automation/data-pipelines"
               target="_blank"
               rel="noopener noreferrer"
               class="inline-link"
-            >github.com/Chris0Jeky/wealthlens-hq/automation/data-pipelines</a>.
+              >github.com/Chris0Jeky/wealthlens-hq/automation/data-pipelines</a
+            >.
           </li>
           <li>
-            <strong>Download the processed data</strong> — the API provides CSV
-            download endpoints for every dataset. Compare our processed output
-            against the raw source.
+            <strong>Download the processed data</strong> — the API provides CSV download endpoints
+            for every dataset. Compare our processed output against the raw source.
           </li>
           <li>
-            <strong>Run it yourself</strong> — clone the repository and run the
-            pipeline locally. The entire stack is reproducible with standard
-            Python and Node.js tooling.
+            <strong>Run it yourself</strong> — clone the repository and run the pipeline locally.
+            The entire stack is reproducible with standard Python and Node.js tooling.
           </li>
         </ul>
       </section>
@@ -378,23 +357,21 @@ const datasets: DatasetSource[] = [
       <section class="methodology-section" aria-labelledby="privacy-heading">
         <span class="wl-eyebrow">Your data</span>
         <h2 id="privacy-heading" class="section-heading">Privacy</h2>
-        <p class="section-body">
-          WealthLens UK does not collect personal data. Specifically:
-        </p>
+        <p class="section-body">WealthLens UK does not collect personal data. Specifically:</p>
         <ul class="privacy-list">
           <li>No personal data is collected, stored, or processed.</li>
           <li>No cookies are used for tracking or advertising.</li>
           <li>
-            No third-party tracking scripts are loaded unless privacy-respecting,
-            aggregate analytics are explicitly enabled for a deployment.
+            No third-party tracking scripts are loaded unless privacy-respecting, aggregate
+            analytics are explicitly enabled for a deployment.
           </li>
           <li>
-            Analytics, if enabled, are privacy-respecting and aggregated — no
-            individual user profiles are created.
+            Analytics, if enabled, are privacy-respecting and aggregated — no individual user
+            profiles are created.
           </li>
           <li>
-            All datasets contain only aggregate, publicly available statistics.
-            No individual-level data is used.
+            All datasets contain only aggregate, publicly available statistics. No individual-level
+            data is used.
           </li>
         </ul>
       </section>
@@ -460,7 +437,7 @@ const datasets: DatasetSource[] = [
 .methodology-title {
   font-family: var(--wl-serif);
   font-size: clamp(36px, 5vw, 56px);
-  line-height: 1.0;
+  line-height: 1;
   letter-spacing: -0.02em;
   font-weight: 600;
   color: var(--wl-ink);

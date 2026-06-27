@@ -6,32 +6,32 @@
  * Fetches all metadata from the data store and displays source citations
  * in a searchable, responsive format (table on desktop, cards on mobile).
  */
-import { ref, computed, onMounted } from 'vue'
-import { useDataStore, type DatasetMetadata } from '@/stores/data'
-import PageHeader from '@/components/PageHeader.vue'
-import SearchInput from '@/components/SearchInput.vue'
-import ExternalLink from '@/components/ExternalLink.vue'
-import SkeletonLoader from '@/components/SkeletonLoader.vue'
+import { ref, computed, onMounted } from "vue"
+import { useDataStore, type DatasetMetadata } from "@/stores/data"
+import PageHeader from "@/components/PageHeader.vue"
+import SearchInput from "@/components/SearchInput.vue"
+import ExternalLink from "@/components/ExternalLink.vue"
+import SkeletonLoader from "@/components/SkeletonLoader.vue"
 
 const store = useDataStore()
 
 const allMetadata = ref<DatasetMetadata[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
-const searchQuery = ref('')
+const searchQuery = ref("")
 
 /** Additional source info not in the API metadata (licence, update frequency). */
 const EXTRA_SOURCE_INFO: Record<string, { licence: string; frequency: string }> = {
-  'wealth-shares': { licence: 'Creative Commons', frequency: 'Annual' },
-  'housing-affordability': { licence: 'Open Government Licence v3.0', frequency: 'Annual' },
-  'wealth-by-decile': { licence: 'Open Government Licence v3.0', frequency: 'Biennial' },
-  'cgt-concentration': { licence: 'Open Government Licence v3.0', frequency: 'Annual' },
-  'productivity-pay': { licence: 'Open Government Licence v3.0', frequency: 'Quarterly' },
-  'gdhi-by-region': { licence: 'Open Government Licence v3.0', frequency: 'Annual' },
-  'tax-composition': { licence: 'Open Government Licence v3.0', frequency: 'Monthly' },
-  'boe-rates': { licence: 'Open Government Licence v3.0', frequency: 'Daily (Bank Rate)' },
-  'child-poverty': { licence: 'Open Government Licence v3.0', frequency: 'Annual' },
-  'generational-wealth': { licence: 'Creative Commons', frequency: 'Irregular' },
+  "wealth-shares": { licence: "Creative Commons", frequency: "Annual" },
+  "housing-affordability": { licence: "Open Government Licence v3.0", frequency: "Annual" },
+  "wealth-by-decile": { licence: "Open Government Licence v3.0", frequency: "Biennial" },
+  "cgt-concentration": { licence: "Open Government Licence v3.0", frequency: "Annual" },
+  "productivity-pay": { licence: "Open Government Licence v3.0", frequency: "Quarterly" },
+  "gdhi-by-region": { licence: "Open Government Licence v3.0", frequency: "Annual" },
+  "tax-composition": { licence: "Open Government Licence v3.0", frequency: "Monthly" },
+  "boe-rates": { licence: "Open Government Licence v3.0", frequency: "Daily (Bank Rate)" },
+  "child-poverty": { licence: "Open Government Licence v3.0", frequency: "Annual" },
+  "generational-wealth": { licence: "Creative Commons", frequency: "Irregular" },
 }
 
 const filteredDatasets = computed(() => {
@@ -49,7 +49,7 @@ onMounted(async () => {
   try {
     allMetadata.value = await store.fetchAllMetadata()
   } catch (e) {
-    error.value = e instanceof Error ? e.message : 'Failed to load data source information'
+    error.value = e instanceof Error ? e.message : "Failed to load data source information"
   } finally {
     loading.value = false
   }
@@ -57,9 +57,9 @@ onMounted(async () => {
 
 function formatDatasetName(name: string): string {
   return name
-    .split('-')
+    .split("-")
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(' ')
+    .join(" ")
 }
 </script>
 
@@ -74,21 +74,16 @@ function formatDatasetName(name: string): string {
     <section class="mb-8 max-w-3xl" aria-labelledby="transparency-heading">
       <h2 id="transparency-heading" class="sr-only">Our commitment to data transparency</h2>
       <p class="text-[var(--wl-ink-body)] leading-relaxed">
-        WealthLens UK is committed to full data transparency. We do not model,
-        extrapolate, or adjust published figures. All datasets are sourced directly
-        from official government publications, academic databases, and reputable
-        research organisations. Each source is linked below so you can verify the
-        data yourself.
+        WealthLens UK is committed to full data transparency. We do not model, extrapolate, or
+        adjust published figures. All datasets are sourced directly from official government
+        publications, academic databases, and reputable research organisations. Each source is
+        linked below so you can verify the data yourself.
       </p>
     </section>
 
     <!-- Search -->
     <div class="mb-6 max-w-sm">
-      <SearchInput
-        v-model="searchQuery"
-        placeholder="Filter data sources..."
-        :debounce-ms="200"
-      />
+      <SearchInput v-model="searchQuery" placeholder="Filter data sources..." :debounce-ms="200" />
     </div>
 
     <!-- Loading state -->
@@ -101,7 +96,8 @@ function formatDatasetName(name: string): string {
     <div v-else-if="error" aria-live="assertive" role="alert">
       <p class="text-[var(--wl-red)] font-medium">{{ error }}</p>
       <p class="text-sm text-[var(--wl-ink-muted)] mt-1">
-        Please try refreshing the page. If the problem persists, the API may be temporarily unavailable.
+        Please try refreshing the page. If the problem persists, the API may be temporarily
+        unavailable.
       </p>
     </div>
 
@@ -152,10 +148,10 @@ function formatDatasetName(name: string): string {
                 </ExternalLink>
               </td>
               <td class="py-3 px-4 text-[var(--wl-ink-body)]">
-                {{ EXTRA_SOURCE_INFO[ds.name]?.licence ?? 'Unknown' }}
+                {{ EXTRA_SOURCE_INFO[ds.name]?.licence ?? "Unknown" }}
               </td>
               <td class="py-3 px-4 text-[var(--wl-ink-body)]">
-                {{ EXTRA_SOURCE_INFO[ds.name]?.frequency ?? 'Unknown' }}
+                {{ EXTRA_SOURCE_INFO[ds.name]?.frequency ?? "Unknown" }}
               </td>
               <td class="py-3 px-4 text-[var(--wl-ink-muted)] whitespace-nowrap">
                 {{ ds.access_date }}
@@ -194,13 +190,13 @@ function formatDatasetName(name: string): string {
             <div class="flex gap-2">
               <dt class="font-medium text-[var(--wl-ink)] min-w-[5rem]">Licence:</dt>
               <dd class="text-[var(--wl-ink-body)]">
-                {{ EXTRA_SOURCE_INFO[ds.name]?.licence ?? 'Unknown' }}
+                {{ EXTRA_SOURCE_INFO[ds.name]?.licence ?? "Unknown" }}
               </dd>
             </div>
             <div class="flex gap-2">
               <dt class="font-medium text-[var(--wl-ink)] min-w-[5rem]">Frequency:</dt>
               <dd class="text-[var(--wl-ink-body)]">
-                {{ EXTRA_SOURCE_INFO[ds.name]?.frequency ?? 'Unknown' }}
+                {{ EXTRA_SOURCE_INFO[ds.name]?.frequency ?? "Unknown" }}
               </dd>
             </div>
             <div class="flex gap-2">

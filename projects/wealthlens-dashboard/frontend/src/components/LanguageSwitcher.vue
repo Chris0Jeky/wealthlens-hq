@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { useI18n } from 'vue-i18n'
-import { LOCALE_STORAGE_KEY } from '@/i18n'
-import { setStorageItem } from '@/utils/browserStorage'
+import { useI18n } from "vue-i18n"
+import { LOCALE_STORAGE_KEY } from "@/i18n"
+import { setStorageItem } from "@/utils/browserStorage"
 
 const { locale } = useI18n()
 
 const languages = [
-  { code: 'en', label: 'English' },
+  { code: "en", label: "English" },
   // { code: 'cy', label: 'Cymraeg' },   // Welsh — future
   // { code: 'gd', label: 'Gàidhlig' },  // Scots Gaelic — future
 ] as const
@@ -19,18 +19,14 @@ function setLocale(code: string) {
 
 <template>
   <div class="lang-switcher">
-    <label for="lang-select" class="sr-only">{{ $t('common.selectLanguage') }}</label>
+    <label for="lang-select" class="sr-only">{{ $t("common.selectLanguage") }}</label>
     <select
       id="lang-select"
       :value="locale"
       class="lang-select"
       @change="setLocale(($event.target as HTMLSelectElement).value)"
     >
-      <option
-        v-for="lang in languages"
-        :key="lang.code"
-        :value="lang.code"
-      >
+      <option v-for="lang in languages" :key="lang.code" :value="lang.code">
         {{ lang.label }}
       </option>
     </select>

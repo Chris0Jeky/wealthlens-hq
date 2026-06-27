@@ -2,10 +2,7 @@ type DynamicImportFn = () => Promise<unknown>
 
 const prefetched = new Set<DynamicImportFn>()
 
-export function prefetchRouteComponent(
-  importFn: DynamicImportFn,
-  timeout = 4000,
-): void {
+export function prefetchRouteComponent(importFn: DynamicImportFn, timeout = 4000): void {
   if (prefetched.has(importFn)) return
   prefetched.add(importFn)
 
@@ -13,11 +10,14 @@ export function prefetchRouteComponent(
     importFn().catch(() => {})
   }
 
-  if (typeof window === 'undefined') return
+  if (typeof window === "undefined") return
 
-  if ('requestIdleCallback' in window) {
-    ;(window as Window & { requestIdleCallback: (cb: () => void, opts?: { timeout: number }) => number })
-      .requestIdleCallback(load, { timeout })
+  if ("requestIdleCallback" in window) {
+    ;(
+      window as Window & {
+        requestIdleCallback: (cb: () => void, opts?: { timeout: number }) => number
+      }
+    ).requestIdleCallback(load, { timeout })
   } else {
     setTimeout(load, timeout)
   }

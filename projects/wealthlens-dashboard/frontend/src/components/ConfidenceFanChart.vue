@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import AlertBanner from '@/components/AlertBanner.vue'
-import type { ConfidenceFanChartProps, IntervalMethod } from '@/types/simulator'
+import { computed } from "vue"
+import AlertBanner from "@/components/AlertBanner.vue"
+import type { ConfidenceFanChartProps, IntervalMethod } from "@/types/simulator"
 
 const props = withDefaults(defineProps<ConfidenceFanChartProps>(), {
-  currency: '£',
-  unit: 'bn',
+  currency: "£",
+  unit: "bn",
   decimals: 2,
   caveats: () => [],
   provenanceComplete: true,
@@ -30,10 +30,7 @@ function fmt(value: number): string {
 const isValid = computed(() => {
   const iv = props.interval
   return (
-    iv != null &&
-    Number.isFinite(iv.low) &&
-    Number.isFinite(iv.central) &&
-    Number.isFinite(iv.high)
+    iv != null && Number.isFinite(iv.low) && Number.isFinite(iv.central) && Number.isFinite(iv.high)
   )
 })
 
@@ -46,9 +43,7 @@ const isDegenerate = computed(() => span.value <= 0)
  * single flag so they can never disagree (a drawn band with a "point estimate"
  * caption would be a data-integrity contradiction).
  */
-const unsourced = computed(
-  () => isDegenerate.value || !props.provenanceComplete,
-)
+const unsourced = computed(() => isDegenerate.value || !props.provenanceComplete)
 
 /** Map a value in [low, high] to the plot's x coordinate (clamped to the band). */
 function x(value: number): number {
@@ -63,8 +58,8 @@ const xHigh = computed(() => x(props.interval.high))
 
 const methodLabel = computed<string>(() => {
   const map: Record<IntervalMethod, string> = {
-    monte_carlo: 'Monte-Carlo credible interval',
-    alpha_sweep: 'Pareto-α range',
+    monte_carlo: "Monte-Carlo credible interval",
+    alpha_sweep: "Pareto-α range",
   }
   return map[props.intervalMethod]
 })
@@ -90,10 +85,7 @@ const ariaLabel = computed(() => {
       </ul>
     </AlertBanner>
 
-    <figure
-      v-if="isValid"
-      class="rounded-lg border border-wl-rule bg-wl-card p-4"
-    >
+    <figure v-if="isValid" class="rounded-lg border border-wl-rule bg-wl-card p-4">
       <figcaption class="mb-2 text-sm font-medium text-wl-ink">
         {{ label }}
       </figcaption>
@@ -143,24 +135,16 @@ const ariaLabel = computed(() => {
 
       <!-- Visible numeric labels (the sighted equivalent of the aria-label). The
            low/high bounds gate on the same `unsourced` flag as the whisker. -->
-      <div
-        class="mt-2 flex items-baseline justify-between gap-2 text-xs text-wl-ink-muted"
-      >
-        <span v-if="!unsourced"
-          >{{ fmt(interval.low) }}<span class="sr-only"> (low)</span></span
-        >
+      <div class="mt-2 flex items-baseline justify-between gap-2 text-xs text-wl-ink-muted">
+        <span v-if="!unsourced">{{ fmt(interval.low) }}<span class="sr-only"> (low)</span></span>
         <span class="text-base font-semibold text-wl-ink">
           {{ fmt(interval.central) }}<span class="sr-only"> (central)</span>
         </span>
-        <span v-if="!unsourced"
-          >{{ fmt(interval.high) }}<span class="sr-only"> (high)</span></span
-        >
+        <span v-if="!unsourced">{{ fmt(interval.high) }}<span class="sr-only"> (high)</span></span>
       </div>
 
       <p class="mt-1 text-xs text-wl-ink-faint">
-        <template v-if="unsourced"
-          >Point estimate — uncertainty unquantified.</template
-        >
+        <template v-if="unsourced">Point estimate — uncertainty unquantified.</template>
         <template v-else>Band: {{ methodLabel }}.</template>
       </p>
     </figure>

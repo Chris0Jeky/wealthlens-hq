@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed } from "vue"
 
 export interface Tab {
   id: string
@@ -12,7 +12,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'update:activeId', id: string): void
+  (e: "update:activeId", id: string): void
 }>()
 
 const activeTab = computed(() => props.tabs.find((t) => t.id === props.activeId) ?? props.tabs[0])
@@ -20,7 +20,11 @@ const activeTab = computed(() => props.tabs.find((t) => t.id === props.activeId)
 
 <template>
   <div>
-    <div role="tablist" aria-label="Content tabs" class="flex border-b border-gray-200 dark:border-gray-700">
+    <div
+      role="tablist"
+      aria-label="Content tabs"
+      class="flex border-b border-gray-200 dark:border-gray-700"
+    >
       <button
         v-for="tab in tabs"
         :key="tab.id"

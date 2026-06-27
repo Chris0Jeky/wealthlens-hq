@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed } from "vue"
 
 const props = defineProps<{
   page: number
@@ -7,7 +7,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'update:page', page: number): void
+  (e: "update:page", page: number): void
 }>()
 
 const safePage = computed(() => Math.max(1, Math.min(props.page, props.totalPages)))
@@ -16,13 +16,13 @@ const pages = computed(() => {
   const total = props.totalPages
   const current = safePage.value
   const delta = 1
-  const range: (number | '...')[] = []
+  const range: (number | "...")[] = []
 
   for (let i = 1; i <= total; i++) {
     if (i === 1 || i === total || (i >= current - delta && i <= current + delta)) {
       range.push(i)
-    } else if (range[range.length - 1] !== '...') {
-      range.push('...')
+    } else if (range[range.length - 1] !== "...") {
+      range.push("...")
     }
   }
   return range
@@ -30,7 +30,7 @@ const pages = computed(() => {
 
 function goTo(p: number) {
   if (p >= 1 && p <= props.totalPages && p !== props.page) {
-    emit('update:page', p)
+    emit("update:page", p)
   }
 }
 </script>
@@ -42,7 +42,10 @@ function goTo(p: number) {
         <button
           type="button"
           :aria-disabled="safePage <= 1 ? 'true' : undefined"
-          :class="['px-3 py-1.5 rounded text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500', safePage <= 1 && 'opacity-40 cursor-not-allowed']"
+          :class="[
+            'px-3 py-1.5 rounded text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500',
+            safePage <= 1 && 'opacity-40 cursor-not-allowed',
+          ]"
           aria-label="Previous page"
           @click="goTo(safePage - 1)"
         >
@@ -75,7 +78,10 @@ function goTo(p: number) {
         <button
           type="button"
           :aria-disabled="safePage >= totalPages ? 'true' : undefined"
-          :class="['px-3 py-1.5 rounded text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500', safePage >= totalPages && 'opacity-40 cursor-not-allowed']"
+          :class="[
+            'px-3 py-1.5 rounded text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500',
+            safePage >= totalPages && 'opacity-40 cursor-not-allowed',
+          ]"
           aria-label="Next page"
           @click="goTo(safePage + 1)"
         >

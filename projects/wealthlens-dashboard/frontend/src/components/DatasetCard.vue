@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { SUPPORTED_CHART_NAMES } from '@/utils/chartConstants'
-import FreshnessIndicator from '@/components/FreshnessIndicator.vue'
-import type { DatasetFreshnessEntry } from '@/types/api'
+import { SUPPORTED_CHART_NAMES } from "@/utils/chartConstants"
+import FreshnessIndicator from "@/components/FreshnessIndicator.vue"
+import type { DatasetFreshnessEntry } from "@/types/api"
 
 const props = defineProps<{
   name: string
@@ -13,9 +13,7 @@ const props = defineProps<{
 }>()
 
 const chartAvailable =
-  props.hasChart !== undefined
-    ? props.hasChart
-    : SUPPORTED_CHART_NAMES.has(props.name)
+  props.hasChart !== undefined ? props.hasChart : SUPPORTED_CHART_NAMES.has(props.name)
 
 const downloadUrl = `/api/data/${props.name}/download`
 </script>

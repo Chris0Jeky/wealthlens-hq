@@ -9,53 +9,40 @@
  *
  * Accessibility: WCAG AA high-contrast colors, aria-label, keyboard tooltip.
  */
-import { computed, ref } from "vue";
-import { use } from "echarts/core";
-import { CanvasRenderer } from "echarts/renderers";
-import { BarChart } from "echarts/charts";
+import { computed, ref } from "vue"
+import { use } from "echarts/core"
+import { CanvasRenderer } from "echarts/renderers"
+import { BarChart } from "echarts/charts"
 import {
   GridComponent,
   TooltipComponent,
   TitleComponent,
   LegendComponent,
-} from "echarts/components";
-import VChart from "vue-echarts";
-import { useChartData } from "@/composables/useChartData";
-import type { EChartsExportable } from "@/composables/useChartExport";
-import {
-  escapeHtml,
-  safeMinMax,
-  toNumberOrNaN,
-  warnIfSignificantDataLoss,
-} from "@/utils/chart";
-import AccessibleDataTable from "@/components/AccessibleDataTable.vue";
+} from "echarts/components"
+import VChart from "vue-echarts"
+import { useChartData } from "@/composables/useChartData"
+import type { EChartsExportable } from "@/composables/useChartExport"
+import { escapeHtml, safeMinMax, toNumberOrNaN, warnIfSignificantDataLoss } from "@/utils/chart"
+import AccessibleDataTable from "@/components/AccessibleDataTable.vue"
 
 // Register only the ECharts modules we need (tree-shaking)
-use([
-  CanvasRenderer,
-  BarChart,
-  GridComponent,
-  TooltipComponent,
-  TitleComponent,
-  LegendComponent,
-]);
+use([CanvasRenderer, BarChart, GridComponent, TooltipComponent, TitleComponent, LegendComponent])
 
-const { rows, loading, error } = useChartData("generational-wealth");
-const chart = ref<EChartsExportable | null>(null);
+const { rows, loading, error } = useChartData("generational-wealth")
+const chart = ref<EChartsExportable | null>(null)
 
-defineExpose({ chart });
+defineExpose({ chart })
 
 /**
  * Respect prefers-reduced-motion (WCAG 2.3.3).
  */
 const prefersReducedMotion =
-  typeof window !== "undefined" &&
-  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches
 
 // WCAG AA high-contrast colors for each generation
-const COLOR_BOOMERS = "#1a56db"; // Blue — ~7.2:1
-const COLOR_GEN_X = "#047857"; // Green — ~5.5:1
-const COLOR_MILLENNIALS = "#dc2626"; // Red — ~4.6:1
+const COLOR_BOOMERS = "#1a56db" // Blue — ~7.2:1
+const COLOR_GEN_X = "#047857" // Green — ~5.5:1
+const COLOR_MILLENNIALS = "#dc2626" // Red — ~4.6:1
 
 /**
  * A single plotted data point for one generation at one age milestone.
@@ -63,36 +50,36 @@ const COLOR_MILLENNIALS = "#dc2626"; // Red — ~4.6:1
  * the accessible data table can mirror the same rows verbatim (see tableRows).
  */
 interface GenEntry {
-  age: number;
-  wealth: number;
-  projected: boolean;
-  birthYears: string;
-  yearMeasured: number;
+  age: number
+  wealth: number
+  projected: boolean
+  birthYears: string
+  yearMeasured: number
 }
 
 /** Structured data by generation and age milestone. */
 const chartData = computed(() => {
   // Group by generation
-  const generations = new Map<string, GenEntry[]>();
-  const generationOrder: string[] = [];
-  let skippedRows = 0;
+  const generations = new Map<string, GenEntry[]>()
+  const generationOrder: string[] = []
+  let skippedRows = 0
 
   for (const row of rows.value) {
-    const gen = String(row.generation ?? "");
+    const gen = String(row.generation ?? "")
     // toNumberOrNaN: a missing age/wealth must NOT coerce to 0 (Number(null) === 0)
     // and slip past the isNaN guard below as a phantom age-0 / £0 bar.
-    const age = toNumberOrNaN(row.age_milestone);
-    const wealth = toNumberOrNaN(row.median_wealth_gbp);
-    const projected = Boolean(row.projected);
+    const age = toNumberOrNaN(row.age_milestone)
+    const wealth = toNumberOrNaN(row.median_wealth_gbp)
+    const projected = Boolean(row.projected)
 
     if (!gen || isNaN(age) || isNaN(wealth)) {
-      skippedRows++;
-      continue;
+      skippedRows++
+      continue
     }
 
     if (!generations.has(gen)) {
-      generations.set(gen, []);
-      generationOrder.push(gen);
+      generations.set(gen, [])
+      generationOrder.push(gen)
     }
     generations.get(gen)!.push({
       age,
@@ -102,43 +89,47 @@ const chartData = computed(() => {
       // toNumberOrNaN keeps a missing year as NaN so the table renders "—"
       // (not the misleading literal year "0") via AccessibleDataTable.
       yearMeasured: toNumberOrNaN(row.year_measured),
-    });
+    })
   }
 
-  warnIfSignificantDataLoss("generational-wealth", rows.value.length, rows.value.length - skippedRows);
+  warnIfSignificantDataLoss(
+    "generational-wealth",
+    rows.value.length,
+    rows.value.length - skippedRows,
+  )
 
   // Sort each generation by age
   for (const data of generations.values()) {
-    data.sort((a, b) => a.age - b.age);
+    data.sort((a, b) => a.age - b.age)
   }
 
   // Get all unique ages across all generations
-  const allAges = new Set<number>();
+  const allAges = new Set<number>()
   for (const data of generations.values()) {
-    for (const d of data) allAges.add(d.age);
+    for (const d of data) allAges.add(d.age)
   }
-  const ages = Array.from(allAges).sort((a, b) => a - b);
+  const ages = Array.from(allAges).sort((a, b) => a - b)
 
-  return { generations, generationOrder, ages };
-});
+  return { generations, generationOrder, ages }
+})
 
 /** True when the API returned actual data to display. */
-const hasData = computed(() => chartData.value.generationOrder.length > 0);
+const hasData = computed(() => chartData.value.generationOrder.length > 0)
 
 /** Wealth range for aria-label. */
 const wealthRange = computed(() => {
-  const allWealth: number[] = [];
+  const allWealth: number[] = []
   for (const data of chartData.value.generations.values()) {
-    for (const d of data) allWealth.push(d.wealth);
+    for (const d of data) allWealth.push(d.wealth)
   }
-  return safeMinMax(allWealth);
-});
+  return safeMinMax(allWealth)
+})
 
 /** Map generation to color. */
 function genColor(gen: string): string {
-  if (gen.includes("Boomer")) return COLOR_BOOMERS;
-  if (gen.includes("X")) return COLOR_GEN_X;
-  return COLOR_MILLENNIALS;
+  if (gen.includes("Boomer")) return COLOR_BOOMERS
+  if (gen.includes("X")) return COLOR_GEN_X
+  return COLOR_MILLENNIALS
 }
 
 /**
@@ -161,14 +152,14 @@ const tableColumns = [
   "Median wealth (£)",
   "Year measured",
   "Projected?",
-];
-const tableNumericColumns = ["Median wealth (£)"];
+]
+const tableNumericColumns = ["Median wealth (£)"]
 const tableRows = computed(() => {
-  const { generations, generationOrder } = chartData.value;
+  const { generations, generationOrder } = chartData.value
   // Iterate in the chart's generation order; entries are already age-sorted
   // inside chartData, so this reproduces the chart's plotting order exactly.
   return generationOrder.flatMap((gen) => {
-    const entries = generations.get(gen) ?? [];
+    const entries = generations.get(gen) ?? []
     return entries.map((e) => ({
       Generation: gen,
       "Birth years": e.birthYears,
@@ -176,9 +167,9 @@ const tableRows = computed(() => {
       "Median wealth (£)": e.wealth,
       "Year measured": e.yearMeasured,
       "Projected?": e.projected ? "Yes" : "No",
-    }));
-  });
-});
+    }))
+  })
+})
 
 /**
  * Table caption — cites the same source the chart shows and states the
@@ -188,38 +179,44 @@ const tableRows = computed(() => {
 const tableCaption =
   "Median total household wealth by generation at key age milestones (2022 real-term £). " +
   "Projected estimates are flagged in the Projected? column and are not measured figures. " +
-  "Source: Resolution Foundation / ONS Wealth and Assets Survey.";
+  "Source: Resolution Foundation / ONS Wealth and Assets Survey."
 
 const option = computed(() => {
-  const { generations, generationOrder, ages } = chartData.value;
+  const { generations, generationOrder, ages } = chartData.value
 
   // Build series for each generation
   const series = generationOrder.map((gen) => {
-    const genData = generations.get(gen) ?? [];
-    const dataMap = new Map<number, { wealth: number; projected: boolean }>();
+    const genData = generations.get(gen) ?? []
+    const dataMap = new Map<number, { wealth: number; projected: boolean }>()
     for (const d of genData) {
-      dataMap.set(d.age, { wealth: d.wealth, projected: d.projected });
+      dataMap.set(d.age, { wealth: d.wealth, projected: d.projected })
     }
 
-    const color = genColor(gen);
+    const color = genColor(gen)
     const data = ages.map((age) => {
-      const entry = dataMap.get(age);
-      if (!entry) return null;
+      const entry = dataMap.get(age)
+      if (!entry) return null
       return {
         value: entry.wealth,
         itemStyle: entry.projected
-          ? { color, opacity: 0.5, borderWidth: 2, borderColor: color, borderType: "dashed" as const }
+          ? {
+              color,
+              opacity: 0.5,
+              borderWidth: 2,
+              borderColor: color,
+              borderType: "dashed" as const,
+            }
           : { color },
-      };
-    });
+      }
+    })
 
     return {
       name: gen,
       type: "bar" as const,
       data,
       barMaxWidth: 40,
-    };
-  });
+    }
+  })
 
   return {
     animation: !prefersReducedMotion,
@@ -235,17 +232,17 @@ const option = computed(() => {
     tooltip: {
       trigger: "axis" as const,
       axisPointer: { type: "shadow" as const },
-      formatter: (params: Array<{ seriesName: string; value: number | null; axisValue: string }>) => {
-        if (!Array.isArray(params) || params.length === 0) return "";
-        let html = `<strong>Age ${escapeHtml(String(params[0].axisValue))}</strong><br/>`;
+      formatter: (
+        params: Array<{ seriesName: string; value: number | null; axisValue: string }>,
+      ) => {
+        if (!Array.isArray(params) || params.length === 0) return ""
+        let html = `<strong>Age ${escapeHtml(String(params[0].axisValue))}</strong><br/>`
         for (const p of params) {
-          if (p.value == null) continue;
-          const val = typeof p.value === "number"
-            ? `£${p.value.toLocaleString()}`
-            : String(p.value);
-          html += `${escapeHtml(String(p.seriesName))}: ${escapeHtml(val)}<br/>`;
+          if (p.value == null) continue
+          const val = typeof p.value === "number" ? `£${p.value.toLocaleString()}` : String(p.value)
+          html += `${escapeHtml(String(p.seriesName))}: ${escapeHtml(val)}<br/>`
         }
-        return html;
+        return html
       },
     },
     legend: {
@@ -281,13 +278,18 @@ const option = computed(() => {
       },
     },
     series,
-  };
-});
+  }
+})
 </script>
 
 <template>
   <!-- Loading state -->
-  <div v-if="loading" class="flex items-center justify-center py-20" role="status" aria-live="polite">
+  <div
+    v-if="loading"
+    class="flex items-center justify-center py-20"
+    role="status"
+    aria-live="polite"
+  >
     <p class="text-[var(--wl-ink-muted)] text-lg">Loading chart data...</p>
   </div>
 
@@ -311,13 +313,7 @@ const option = computed(() => {
       :aria-label="`Grouped bar chart showing median wealth by generation at key age milestones. Compares ${chartData.generationOrder.join(', ')} across ages ${chartData.ages.join(', ')}. Wealth values range from £${wealthRange.min.toLocaleString()} to £${wealthRange.max.toLocaleString()}. Faded bars indicate projected values.`"
       class="w-full"
     >
-      <VChart
-        ref="chart"
-        class="w-full"
-        style="height: 480px"
-        :option="option"
-        autoresize
-      />
+      <VChart ref="chart" class="w-full" style="height: 480px" :option="option" autoresize />
     </div>
 
     <!-- Note about projected data -->
@@ -342,7 +338,10 @@ const option = computed(() => {
         rel="noopener"
         class="underline hover:text-[var(--wl-ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--wl-red)] rounded"
       >
-        Resolution Foundation / ONS Wealth and Assets Survey<span class="sr-only"> (opens in new tab)</span></a>, accessed 2026-05-14
+        Resolution Foundation / ONS Wealth and Assets Survey<span class="sr-only">
+          (opens in new tab)</span
+        ></a
+      >, accessed 2026-05-14
     </p>
   </div>
 </template>

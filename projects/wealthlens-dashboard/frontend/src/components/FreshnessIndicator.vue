@@ -7,8 +7,8 @@
  * a tooltip with the full "Last updated: X days ago" detail. Includes
  * a screen-reader-only description for assistive technology.
  */
-import { computed } from 'vue'
-import type { DatasetFreshnessEntry } from '@/types/api'
+import { computed } from "vue"
+import type { DatasetFreshnessEntry } from "@/types/api"
 
 const props = defineProps<{
   /** Freshness data for this dataset. */
@@ -18,35 +18,35 @@ const props = defineProps<{
 /** Map status to Tailwind dot colour class. */
 const dotColorClass = computed(() => {
   const map: Record<string, string> = {
-    fresh: 'bg-green-500',
-    stale: 'bg-yellow-500',
-    expired: 'bg-red-500',
-    unknown: 'bg-gray-400',
+    fresh: "bg-green-500",
+    stale: "bg-yellow-500",
+    expired: "bg-red-500",
+    unknown: "bg-gray-400",
   }
-  return map[props.freshness.status] ?? 'bg-gray-400'
+  return map[props.freshness.status] ?? "bg-gray-400"
 })
 
 /** Human-readable label displayed beside the dot. */
 const label = computed(() => {
   const map: Record<string, string> = {
-    fresh: 'Fresh',
-    stale: 'Stale',
-    expired: 'Expired',
-    unknown: 'Unknown',
+    fresh: "Fresh",
+    stale: "Stale",
+    expired: "Expired",
+    unknown: "Unknown",
   }
-  return map[props.freshness.status] ?? 'Unknown'
+  return map[props.freshness.status] ?? "Unknown"
 })
 
 /** Tooltip text with relative age. */
 const tooltipText = computed(() => {
   if (props.freshness.age_hours == null) {
-    return 'Data file not found'
+    return "Data file not found"
   }
   const hours = props.freshness.age_hours
-  if (hours < 1) return 'Last updated: less than an hour ago'
+  if (hours < 1) return "Last updated: less than an hour ago"
   if (hours < 24) return `Last updated: ${Math.round(hours)} hours ago`
   const days = Math.round(hours / 24)
-  return `Last updated: ${days} ${days === 1 ? 'day' : 'days'} ago`
+  return `Last updated: ${days} ${days === 1 ? "day" : "days"} ago`
 })
 </script>
 
@@ -66,10 +66,7 @@ const tooltipText = computed(() => {
       aria-hidden="true"
       data-testid="freshness-dot"
     />
-    <span
-      class="text-xs text-[var(--wl-ink-muted)]"
-      data-testid="freshness-label"
-    >
+    <span class="text-xs text-[var(--wl-ink-muted)]" data-testid="freshness-label">
       {{ label }}
     </span>
     <span
@@ -84,7 +81,7 @@ const tooltipText = computed(() => {
 </template>
 
 <style scoped>
-.freshness-indicator[data-hover='true'] .freshness-tooltip {
+.freshness-indicator[data-hover="true"] .freshness-tooltip {
   opacity: 1;
 }
 </style>

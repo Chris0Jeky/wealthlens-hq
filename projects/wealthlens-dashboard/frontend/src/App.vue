@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { onMounted, watch } from 'vue'
-import { RouterView, useRouter } from 'vue-router'
-import ErrorBoundary from '@/components/ErrorBoundary.vue'
-import AppHeader from '@/components/AppHeader.vue'
-import AppFooter from '@/components/AppFooter.vue'
-import SkipLink from '@/components/SkipLink.vue'
-import { useAnalytics } from '@/composables/useAnalytics'
+import { onMounted, watch } from "vue"
+import { RouterView, useRouter } from "vue-router"
+import ErrorBoundary from "@/components/ErrorBoundary.vue"
+import AppHeader from "@/components/AppHeader.vue"
+import AppFooter from "@/components/AppFooter.vue"
+import SkipLink from "@/components/SkipLink.vue"
+import { useAnalytics } from "@/composables/useAnalytics"
 
 const { init: initAnalytics } = useAnalytics()
 
@@ -21,7 +21,7 @@ const router = useRouter()
 watch(
   () => router.currentRoute.value.fullPath,
   () => {
-    const main = document.getElementById('main-content')
+    const main = document.getElementById("main-content")
     if (main) {
       main.focus({ preventScroll: false })
     }

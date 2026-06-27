@@ -12,73 +12,62 @@
  *
  * Accessibility: WCAG AA high-contrast colors, aria-label, escapeHtml tooltips.
  */
-import { computed, ref } from "vue";
-import { use } from "echarts/core";
-import { CanvasRenderer } from "echarts/renderers";
-import { BarChart } from "echarts/charts";
-import {
-  GridComponent,
-  TooltipComponent,
-  TitleComponent,
-} from "echarts/components";
-import VChart from "vue-echarts";
-import { useChartData } from "@/composables/useChartData";
-import type { EChartsExportable } from "@/composables/useChartExport";
-import { escapeHtml, toNumberOrNaN, warnIfSignificantDataLoss } from "@/utils/chart";
-import AccessibleDataTable from "@/components/AccessibleDataTable.vue";
+import { computed, ref } from "vue"
+import { use } from "echarts/core"
+import { CanvasRenderer } from "echarts/renderers"
+import { BarChart } from "echarts/charts"
+import { GridComponent, TooltipComponent, TitleComponent } from "echarts/components"
+import VChart from "vue-echarts"
+import { useChartData } from "@/composables/useChartData"
+import type { EChartsExportable } from "@/composables/useChartExport"
+import { escapeHtml, toNumberOrNaN, warnIfSignificantDataLoss } from "@/utils/chart"
+import AccessibleDataTable from "@/components/AccessibleDataTable.vue"
 
 // Register only the ECharts modules we need (tree-shaking)
-use([
-  CanvasRenderer,
-  BarChart,
-  GridComponent,
-  TooltipComponent,
-  TitleComponent,
-]);
+use([CanvasRenderer, BarChart, GridComponent, TooltipComponent, TitleComponent])
 
-const { rows, loading, error } = useChartData("wealth-by-decile");
-const chart = ref<EChartsExportable | null>(null);
+const { rows, loading, error } = useChartData("wealth-by-decile")
+const chart = ref<EChartsExportable | null>(null)
 
-defineExpose({ chart });
+defineExpose({ chart })
 
 /**
  * Respect prefers-reduced-motion (WCAG 2.3.3).
  * Disables ECharts animations when the user has requested reduced motion.
  */
 const prefersReducedMotion =
-  typeof window !== "undefined" &&
-  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches
 
 // WCAG AA high-contrast colors against white
 // #1a56db (blue) contrast ratio ~7.2:1 — standard bars
 // #b91c1c (red-700) contrast ratio ~5.7:1 — negative value warning
-const COLOR_BAR = "#1a56db";
-const COLOR_NEGATIVE = "#b91c1c";
+const COLOR_BAR = "#1a56db"
+const COLOR_NEGATIVE = "#b91c1c"
 
 /** Parsed data rows preserving CSV order (1st poorest to 10th richest). */
 const parsedData = computed(() => {
   const mapped = rows.value.map((r) => ({
     decile: String(r.decile ?? ""),
     totalWealthBn: toNumberOrNaN(r.total_wealth_bn),
-  }));
-  const filtered = mapped.filter((r) => r.decile && !isNaN(r.totalWealthBn));
+  }))
+  const filtered = mapped.filter((r) => r.decile && !isNaN(r.totalWealthBn))
 
-  warnIfSignificantDataLoss("wealth-by-decile", mapped.length, filtered.length);
+  warnIfSignificantDataLoss("wealth-by-decile", mapped.length, filtered.length)
 
-  return filtered;
-});
+  return filtered
+})
 
-const hasData = computed(() => parsedData.value.length > 0);
+const hasData = computed(() => parsedData.value.length > 0)
 
 /** Build a headline insight for the aria-label. */
 const headlineInsight = computed(() => {
-  const data = parsedData.value;
-  if (data.length === 0) return "";
-  const richest = data[data.length - 1];
-  const poorest = data[0];
-  if (!richest || !poorest) return "";
-  return `The ${richest.decile} decile holds ${richest.totalWealthBn.toLocaleString()}bn in total wealth, while the ${poorest.decile} decile has ${poorest.totalWealthBn.toLocaleString()}bn`;
-});
+  const data = parsedData.value
+  if (data.length === 0) return ""
+  const richest = data[data.length - 1]
+  const poorest = data[0]
+  if (!richest || !poorest) return ""
+  return `The ${richest.decile} decile holds ${richest.totalWealthBn.toLocaleString()}bn in total wealth, while the ${poorest.decile} decile has ${poorest.totalWealthBn.toLocaleString()}bn`
+})
 
 /**
  * Only claim the "negative net wealth / red highlight" in the aria-label when the
@@ -86,33 +75,31 @@ const headlineInsight = computed(() => {
  * (+£13.9bn), so the claim would otherwise describe a red bar that is never drawn.
  */
 const poorestIsNegative = computed(() => {
-  const poorest = parsedData.value[0];
-  return poorest ? poorest.totalWealthBn < 0 : false;
-});
+  const poorest = parsedData.value[0]
+  return poorest ? poorest.totalWealthBn < 0 : false
+})
 
 /**
  * Accessible data-table fallback (WCAG 1.1.1). Mirrors the single plotted series
  * — total household wealth (£bn) per decile — using the same already-loaded,
  * filtered, verbatim figures the chart draws, in the same poorest-to-richest order.
  */
-const tableColumns = ["Decile", "Total wealth (£bn)"];
-const tableNumericColumns = ["Total wealth (£bn)"];
+const tableColumns = ["Decile", "Total wealth (£bn)"]
+const tableNumericColumns = ["Total wealth (£bn)"]
 const tableRows = computed(() =>
   parsedData.value.map((d) => ({
     Decile: d.decile,
     "Total wealth (£bn)": d.totalWealthBn,
   })),
-);
+)
 
 const option = computed(() => {
-  const data = parsedData.value;
-  const labels = data.map((d) => d.decile);
-  const values = data.map((d) => d.totalWealthBn);
+  const data = parsedData.value
+  const labels = data.map((d) => d.decile)
+  const values = data.map((d) => d.totalWealthBn)
 
   // Color each bar: red for negative values, blue for positive
-  const barColors = values.map((v) =>
-    v < 0 ? COLOR_NEGATIVE : COLOR_BAR,
-  );
+  const barColors = values.map((v) => (v < 0 ? COLOR_NEGATIVE : COLOR_BAR))
 
   return {
     animation: !prefersReducedMotion,
@@ -130,22 +117,21 @@ const option = computed(() => {
       axisPointer: { type: "shadow" as const },
       formatter: (
         params: Array<{
-          seriesName: string;
-          value: number;
-          axisValue: string;
-          dataIndex: number;
+          seriesName: string
+          value: number
+          axisValue: string
+          dataIndex: number
         }>,
       ) => {
-        if (!Array.isArray(params) || params.length === 0) return "";
-        const p = params[0];
-        const val =
-          typeof p.value === "number" ? p.value.toFixed(1) : String(p.value);
-        let html = `<strong>${escapeHtml(String(p.axisValue))}</strong><br/>`;
-        html += `Total wealth: ${escapeHtml(val)}bn`;
+        if (!Array.isArray(params) || params.length === 0) return ""
+        const p = params[0]
+        const val = typeof p.value === "number" ? p.value.toFixed(1) : String(p.value)
+        let html = `<strong>${escapeHtml(String(p.axisValue))}</strong><br/>`
+        html += `Total wealth: ${escapeHtml(val)}bn`
         if (typeof p.value === "number" && p.value < 0) {
-          html += `<br/><em style="color:${COLOR_NEGATIVE}">Net negative wealth</em>`;
+          html += `<br/><em style="color:${COLOR_NEGATIVE}">Net negative wealth</em>`
         }
-        return html;
+        return html
       },
     },
     grid: {
@@ -184,13 +170,18 @@ const option = computed(() => {
         barMaxWidth: 60,
       },
     ],
-  };
-});
+  }
+})
 </script>
 
 <template>
   <!-- Loading state -->
-  <div v-if="loading" class="flex items-center justify-center py-20" role="status" aria-live="polite">
+  <div
+    v-if="loading"
+    class="flex items-center justify-center py-20"
+    role="status"
+    aria-live="polite"
+  >
     <p class="text-[var(--wl-ink-muted)] text-lg">Loading chart data...</p>
   </div>
 
@@ -214,13 +205,7 @@ const option = computed(() => {
       :aria-label="`Bar chart showing total household wealth by decile in the UK. ${headlineInsight}.${poorestIsNegative ? ' The poorest decile is highlighted in red to indicate net negative wealth.' : ''}`"
       class="w-full"
     >
-      <VChart
-        ref="chart"
-        class="w-full"
-        style="height: 480px"
-        :option="option"
-        autoresize
-      />
+      <VChart ref="chart" class="w-full" style="height: 480px" :option="option" autoresize />
     </div>
 
     <!-- Accessible data-table fallback (WCAG 1.1.1 non-text content). -->
@@ -240,7 +225,8 @@ const option = computed(() => {
         rel="noopener"
         class="underline hover:text-[var(--wl-ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--wl-red)] rounded"
       >
-        ONS Wealth and Assets Survey<span class="sr-only"> (opens in new tab)</span></a>, accessed 2026-05-15
+        ONS Wealth and Assets Survey<span class="sr-only"> (opens in new tab)</span></a
+      >, accessed 2026-05-15
     </p>
   </div>
 </template>

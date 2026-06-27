@@ -12,11 +12,7 @@ defineProps<{
 <template>
   <nav aria-label="Breadcrumb" class="text-sm text-gray-500 mb-4">
     <ol class="flex items-center gap-1">
-      <li
-        v-for="(item, index) in items"
-        :key="index"
-        class="flex items-center"
-      >
+      <li v-for="(item, index) in items" :key="index" class="flex items-center">
         <span v-if="index > 0" class="mx-1" aria-hidden="true">/</span>
         <router-link
           v-if="item.to"

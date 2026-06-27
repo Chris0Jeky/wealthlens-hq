@@ -5,29 +5,29 @@
  * Displays "Copy link" by default and briefly shows "Copied!" for 2 seconds
  * after a successful copy. Only renders when the Clipboard API is available.
  */
-import { ref, computed, onBeforeUnmount } from "vue";
+import { ref, computed, onBeforeUnmount } from "vue"
 
-const copied = ref(false);
+const copied = ref(false)
 
 /** Whether the Clipboard API is available in this browser. */
 const isClipboardSupported = computed(
   () => typeof navigator !== "undefined" && !!navigator.clipboard,
-);
+)
 
-let timeoutId: ReturnType<typeof setTimeout> | null = null;
+let timeoutId: ReturnType<typeof setTimeout> | null = null
 
 async function copyUrl(): Promise<void> {
   try {
-    await navigator.clipboard.writeText(window.location.href);
-    copied.value = true;
+    await navigator.clipboard.writeText(window.location.href)
+    copied.value = true
 
     if (timeoutId) {
-      clearTimeout(timeoutId);
+      clearTimeout(timeoutId)
     }
     timeoutId = setTimeout(() => {
-      copied.value = false;
-      timeoutId = null;
-    }, 2000);
+      copied.value = false
+      timeoutId = null
+    }, 2000)
   } catch {
     // Clipboard write failed — silently ignore.
   }
@@ -35,10 +35,10 @@ async function copyUrl(): Promise<void> {
 
 onBeforeUnmount(() => {
   if (timeoutId) {
-    clearTimeout(timeoutId);
-    timeoutId = null;
+    clearTimeout(timeoutId)
+    timeoutId = null
   }
-});
+})
 </script>
 
 <template>

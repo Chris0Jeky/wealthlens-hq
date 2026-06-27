@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
-import { useRoute } from 'vue-router'
-import { useDataStore, type DatasetRow } from '@/stores/data'
-import { usePageMeta } from '@/composables/usePageMeta'
+import { computed, onMounted, ref } from "vue"
+import { useRoute } from "vue-router"
+import { useDataStore, type DatasetRow } from "@/stores/data"
+import { usePageMeta } from "@/composables/usePageMeta"
 
 const route = useRoute()
 const store = useDataStore()
@@ -23,29 +23,23 @@ const loading = ref(true)
 const error = ref<string | null>(null)
 
 const chartTitles: Record<string, string> = {
-  'wealth-shares': 'Wealth Shares',
-  'housing-affordability': 'Housing Affordability',
-  'wealth-by-decile': 'Wealth by Decile',
-  'cgt-concentration': 'CGT Concentration',
+  "wealth-shares": "Wealth Shares",
+  "housing-affordability": "Housing Affordability",
+  "wealth-by-decile": "Wealth by Decile",
+  "cgt-concentration": "CGT Concentration",
 }
 
 const hasChart = computed(() => datasetName.value in chartTitles)
 
-const pageTitle = computed(
-  () => chartTitles[datasetName.value] ?? datasetName.value,
-)
+const pageTitle = computed(() => chartTitles[datasetName.value] ?? datasetName.value)
 
 usePageMeta({
   title: computed(() => `${pageTitle.value} — Data Source`),
   description: computed(
     () => `Data source details and preview for the ${pageTitle.value} dataset on WealthLens UK.`,
   ),
-  url: computed(
-    () => `https://chris0jeky.github.io/wealthlens-hq/datasets/${datasetName.value}`,
-  ),
-  image: computed(
-    () => `https://chris0jeky.github.io/wealthlens-hq/og/${datasetName.value}.png`,
-  ),
+  url: computed(() => `https://chris0jeky.github.io/wealthlens-hq/datasets/${datasetName.value}`),
+  image: computed(() => `https://chris0jeky.github.io/wealthlens-hq/og/${datasetName.value}.png`),
   imageAlt: computed(() => `${pageTitle.value} dataset — WealthLens UK`),
 })
 
@@ -59,7 +53,7 @@ onMounted(async () => {
     metadata.value = await metaRes.json()
     rows.value = dataRows.data.slice(0, 10)
   } catch (e) {
-    error.value = e instanceof Error ? e.message : 'Failed to load dataset'
+    error.value = e instanceof Error ? e.message : "Failed to load dataset"
   } finally {
     loading.value = false
   }
@@ -81,9 +75,7 @@ onMounted(async () => {
 
     <div v-else-if="error" class="py-10 text-center" role="alert">
       <p class="text-red-600 font-medium">{{ error }}</p>
-      <p class="text-gray-500 text-sm mt-2">
-        Make sure the backend API is running on port 8000.
-      </p>
+      <p class="text-gray-500 text-sm mt-2">Make sure the backend API is running on port 8000.</p>
     </div>
 
     <template v-else-if="metadata">
@@ -93,9 +85,7 @@ onMounted(async () => {
       </header>
 
       <section class="mb-8" aria-labelledby="source-heading">
-        <h2 id="source-heading" class="text-lg font-semibold mb-3">
-          Data Source
-        </h2>
+        <h2 id="source-heading" class="text-lg font-semibold mb-3">Data Source</h2>
         <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
           <div>
             <dt class="text-gray-500">Source</dt>
@@ -163,7 +153,7 @@ onMounted(async () => {
                   :key="col"
                   class="px-4 py-2 text-gray-900 dark:text-gray-100 whitespace-nowrap"
                 >
-                  {{ row[col] ?? '—' }}
+                  {{ row[col] ?? "—" }}
                 </td>
               </tr>
             </tbody>

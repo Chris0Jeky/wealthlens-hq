@@ -7,40 +7,33 @@
  * Usage: place below any chart component and pass the same data rows.
  * Collapsed by default via <details>/<summary> to avoid visual clutter.
  */
-import type { DatasetRow } from "@/stores/data";
+import type { DatasetRow } from "@/stores/data"
 
 const props = defineProps<{
   /** Array of data objects to display as table rows. */
-  rows: DatasetRow[];
+  rows: DatasetRow[]
   /** Column keys to display (controls order and which fields are shown). */
-  columns: string[];
+  columns: string[]
   /** Accessible caption describing the table content. */
-  caption: string;
+  caption: string
   /** Column keys whose numeric values should be locale-formatted. Others render raw. */
-  numericColumns?: string[];
-}>();
+  numericColumns?: string[]
+}>()
 
-function formatCell(
-  value: string | number | null | undefined,
-  col: string,
-): string {
+function formatCell(value: string | number | null | undefined, col: string): string {
   if (value === null || value === undefined) {
-    return "—";
+    return "—"
   }
   // A non-finite number (NaN/Infinity) means "no usable value"; render it as
   // missing rather than the misleading literal "NaN" — so a malformed/suppressed
   // source cell never reads as real data in the accessible fallback.
   if (typeof value === "number" && !Number.isFinite(value)) {
-    return "—";
+    return "—"
   }
-  if (
-    typeof value === "number" &&
-    props.numericColumns &&
-    props.numericColumns.includes(col)
-  ) {
-    return value.toLocaleString("en-GB");
+  if (typeof value === "number" && props.numericColumns && props.numericColumns.includes(col)) {
+    return value.toLocaleString("en-GB")
   }
-  return String(value);
+  return String(value)
 }
 </script>
 
@@ -53,11 +46,11 @@ function formatCell(
     </summary>
 
     <div class="overflow-x-auto mt-2">
-      <table
-        class="min-w-full border-collapse border border-gray-300 text-sm"
-      >
+      <table class="min-w-full border-collapse border border-gray-300 text-sm">
         <caption class="text-left text-sm font-medium text-gray-600 pb-2">
-          {{ props.caption }}
+          {{
+            props.caption
+          }}
         </caption>
 
         <thead>

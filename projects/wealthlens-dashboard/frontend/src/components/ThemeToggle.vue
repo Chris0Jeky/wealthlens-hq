@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useTheme } from '@/composables/useTheme'
+import { useTheme } from "@/composables/useTheme"
 
 const { theme, toggleTheme } = useTheme()
 </script>
@@ -30,7 +30,9 @@ const { theme, toggleTheme } = useTheme()
   background: var(--wl-bg-muted);
   color: var(--wl-ink);
   cursor: pointer;
-  transition: background 0.12s ease, border-color 0.12s ease;
+  transition:
+    background 0.12s ease,
+    border-color 0.12s ease;
 }
 
 .theme-toggle:hover {

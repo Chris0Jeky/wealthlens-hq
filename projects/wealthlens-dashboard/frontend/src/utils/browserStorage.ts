@@ -1,5 +1,5 @@
 export function getStorageItem(key: string): string | null {
-  if (typeof window === 'undefined') return null
+  if (typeof window === "undefined") return null
 
   try {
     return window.localStorage.getItem(key)
@@ -9,7 +9,7 @@ export function getStorageItem(key: string): string | null {
 }
 
 export function setStorageItem(key: string, value: string): void {
-  if (typeof window === 'undefined') return
+  if (typeof window === "undefined") return
 
   try {
     window.localStorage.setItem(key, value)
@@ -19,7 +19,7 @@ export function setStorageItem(key: string, value: string): void {
 }
 
 export function removeStorageItem(key: string): void {
-  if (typeof window === 'undefined') return
+  if (typeof window === "undefined") return
 
   try {
     window.localStorage.removeItem(key)

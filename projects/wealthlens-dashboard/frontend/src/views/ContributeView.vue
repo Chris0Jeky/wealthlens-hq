@@ -29,9 +29,9 @@
         <span class="wl-eyebrow">Get Involved</span>
         <h1 id="contribute-heading" class="wl-h2">Contribute to WealthLens UK</h1>
         <p class="contribute-hero__intro">
-          WealthLens is open-source and community-driven. Whether you write code,
-          crunch data, design charts, or simply care about making wealth inequality
-          visible, there is a way to help.
+          WealthLens is open-source and community-driven. Whether you write code, crunch data,
+          design charts, or simply care about making wealth inequality visible, there is a way to
+          help.
         </p>
       </section>
 
@@ -45,8 +45,8 @@
           <article class="way-card" role="listitem">
             <h3 class="way-card__title">Code</h3>
             <p class="way-card__body">
-              The dashboard is built with Vue 3, TypeScript, and FastAPI (Python).
-              Fix bugs, add features, improve performance, or write tests.
+              The dashboard is built with Vue 3, TypeScript, and FastAPI (Python). Fix bugs, add
+              features, improve performance, or write tests.
             </p>
             <ul class="way-card__links">
               <li>
@@ -55,7 +55,8 @@
                   target="_blank"
                   rel="noopener"
                   class="way-card__link"
-                >GitHub Repository</a>
+                  >GitHub Repository</a
+                >
               </li>
               <li>
                 <a
@@ -63,7 +64,8 @@
                   target="_blank"
                   rel="noopener"
                   class="way-card__link"
-                >CONTRIBUTING.md</a>
+                  >CONTRIBUTING.md</a
+                >
               </li>
             </ul>
           </article>
@@ -72,8 +74,8 @@
           <article class="way-card" role="listitem">
             <h3 class="way-card__title">Data</h3>
             <p class="way-card__body">
-              Suggest new data sources, verify existing sources for accuracy,
-              or help with Freedom of Information requests to uncover hidden datasets.
+              Suggest new data sources, verify existing sources for accuracy, or help with Freedom
+              of Information requests to uncover hidden datasets.
             </p>
             <ul class="way-card__links">
               <li>
@@ -82,7 +84,8 @@
                   target="_blank"
                   rel="noopener"
                   class="way-card__link"
-                >Suggest a data source</a>
+                  >Suggest a data source</a
+                >
               </li>
             </ul>
           </article>
@@ -91,8 +94,8 @@
           <article class="way-card" role="listitem">
             <h3 class="way-card__title">Design</h3>
             <p class="way-card__body">
-              Help with chart design, accessibility testing, mobile UX improvements,
-              or the overall visual identity of the project.
+              Help with chart design, accessibility testing, mobile UX improvements, or the overall
+              visual identity of the project.
             </p>
             <ul class="way-card__links">
               <li>
@@ -101,7 +104,8 @@
                   target="_blank"
                   rel="noopener"
                   class="way-card__link"
-                >Open a design issue</a>
+                  >Open a design issue</a
+                >
               </li>
             </ul>
           </article>
@@ -110,8 +114,8 @@
           <article class="way-card" role="listitem">
             <h3 class="way-card__title">Content</h3>
             <p class="way-card__body">
-              Write analysis pieces, help with social media posts, suggest chart
-              narratives, or improve documentation and copy.
+              Write analysis pieces, help with social media posts, suggest chart narratives, or
+              improve documentation and copy.
             </p>
             <ul class="way-card__links">
               <li>
@@ -120,7 +124,8 @@
                   target="_blank"
                   rel="noopener"
                   class="way-card__link"
-                >Suggest content</a>
+                  >Suggest content</a
+                >
               </li>
             </ul>
           </article>
@@ -129,8 +134,8 @@
           <article class="way-card" role="listitem">
             <h3 class="way-card__title">Research</h3>
             <p class="way-card__body">
-              Contribute academic sources, policy documents, fact-checking,
-              or analysis of existing wealth data.
+              Contribute academic sources, policy documents, fact-checking, or analysis of existing
+              wealth data.
             </p>
             <ul class="way-card__links">
               <li>
@@ -139,7 +144,8 @@
                   target="_blank"
                   rel="noopener"
                   class="way-card__link"
-                >Share research</a>
+                  >Share research</a
+                >
               </li>
             </ul>
           </article>
@@ -159,11 +165,9 @@
               <strong>Fork the repository</strong>
               <p>
                 Clone
-                <a
-                  href="https://github.com/Chris0Jeky/wealthlens-hq"
-                  target="_blank"
-                  rel="noopener"
-                >github.com/Chris0Jeky/wealthlens-hq</a>
+                <a href="https://github.com/Chris0Jeky/wealthlens-hq" target="_blank" rel="noopener"
+                  >github.com/Chris0Jeky/wealthlens-hq</a
+                >
                 and set up your local environment.
               </p>
             </div>
@@ -172,9 +176,7 @@
             <span class="started-steps__num">2</span>
             <div>
               <strong>Read CONTRIBUTING.md</strong>
-              <p>
-                Covers branch naming, commit style, testing, and the review process.
-              </p>
+              <p>Covers branch naming, commit style, testing, and the review process.</p>
             </div>
           </li>
           <li class="started-steps__item">
@@ -187,7 +189,8 @@
                   href="https://github.com/Chris0Jeky/wealthlens-hq/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22"
                   target="_blank"
                   rel="noopener"
-                >good first issue</a>
+                  >good first issue</a
+                >
                 on GitHub.
               </p>
             </div>
@@ -196,9 +199,7 @@
             <span class="started-steps__num">4</span>
             <div>
               <strong>Open a pull request</strong>
-              <p>
-                Keep PRs small and focused. Every contribution is reviewed and appreciated.
-              </p>
+              <p>Keep PRs small and focused. Every contribution is reviewed and appreciated.</p>
             </div>
           </li>
         </ol>
@@ -227,16 +228,20 @@
         <h2 id="values-heading" class="wl-h3">What we stand for</h2>
         <ul class="values-list">
           <li>
-            <strong>Open source always</strong> — all code, data pipelines, and documentation are public.
+            <strong>Open source always</strong> — all code, data pipelines, and documentation are
+            public.
           </li>
           <li>
-            <strong>Data first, opinion second</strong> — we present sourced data, not party-political positions.
+            <strong>Data first, opinion second</strong> — we present sourced data, not
+            party-political positions.
           </li>
           <li>
-            <strong>Accessible by default</strong> — charts meet WCAG AA, content is plain-language, mobile-first.
+            <strong>Accessible by default</strong> — charts meet WCAG AA, content is plain-language,
+            mobile-first.
           </li>
           <li>
-            <strong>Independent and non-partisan</strong> — we serve the public interest, not any political party.
+            <strong>Independent and non-partisan</strong> — we serve the public interest, not any
+            political party.
           </li>
         </ul>
       </section>
@@ -248,14 +253,14 @@
         <span class="wl-eyebrow">Community</span>
         <h2 id="conduct-heading" class="wl-h3">Code of Conduct</h2>
         <p>
-          We are committed to providing a welcoming and respectful environment for
-          everyone. All participants are expected to behave professionally and
-          treat others with dignity. See our
+          We are committed to providing a welcoming and respectful environment for everyone. All
+          participants are expected to behave professionally and treat others with dignity. See our
           <a
             href="https://github.com/Chris0Jeky/wealthlens-hq/blob/main/CODE_OF_CONDUCT.md"
             target="_blank"
             rel="noopener"
-          >Code of Conduct</a>
+            >Code of Conduct</a
+          >
           for full details.
         </p>
       </section>
@@ -266,9 +271,7 @@
       <section class="contribute-contact" aria-labelledby="contact-heading">
         <span class="wl-eyebrow">Get in Touch</span>
         <h2 id="contact-heading" class="wl-h3">Contact</h2>
-        <p>
-          Have questions, suggestions, or want to discuss a contribution?
-        </p>
+        <p>Have questions, suggestions, or want to discuss a contribution?</p>
         <ul class="contact-list">
           <li>
             <strong>GitHub Issues</strong> —
@@ -276,7 +279,8 @@
               href="https://github.com/Chris0Jeky/wealthlens-hq/issues"
               target="_blank"
               rel="noopener"
-            >Open an issue</a>
+              >Open an issue</a
+            >
             for bugs, feature requests, or data suggestions.
           </li>
           <li>

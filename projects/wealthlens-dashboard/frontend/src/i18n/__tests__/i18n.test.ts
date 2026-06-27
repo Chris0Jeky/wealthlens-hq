@@ -1,89 +1,89 @@
-import { afterEach, describe, it, expect, vi } from 'vitest'
-import { createI18n } from 'vue-i18n'
-import en from '../locales/en.json'
-import i18n from '../index'
+import { afterEach, describe, it, expect, vi } from "vitest"
+import { createI18n } from "vue-i18n"
+import en from "../locales/en.json"
+import i18n from "../index"
 
-const localStorageDescriptor = Object.getOwnPropertyDescriptor(window, 'localStorage')
+const localStorageDescriptor = Object.getOwnPropertyDescriptor(window, "localStorage")
 
 function mockUnavailableLocalStorage() {
-  Object.defineProperty(window, 'localStorage', {
+  Object.defineProperty(window, "localStorage", {
     configurable: true,
     value: {
       getItem: vi.fn(() => {
-        throw new DOMException('Storage blocked', 'SecurityError')
+        throw new DOMException("Storage blocked", "SecurityError")
       }),
       setItem: vi.fn(() => {
-        throw new DOMException('Storage blocked', 'SecurityError')
+        throw new DOMException("Storage blocked", "SecurityError")
       }),
       removeItem: vi.fn(() => {
-        throw new DOMException('Storage blocked', 'SecurityError')
+        throw new DOMException("Storage blocked", "SecurityError")
       }),
       clear: vi.fn(),
     },
   })
 }
 
-describe('i18n configuration', () => {
+describe("i18n configuration", () => {
   afterEach(() => {
     if (localStorageDescriptor) {
-      Object.defineProperty(window, 'localStorage', localStorageDescriptor)
+      Object.defineProperty(window, "localStorage", localStorageDescriptor)
     }
   })
 
-  it('creates an i18n instance with English as default locale', () => {
-    expect(i18n.global.locale.value).toBe('en')
+  it("creates an i18n instance with English as default locale", () => {
+    expect(i18n.global.locale.value).toBe("en")
   })
 
-  it('uses English as the fallback locale', () => {
-    expect(i18n.global.fallbackLocale.value).toBe('en')
+  it("uses English as the fallback locale", () => {
+    expect(i18n.global.fallbackLocale.value).toBe("en")
   })
 
-  it('loads the English locale messages', () => {
-    expect(i18n.global.t('nav.home')).toBe('Front page')
-    expect(i18n.global.t('nav.data')).toBe('The data')
-    expect(i18n.global.t('nav.sources')).toBe('Sources')
-    expect(i18n.global.t('nav.methodology')).toBe('Methodology')
+  it("loads the English locale messages", () => {
+    expect(i18n.global.t("nav.home")).toBe("Front page")
+    expect(i18n.global.t("nav.data")).toBe("The data")
+    expect(i18n.global.t("nav.sources")).toBe("Sources")
+    expect(i18n.global.t("nav.methodology")).toBe("Methodology")
   })
 
-  it('resolves nested keys correctly', () => {
-    expect(i18n.global.t('common.loading')).toBe('Loading...')
-    expect(i18n.global.t('common.error')).toBe('Something went wrong')
-    expect(i18n.global.t('calculator.title')).toBe('Where Do You Fit in UK Wealth?')
+  it("resolves nested keys correctly", () => {
+    expect(i18n.global.t("common.loading")).toBe("Loading...")
+    expect(i18n.global.t("common.error")).toBe("Something went wrong")
+    expect(i18n.global.t("calculator.title")).toBe("Where Do You Fit in UK Wealth?")
   })
 
-  it('supports named interpolation in messages', () => {
-    const result = i18n.global.t('footer.copyright', { year: 2026 })
-    expect(result).toBe('© 2026 WealthLens UK')
+  it("supports named interpolation in messages", () => {
+    const result = i18n.global.t("footer.copyright", { year: 2026 })
+    expect(result).toBe("© 2026 WealthLens UK")
   })
 
-  it('falls back to English for missing keys in a non-existent locale', () => {
+  it("falls back to English for missing keys in a non-existent locale", () => {
     // Create a separate instance to test fallback behavior
     const testI18n = createI18n({
-      locale: 'cy',
-      fallbackLocale: 'en',
+      locale: "cy",
+      fallbackLocale: "en",
       legacy: false,
       messages: { en },
     })
 
     // When locale is 'cy' but no Welsh messages exist, falls back to English
-    expect(testI18n.global.t('nav.home')).toBe('Front page')
+    expect(testI18n.global.t("nav.home")).toBe("Front page")
   })
 
-  it('has all expected top-level namespaces', () => {
+  it("has all expected top-level namespaces", () => {
     const messages = en as Record<string, unknown>
-    expect(messages).toHaveProperty('nav')
-    expect(messages).toHaveProperty('home')
-    expect(messages).toHaveProperty('common')
-    expect(messages).toHaveProperty('calculator')
-    expect(messages).toHaveProperty('footer')
+    expect(messages).toHaveProperty("nav")
+    expect(messages).toHaveProperty("home")
+    expect(messages).toHaveProperty("common")
+    expect(messages).toHaveProperty("calculator")
+    expect(messages).toHaveProperty("footer")
   })
 
-  it('falls back to English when locale storage is unavailable during startup', async () => {
+  it("falls back to English when locale storage is unavailable during startup", async () => {
     vi.resetModules()
     mockUnavailableLocalStorage()
 
-    const module = await import('../index')
+    const module = await import("../index")
 
-    expect(module.default.global.locale.value).toBe('en')
+    expect(module.default.global.locale.value).toBe("en")
   })
 })

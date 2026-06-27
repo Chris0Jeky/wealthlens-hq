@@ -1,4 +1,4 @@
-import { onMounted, onUnmounted } from 'vue'
+import { onMounted, onUnmounted } from "vue"
 
 export interface ShortcutOptions {
   ctrl?: boolean
@@ -25,10 +25,10 @@ export function useKeyboardShortcut(
   }
 
   onMounted(() => {
-    document.addEventListener('keydown', onKeydown)
+    document.addEventListener("keydown", onKeydown)
   })
 
   onUnmounted(() => {
-    document.removeEventListener('keydown', onKeydown)
+    document.removeEventListener("keydown", onKeydown)
   })
 }

@@ -1,30 +1,30 @@
 <script setup lang="ts">
-import { ref, nextTick, onErrorCaptured } from "vue";
+import { ref, nextTick, onErrorCaptured } from "vue"
 
-const MAX_RETRIES = 3;
+const MAX_RETRIES = 3
 
-const error = ref<Error | null>(null);
-const errorId = ref("");
-const retryCount = ref(0);
-const errorContainer = ref<HTMLDivElement | null>(null);
+const error = ref<Error | null>(null)
+const errorId = ref("")
+const retryCount = ref(0)
+const errorContainer = ref<HTMLDivElement | null>(null)
 
 function generateErrorId(): string {
-  return `ERR-${Date.now().toString(36).slice(-6).toUpperCase()}`;
+  return `ERR-${Date.now().toString(36).slice(-6).toUpperCase()}`
 }
 
 function reset() {
-  retryCount.value++;
-  error.value = null;
+  retryCount.value++
+  error.value = null
 }
 
 onErrorCaptured((err: Error) => {
-  error.value = err;
-  errorId.value = generateErrorId();
+  error.value = err
+  errorId.value = generateErrorId()
   nextTick(() => {
-    errorContainer.value?.focus();
-  });
-  return false;
-});
+    errorContainer.value?.focus()
+  })
+  return false
+})
 </script>
 
 <template>

@@ -1,9 +1,9 @@
-import { ref, onUnmounted, type Ref } from 'vue'
+import { ref, onUnmounted, type Ref } from "vue"
 
 export function useMediaQuery(query: string): Ref<boolean> {
   const matches = ref(false)
 
-  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
     return matches
   }
 
@@ -14,10 +14,10 @@ export function useMediaQuery(query: string): Ref<boolean> {
     matches.value = event.matches
   }
 
-  mql.addEventListener('change', handler)
+  mql.addEventListener("change", handler)
 
   onUnmounted(() => {
-    mql.removeEventListener('change', handler)
+    mql.removeEventListener("change", handler)
   })
 
   return matches

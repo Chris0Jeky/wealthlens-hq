@@ -5,7 +5,7 @@
  * Renders a breadcrumb trail and the TaxCalculator component.
  * Route: /tools/tax-calculator
  */
-import TaxCalculator from "@/components/TaxCalculator.vue";
+import TaxCalculator from "@/components/TaxCalculator.vue"
 </script>
 
 <template>
@@ -22,9 +22,7 @@ import TaxCalculator from "@/components/TaxCalculator.vue";
           <span class="crumb__sep" aria-hidden="true">/</span>
         </li>
         <li class="crumb__item">
-          <span class="crumb__current" aria-current="page">
-            Tax Calculator
-          </span>
+          <span class="crumb__current" aria-current="page"> Tax Calculator </span>
         </li>
       </ol>
     </nav>

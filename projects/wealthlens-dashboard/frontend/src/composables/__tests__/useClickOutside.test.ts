@@ -1,7 +1,7 @@
-import { describe, it, expect, vi } from 'vitest'
-import { mount } from '@vue/test-utils'
-import { defineComponent, ref, nextTick } from 'vue'
-import { useClickOutside } from '@/composables/useClickOutside'
+import { describe, it, expect, vi } from "vitest"
+import { mount } from "@vue/test-utils"
+import { defineComponent, ref, nextTick } from "vue"
+import { useClickOutside } from "@/composables/useClickOutside"
 
 function createTestComponent(handler: () => void) {
   return defineComponent({
@@ -19,8 +19,8 @@ function createTestComponent(handler: () => void) {
   })
 }
 
-describe('useClickOutside', () => {
-  it('calls handler when clicking outside the target', async () => {
+describe("useClickOutside", () => {
+  it("calls handler when clicking outside the target", async () => {
     const handler = vi.fn()
     const wrapper = mount(createTestComponent(handler), {
       attachTo: document.body,
@@ -28,12 +28,12 @@ describe('useClickOutside', () => {
     await nextTick()
 
     const outside = wrapper.find('[data-testid="outside"]')
-    await outside.trigger('pointerdown')
+    await outside.trigger("pointerdown")
     expect(handler).toHaveBeenCalledOnce()
     wrapper.unmount()
   })
 
-  it('does not call handler when clicking inside the target', async () => {
+  it("does not call handler when clicking inside the target", async () => {
     const handler = vi.fn()
     const wrapper = mount(createTestComponent(handler), {
       attachTo: document.body,
@@ -41,12 +41,12 @@ describe('useClickOutside', () => {
     await nextTick()
 
     const target = wrapper.find('[data-testid="target"]')
-    await target.trigger('pointerdown')
+    await target.trigger("pointerdown")
     expect(handler).not.toHaveBeenCalled()
     wrapper.unmount()
   })
 
-  it('does not call handler when clicking the target element itself', async () => {
+  it("does not call handler when clicking the target element itself", async () => {
     const handler = vi.fn()
     const wrapper = mount(createTestComponent(handler), {
       attachTo: document.body,
@@ -54,12 +54,12 @@ describe('useClickOutside', () => {
     await nextTick()
 
     const target = wrapper.find('[data-testid="target"]')
-    await target.trigger('pointerdown')
+    await target.trigger("pointerdown")
     expect(handler).not.toHaveBeenCalled()
     wrapper.unmount()
   })
 
-  it('cleans up the listener on unmount', async () => {
+  it("cleans up the listener on unmount", async () => {
     const handler = vi.fn()
     const wrapper = mount(createTestComponent(handler), {
       attachTo: document.body,
@@ -67,11 +67,11 @@ describe('useClickOutside', () => {
     await nextTick()
     wrapper.unmount()
 
-    document.body.dispatchEvent(new Event('pointerdown', { bubbles: true }))
+    document.body.dispatchEvent(new Event("pointerdown", { bubbles: true }))
     expect(handler).not.toHaveBeenCalled()
   })
 
-  it('exposes start and stop for manual control', async () => {
+  it("exposes start and stop for manual control", async () => {
     const handler = vi.fn()
     const targetRef = ref<HTMLElement | null>(null)
 
@@ -93,17 +93,17 @@ describe('useClickOutside', () => {
 
     wrapper.vm.stop()
     const outside = wrapper.find('[data-testid="outside"]')
-    await outside.trigger('pointerdown')
+    await outside.trigger("pointerdown")
     expect(handler).not.toHaveBeenCalled()
 
     wrapper.vm.start()
-    await outside.trigger('pointerdown')
+    await outside.trigger("pointerdown")
     expect(handler).toHaveBeenCalledOnce()
 
     wrapper.unmount()
   })
 
-  it('handles null ref gracefully', async () => {
+  it("handles null ref gracefully", async () => {
     const handler = vi.fn()
     const targetRef = ref<HTMLElement | null>(null)
 
@@ -112,13 +112,13 @@ describe('useClickOutside', () => {
         useClickOutside(targetRef, handler)
         return {}
       },
-      template: '<div>No ref</div>',
+      template: "<div>No ref</div>",
     })
 
     const wrapper = mount(TestComp, { attachTo: document.body })
     await nextTick()
 
-    document.body.dispatchEvent(new Event('pointerdown', { bubbles: true }))
+    document.body.dispatchEvent(new Event("pointerdown", { bubbles: true }))
     expect(handler).not.toHaveBeenCalled()
     wrapper.unmount()
   })

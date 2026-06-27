@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref, nextTick } from 'vue'
-import { RouterLink } from 'vue-router'
+import { ref, nextTick } from "vue"
+import { RouterLink } from "vue-router"
 
 const mobileMenuOpen = ref(false)
 const hamburgerBtn = ref<HTMLButtonElement | null>(null)
@@ -11,7 +11,7 @@ function toggleMenu() {
   if (mobileMenuOpen.value) {
     // Move focus into the mobile menu after it renders
     nextTick(() => {
-      const firstLink = mobileNav.value?.querySelector<HTMLElement>('a')
+      const firstLink = mobileNav.value?.querySelector<HTMLElement>("a")
       firstLink?.focus()
     })
   }
@@ -26,15 +26,15 @@ function closeMenu(returnFocus = false) {
 }
 
 function onMenuKeydown(event: KeyboardEvent) {
-  if (event.key === 'Escape') {
+  if (event.key === "Escape") {
     closeMenu(true)
   }
 }
 
-const today = new Date().toLocaleDateString('en-GB', {
-  day: 'numeric',
-  month: 'short',
-  year: 'numeric',
+const today = new Date().toLocaleDateString("en-GB", {
+  day: "numeric",
+  month: "short",
+  year: "numeric",
 })
 </script>
 
@@ -58,12 +58,7 @@ const today = new Date().toLocaleDateString('en-GB', {
     <!-- Main nav row -->
     <div class="nav-inner">
       <RouterLink to="/" class="brand" aria-label="WealthLens UK — home page" @click="closeMenu()">
-        <svg
-          class="brand-mark"
-          viewBox="0 0 68 68"
-          fill="none"
-          aria-hidden="true"
-        >
+        <svg class="brand-mark" viewBox="0 0 68 68" fill="none" aria-hidden="true">
           <circle
             cx="34"
             cy="34"
@@ -97,25 +92,30 @@ const today = new Date().toLocaleDateString('en-GB', {
       <!-- Desktop nav links -->
       <div class="nav-links">
         <RouterLink to="/" class="nav-link" active-class="active" @click="closeMenu()">
-          {{ $t('nav.home') }}
+          {{ $t("nav.home") }}
         </RouterLink>
-        <RouterLink to="/charts/wealth-shares" class="nav-link" active-class="active" @click="closeMenu()">
-          {{ $t('nav.data') }}
+        <RouterLink
+          to="/charts/wealth-shares"
+          class="nav-link"
+          active-class="active"
+          @click="closeMenu()"
+        >
+          {{ $t("nav.data") }}
         </RouterLink>
         <RouterLink to="/simulator" class="nav-link" active-class="active" @click="closeMenu()">
-          {{ $t('nav.simulator') }}
+          {{ $t("nav.simulator") }}
         </RouterLink>
         <RouterLink to="/data-sources" class="nav-link" active-class="active" @click="closeMenu()">
-          {{ $t('nav.sources') }}
+          {{ $t("nav.sources") }}
         </RouterLink>
         <RouterLink to="/methodology" class="nav-link" active-class="active" @click="closeMenu()">
-          {{ $t('nav.methodology') }}
+          {{ $t("nav.methodology") }}
         </RouterLink>
         <RouterLink to="/about" class="nav-link" active-class="active" @click="closeMenu()">
-          {{ $t('nav.about') }}
+          {{ $t("nav.about") }}
         </RouterLink>
         <RouterLink to="/contribute" class="nav-link" active-class="active" @click="closeMenu()">
-          {{ $t('nav.contribute') }}
+          {{ $t("nav.contribute") }}
         </RouterLink>
       </div>
 
@@ -127,10 +127,10 @@ const today = new Date().toLocaleDateString('en-GB', {
           rel="noopener"
           class="wl-btn wl-btn--ghost wl-btn--sm"
         >
-          {{ $t('nav.viewSource') }} ↗
+          {{ $t("nav.viewSource") }} ↗
         </a>
         <RouterLink to="/charts/wealth-shares" class="wl-btn wl-btn--red wl-btn--sm">
-          {{ $t('nav.readTheData') }} →
+          {{ $t("nav.readTheData") }} →
         </RouterLink>
       </div>
 
@@ -159,25 +159,30 @@ const today = new Date().toLocaleDateString('en-GB', {
       @keydown="onMenuKeydown"
     >
       <RouterLink to="/" class="mobile-link" active-class="active" @click="closeMenu()">
-        {{ $t('nav.home') }}
+        {{ $t("nav.home") }}
       </RouterLink>
-      <RouterLink to="/charts/wealth-shares" class="mobile-link" active-class="active" @click="closeMenu()">
-        {{ $t('nav.data') }}
+      <RouterLink
+        to="/charts/wealth-shares"
+        class="mobile-link"
+        active-class="active"
+        @click="closeMenu()"
+      >
+        {{ $t("nav.data") }}
       </RouterLink>
       <RouterLink to="/simulator" class="mobile-link" active-class="active" @click="closeMenu()">
-        {{ $t('nav.simulator') }}
+        {{ $t("nav.simulator") }}
       </RouterLink>
       <RouterLink to="/data-sources" class="mobile-link" active-class="active" @click="closeMenu()">
-        {{ $t('nav.sources') }}
+        {{ $t("nav.sources") }}
       </RouterLink>
       <RouterLink to="/methodology" class="mobile-link" active-class="active" @click="closeMenu()">
-        {{ $t('nav.methodology') }}
+        {{ $t("nav.methodology") }}
       </RouterLink>
       <RouterLink to="/about" class="mobile-link" active-class="active" @click="closeMenu()">
-        {{ $t('nav.about') }}
+        {{ $t("nav.about") }}
       </RouterLink>
       <RouterLink to="/contribute" class="mobile-link" active-class="active" @click="closeMenu()">
-        {{ $t('nav.contribute') }}
+        {{ $t("nav.contribute") }}
       </RouterLink>
       <div class="mobile-actions">
         <a
@@ -186,10 +191,14 @@ const today = new Date().toLocaleDateString('en-GB', {
           rel="noopener"
           class="wl-btn wl-btn--ghost wl-btn--sm"
         >
-          {{ $t('nav.viewSource') }} ↗
+          {{ $t("nav.viewSource") }} ↗
         </a>
-        <RouterLink to="/charts/wealth-shares" class="wl-btn wl-btn--red wl-btn--sm" @click="closeMenu()">
-          {{ $t('nav.readTheData') }} →
+        <RouterLink
+          to="/charts/wealth-shares"
+          class="wl-btn wl-btn--red wl-btn--sm"
+          @click="closeMenu()"
+        >
+          {{ $t("nav.readTheData") }} →
         </RouterLink>
       </div>
     </div>
@@ -243,8 +252,13 @@ const today = new Date().toLocaleDateString('en-GB', {
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.35; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
 }
 
 .band-right {
@@ -368,7 +382,9 @@ const today = new Date().toLocaleDateString('en-GB', {
   width: 100%;
   height: 2px;
   background: var(--wl-ink);
-  transition: transform 0.25s ease, opacity 0.25s ease;
+  transition:
+    transform 0.25s ease,
+    opacity 0.25s ease;
   transform-origin: center;
 }
 

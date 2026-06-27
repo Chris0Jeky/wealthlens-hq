@@ -22,18 +22,18 @@
  */
 
 export interface SeriesLegendItem {
-  label: string;
-  color: string;
-  bold?: boolean;
+  label: string
+  color: string
+  bold?: boolean
 }
 
 const props = withDefaults(
   defineProps<{
-    title?: string;
-    unit?: string;
-    series?: SeriesLegendItem[];
-    ranges?: string[];
-    activeRange?: string;
+    title?: string
+    unit?: string
+    series?: SeriesLegendItem[]
+    ranges?: string[]
+    activeRange?: string
   }>(),
   {
     title: "",
@@ -42,14 +42,14 @@ const props = withDefaults(
     ranges: () => [],
     activeRange: "",
   },
-);
+)
 
 const emit = defineEmits<{
-  (e: "range-change", range: string): void;
-}>();
+  (e: "range-change", range: string): void
+}>()
 
 function selectRange(range: string) {
-  emit("range-change", range);
+  emit("range-change", range)
 }
 
 /**
@@ -58,36 +58,36 @@ function selectRange(range: string) {
  * first/last. The focused tab is activated on arrow key press.
  */
 function onKeydown(event: KeyboardEvent) {
-  const tabs = props.ranges;
-  if (tabs.length === 0) return;
+  const tabs = props.ranges
+  if (tabs.length === 0) return
 
-  const currentIdx = tabs.indexOf(props.activeRange);
-  let nextIdx: number;
+  const currentIdx = tabs.indexOf(props.activeRange)
+  let nextIdx: number
 
   switch (event.key) {
     case "ArrowRight":
-      nextIdx = (currentIdx + 1) % tabs.length;
-      break;
+      nextIdx = (currentIdx + 1) % tabs.length
+      break
     case "ArrowLeft":
-      nextIdx = (currentIdx - 1 + tabs.length) % tabs.length;
-      break;
+      nextIdx = (currentIdx - 1 + tabs.length) % tabs.length
+      break
     case "Home":
-      nextIdx = 0;
-      break;
+      nextIdx = 0
+      break
     case "End":
-      nextIdx = tabs.length - 1;
-      break;
+      nextIdx = tabs.length - 1
+      break
     default:
-      return; // let other keys propagate
+      return // let other keys propagate
   }
 
-  event.preventDefault();
-  selectRange(tabs[nextIdx]);
+  event.preventDefault()
+  selectRange(tabs[nextIdx])
 
   // Move focus to the newly active tab button
-  const container = (event.currentTarget as HTMLElement);
-  const buttons = container.querySelectorAll<HTMLButtonElement>('[role="tab"]');
-  buttons[nextIdx]?.focus();
+  const container = event.currentTarget as HTMLElement
+  const buttons = container.querySelectorAll<HTMLButtonElement>('[role="tab"]')
+  buttons[nextIdx]?.focus()
 }
 </script>
 
@@ -98,15 +98,8 @@ function onKeydown(event: KeyboardEvent) {
         <b>{{ props.title }}</b>
         <template v-if="props.unit"> ({{ props.unit }})</template>
       </span>
-      <span
-        v-for="s in props.series"
-        :key="s.label"
-        class="chart-toolbar__tag"
-      >
-        <span
-          class="chart-toolbar__dot"
-          :style="{ background: s.color }"
-        ></span>
+      <span v-for="s in props.series" :key="s.label" class="chart-toolbar__tag">
+        <span class="chart-toolbar__dot" :style="{ background: s.color }"></span>
         <b v-if="s.bold">{{ s.label }}</b>
         <template v-else>{{ s.label }}</template>
       </span>

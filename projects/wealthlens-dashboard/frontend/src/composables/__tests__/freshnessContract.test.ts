@@ -1,30 +1,31 @@
-import { describe, it, expect } from "vitest";
-import { existsSync, readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-import { dirname, resolve } from "node:path";
-import { VALID_CHART_NAMES } from "@/constants/charts";
+import { describe, it, expect } from "vitest"
+import { existsSync, readFileSync } from "node:fs"
+import { fileURLToPath } from "node:url"
+import { dirname, resolve } from "node:path"
+import { VALID_CHART_NAMES } from "@/constants/charts"
 
-const here = dirname(fileURLToPath(import.meta.url));
-const DATA_DIR = resolve(here, "../../../public/data");
+const here = dirname(fileURLToPath(import.meta.url))
+const DATA_DIR = resolve(here, "../../../public/data")
 
 // Resolve relative to THIS file (not process.cwd()) so the test passes regardless of
 // which directory the runner is invoked from (repo root vs frontend).
 function loadFreshness(): Record<string, unknown> {
-  return JSON.parse(
-    readFileSync(resolve(DATA_DIR, "freshness.json"), "utf-8"),
-  ) as Record<string, unknown>;
+  return JSON.parse(readFileSync(resolve(DATA_DIR, "freshness.json"), "utf-8")) as Record<
+    string,
+    unknown
+  >
 }
 
 /** Source string from a committed `{slug}-metadata.json`, or null if absent. */
 function metadataSource(slug: string): string | null {
-  const path = resolve(DATA_DIR, `${slug}-metadata.json`);
-  if (!existsSync(path)) return null;
+  const path = resolve(DATA_DIR, `${slug}-metadata.json`)
+  if (!existsSync(path)) return null
   // A metadata file that is empty or literally `null` parses to a non-object;
   // guard so `.source` cannot throw a TypeError (just treat it as no source).
-  const meta = JSON.parse(readFileSync(path, "utf-8")) as unknown;
-  if (typeof meta !== "object" || meta === null) return null;
-  const source = (meta as { source?: unknown }).source;
-  return typeof source === "string" ? source : null;
+  const meta = JSON.parse(readFileSync(path, "utf-8")) as unknown
+  if (typeof meta !== "object" || meta === null) return null
+  const source = (meta as { source?: unknown }).source
+  return typeof source === "string" ? source : null
 }
 
 /**
@@ -44,29 +45,27 @@ function metadataSource(slug: string): string | null {
  */
 describe("committed public/data/freshness.json contract", () => {
   it("is a flat slug map of { last_updated: YYYY-MM-DD, source }", () => {
-    const data = loadFreshness();
+    const data = loadFreshness()
 
     // Not the live-API nested shape.
-    expect(data.datasets).toBeUndefined();
-    expect(data.thresholds).toBeUndefined();
+    expect(data.datasets).toBeUndefined()
+    expect(data.thresholds).toBeUndefined()
 
-    const entries = Object.entries(data);
-    expect(entries.length).toBeGreaterThan(0);
+    const entries = Object.entries(data)
+    expect(entries.length).toBeGreaterThan(0)
     for (const [slug, entry] of entries) {
       expect(entry, `entry for ${slug}`).toMatchObject({
         last_updated: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
         source: expect.any(String),
-      });
+      })
     }
-  });
+  })
 
   it("has a freshness entry for every chart page (so no badge is missing)", () => {
-    const data = loadFreshness();
-    const missing = [...VALID_CHART_NAMES].filter((slug) => !(slug in data));
-    expect(missing, `chart pages without a freshness entry: ${missing.join(", ")}`).toEqual(
-      [],
-    );
-  });
+    const data = loadFreshness()
+    const missing = [...VALID_CHART_NAMES].filter((slug) => !(slug in data))
+    expect(missing, `chart pages without a freshness entry: ${missing.join(", ")}`).toEqual([])
+  })
 
   // The badge tooltip renders freshness `source`, so it must not name the WRONG
   // organisation. Most entries are deliberately brief labels (e.g. "Bank of
@@ -90,14 +89,14 @@ describe("committed public/data/freshness.json contract", () => {
   // source conflict deferred to a human (see ORCHESTRATION). Neither has a
   // committed metadata file, so neither can be structurally locked here anyway.
   it("wealth-shares freshness source matches its authoritative metadata source", () => {
-    const data = loadFreshness();
-    const metaSource = metadataSource("wealth-shares");
-    expect(metaSource, "wealth-shares-metadata.json should be committed").not.toBeNull();
+    const data = loadFreshness()
+    const metaSource = metadataSource("wealth-shares")
+    expect(metaSource, "wealth-shares-metadata.json should be committed").not.toBeNull()
     // Guard the entry shape before reading .source, so a missing/null/non-object
     // wealth-shares entry fails as a clear assertion, not an opaque TypeError.
-    const entry = data["wealth-shares"];
-    expect(entry, "freshness.json should have a wealth-shares entry").toBeTruthy();
-    expect(typeof entry).toBe("object");
-    expect((entry as { source?: unknown }).source).toBe(metaSource);
-  });
-});
+    const entry = data["wealth-shares"]
+    expect(entry, "freshness.json should have a wealth-shares entry").toBeTruthy()
+    expect(typeof entry).toBe("object")
+    expect((entry as { source?: unknown }).source).toBe(metaSource)
+  })
+})

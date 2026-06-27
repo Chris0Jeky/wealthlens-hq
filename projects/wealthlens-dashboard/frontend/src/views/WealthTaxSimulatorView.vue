@@ -5,7 +5,7 @@
  * Renders a breadcrumb trail and the WealthTaxSimulator component.
  * Route: /tools/wealth-tax-simulator
  */
-import WealthTaxSimulator from "@/components/WealthTaxSimulator.vue";
+import WealthTaxSimulator from "@/components/WealthTaxSimulator.vue"
 </script>
 
 <template>
@@ -22,9 +22,7 @@ import WealthTaxSimulator from "@/components/WealthTaxSimulator.vue";
           <span class="crumb__sep" aria-hidden="true">/</span>
         </li>
         <li class="crumb__item">
-          <span class="crumb__current" aria-current="page">
-            Wealth Tax Simulator
-          </span>
+          <span class="crumb__current" aria-current="page"> Wealth Tax Simulator </span>
         </li>
       </ol>
     </nav>

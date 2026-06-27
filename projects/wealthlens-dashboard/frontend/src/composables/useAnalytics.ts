@@ -5,7 +5,7 @@
  * Plausible is cookieless and GDPR-compliant; no consent banner needed.
  * The script loads lazily after page mount to avoid blocking render.
  */
-import { ref } from 'vue'
+import { ref } from "vue"
 
 interface PlausibleWindow {
   plausible?: ((...args: unknown[]) => void) & { q?: unknown[][] }
@@ -15,10 +15,10 @@ const initialized = ref(false)
 
 export function useAnalytics() {
   const domain =
-    ((import.meta.env.VITE_PLAUSIBLE_DOMAIN as string | undefined) ?? '').trim() || undefined
+    ((import.meta.env.VITE_PLAUSIBLE_DOMAIN as string | undefined) ?? "").trim() || undefined
 
   function init() {
-    if (initialized.value || !domain || typeof window === 'undefined') return
+    if (initialized.value || !domain || typeof window === "undefined") return
     initialized.value = true
 
     const w = window as unknown as PlausibleWindow
@@ -31,14 +31,14 @@ export function useAnalytics() {
         { q: [] as unknown[][] },
       )
 
-    const script = document.createElement('script')
+    const script = document.createElement("script")
     script.defer = true
     script.dataset.domain = domain
-    script.src = 'https://plausible.io/js/script.js'
+    script.src = "https://plausible.io/js/script.js"
     script.onerror = () => {
       console.warn(
-        '[WealthLens] Plausible analytics script failed to load. ' +
-          'This is expected if an ad-blocker is active.',
+        "[WealthLens] Plausible analytics script failed to load. " +
+          "This is expected if an ad-blocker is active.",
       )
       w.plausible = function () {}
     }

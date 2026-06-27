@@ -5,7 +5,7 @@
  * Renders a breadcrumb trail and the WealthCalculator component.
  * Route: /tools/wealth-calculator
  */
-import WealthCalculator from "@/components/WealthCalculator.vue";
+import WealthCalculator from "@/components/WealthCalculator.vue"
 </script>
 
 <template>
@@ -22,9 +22,7 @@ import WealthCalculator from "@/components/WealthCalculator.vue";
           <span class="crumb__sep" aria-hidden="true">/</span>
         </li>
         <li class="crumb__item">
-          <span class="crumb__current" aria-current="page">
-            Wealth Calculator
-          </span>
+          <span class="crumb__current" aria-current="page"> Wealth Calculator </span>
         </li>
       </ol>
     </nav>

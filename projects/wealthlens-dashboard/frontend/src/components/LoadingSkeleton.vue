@@ -6,9 +6,9 @@
 withDefaults(
   defineProps<{
     /** Visual layout: "chart" renders tall bars + axes, "card" renders compact lines. */
-    variant?: 'chart' | 'card'
+    variant?: "chart" | "card"
   }>(),
-  { variant: 'chart' },
+  { variant: "chart" },
 )
 </script>
 

@@ -7,10 +7,10 @@
  *
  * Extracted from ChartView.vue for maintainability and testability.
  */
-import type { StatItem } from "@/components/StatStrip.vue";
-import type { SeriesLegendItem } from "@/components/ChartToolbar.vue";
-import type { RelatedChartItem } from "@/components/RelatedCharts.vue";
-import { COLOR_TOP_10, COLOR_TOP_1 } from "@/config/chartColors";
+import type { StatItem } from "@/components/StatStrip.vue"
+import type { SeriesLegendItem } from "@/components/ChartToolbar.vue"
+import type { RelatedChartItem } from "@/components/RelatedCharts.vue"
+import { COLOR_TOP_10, COLOR_TOP_1 } from "@/config/chartColors"
 
 /**
  * Full article configuration for a chart page. Charts without a full
@@ -18,63 +18,60 @@ import { COLOR_TOP_10, COLOR_TOP_1 } from "@/config/chartColors";
  */
 export interface ChartConfig {
   /** Breadcrumb trail segments (last is the current page, not a link). */
-  breadcrumb: { label: string; to?: string }[];
+  breadcrumb: { label: string; to?: string }[]
   /** Tag pills shown above the headline. */
-  pills: { text: string; accent?: boolean }[];
+  pills: { text: string; accent?: boolean }[]
   /** Headline text. Supports one <em> for italic red emphasis. */
-  headline: string;
+  headline: string
   /** Italicised emphasis portion of headline (rendered in red). */
-  headlineEmphasis?: string;
+  headlineEmphasis?: string
   /** Lede paragraph (HTML allowed for <strong> tags). */
-  lede: string;
+  lede: string
   /** Metadata card key-value pairs. */
-  meta: { label: string; value: string; href?: string }[];
+  meta: { label: string; value: string; href?: string }[]
   /** Headline stats for the stat strip. */
-  stats: StatItem[];
+  stats: StatItem[]
   /** Chart toolbar configuration. */
   toolbar: {
-    title: string;
-    unit: string;
-    series: SeriesLegendItem[];
-    ranges: string[];
-    defaultRange: string;
-  };
+    title: string
+    unit: string
+    series: SeriesLegendItem[]
+    ranges: string[]
+    defaultRange: string
+  }
   /** Source bar content. */
   source: {
-    name: string;
-    url: string;
-    licence: string;
-    accessed: string;
-    chartId: string;
-  };
+    name: string
+    url: string
+    licence: string
+    accessed: string
+    chartId: string
+  }
   /** Article body sections. */
   article: {
     sections: {
-      heading: string;
-      headingEmphasis?: string;
-      paragraphs: string[];
-    }[];
+      heading: string
+      headingEmphasis?: string
+      paragraphs: string[]
+    }[]
     pullQuote?: {
-      text: string;
-    };
-  };
+      text: string
+    }
+  }
   /** Methodology accordion content (HTML allowed). */
-  methodology: string;
+  methodology: string
   /** Related charts for the bottom grid. */
-  related: RelatedChartItem[];
+  related: RelatedChartItem[]
 }
 
 /** Simple fallback config for charts without full article content. */
 export const simpleChartTitles: Record<string, string> = {
-  "housing-affordability":
-    "Housing Affordability — Price-to-Earnings Ratios by Region",
-  "cgt-concentration":
-    "Capital Gains Tax — Concentration by Size of Gain",
+  "housing-affordability": "Housing Affordability — Price-to-Earnings Ratios by Region",
+  "cgt-concentration": "Capital Gains Tax — Concentration by Size of Gain",
   "wealth-by-decile": "Total Household Wealth by Decile",
-  "wage-stagnation":
-    "Real Wage Stagnation — UK Median Earnings Since 2008",
+  "wage-stagnation": "Real Wage Stagnation — UK Median Earnings Since 2008",
   "inheritance-tax": "Inheritance Tax — How Few Estates Actually Pay",
-};
+}
 
 /**
  * Full chart configurations. Wealth-shares is the primary example,
@@ -98,7 +95,7 @@ export const chartConfigs: Record<string, ChartConfig> = {
     ],
     headline: "Who owns wealth in the UK?",
     headlineEmphasis: "Same lot, mostly.",
-    lede: 'For at least two centuries, the top 10% have held over <strong>half of all UK personal wealth</strong>. The post-war squeeze was real, but partial: concentration bottomed out near 52% around 1990. The slide back has been steady since, and the top 10% now hold over <strong>57%</strong> again, roughly back to early-1980s levels.',
+    lede: "For at least two centuries, the top 10% have held over <strong>half of all UK personal wealth</strong>. The post-war squeeze was real, but partial: concentration bottomed out near 52% around 1990. The slide back has been steady since, and the top 10% now hold over <strong>57%</strong> again, roughly back to early-1980s levels.",
     meta: [
       { label: "Source", value: "WID.world", href: "https://wid.world" },
       { label: "Series", value: "UK · Net personal wealth" },
@@ -123,8 +120,7 @@ export const chartConfigs: Record<string, ChartConfig> = {
         label: "The headline",
         value: "57",
         unit: "%",
-        description:
-          "Share of UK personal wealth owned by the top 10% in 2024",
+        description: "Share of UK personal wealth owned by the top 10% in 2024",
         headline: true,
       },
       {
@@ -137,15 +133,13 @@ export const chartConfigs: Record<string, ChartConfig> = {
         label: "Bottom 90%",
         value: "43",
         unit: "%",
-        description:
-          "Nine in ten people share less than the top 10% holds alone",
+        description: "Nine in ten people share less than the top 10% holds alone",
       },
       {
         label: "Postwar low (1990)",
         value: "52",
         unit: "%",
-        description:
-          "The least concentrated UK wealth has ever been, and still over half",
+        description: "The least concentrated UK wealth has ever been, and still over half",
       },
     ],
     toolbar: {
@@ -176,25 +170,25 @@ export const chartConfigs: Record<string, ChartConfig> = {
         {
           heading: "What this chart shows",
           paragraphs: [
-            'The share of <em>net personal wealth</em> held by the top 10% and the top 1% in the United Kingdom, from 1820 to 2024. Net personal wealth is the sum of all financial assets (savings, investments, pensions) and non-financial assets (mainly housing) — minus debts.',
+            "The share of <em>net personal wealth</em> held by the top 10% and the top 1% in the United Kingdom, from 1820 to 2024. Net personal wealth is the sum of all financial assets (savings, investments, pensions) and non-financial assets (mainly housing) — minus debts.",
           ],
         },
         {
           heading: "",
           paragraphs: [
-            'The shape tells a story in three acts. From 1820 to 1914, the UK was the most unequal large economy in the world by some measures — a tiny aristocratic and capitalist class held more than 90% of all personal wealth. Two world wars, progressive taxation, and the postwar welfare settlement compressed this dramatically: the top 10% share fell from 58% in 1980 to an all-time low of around 52% by 1990. Since then the curve has bent the other way.',
+            "The shape tells a story in three acts. From 1820 to 1914, the UK was the most unequal large economy in the world by some measures — a tiny aristocratic and capitalist class held more than 90% of all personal wealth. Two world wars, progressive taxation, and the postwar welfare settlement compressed this dramatically: the top 10% share fell from 58% in 1980 to an all-time low of around 52% by 1990. Since then the curve has bent the other way.",
           ],
         },
         {
           heading: "Why it",
           headingEmphasis: "matters",
           paragraphs: [
-            'Wealth, not income, is the dominant determinant of life outcomes in the UK in 2026. It funds deposits on first homes, university choices, business creation, and old-age security. When wealth is concentrated, opportunity is too — and the rate of inter-generational mobility falls. The "left-behind town" isn\'t a metaphor. It\'s a balance sheet.',
+            "Wealth, not income, is the dominant determinant of life outcomes in the UK in 2026. It funds deposits on first homes, university choices, business creation, and old-age security. When wealth is concentrated, opportunity is too — and the rate of inter-generational mobility falls. The \"left-behind town\" isn't a metaphor. It's a balance sheet.",
           ],
         },
       ],
       pullQuote: {
-        text: 'In two hundred years of data, the top 10% have <strong>never</strong> held less than 51% of UK personal wealth. The post-war compression was real — but partial. Since the early 1990s, the trend has been steady re-concentration.',
+        text: "In two hundred years of data, the top 10% have <strong>never</strong> held less than 51% of UK personal wealth. The post-war compression was real — but partial. Since the early 1990s, the trend has been steady re-concentration.",
       },
     },
     methodology: `
@@ -221,24 +215,21 @@ export const chartConfigs: Record<string, ChartConfig> = {
       {
         domain: "Wealth · UK",
         title: "Composition of household wealth, 1995–2023",
-        finding:
-          'Housing is now <b>36%</b> of all household wealth — up from 22% in 1995.',
+        finding: "Housing is now <b>36%</b> of all household wealth — up from 22% in 1995.",
         to: "/charts/wealth-by-decile",
         sparkType: "line",
       },
       {
         domain: "Tax · UK",
         title: "Capital gains concentration by decile",
-        finding:
-          '<b>92%</b> of taxable gains accrue to the top 1% of recipients.',
+        finding: "<b>92%</b> of taxable gains accrue to the top 1% of recipients.",
         to: "/charts/cgt-concentration",
         sparkType: "bar",
       },
       {
         domain: "Housing · UK",
         title: "House price to earnings ratio, 1997–2025",
-        finding:
-          'England & Wales ratio peaked at <b>9.0×</b> in 2021 (7.6× in 2025).',
+        finding: "England & Wales ratio peaked at <b>9.0×</b> in 2021 (7.6× in 2025).",
         to: "/charts/housing-affordability",
         sparkType: "line",
       },
@@ -263,9 +254,13 @@ export const chartConfigs: Record<string, ChartConfig> = {
     ],
     headline: "Workers produce more than ever —",
     headlineEmphasis: "their pay hasn't kept up.",
-    lede: 'Since 1997, UK output per hour has risen by roughly <strong>32%</strong> while real pay has grown by only around <strong>11%</strong>. The gap widened sharply after the 2008 financial crisis and never closed.',
+    lede: "Since 1997, UK output per hour has risen by roughly <strong>32%</strong> while real pay has grown by only around <strong>11%</strong>. The gap widened sharply after the 2008 financial crisis and never closed.",
     meta: [
-      { label: "Source", value: "ONS Labour Productivity / AWE", href: "https://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/labourproductivity" },
+      {
+        label: "Source",
+        value: "ONS Labour Productivity / AWE",
+        href: "https://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/labourproductivity",
+      },
       { label: "Series", value: "UK · Output per hour (LZVD) & real AWE" },
       { label: "Coverage", value: "1970 — 2023" },
       { label: "Updated", value: "16 May 2026" },
@@ -278,8 +273,7 @@ export const chartConfigs: Record<string, ChartConfig> = {
         label: "Productivity (2023)",
         value: "132",
         unit: "",
-        description:
-          "Output-per-hour index in 2023 (base 1997 = 100)",
+        description: "Output-per-hour index in 2023 (base 1997 = 100)",
         headline: true,
       },
       {
@@ -292,15 +286,13 @@ export const chartConfigs: Record<string, ChartConfig> = {
         label: "Gap opened since 1997",
         value: "~19",
         unit: "pp",
-        description:
-          "Productivity gained 32 index points; pay gained only 11",
+        description: "Productivity gained 32 index points; pay gained only 11",
       },
       {
         label: "Lost decade",
         value: "2008–18",
         unit: "",
-        description:
-          "Real pay was lower in 2018 than in 2008 — unprecedented in modern UK history",
+        description: "Real pay was lower in 2018 than in 2008 — unprecedented in modern UK history",
       },
     ],
     toolbar: {
@@ -325,7 +317,7 @@ export const chartConfigs: Record<string, ChartConfig> = {
         {
           heading: "What this chart shows",
           paragraphs: [
-            'Two indices, both set to 100 in 1997: <em>output per hour worked</em> (a standard productivity measure) and <em>average weekly earnings deflated by CPIH</em> (a measure of real pay). When the lines diverge, workers are producing more value but receiving a smaller share of it as wages.',
+            "Two indices, both set to 100 in 1997: <em>output per hour worked</em> (a standard productivity measure) and <em>average weekly earnings deflated by CPIH</em> (a measure of real pay). When the lines diverge, workers are producing more value but receiving a smaller share of it as wages.",
           ],
         },
         {
@@ -338,12 +330,12 @@ export const chartConfigs: Record<string, ChartConfig> = {
           heading: "Why it",
           headingEmphasis: "matters",
           paragraphs: [
-            'If pay had kept pace with productivity since 1997, the average UK worker would earn significantly more today. The gap represents value created by labour that flows instead to profits, rents, and capital income. It is a structural driver of wealth inequality — and it hits hardest in regions and sectors where workers have the least bargaining power.',
+            "If pay had kept pace with productivity since 1997, the average UK worker would earn significantly more today. The gap represents value created by labour that flows instead to profits, rents, and capital income. It is a structural driver of wealth inequality — and it hits hardest in regions and sectors where workers have the least bargaining power.",
           ],
         },
       ],
       pullQuote: {
-        text: 'Since 1997, UK productivity rose by roughly <strong>32%</strong> while real pay rose by only <strong>11%</strong>. Workers are producing more than ever — they just aren\'t being paid for it.',
+        text: "Since 1997, UK productivity rose by roughly <strong>32%</strong> while real pay rose by only <strong>11%</strong>. Workers are producing more than ever — they just aren't being paid for it.",
       },
     },
     methodology: `
@@ -360,24 +352,21 @@ export const chartConfigs: Record<string, ChartConfig> = {
       {
         domain: "Income · UK",
         title: "Gross Disposable Household Income by region",
-        finding:
-          'London GDHI per head is <b>4×</b> higher than the lowest areas.',
+        finding: "London GDHI per head is <b>4×</b> higher than the lowest areas.",
         to: "/charts/gdhi-by-region",
         sparkType: "bar",
       },
       {
         domain: "Tax · UK",
         title: "UK tax revenue — work vs wealth",
-        finding:
-          '<b>93%</b> of selected tax revenue comes from taxes on work.',
+        finding: "<b>93%</b> of selected tax revenue comes from taxes on work.",
         to: "/charts/tax-composition",
         sparkType: "bar",
       },
       {
         domain: "Wealth · UK",
         title: "Who owns wealth in the UK?",
-        finding:
-          'Top 10% hold <b>57%</b> of all personal wealth.',
+        finding: "Top 10% hold <b>57%</b> of all personal wealth.",
         to: "/charts/wealth-shares",
         sparkType: "line",
       },
@@ -402,9 +391,13 @@ export const chartConfigs: Record<string, ChartConfig> = {
     ],
     headline: "The income map of Britain",
     headlineEmphasis: "reveals two countries.",
-    lede: 'Gross disposable household income per head in Kensington & Chelsea is over <strong>£79,000</strong> — more than five times the £14,200 in Blackpool. The UK average of £24,800 masks enormous geographic inequality.',
+    lede: "Gross disposable household income per head in Kensington & Chelsea is over <strong>£79,000</strong> — more than five times the £14,200 in Blackpool. The UK average of £24,800 masks enormous geographic inequality.",
     meta: [
-      { label: "Source", value: "ONS Regional GDHI", href: "https://www.ons.gov.uk/economy/regionalaccounts/grossdisposablehouseholdincome" },
+      {
+        label: "Source",
+        value: "ONS Regional GDHI",
+        href: "https://www.ons.gov.uk/economy/regionalaccounts/grossdisposablehouseholdincome",
+      },
       { label: "Series", value: "UK · GDHI per head, all ITL regions" },
       { label: "Coverage", value: "2023 (latest year)" },
       { label: "Updated", value: "16 May 2026" },
@@ -417,8 +410,7 @@ export const chartConfigs: Record<string, ChartConfig> = {
         label: "Highest (Kensington & Chelsea)",
         value: "79,500",
         unit: "£",
-        description:
-          "GDHI per head — more than 5× the lowest area",
+        description: "GDHI per head — more than 5× the lowest area",
         headline: true,
       },
       {
@@ -431,15 +423,13 @@ export const chartConfigs: Record<string, ChartConfig> = {
         label: "Lowest (Blackpool)",
         value: "14,200",
         unit: "£",
-        description:
-          "The lowest GDHI per head in England",
+        description: "The lowest GDHI per head in England",
       },
       {
         label: "Ratio (top / bottom)",
         value: "5.6",
         unit: "×",
-        description:
-          "The income gap between the richest and poorest areas",
+        description: "The income gap between the richest and poorest areas",
       },
     ],
     toolbar: {
@@ -470,19 +460,19 @@ export const chartConfigs: Record<string, ChartConfig> = {
         {
           heading: "",
           paragraphs: [
-            'The chart reveals a clear geographic gradient: inner London boroughs dominate the top, with values far above the UK average of roughly £24,800. At the other end, post-industrial areas in the North, Wales, and the Midlands cluster well below the national figure. The gap between the highest and lowest areas is more than fivefold — one of the widest in any developed economy.',
+            "The chart reveals a clear geographic gradient: inner London boroughs dominate the top, with values far above the UK average of roughly £24,800. At the other end, post-industrial areas in the North, Wales, and the Midlands cluster well below the national figure. The gap between the highest and lowest areas is more than fivefold — one of the widest in any developed economy.",
           ],
         },
         {
           heading: "Why it",
           headingEmphasis: "matters",
           paragraphs: [
-            'Regional income inequality drives unequal access to housing, services, education, and opportunity. It is not just a North-South divide — pockets of low income exist within otherwise affluent regions. Policy interventions (levelling up, devolution, investment zones) are measured against exactly this kind of data.',
+            "Regional income inequality drives unequal access to housing, services, education, and opportunity. It is not just a North-South divide — pockets of low income exist within otherwise affluent regions. Policy interventions (levelling up, devolution, investment zones) are measured against exactly this kind of data.",
           ],
         },
       ],
       pullQuote: {
-        text: 'A household in Kensington & Chelsea has over <strong>five times</strong> the disposable income per head of a household in Blackpool. The UK average of £24,800 is a statistical fiction that hides two very different countries.',
+        text: "A household in Kensington & Chelsea has over <strong>five times</strong> the disposable income per head of a household in Blackpool. The UK average of £24,800 is a statistical fiction that hides two very different countries.",
       },
     },
     methodology: `
@@ -499,24 +489,21 @@ export const chartConfigs: Record<string, ChartConfig> = {
       {
         domain: "Work & Pay · UK",
         title: "Productivity vs pay — the growing divergence",
-        finding:
-          'Pay has lagged <b>~19 points</b> behind productivity since 1997.',
+        finding: "Pay has lagged <b>~19 points</b> behind productivity since 1997.",
         to: "/charts/productivity-pay",
         sparkType: "line",
       },
       {
         domain: "Poverty · UK",
         title: "Child poverty by UK region",
-        finding:
-          'Up to <b>38%</b> of children in the North East live in poverty.',
+        finding: "Up to <b>38%</b> of children in the North East live in poverty.",
         to: "/charts/child-poverty",
         sparkType: "bar",
       },
       {
         domain: "Housing · UK",
         title: "House price to earnings ratio by region",
-        finding:
-          'England & Wales ratio peaked at <b>9.0×</b> in 2021 (7.6× in 2025).',
+        finding: "England & Wales ratio peaked at <b>9.0×</b> in 2021 (7.6× in 2025).",
         to: "/charts/housing-affordability",
         sparkType: "line",
       },
@@ -541,9 +528,13 @@ export const chartConfigs: Record<string, ChartConfig> = {
     ],
     headline: "Britain taxes work,",
     headlineEmphasis: "not wealth.",
-    lede: 'Income tax and National Insurance contribute around <strong>93%</strong> of selected tax revenue. Capital gains tax, inheritance tax, and stamp duty together account for just <strong>7%</strong> — despite wealth being far more concentrated than income.',
+    lede: "Income tax and National Insurance contribute around <strong>93%</strong> of selected tax revenue. Capital gains tax, inheritance tax, and stamp duty together account for just <strong>7%</strong> — despite wealth being far more concentrated than income.",
     meta: [
-      { label: "Source", value: "HMRC Tax Receipts", href: "https://www.gov.uk/government/statistics/hmrc-tax-and-nics-receipts-for-the-uk" },
+      {
+        label: "Source",
+        value: "HMRC Tax Receipts",
+        href: "https://www.gov.uk/government/statistics/hmrc-tax-and-nics-receipts-for-the-uk",
+      },
       { label: "Series", value: "UK · Income Tax, NICs, CGT, IHT, SDLT" },
       { label: "Coverage", value: "2018-19 — 2023-24" },
       { label: "Updated", value: "16 May 2026" },
@@ -556,8 +547,7 @@ export const chartConfigs: Record<string, ChartConfig> = {
         label: "Work taxes (2023-24)",
         value: "93",
         unit: "%",
-        description:
-          "Income tax (£270bn) + NICs (£180bn) share of selected revenue",
+        description: "Income tax (£270bn) + NICs (£180bn) share of selected revenue",
         headline: true,
       },
       {
@@ -570,15 +560,13 @@ export const chartConfigs: Record<string, ChartConfig> = {
         label: "Income Tax alone",
         value: "270",
         unit: "£bn",
-        description:
-          "The single largest tax, paid overwhelmingly on earned income",
+        description: "The single largest tax, paid overwhelmingly on earned income",
       },
       {
         label: "CGT receipts",
         value: "15",
         unit: "£bn",
-        description:
-          "Despite £billions in capital gains, the tax raises relatively little",
+        description: "Despite £billions in capital gains, the tax raises relatively little",
       },
     ],
     toolbar: {
@@ -606,25 +594,25 @@ export const chartConfigs: Record<string, ChartConfig> = {
         {
           heading: "What this chart shows",
           paragraphs: [
-            'A stacked bar chart of five major UK taxes: <em>Income Tax</em> and <em>National Insurance Contributions</em> (taxes on work/earned income) versus <em>Capital Gains Tax</em>, <em>Inheritance Tax</em>, and <em>Stamp Duty Land Tax</em> (taxes on wealth and capital). The visual contrast between the two groups is immediate and stark.',
+            "A stacked bar chart of five major UK taxes: <em>Income Tax</em> and <em>National Insurance Contributions</em> (taxes on work/earned income) versus <em>Capital Gains Tax</em>, <em>Inheritance Tax</em>, and <em>Stamp Duty Land Tax</em> (taxes on wealth and capital). The visual contrast between the two groups is immediate and stark.",
           ],
         },
         {
           heading: "",
           paragraphs: [
-            'The UK raises roughly £450 billion per year from income tax and NICs alone — taxes that fall almost entirely on workers and their employers. By contrast, the three main wealth taxes together raise only around £34–35 billion. This is not because wealth is small — UK household wealth exceeds £15 trillion — but because wealth is taxed lightly, with numerous reliefs, exemptions, and lower rates.',
+            "The UK raises roughly £450 billion per year from income tax and NICs alone — taxes that fall almost entirely on workers and their employers. By contrast, the three main wealth taxes together raise only around £34–35 billion. This is not because wealth is small — UK household wealth exceeds £15 trillion — but because wealth is taxed lightly, with numerous reliefs, exemptions, and lower rates.",
           ],
         },
         {
           heading: "Why it",
           headingEmphasis: "matters",
           paragraphs: [
-            'A tax system that falls heavily on work and lightly on wealth has consequences: it redistributes from younger, working-age populations to older, asset-rich generations. It makes it harder to accumulate wealth through labour alone. And it means the fiscal system does little to reduce the concentration of wealth documented elsewhere on this site.',
+            "A tax system that falls heavily on work and lightly on wealth has consequences: it redistributes from younger, working-age populations to older, asset-rich generations. It makes it harder to accumulate wealth through labour alone. And it means the fiscal system does little to reduce the concentration of wealth documented elsewhere on this site.",
           ],
         },
       ],
       pullQuote: {
-        text: 'The UK raises <strong>13×</strong> more from taxes on work than from taxes on wealth. The top 10% own 57% of all personal wealth — yet wealth taxes contribute just 7% of revenue.',
+        text: "The UK raises <strong>13×</strong> more from taxes on work than from taxes on wealth. The top 10% own 57% of all personal wealth — yet wealth taxes contribute just 7% of revenue.",
       },
     },
     methodology: `
@@ -643,24 +631,21 @@ export const chartConfigs: Record<string, ChartConfig> = {
       {
         domain: "Tax · UK",
         title: "Capital gains concentration by decile",
-        finding:
-          '<b>92%</b> of taxable gains accrue to the top 1% of recipients.',
+        finding: "<b>92%</b> of taxable gains accrue to the top 1% of recipients.",
         to: "/charts/cgt-concentration",
         sparkType: "bar",
       },
       {
         domain: "Wealth · UK",
         title: "Who owns wealth in the UK?",
-        finding:
-          'Top 10% hold <b>57%</b> of all personal wealth.',
+        finding: "Top 10% hold <b>57%</b> of all personal wealth.",
         to: "/charts/wealth-shares",
         sparkType: "line",
       },
       {
         domain: "Generations · UK",
         title: "Median wealth by generation at key ages",
-        finding:
-          'Millennials hold <b>60%</b> less wealth at 30 than boomers did.',
+        finding: "Millennials hold <b>60%</b> less wealth at 30 than boomers did.",
         to: "/charts/generational-wealth",
         sparkType: "bar",
       },
@@ -685,9 +670,13 @@ export const chartConfigs: Record<string, ChartConfig> = {
     ],
     headline: "The cost of borrowing:",
     headlineEmphasis: "30 years of interest rate history.",
-    lede: 'From <strong>6% in 2000</strong> to a historic low of <strong>0.1% in 2020–21</strong>, then the fastest rise in decades to <strong>5.25% by late 2023</strong>. The Bank Rate shapes mortgages, savings, and the real value of money.',
+    lede: "From <strong>6% in 2000</strong> to a historic low of <strong>0.1% in 2020–21</strong>, then the fastest rise in decades to <strong>5.25% by late 2023</strong>. The Bank Rate shapes mortgages, savings, and the real value of money.",
     meta: [
-      { label: "Source", value: "Bank of England IADB", href: "https://www.bankofengland.co.uk/boeapps/database/" },
+      {
+        label: "Source",
+        value: "Bank of England IADB",
+        href: "https://www.bankofengland.co.uk/boeapps/database/",
+      },
       { label: "Series", value: "IUDBEDR (Bank Rate) + D7BT (CPI)" },
       { label: "Coverage", value: "2000 — present" },
       { label: "Updated", value: "16 May 2026" },
@@ -700,8 +689,7 @@ export const chartConfigs: Record<string, ChartConfig> = {
         label: "Peak rate (2023)",
         value: "5.25",
         unit: "%",
-        description:
-          "Highest Bank Rate since 2008, reached August 2023",
+        description: "Highest Bank Rate since 2008, reached August 2023",
         headline: true,
       },
       {
@@ -714,15 +702,13 @@ export const chartConfigs: Record<string, ChartConfig> = {
         label: "Peak CPI (2022)",
         value: "11.1",
         unit: "%",
-        description:
-          "Highest CPI inflation in 41 years, October 2022",
+        description: "Highest CPI inflation in 41 years, October 2022",
       },
       {
         label: "Rate rises (2021–23)",
         value: "14",
         unit: "",
-        description:
-          "Consecutive rate increases — the fastest tightening cycle since the 1980s",
+        description: "Consecutive rate increases — the fastest tightening cycle since the 1980s",
       },
     ],
     toolbar: {
@@ -747,13 +733,13 @@ export const chartConfigs: Record<string, ChartConfig> = {
         {
           heading: "What this chart shows",
           paragraphs: [
-            'Two monthly series: the <em>Bank of England official Bank Rate</em> (the interest rate the BoE charges to commercial banks, which directly influences mortgage and savings rates) and the <em>CPI annual inflation rate</em> (the 12-month percentage change in consumer prices). Together they show how monetary policy responds to — and sometimes lags behind — price pressures.',
+            "Two monthly series: the <em>Bank of England official Bank Rate</em> (the interest rate the BoE charges to commercial banks, which directly influences mortgage and savings rates) and the <em>CPI annual inflation rate</em> (the 12-month percentage change in consumer prices). Together they show how monetary policy responds to — and sometimes lags behind — price pressures.",
           ],
         },
         {
           heading: "",
           paragraphs: [
-            'The story has three distinct chapters. From 2000 to 2008, rates were relatively stable at 4–5%, keeping inflation near the 2% target. The 2008 crisis triggered emergency cuts to 0.5%, then 0.25%, and finally 0.1% in 2020. When inflation surged past 10% in 2022 — driven by energy prices and post-COVID supply shocks — the Bank raised rates 14 consecutive times in under two years, the fastest tightening cycle since the early 1990s.',
+            "The story has three distinct chapters. From 2000 to 2008, rates were relatively stable at 4–5%, keeping inflation near the 2% target. The 2008 crisis triggered emergency cuts to 0.5%, then 0.25%, and finally 0.1% in 2020. When inflation surged past 10% in 2022 — driven by energy prices and post-COVID supply shocks — the Bank raised rates 14 consecutive times in under two years, the fastest tightening cycle since the early 1990s.",
           ],
         },
         {
@@ -765,7 +751,7 @@ export const chartConfigs: Record<string, ChartConfig> = {
         },
       ],
       pullQuote: {
-        text: 'From <strong>0.1%</strong> to <strong>5.25%</strong> in under two years — the fastest rate-rise cycle in decades. For a typical mortgage holder, that means hundreds of pounds more per month.',
+        text: "From <strong>0.1%</strong> to <strong>5.25%</strong> in under two years — the fastest rate-rise cycle in decades. For a typical mortgage holder, that means hundreds of pounds more per month.",
       },
     },
     methodology: `
@@ -781,24 +767,21 @@ export const chartConfigs: Record<string, ChartConfig> = {
       {
         domain: "Housing · UK",
         title: "House price to earnings ratio, 1997–2025",
-        finding:
-          'England & Wales ratio peaked at <b>9.0×</b> in 2021 (7.6× in 2025).',
+        finding: "England & Wales ratio peaked at <b>9.0×</b> in 2021 (7.6× in 2025).",
         to: "/charts/housing-affordability",
         sparkType: "line",
       },
       {
         domain: "Work & Pay · UK",
         title: "Productivity vs pay — the growing divergence",
-        finding:
-          'Real pay was lower in 2018 than in 2008.',
+        finding: "Real pay was lower in 2018 than in 2008.",
         to: "/charts/productivity-pay",
         sparkType: "line",
       },
       {
         domain: "Income · UK",
         title: "Gross Disposable Household Income by region",
-        finding:
-          'GDHI per head ranges from <b>£14k</b> to <b>£79k</b>.',
+        finding: "GDHI per head ranges from <b>£14k</b> to <b>£79k</b>.",
         to: "/charts/gdhi-by-region",
         sparkType: "bar",
       },
@@ -823,9 +806,13 @@ export const chartConfigs: Record<string, ChartConfig> = {
     ],
     headline: "One in three children in parts of Britain",
     headlineEmphasis: "grows up in poverty.",
-    lede: 'After housing costs, <strong>38%</strong> of children in the North East live in relative poverty — the highest regional rate in the UK. Even the lowest region (South East) has a rate of <strong>22%</strong>. Nationally, over 3.3 million children are affected.',
+    lede: "After housing costs, <strong>38%</strong> of children in the North East live in relative poverty — the highest regional rate in the UK. Even the lowest region (South East) has a rate of <strong>22%</strong>. Nationally, over 3.3 million children are affected.",
     meta: [
-      { label: "Source", value: "DWP/HMRC Statistics", href: "https://www.gov.uk/government/statistics/children-in-low-income-families-local-area-statistics-2014-to-2023" },
+      {
+        label: "Source",
+        value: "DWP/HMRC Statistics",
+        href: "https://www.gov.uk/government/statistics/children-in-low-income-families-local-area-statistics-2014-to-2023",
+      },
       { label: "Series", value: "Children in Low Income Families" },
       { label: "Coverage", value: "2022-23 (12 regions)" },
       { label: "Updated", value: "16 May 2026" },
@@ -838,8 +825,7 @@ export const chartConfigs: Record<string, ChartConfig> = {
         label: "Highest (North East)",
         value: "38",
         unit: "%",
-        description:
-          "More than one in three children in relative poverty after housing costs",
+        description: "More than one in three children in relative poverty after housing costs",
         headline: true,
       },
       {
@@ -852,15 +838,13 @@ export const chartConfigs: Record<string, ChartConfig> = {
         label: "Lowest (South East)",
         value: "22",
         unit: "%",
-        description:
-          "Even the 'best' region has more than one in five children in poverty",
+        description: "Even the 'best' region has more than one in five children in poverty",
       },
       {
         label: "Children affected (UK)",
         value: "3.3",
         unit: "m+",
-        description:
-          "Total children in relative poverty across all regions",
+        description: "Total children in relative poverty across all regions",
       },
     ],
     toolbar: {
@@ -885,25 +869,25 @@ export const chartConfigs: Record<string, ChartConfig> = {
         {
           heading: "What this chart shows",
           paragraphs: [
-            'The percentage of children living in relative low income <em>after housing costs</em> (AHC) by UK region. Relative low income means a household income below 60% of the median. After-housing-costs is the more policy-relevant measure because housing costs vary enormously by region and consume a large share of low-income families\' budgets.',
+            "The percentage of children living in relative low income <em>after housing costs</em> (AHC) by UK region. Relative low income means a household income below 60% of the median. After-housing-costs is the more policy-relevant measure because housing costs vary enormously by region and consume a large share of low-income families' budgets.",
           ],
         },
         {
           heading: "",
           paragraphs: [
-            'The North East has the highest rate at 38%, closely followed by London (36%) and the West Midlands (35%). London\'s high rate may seem paradoxical given high average incomes — but extreme housing costs push many families below the poverty line after rent is paid. The South East and East of England have the lowest rates, but even these exceed 20%. No region in the UK has a child poverty rate below one in five.',
+            "The North East has the highest rate at 38%, closely followed by London (36%) and the West Midlands (35%). London's high rate may seem paradoxical given high average incomes — but extreme housing costs push many families below the poverty line after rent is paid. The South East and East of England have the lowest rates, but even these exceed 20%. No region in the UK has a child poverty rate below one in five.",
           ],
         },
         {
           heading: "Why it",
           headingEmphasis: "matters",
           paragraphs: [
-            'Child poverty is the single strongest predictor of poor outcomes in education, health, and lifetime earnings. It is also the most tractable form of inequality — targeted benefit increases (e.g. child benefit, universal credit child elements) have historically reduced child poverty rates rapidly. The regional variation shows that poverty is not evenly distributed: it clusters in areas already affected by deindustrialisation, low GDHI, and poor housing.',
+            "Child poverty is the single strongest predictor of poor outcomes in education, health, and lifetime earnings. It is also the most tractable form of inequality — targeted benefit increases (e.g. child benefit, universal credit child elements) have historically reduced child poverty rates rapidly. The regional variation shows that poverty is not evenly distributed: it clusters in areas already affected by deindustrialisation, low GDHI, and poor housing.",
           ],
         },
       ],
       pullQuote: {
-        text: 'No region in the UK has a child poverty rate below <strong>one in five</strong>. In the North East, it is closer to <strong>two in five</strong>. These are not edge cases — they are millions of children.',
+        text: "No region in the UK has a child poverty rate below <strong>one in five</strong>. In the North East, it is closer to <strong>two in five</strong>. These are not edge cases — they are millions of children.",
       },
     },
     methodology: `
@@ -920,24 +904,21 @@ export const chartConfigs: Record<string, ChartConfig> = {
       {
         domain: "Income · UK",
         title: "Gross Disposable Household Income by region",
-        finding:
-          'GDHI per head in Blackpool is just <b>£14,200</b>.',
+        finding: "GDHI per head in Blackpool is just <b>£14,200</b>.",
         to: "/charts/gdhi-by-region",
         sparkType: "bar",
       },
       {
         domain: "Wealth · UK",
         title: "Total household wealth by decile",
-        finding:
-          'The bottom decile holds just <b>£13.9bn</b> — 0.1% of the total.',
+        finding: "The bottom decile holds just <b>£13.9bn</b> — 0.1% of the total.",
         to: "/charts/wealth-by-decile",
         sparkType: "bar",
       },
       {
         domain: "Generations · UK",
         title: "Median wealth by generation at key ages",
-        finding:
-          'Millennials hold <b>60%</b> less wealth at 30 than boomers did.',
+        finding: "Millennials hold <b>60%</b> less wealth at 30 than boomers did.",
         to: "/charts/generational-wealth",
         sparkType: "bar",
       },
@@ -962,9 +943,13 @@ export const chartConfigs: Record<string, ChartConfig> = {
     ],
     headline: "The wealth ladder is pulling up",
     headlineEmphasis: "behind younger generations.",
-    lede: 'At age 30, Baby Boomers had median household wealth of <strong>£68,000</strong> (in 2022 real terms). Millennials at the same age: just <strong>£27,000</strong> — a 60% shortfall. The gap widens at every subsequent age milestone.',
+    lede: "At age 30, Baby Boomers had median household wealth of <strong>£68,000</strong> (in 2022 real terms). Millennials at the same age: just <strong>£27,000</strong> — a 60% shortfall. The gap widens at every subsequent age milestone.",
     meta: [
-      { label: "Source", value: "Resolution Foundation / ONS WAS", href: "https://www.resolutionfoundation.org/publications/" },
+      {
+        label: "Source",
+        value: "Resolution Foundation / ONS WAS",
+        href: "https://www.resolutionfoundation.org/publications/",
+      },
       { label: "Series", value: "Median household wealth by generation" },
       { label: "Coverage", value: "1994 — 2026 (measured & projected)" },
       { label: "Updated", value: "16 May 2026" },
@@ -977,8 +962,7 @@ export const chartConfigs: Record<string, ChartConfig> = {
         label: "Boomers at 30",
         value: "68k",
         unit: "£",
-        description:
-          "Median total household wealth at age 30, 2022 real terms",
+        description: "Median total household wealth at age 30, 2022 real terms",
         headline: true,
       },
       {
@@ -991,15 +975,13 @@ export const chartConfigs: Record<string, ChartConfig> = {
         label: "Boomers at 60",
         value: "395k",
         unit: "£",
-        description:
-          "Approaching retirement with nearly £400k median wealth",
+        description: "Approaching retirement with nearly £400k median wealth",
       },
       {
         label: "Gen X at 40",
         value: "116k",
         unit: "£",
-        description:
-          "27% less than Boomers had at 40 (£159k)",
+        description: "27% less than Boomers had at 40 (£159k)",
       },
     ],
     toolbar: {
@@ -1025,7 +1007,7 @@ export const chartConfigs: Record<string, ChartConfig> = {
         {
           heading: "What this chart shows",
           paragraphs: [
-            'Median total household wealth at equivalent age milestones (30, 40, 50, 60) for three generations: Baby Boomers (born 1946–64), Generation X (born 1965–80), and Millennials (born 1981–96). All values are adjusted to 2022 real terms so that generational comparisons are like-for-like. Faded bars indicate projected or estimated values where that generation has not yet reached the milestone.',
+            "Median total household wealth at equivalent age milestones (30, 40, 50, 60) for three generations: Baby Boomers (born 1946–64), Generation X (born 1965–80), and Millennials (born 1981–96). All values are adjusted to 2022 real terms so that generational comparisons are like-for-like. Faded bars indicate projected or estimated values where that generation has not yet reached the milestone.",
           ],
         },
         {
@@ -1038,12 +1020,12 @@ export const chartConfigs: Record<string, ChartConfig> = {
           heading: "Why it",
           headingEmphasis: "matters",
           paragraphs: [
-            'Wealth at key life stages determines access to home ownership, financial security, and retirement adequacy. If Millennials and Gen Z cannot accumulate wealth at the same rate as their parents did, the UK faces a future where prosperity depends almost entirely on inheritance rather than work. This makes inter-generational mobility impossible without structural policy change — and makes the distribution of inherited wealth a defining political question of the coming decades.',
+            "Wealth at key life stages determines access to home ownership, financial security, and retirement adequacy. If Millennials and Gen Z cannot accumulate wealth at the same rate as their parents did, the UK faces a future where prosperity depends almost entirely on inheritance rather than work. This makes inter-generational mobility impossible without structural policy change — and makes the distribution of inherited wealth a defining political question of the coming decades.",
           ],
         },
       ],
       pullQuote: {
-        text: 'At age 30, Boomers had <strong>£68,000</strong>. Millennials at 30 had <strong>£27,000</strong>. That\'s not a lifestyle choice — it\'s a structural shift in who gets to build wealth and when.',
+        text: "At age 30, Boomers had <strong>£68,000</strong>. Millennials at 30 had <strong>£27,000</strong>. That's not a lifestyle choice — it's a structural shift in who gets to build wealth and when.",
       },
     },
     methodology: `
@@ -1060,27 +1042,24 @@ export const chartConfigs: Record<string, ChartConfig> = {
       {
         domain: "Wealth · UK",
         title: "Who owns wealth in the UK?",
-        finding:
-          'Top 10% hold <b>57%</b> of all personal wealth.',
+        finding: "Top 10% hold <b>57%</b> of all personal wealth.",
         to: "/charts/wealth-shares",
         sparkType: "line",
       },
       {
         domain: "Housing · UK",
         title: "House price to earnings ratio, 1997–2025",
-        finding:
-          'England & Wales ratio peaked at <b>9.0×</b> in 2021 (7.6× in 2025).',
+        finding: "England & Wales ratio peaked at <b>9.0×</b> in 2021 (7.6× in 2025).",
         to: "/charts/housing-affordability",
         sparkType: "line",
       },
       {
         domain: "Tax · UK",
         title: "UK tax revenue — work vs wealth",
-        finding:
-          '<b>93%</b> of selected tax revenue comes from taxes on work.',
+        finding: "<b>93%</b> of selected tax revenue comes from taxes on work.",
         to: "/charts/tax-composition",
         sparkType: "bar",
       },
     ],
   },
-};
+}
