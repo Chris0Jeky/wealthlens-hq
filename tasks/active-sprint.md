@@ -2,8 +2,19 @@
 
 Last updated: 2026-06-27
 
-> **SESSION 13 (2026-06-27) — offline-defect sweep #4; PR #456 MERGED.** Build chain
-> still `OPENAI_API_KEY`-blocked (ACTION-REQUIRED #9), so ran sweep #4 (5-finder +
+> **SESSION 13 (2026-06-27) — 6 PRs MERGED (#456-#460).** Build chain still
+> `OPENAI_API_KEY`-blocked (ACTION-REQUIRED #9), so ran offline sweeps + hygiene:
+> **#457/#458** Dependabot drain (fastapi patch, setup-python minor — my #456
+> dependabot.yml fix means analyst+sim packages are now scanned); **#459** prettier
+> full adoption (config fix + 283-file reformat + CI format gate + `.git-blame-ignore-revs`,
+> merge-committed to preserve the SHA; the reformat exposed one real Vue-template break,
+> caught pre-push); **#460** data-integrity sweep #5 — a 5-finder audit of every chart
+> vs its committed source JSON found **13 real public-facing misrepresentations** (2-lens
+> review + gemini + codex all addressed): a CGT card overstating concentration **2×**
+> (now band-aligned £2m+ figure), housing's top-N mixing national aggregates as "regions"
+> (filtered; teasers repointed to London), BoE mislabelled "Monthly" (→ source-cadence
+> only), WealthByDecile/RevenueBreakdown UK→GB a11y labels, a backend NaN→null no-op
+> under pandas 3, + more. Below: **sweep #4 (#456)**. Ran sweep #4 (5-finder +
 > adversarial-verify workflow → **12 confirmed offline defects**) then a **3-lens
 > adversarial review** of the fixes (caught 11 real consistency gaps incl. a *second*
 > `data-licences.md` and a gemini-caught engine-leak edge — all folded in). Fixed:
