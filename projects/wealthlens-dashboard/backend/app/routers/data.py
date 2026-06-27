@@ -287,10 +287,14 @@ def _get_data_type(dataset_name: str) -> str | None:
     """Return the ``data_type`` from a dataset's ``.meta.json`` sidecar.
 
     The data pipelines write a sidecar (e.g. ``productivity_pay_gap.meta.json``)
-    next to each processed CSV recording provenance — ``"live_ons"`` for live
-    data or ``"illustrative_fallback"`` when illustrative data was used. The
-    frontend surfaces a data-honesty caveat when the value is
-    ``"illustrative_fallback"``.
+    next to each processed CSV recording provenance:
+    - ``"live_ons"`` — fetched live from the official source;
+    - ``"illustrative_fallback"`` — an illustrative composite (figures are
+      derived/example, not official); the frontend surfaces a data-honesty caveat;
+    - ``"static_published"`` — REAL published figures compiled statically into the
+      repo (not a live fetch and not invented), e.g. child poverty / generational
+      wealth. Distinct from ``illustrative_fallback`` precisely so the UI never
+      mislabels real published data as "example data".
 
     Deliberately UNCACHED (unlike row_count/columns): a pipeline rerun that
     switches a dataset between live and fallback data must be reflected without

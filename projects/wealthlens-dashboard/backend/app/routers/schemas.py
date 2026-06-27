@@ -48,8 +48,10 @@ class DatasetMetadataResponse(BaseModel):
         default=None,
         description=(
             "Data provenance from the pipeline's .meta.json sidecar: "
-            "'live_ons' for live data, 'illustrative_fallback' when "
-            "illustrative data was used, or null if no sidecar exists"
+            "'live_ons' (fetched live), 'illustrative_fallback' (illustrative "
+            "composite — figures are examples, caveat shown), 'static_published' "
+            "(real published figures compiled statically, not a live fetch), or "
+            "null if no sidecar exists"
         ),
     )
 

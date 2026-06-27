@@ -103,6 +103,12 @@ def process(df_raw: pd.DataFrame, *, is_fallback: bool) -> pd.DataFrame:
         "source_url": SOURCE_URL,
         "access_date": ACCESS_DATE,
         "is_fallback": is_fallback,
+        # Provenance for the /metadata contract (backend _get_data_type). These are
+        # REAL DWP published figures compiled statically into the repo (not a live
+        # fetch), so the honest marker is "static_published" — NOT "illustrative_*"
+        # (the numbers are not invented). Absent this key the API reports None,
+        # which the contract documents as "no sidecar / unknown provenance".
+        "data_type": "static_published" if is_fallback else "live_ons",
         "row_count": len(df),
         "period": "2022/23",
         "measure": "Percentage of children in relative low income after housing costs",

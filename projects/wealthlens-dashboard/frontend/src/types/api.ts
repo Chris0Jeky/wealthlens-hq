@@ -24,7 +24,9 @@ export interface DatasetMetadataResponse {
   row_count: number
   columns: string[]
   last_updated?: string | null
-  /** Pipeline provenance: 'live_ons', 'illustrative_fallback', or null (no sidecar). */
+  /** Pipeline provenance: 'live_ons' (live), 'illustrative_fallback' (example
+   * composite — caveat shown), 'static_published' (real published figures
+   * compiled statically, not invented), or null (no sidecar). */
   data_type?: string | null
 }
 

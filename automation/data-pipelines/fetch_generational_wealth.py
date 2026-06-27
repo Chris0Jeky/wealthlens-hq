@@ -210,6 +210,11 @@ def _write_meta(csv_path: Path) -> None:
             "physical assets minus debts."
         ),
         "access_date": ACCESS_DATE,
+        # Provenance for the /metadata contract (backend _get_data_type): REAL
+        # published figures (Resolution Foundation / ONS WAS) compiled statically
+        # into the repo, not a live fetch — "static_published", not "illustrative_*"
+        # (the figures are not invented; projections are flagged per-row instead).
+        "data_type": "static_published",
         "columns": {
             "generation": "Generational cohort name",
             "birth_years": "Birth year range for the cohort",
