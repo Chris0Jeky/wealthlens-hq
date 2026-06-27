@@ -33,8 +33,10 @@ usePageMeta({
     <section class="mb-10">
       <h2 class="text-xl font-semibold mb-3">Data Sources</h2>
       <p class="text-gray-700 leading-relaxed mb-4">
-        All data is sourced from official government and academic publications. Each dataset is
-        cited below with its source URL and the date it was accessed.
+        All data is sourced from official government and academic publications. Key datasets are
+        cited below; the full
+        <RouterLink to="/data-sources" class="text-blue-600 underline">Data Sources</RouterLink>
+        page lists every dataset with its source URL and the date it was accessed.
       </p>
       <ul class="space-y-4">
         <li class="border-l-4 border-blue-500 pl-4">
@@ -111,9 +113,10 @@ usePageMeta({
       <p class="text-gray-700 leading-relaxed">
         Data is sourced directly from official government and academic publications. Raw datasets
         are downloaded and processed into clean CSV files via reproducible Python scripts. The
-        backend API serves this processed data to the frontend, which renders interactive charts. No
-        modelling, extrapolation, or adjustment is applied — the charts present the published
-        figures as-is.
+        backend API serves this processed data to the frontend, which renders interactive charts.
+        Most charts present the published figures as-is; where a chart applies inflation adjustment
+        (real terms), clearly-marked projections, or an illustrative composite while live data is
+        unavailable, that is stated in the chart's own methodology section.
       </p>
     </section>
 
