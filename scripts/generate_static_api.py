@@ -299,6 +299,8 @@ def main() -> None:
 
     available: list[str] = []
     errors: list[str] = []
+    # Normalised metadata for static (committed-JSON) datasets, keyed by slug.
+    STATIC_META: dict[str, dict[str, Any]] = {}
 
     for slug, filename in DATASETS.items():
         csv_path = DATA_DIR / filename
@@ -345,16 +347,61 @@ def main() -> None:
 
         print(f"  OK {slug}: {len(records)} rows")
 
-    # Dataset listing
+    # Datasets served from committed static JSON (no pipeline CSV): normalise their
+    # committed metadata sidecars to the API DatasetMetadata shape so the public
+    # provenance page (all-metadata) cites every routed chart — not just the CSV-pipeline
+    # ones. They are deliberately NOT added to datasets.json (the fetchable-data listing):
+    # their data JSON is hand-curated and not in the API {data,total,...} shape, so the
+    # data-contract validation only covers the CSV-pipeline datasets.
+    STATIC_DATASETS = ("inheritance-tax", "wage-stagnation")
+    for slug in STATIC_DATASETS:
+        if slug in available:
+            continue
+        sidecar = OUT_DIR / f"{slug}-metadata.json"
+        if not sidecar.exists():
+            # Fail loud rather than silently dropping a routed chart from provenance.
+            errors.append(f"  SKIP static {slug}: {sidecar} not found")
+            continue
+        m = json.loads(sidecar.read_text(encoding="utf-8"))
+        # row_count/columns: use the sidecar's if present (e.g. inheritance-tax), else
+        # derive them from the committed data JSON's row array so the catalog is
+        # accurate rather than publishing 0 / [] for a real chart (e.g. wage-stagnation).
+        row_count = m.get("row_count")
+        columns = m.get("columns")
+        if row_count is None or columns is None:
+            data_file = OUT_DIR / f"{slug}.json"
+            if data_file.exists():
+                dj = json.loads(data_file.read_text(encoding="utf-8"))
+                rows = dj.get("data") if isinstance(dj, dict) else dj
+                if isinstance(rows, list) and rows and isinstance(rows[0], dict):
+                    row_count = len(rows) if row_count is None else row_count
+                    columns = list(rows[0].keys()) if columns is None else columns
+        STATIC_META[slug] = {
+            "name": m.get("name", m.get("slug", slug)),
+            "description": m.get("description", ""),
+            "source": m.get("source", ""),
+            "source_url": m.get("source_url", ""),
+            # chart-meta sidecars use "last_updated"; API metadata uses "access_date".
+            "access_date": m.get("access_date", m.get("last_updated", "")),
+            "row_count": row_count if row_count is not None else 0,
+            "columns": columns if columns is not None else [],
+            # Schema parity with the CSV-pipeline metadata (which carries data_type).
+            "data_type": m.get("data_type"),
+        }
+
+    # Dataset listing (CSV-pipeline datasets only — what the data API can serve)
     listing = {"datasets": available}
     listing_path = OUT_DIR / "datasets.json"
     listing_path.write_text(json.dumps(listing, allow_nan=False), encoding="utf-8")
 
-    # All metadata combined
-    all_meta = {"datasets": []}
+    # All metadata combined: CSV-pipeline datasets + the static-JSON datasets, so the
+    # provenance page lists every routed chart.
+    all_meta: dict[str, list[dict[str, Any]]] = {"datasets": []}
     for slug in available:
         meta_path = OUT_DIR / f"{slug}-metadata.json"
         all_meta["datasets"].append(json.loads(meta_path.read_text(encoding="utf-8")))
+    for static_entry in STATIC_META.values():
+        all_meta["datasets"].append(static_entry)
     all_meta_path = OUT_DIR / "all-metadata.json"
     all_meta_path.write_text(json.dumps(all_meta, allow_nan=False), encoding="utf-8")
 

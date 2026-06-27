@@ -95,6 +95,26 @@ const mockMetadata: DatasetMetadata[] = [
     row_count: 50,
     columns: ["generation", "age", "wealth"],
   },
+  {
+    // Static (committed-JSON) datasets appended to all-metadata by the generator.
+    name: "wage-stagnation",
+    description: "UK median real weekly earnings have barely recovered since 2008",
+    source: "ONS ASHE",
+    source_url:
+      "https://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/earningsandworkinghours/datasets/ashe1702",
+    access_date: "2026-05-16",
+    row_count: 25,
+    columns: ["year", "real_weekly"],
+  },
+  {
+    name: "inheritance-tax",
+    description: "Share of estates liable for Inheritance Tax in the UK",
+    source: "HMRC Inheritance Tax Statistics 2021-22",
+    source_url: "https://www.gov.uk/government/statistics/inheritance-tax-statistics",
+    access_date: "2026-05-16",
+    row_count: 6,
+    columns: ["year", "deaths", "liable", "rate_pct", "revenue_bn"],
+  },
 ]
 
 const mockFetchAllMetadata = vi.fn()
@@ -152,12 +172,12 @@ describe("DataSourcesView", () => {
     expect(wrapper.text()).toContain("Server unavailable")
   })
 
-  it("renders all 10 datasets after loading", async () => {
+  it("renders all 12 datasets after loading", async () => {
     mockFetchAllMetadata.mockResolvedValue(mockMetadata)
     const wrapper = mountView()
     await flushPromises()
-    // Should mention all 10 sources
-    expect(wrapper.text()).toContain("Showing 10 of 10 data sources")
+    // Should mention all 12 sources (10 CSV-pipeline + 2 static-JSON datasets)
+    expect(wrapper.text()).toContain("Showing 12 of 12 data sources")
   })
 
   it("shows source links as external links with correct URLs", async () => {
@@ -202,8 +222,8 @@ describe("DataSourcesView", () => {
     await flushPromises()
 
     // "wealth" matches wealth-shares, wealth-by-decile, generational-wealth,
-    // and tax-composition (description contains "wealth taxes")
-    expect(wrapper.text()).toContain("Showing 4 of 10 data sources")
+    // and tax-composition (description contains "wealth taxes") — 4 of 12 total.
+    expect(wrapper.text()).toContain("Showing 4 of 12 data sources")
   })
 
   it("shows no results message when filter matches nothing", async () => {
