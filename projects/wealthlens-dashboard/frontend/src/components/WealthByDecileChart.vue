@@ -12,7 +12,7 @@
  *
  * Accessibility: WCAG AA high-contrast colors, aria-label, escapeHtml tooltips.
  */
-import { computed, ref } from "vue"
+import { computed, ref, useId } from "vue"
 import { use } from "echarts/core"
 import { CanvasRenderer } from "echarts/renderers"
 import { BarChart } from "echarts/charts"
@@ -30,6 +30,11 @@ const { rows, loading, error } = useChartData("wealth-by-decile")
 const chart = ref<EChartsExportable | null>(null)
 
 defineExpose({ chart })
+
+// Stable id linking the chart's role="img" to its provenance caveat via
+// aria-describedby, so the WAS under-reporting note is announced as part of the
+// chart description (not just reachable later in the reading order).
+const caveatId = useId()
 
 /**
  * Respect prefers-reduced-motion (WCAG 2.3.3).
@@ -203,6 +208,7 @@ const option = computed(() => {
     <div
       role="img"
       :aria-label="`Bar chart showing total household wealth by decile in Great Britain. ${headlineInsight}.${poorestIsNegative ? ' The poorest decile is highlighted in red to indicate net negative wealth.' : ''}`"
+      :aria-describedby="caveatId"
       class="w-full"
     >
       <VChart ref="chart" class="w-full" style="height: 480px" :option="option" autoresize />
@@ -234,7 +240,7 @@ const option = computed(() => {
          richest-decile total is, if anything, conservative. Stated so the chart
          is never read as a hard ceiling on top-decile wealth, and consistent with
          how the wealth-shares chart already notes the same top-tail limitation. -->
-    <p class="text-xs text-[var(--wl-ink-muted)] mt-2 text-center max-w-2xl mx-auto">
+    <p :id="caveatId" class="text-xs text-[var(--wl-ink-muted)] mt-2 text-center max-w-2xl mx-auto">
       Note: household surveys such as the Wealth and Assets Survey under-record wealth at the very
       top, so the true gap between the richest and poorest deciles is likely wider than shown.
     </p>
