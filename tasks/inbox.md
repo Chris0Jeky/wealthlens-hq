@@ -275,21 +275,34 @@ group). Each: real per-row cell-mapping test + 2 adversarial reviews.
   has "net negative wealth" / is "highlighted in red"** while the committed ONS
   data is +£13.9bn (positive) — fixed in #422 (gated the claim on a
   `poorestIsNegative` computed; tooltip + bar colour were already conditional).
-- [ ] **Frontend `.prettierrc` is stale / unenforced — reconcile it with the code.**
-  Surfaced 2026-06-19 (#430 review); **premise corrected 2026-06-26 (session 11)
-  after actually running prettier.** `frontend/.prettierrc` declares
-  `semi: false, singleQuote: true, trailingComma: all`, and `format:check`
-  (`prettier --check`) runs **nowhere in CI** — so prettier is effectively dead.
-  The earlier note's premise was WRONG: the codebase does NOT use semicolons; a
-  sampled component is double-quote + **no semicolons** (e.g. `import { computed } from "vue"` with no `;`), so the config's `semi:false` matches but `singleQuote:true`
-  does NOT. **`npx prettier --check .` flags 314 files** — and critically that set
-  INCLUDES committed `public/data/*.json` data files (there is **no `.prettierignore`**),
-  which must NOT be reformatted by prettier. So this is NOT a clean slice: it needs
-  (1) a house-style decision (the real code is double-quote + no-semi, so likely
-  `semi:false, singleQuote:false`), (2) a `.prettierignore` excluding `public/data/`,
-  `dist/`, coverage, etc., and (3) a 300-file `prettier --write` churn + wiring
-  `format:check` into `ci-frontend.yml`. Do on a clean branch; confirm the JSON data
-  files are excluded BEFORE `--write`. Likely wants Chris's nod on the canonical style.
+- [ ] **Frontend `.prettierrc` is stale / unenforced — adopt prettier properly.**
+  Surfaced 2026-06-19 (#430); **fully scoped 2026-06-26/27 (session 11) by running
+  prettier; Chris AUTHORIZED it ("do it, however you think is best").** Ready to
+  execute in one clean-context PR next session. Findings (empirical):
+  - The real house style is **double-quote + NO semicolons** (`src/main.ts`/`App.vue`/
+    `stores/data.ts` have 0 semicolon-terminated lines). So `.prettierrc`'s `semi:false`
+    is CORRECT but `singleQuote:true` is WRONG (code uses double quotes).
+  - `format:check` (`prettier --check`) runs **NOWHERE in CI** → prettier is dead;
+    formatting is currently unowned (eslint's format rules are off via
+    `@vue/eslint-config-prettier`).
+  - A `.prettierignore` EXISTS (`dist, node_modules, coverage, *.min.js, *.min.css,
+    package-lock.json`) but **misses `public/data`** — 30 committed data JSON files
+    get flagged and must NOT be prettier-reformatted (data integrity). `public/sw.js`,
+    `manifest.json`, `offline.html` ARE hand-written source (OK to format).
+  - It is a **genuine ~283-file reformat**: even after `singleQuote:false`, ~283
+    source files still differ (printWidth 80/100/120 all ≈ same count) — the codebase
+    was simply never prettier-formatted, so adoption is an unavoidable mass reformat,
+    not a quote tweak. (Do NOT commit a "truthful but unenforced" config alone — it's
+    a footgun: `npm run format` would then produce the 283-file diff for any dev.)
+  - **Execution plan:** (1) set `.prettierrc` → `{semi:false, singleQuote:false,
+    trailingComma:"all", printWidth:100}`; (2) add `public/data` to `.prettierignore`;
+    (3) `npx prettier --write .` (confirm the changed set is source-only, NO
+    `public/data`, BEFORE committing); (4) add a `.git-blame-ignore-revs` with the
+    reformat commit SHA (blame hygiene); (5) wire `npm run format:check` into
+    `ci-frontend.yml`; (6) verify semantics-preserving via `vue-tsc -b --noEmit` +
+    `vite build` + `eslint` + `vitest run` (all must stay green). One PR; format-only
+    review is light. High git-blame noise (mitigated by step 4), low mission value —
+    but Chris OK'd it.
 
 ## Build: Charts and Visualisations
 

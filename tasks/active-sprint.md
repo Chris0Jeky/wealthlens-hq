@@ -15,9 +15,11 @@ Last updated: 2026-06-27
 > per-dataset instead of 503-ing the whole citations catalog, plus a REQUEST_TIMEOUT
 > positive/finite floor and a rate-limit health-path trailing-slash exemption. Each:
 > 2 independent adversarial-review lenses + every gemini bot comment addressed +
-> green CI. **Next unblocked code work is still infra-gated** (H1-09 needs the local
-> Postgres+pgvector container; H1-08 needs the PDFs); otherwise another offline-defect
-> sweep or a Chris decision below. Full state:
+> green CI. **Mid-session Chris started Docker → H1-09 is now UNBLOCKED** (analyst-db
+> container verified up on :15432, migrations at head). **NEXT SESSION:** **H1-09**
+> (wire CGT/WAS/HMRC chunks → DB → FTS → embed; embed gated on `OPENAI_API_KEY`) is
+> the top task; then the **prettierrc** full-adoption PR (scoped + Chris-authorised,
+> plan in `inbox.md`); then another offline-defect sweep if both stall. Full state:
 > `../hq-private/projects/wealthlens/memories/session_notes/ORCHESTRATION.md`.
 
 > **SESSION 10 (2026-06-26) — WRAPPED.** Found main CI was actually **RED**
