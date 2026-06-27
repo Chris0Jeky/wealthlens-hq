@@ -17,8 +17,7 @@ interface DatasetSource {
 }
 
 /**
- * All 10 datasets with full source citations.
- * Mirrors DATASET_META in backend/app/routers/data.py.
+ * All 12 datasets with full source citations (one per routed chart).
  */
 const datasets: DatasetSource[] = [
   {
@@ -27,7 +26,7 @@ const datasets: DatasetSource[] = [
     source: "World Inequality Database",
     sourceUrl: "https://wid.world/",
     accessDate: "2026-05-14",
-    updateFrequency: "Annual",
+    updateFrequency: "Periodic",
   },
   {
     name: "housing-affordability",
@@ -104,7 +103,24 @@ const datasets: DatasetSource[] = [
     source: "Resolution Foundation / ONS Wealth and Assets Survey",
     sourceUrl: "https://www.resolutionfoundation.org/publications/",
     accessDate: "2026-05-16",
-    updateFrequency: "Biennial",
+    updateFrequency: "Annual",
+  },
+  {
+    name: "wage-stagnation",
+    description: "Real (CPIH-adjusted) median weekly pay, indexed",
+    source: "ONS Annual Survey of Hours and Earnings (ASHE)",
+    sourceUrl:
+      "https://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/earningsandworkinghours/datasets/ashe1702",
+    accessDate: "2026-05-16",
+    updateFrequency: "Annual",
+  },
+  {
+    name: "inheritance-tax",
+    description: "Estates notified and liable to inheritance tax",
+    source: "HMRC Inheritance Tax Statistics",
+    sourceUrl: "https://www.gov.uk/government/statistics/inheritance-tax-statistics",
+    accessDate: "2026-05-16",
+    updateFrequency: "Annual",
   },
 ]
 </script>
@@ -160,8 +176,10 @@ const datasets: DatasetSource[] = [
           <li class="pipeline-step">
             <strong class="step-label">Process</strong>
             <span class="step-desc">
-              Raw data is cleaned, normalised, and written to standardised CSV files. No modelling,
-              extrapolation, or adjustment is applied.
+              Raw data is cleaned, normalised, and written to standardised CSV files. Beyond
+              standard normalisation (e.g. rebasing to an index or converting to real terms), no
+              modelling or extrapolation is applied; where live data is temporarily unavailable the
+              pipeline substitutes clearly-labelled illustrative values.
             </span>
           </li>
           <li class="pipeline-step">
@@ -188,7 +206,7 @@ const datasets: DatasetSource[] = [
         <span class="wl-eyebrow">Provenance</span>
         <h2 id="sources-heading" class="section-heading">Source Citations</h2>
         <p class="section-body">
-          All 10 datasets are sourced from official government and academic publications. Each entry
+          All 12 datasets are sourced from official government and academic publications. Each entry
           below documents the source name, URL, access date, and update frequency.
         </p>
         <div class="sources-grid">
@@ -307,7 +325,7 @@ const datasets: DatasetSource[] = [
         <h2 id="schedule-heading" class="section-heading">Update Schedule</h2>
         <p class="section-body">
           The data pipeline runs automatically every week via GitHub Actions. Each run fetches the
-          latest available data from all 10 sources, validates it, and updates the processed CSV
+          latest available data from these sources, validates it, and updates the processed CSV
           files. If a source has not published new data since the last run, the existing file is
           retained unchanged.
         </p>
