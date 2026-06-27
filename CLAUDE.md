@@ -8,7 +8,7 @@ Compact session contract for Claude Code in `wealthlens-hq/`. Move detailed proc
 2. `AGENTS.md` for repo-wide operating rules.
 3. `../hq-private/projects/wealthlens/memories/00_ACTIVE.md` for current focus areas and status (private HQ repo — see below).
 4. `../hq-private/projects/wealthlens/memories/program/00_READ_THIS_FIRST.md` for program context.
-5. `autodoc/AGENT_INDEX.md` for code-grounded orientation (once code exists).
+5. `autodoc/AGENT_INDEX.md` for code-grounded orientation.
 6. Relevant skill under `.claude/skills/*/SKILL.md`.
 7. Strategy and vision docs for non-coding work.
 8. Research docs for data and analysis work.

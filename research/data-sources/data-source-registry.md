@@ -65,7 +65,7 @@ Track every source used by WealthLens. Do not use a dataset in a public chart un
 
 | Source | URL | Publisher | Format | Licence | Update | Coverage | Notes |
 |---|---|---|---|---|---|---|---|
-| Regional GDHI | ons.gov.uk/economy/regionalaccounts/grossdisposablehouseholdincome | ONS | XLSX; CSV via Nomis | OGL v3.0 | Annual (~21-month lag) | UK | Westminster GDHI per head £79,555 vs UK avg £24,836. |
+| Regional GDHI | ons.gov.uk/economy/regionalaccounts/grossdisposablehouseholdincome | ONS | XLSX; CSV via Nomis | OGL v3.0 | Annual (~21-month lag) | UK | Top ITL3 area is Kensington & Chelsea / Hammersmith & Fulham (£79,500 per head, 2023) vs UK avg £24,800; Westminster £64,800, Blackpool £14,200. |
 | ONS Regional GDP per Head | Via ONS | ONS | XLSX | OGL v3.0 | Annual (April) | UK | ITL1-3, LA. |
 | ONS ASHE Earnings | Via ONS | ONS | XLSX | OGL v3.0 | Annual | UK | Region, occupation, age. |
 | ONS Small-area Income Estimates | Via ONS | ONS | XLSX + interactive | OGL v3.0 | Annual | England & Wales | MSOA level. |

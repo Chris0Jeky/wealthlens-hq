@@ -27,7 +27,7 @@ Which runtime capabilities each agent has and where shared baselines live.
 
 - `.mcp.json` — MCP server definitions, used by both runtimes
 - `docs/agentic/` — shared protocols (question, failure, git workflow, skill registry)
-- `autodoc/AGENT_INDEX.md` — code-grounded orientation for both agents (once code exists)
+- `autodoc/AGENT_INDEX.md` — code-grounded orientation for both agents
 
 ## Skills parity
 

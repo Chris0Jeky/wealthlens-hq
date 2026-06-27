@@ -43,7 +43,7 @@ Every design element should accommodate these five content areas:
 2. **Housing** — The affordability crisis. Median house price to median earnings ratio. Regional divergence. Generational lockout.
 3. **Tax** — Where the money comes from and doesn't. Capital gains: 92% of gains go to the top 1%. Inheritance tax: only 4-5% of estates pay it. Wealth taxes raise ~3% of GDP despite wealth being 7x GDP.
 4. **Inheritance** — Intergenerational wealth transfer and its concentration.
-5. **Income & Opportunity** — The gap between earnings and capital gains. Regional GDHI (Westminster £79,555 vs UK average £24,836). Educational inequality as the first valve in the wealth funnel.
+5. **Income & Opportunity** — The gap between earnings and capital gains. Regional GDHI (Kensington & Chelsea / Hammersmith & Fulham £79,500 vs UK average £24,800). Educational inequality as the first valve in the wealth funnel.
 
 ### Voice & Tone (reflected in all copy)
 

@@ -3,7 +3,7 @@
 Repository-level operating instructions for coding agents working in `wealthlens-hq/`.
 
 Use [CLAUDE.md](./CLAUDE.md) as the Claude Code session contract.
-Use [autodoc/README.md](./autodoc/README.md) as the concise code-grounded synthesis layer (once code exists).
+Use [autodoc/README.md](./autodoc/README.md) as the concise code-grounded synthesis layer.
 
 > **Private HQ repo:** personal/sensitive material (identity, applications,
 > outreach contacts + logs, agent session memories incl. ORCHESTRATION.md,
@@ -144,7 +144,7 @@ Repo-local Codex skills live under `.agents/skills/` and supplement this file. U
 
 - Change is minimal and localized.
 - Tests are added or updated, or verification steps are written explicitly (for code work).
-- `make ci-quick` passes locally (when code exists).
+- `make ci-quick` passes locally.
 - Relevant linters and typechecks pass.
 - `../hq-private/projects/wealthlens/memories/00_ACTIVE.md` (private sibling repo) is updated if the work changes current status.
 - If a meaningful decision was made, capture it in `../hq-private/projects/wealthlens/memories/decisions/`
