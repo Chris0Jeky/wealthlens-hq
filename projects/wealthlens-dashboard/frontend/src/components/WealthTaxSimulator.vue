@@ -3,7 +3,7 @@
  * WealthTaxSimulator — interactive wealth tax revenue calculator.
  *
  * Allows users to configure progressive wealth tax bands with sliders
- * and see estimated annual revenue, affected households, and spending
+ * and see estimated annual revenue, affected taxpayers, and spending
  * comparisons. Uses a simplified Pareto model for illustration.
  *
  * Sources:
@@ -24,7 +24,7 @@ import { ref, computed } from "vue"
 import {
   simulateWealthTax,
   formatRevenue,
-  formatHouseholds,
+  formatTaxpayers,
   formatThreshold,
   getSpendingComparison,
   PRESET_SCENARIOS,
@@ -251,6 +251,10 @@ function onSliderChange() {
       <div class="sim__headline">
         <p class="wl-eyebrow">Estimated annual revenue</p>
         <p class="sim__revenue">{{ formatRevenue(results.annualRevenue) }}</p>
+        <p class="sim__comparison">
+          Illustrative gross estimate — it scales linearly with the rate and assumes no behavioural
+          response or avoidance, so treat it as an upper bound.
+        </p>
         <p v-if="spendingText" class="sim__comparison">
           {{ spendingText }}
         </p>
@@ -259,15 +263,15 @@ function onSliderChange() {
       <!-- Stats grid -->
       <div class="sim__stat-grid">
         <div class="sim__stat">
-          <span class="sim__stat-label">Taxable units affected</span>
+          <span class="sim__stat-label">Taxpayers affected</span>
           <span class="sim__stat-value wl-num">
-            {{ formatHouseholds(results.affectedHouseholds) }}
+            {{ formatTaxpayers(results.affectedTaxpayers) }}
           </span>
         </div>
         <div class="sim__stat">
-          <span class="sim__stat-label">Average tax per household</span>
+          <span class="sim__stat-label">Average tax per taxpayer</span>
           <span class="sim__stat-value wl-num">
-            {{ formatRevenue(results.averageTaxPerHousehold) }}
+            {{ formatRevenue(results.averageTaxPerTaxpayer) }}
           </span>
         </div>
         <div class="sim__stat">

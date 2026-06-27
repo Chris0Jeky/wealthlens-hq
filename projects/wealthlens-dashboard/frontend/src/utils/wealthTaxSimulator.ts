@@ -35,10 +35,10 @@ export interface WealthTaxBand {
 export interface SimulationResult {
   /** Estimated annual revenue in GBP */
   annualRevenue: number
-  /** Number of households affected (wealth above lowest threshold) */
-  affectedHouseholds: number
-  /** Average tax per affected household in GBP */
-  averageTaxPerHousehold: number
+  /** Number of taxpayers affected (wealth above lowest threshold) */
+  affectedTaxpayers: number
+  /** Average tax per affected taxpayer in GBP */
+  averageTaxPerTaxpayer: number
   /** Revenue as a percentage of UK GDP */
   revenueAsPercentGDP: number
 }
@@ -95,15 +95,15 @@ export const PARETO_XMIN = 250_000
  */
 export const WEALTH_THRESHOLDS: ReadonlyArray<{
   threshold: number
-  householdsAbove: number
+  taxpayersAbove: number
   wealthAbove: number
 }> = [
-  { threshold: 250_000, householdsAbove: 15_537_000, wealthAbove: 12_217_000_000_000 },
-  { threshold: 500_000, householdsAbove: 8_246_000, wealthAbove: 9_679_000_000_000 },
-  { threshold: 1_000_000, householdsAbove: 3_004_000, wealthAbove: 6_230_000_000_000 },
-  { threshold: 2_000_000, householdsAbove: 626_000, wealthAbove: 3_006_000_000_000 },
-  { threshold: 5_000_000, householdsAbove: 83_000, wealthAbove: 1_514_000_000_000 },
-  { threshold: 10_000_000, householdsAbove: 22_000, wealthAbove: 1_113_000_000_000 },
+  { threshold: 250_000, taxpayersAbove: 15_537_000, wealthAbove: 12_217_000_000_000 },
+  { threshold: 500_000, taxpayersAbove: 8_246_000, wealthAbove: 9_679_000_000_000 },
+  { threshold: 1_000_000, taxpayersAbove: 3_004_000, wealthAbove: 6_230_000_000_000 },
+  { threshold: 2_000_000, taxpayersAbove: 626_000, wealthAbove: 3_006_000_000_000 },
+  { threshold: 5_000_000, taxpayersAbove: 83_000, wealthAbove: 1_514_000_000_000 },
+  { threshold: 10_000_000, taxpayersAbove: 22_000, wealthAbove: 1_113_000_000_000 },
 ]
 
 // ============================================================
@@ -111,27 +111,31 @@ export const WEALTH_THRESHOLDS: ReadonlyArray<{
 // ============================================================
 
 /**
- * Estimates the number of households with wealth above a given threshold
- * using Pareto interpolation between known data points.
+ * Estimates the number of taxpayers (individuals) with wealth above a given
+ * threshold using Pareto interpolation between known data points. The anchors
+ * (WEALTH_THRESHOLDS) are per-taxpayer figures from the Wealth Tax Commission.
  *
  * Uses the complementary CDF of a Pareto distribution:
  * P(X > x) = (xmin / x)^alpha for x >= xmin
  *
  * We interpolate between known empirical data points for better accuracy.
  */
-export function estimateHouseholdsAbove(threshold: number): number {
+export function estimateTaxpayersAbove(threshold: number): number {
   if (threshold <= 0) return TOTAL_HOUSEHOLDS
   if (threshold < PARETO_XMIN) {
-    // Linear interpolation from all households to the first empirical anchor.
+    // Sub-£250k fallback only: interpolate from the total-household count down to
+    // the first per-taxpayer anchor. This mixes a household base with taxpayer
+    // anchors (an approximation), but the simulator slider starts at £500k, so
+    // this branch is not reachable from the UI.
     const firstPoint = WEALTH_THRESHOLDS[0]
     const fraction = threshold / PARETO_XMIN
-    return Math.round(TOTAL_HOUSEHOLDS + fraction * (firstPoint.householdsAbove - TOTAL_HOUSEHOLDS))
+    return Math.round(TOTAL_HOUSEHOLDS + fraction * (firstPoint.taxpayersAbove - TOTAL_HOUSEHOLDS))
   }
 
   // Find bracketing known thresholds
   const points = WEALTH_THRESHOLDS
   const exactPoint = points.find((point) => point.threshold === threshold)
-  if (exactPoint) return exactPoint.householdsAbove
+  if (exactPoint) return exactPoint.taxpayersAbove
 
   for (let i = 0; i < points.length - 1; i++) {
     if (threshold >= points[i].threshold && threshold <= points[i + 1].threshold) {
@@ -139,17 +143,17 @@ export function estimateHouseholdsAbove(threshold: number): number {
       const logRatio =
         Math.log(threshold / points[i].threshold) /
         Math.log(points[i + 1].threshold / points[i].threshold)
-      const logHouseholds =
-        Math.log(points[i].householdsAbove) +
-        logRatio * (Math.log(points[i + 1].householdsAbove) - Math.log(points[i].householdsAbove))
-      return Math.round(Math.exp(logHouseholds))
+      const logTaxpayers =
+        Math.log(points[i].taxpayersAbove) +
+        logRatio * (Math.log(points[i + 1].taxpayersAbove) - Math.log(points[i].taxpayersAbove))
+      return Math.round(Math.exp(logTaxpayers))
     }
   }
 
   // Above highest known point: extrapolate with Pareto
   const lastPoint = points[points.length - 1]
   const ratio = lastPoint.threshold / threshold
-  return Math.max(1, Math.round(lastPoint.householdsAbove * Math.pow(ratio, PARETO_ALPHA)))
+  return Math.max(1, Math.round(lastPoint.taxpayersAbove * Math.pow(ratio, PARETO_ALPHA)))
 }
 
 /**
@@ -158,7 +162,7 @@ export function estimateHouseholdsAbove(threshold: number): number {
  *
  * For a Pareto distribution with alpha > 1:
  * E[X - threshold | X > threshold] = threshold / (alpha - 1)
- * Total excess wealth = households_above * threshold / (alpha - 1)
+ * Total excess wealth = taxpayers_above * threshold / (alpha - 1)
  *
  * We use empirical data points for interpolation where available.
  */
@@ -199,12 +203,12 @@ export function estimateWealthAbove(threshold: number): number {
  * Estimates the "excess" wealth above a threshold — i.e., the taxable
  * amount for wealth above that threshold. This is the total wealth held
  * by those above the threshold minus the threshold times the number
- * of households.
+ * of taxpayers.
  */
 export function estimateExcessWealth(threshold: number): number {
   const totalAbove = estimateWealthAbove(threshold)
-  const households = estimateHouseholdsAbove(threshold)
-  const exemptPortion = threshold * households
+  const taxpayers = estimateTaxpayersAbove(threshold)
+  const exemptPortion = threshold * taxpayers
   return Math.max(0, totalAbove - exemptPortion)
 }
 
@@ -226,8 +230,8 @@ export function simulateWealthTax(bands: WealthTaxBand[]): SimulationResult {
   if (bands.length === 0) {
     return {
       annualRevenue: 0,
-      affectedHouseholds: 0,
-      averageTaxPerHousehold: 0,
+      affectedTaxpayers: 0,
+      averageTaxPerTaxpayer: 0,
       revenueAsPercentGDP: 0,
     }
   }
@@ -260,17 +264,17 @@ export function simulateWealthTax(bands: WealthTaxBand[]): SimulationResult {
     totalRevenue += revenueFromBand
   }
 
-  // Affected households are those above the lowest threshold
+  // Affected taxpayers are those above the lowest threshold
   const lowestThreshold = sorted[0].threshold
-  const affectedHouseholds = estimateHouseholdsAbove(lowestThreshold)
+  const affectedTaxpayers = estimateTaxpayersAbove(lowestThreshold)
 
-  const averageTax = affectedHouseholds > 0 ? totalRevenue / affectedHouseholds : 0
+  const averageTax = affectedTaxpayers > 0 ? totalRevenue / affectedTaxpayers : 0
   const revenueAsPercentGDP = (totalRevenue / UK_GDP) * 100
 
   return {
     annualRevenue: Math.round(totalRevenue),
-    affectedHouseholds,
-    averageTaxPerHousehold: Math.round(averageTax),
+    affectedTaxpayers,
+    averageTaxPerTaxpayer: Math.round(averageTax),
     revenueAsPercentGDP: Math.round(revenueAsPercentGDP * 100) / 100,
   }
 }
@@ -298,10 +302,10 @@ export function formatRevenue(value: number): string {
 }
 
 /**
- * Formats a number of households compactly.
+ * Formats a number of taxpayers compactly.
  * e.g. 2_810_000 -> "2.8 million"
  */
-export function formatHouseholds(value: number): string {
+export function formatTaxpayers(value: number): string {
   if (value >= 1_000_000) {
     return `${(value / 1_000_000).toFixed(1)} million`
   }
