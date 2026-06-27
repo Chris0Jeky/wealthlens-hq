@@ -363,6 +363,19 @@ def main() -> None:
             errors.append(f"  SKIP static {slug}: {sidecar} not found")
             continue
         m = json.loads(sidecar.read_text(encoding="utf-8"))
+        # row_count/columns: use the sidecar's if present (e.g. inheritance-tax), else
+        # derive them from the committed data JSON's row array so the catalog is
+        # accurate rather than publishing 0 / [] for a real chart (e.g. wage-stagnation).
+        row_count = m.get("row_count")
+        columns = m.get("columns")
+        if row_count is None or columns is None:
+            data_file = OUT_DIR / f"{slug}.json"
+            if data_file.exists():
+                dj = json.loads(data_file.read_text(encoding="utf-8"))
+                rows = dj.get("data") if isinstance(dj, dict) else dj
+                if isinstance(rows, list) and rows and isinstance(rows[0], dict):
+                    row_count = len(rows) if row_count is None else row_count
+                    columns = list(rows[0].keys()) if columns is None else columns
         STATIC_META[slug] = {
             "name": m.get("name", m.get("slug", slug)),
             "description": m.get("description", ""),
@@ -370,8 +383,8 @@ def main() -> None:
             "source_url": m.get("source_url", ""),
             # chart-meta sidecars use "last_updated"; API metadata uses "access_date".
             "access_date": m.get("access_date", m.get("last_updated", "")),
-            "row_count": m.get("row_count", 0),
-            "columns": m.get("columns", []),
+            "row_count": row_count if row_count is not None else 0,
+            "columns": columns if columns is not None else [],
             # Schema parity with the CSV-pipeline metadata (which carries data_type).
             "data_type": m.get("data_type"),
         }
