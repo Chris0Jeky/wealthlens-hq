@@ -209,7 +209,7 @@ export const chartConfigs: Record<string, ChartConfig> = {
           <tr><td>2006 – 2024</td><td>WAS microdata + admin</td><td>Very high</td></tr>
         </tbody>
       </table>
-      <p><strong>Known caveats:</strong> wealth at the very top is historically under-counted; offshore holdings are largely invisible to estate records; pension reform changes mean pre-2006 and post-2006 series are not strictly comparable for the bottom 50%.</p>
+      <p><strong>Known caveats:</strong> wealth at the very top is historically under-counted; offshore holdings are largely invisible to estate records; pension reform changes mean pre-2006 and post-2006 series are not strictly comparable for the bottom 50%. The ONS Wealth and Assets Survey microdata feeding the modern (2006 onward) UK leg lost accredited official statistics status in June 2025; WID's series mitigates this by calibrating the top tail against rich-list data, which household surveys miss.</p>
     `,
     related: [
       {
@@ -1038,7 +1038,7 @@ export const chartConfigs: Record<string, ChartConfig> = {
         <li><strong>Adjustment:</strong> All values in 2022 real terms (deflated by CPI/CPIH to remove inflation effects).</li>
         <li><strong>Projected values:</strong> Where a generation has not yet reached a milestone (e.g. Millennials at 40), values are projected from current wealth trajectories and are clearly marked.</li>
       </ul>
-      <p><strong>Known caveats:</strong> "Household" wealth divides differently for different living arrangements (single vs. couple). Pension wealth is included but valued differently across defined-benefit (Boomers) and defined-contribution (younger) schemes. The WAS sample begins in 2006, so Boomer wealth at age 30 (circa 1994) is estimated from other sources. Inheritance received is included in current wealth but not separately tracked.</p>
+      <p><strong>Known caveats:</strong> the ONS Wealth and Assets Survey, which provides the underlying wealth figures, lost accredited official statistics status in June 2025 (declining response rates, OSR Report 396), so its figures are no longer National Statistics. "Household" wealth divides differently for different living arrangements (single vs. couple). Pension wealth is included but valued differently across defined-benefit (Boomers) and defined-contribution (younger) schemes. The WAS sample begins in 2006, so Boomer wealth at age 30 (circa 1994) is estimated from other sources. Inheritance received is included in current wealth but not separately tracked.</p>
     `,
     related: [
       {
