@@ -22,7 +22,7 @@ describe("MethodologyView", () => {
     expect(wrapper.find("h1").text()).toBe("Methodology")
   })
 
-  it("contains all 10 dataset source citations", () => {
+  it("contains all 12 dataset source citations", () => {
     const wrapper = mountWithRouter()
     const expectedDatasets = [
       "wealth-shares",
@@ -35,6 +35,8 @@ describe("MethodologyView", () => {
       "boe-rates",
       "child-poverty",
       "generational-wealth",
+      "wage-stagnation",
+      "inheritance-tax",
     ]
     for (const name of expectedDatasets) {
       expect(wrapper.text()).toContain(name)

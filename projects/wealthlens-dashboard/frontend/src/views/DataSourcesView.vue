@@ -22,16 +22,22 @@ const searchQuery = ref("")
 
 /** Additional source info not in the API metadata (licence, update frequency). */
 const EXTRA_SOURCE_INFO: Record<string, { licence: string; frequency: string }> = {
-  "wealth-shares": { licence: "Creative Commons", frequency: "Annual" },
+  "wealth-shares": { licence: "Creative Commons", frequency: "Periodic" },
   "housing-affordability": { licence: "Open Government Licence v3.0", frequency: "Annual" },
   "wealth-by-decile": { licence: "Open Government Licence v3.0", frequency: "Biennial" },
   "cgt-concentration": { licence: "Open Government Licence v3.0", frequency: "Annual" },
   "productivity-pay": { licence: "Open Government Licence v3.0", frequency: "Quarterly" },
   "gdhi-by-region": { licence: "Open Government Licence v3.0", frequency: "Annual" },
   "tax-composition": { licence: "Open Government Licence v3.0", frequency: "Monthly" },
-  "boe-rates": { licence: "Open Government Licence v3.0", frequency: "Daily (Bank Rate)" },
+  "boe-rates": { licence: "Open Government Licence v3.0", frequency: "Monthly" },
   "child-poverty": { licence: "Open Government Licence v3.0", frequency: "Annual" },
-  "generational-wealth": { licence: "Creative Commons", frequency: "Irregular" },
+  "generational-wealth": { licence: "Creative Commons", frequency: "Annual" },
+  // inheritance-tax + wage-stagnation are served from static/hand-curated JSON
+  // (outside the CSV metadata pipeline), so they are not yet in the generated
+  // all-metadata this page renders. Pre-registered here so they show the correct
+  // licence/frequency once wired into all-metadata (tracked follow-up).
+  "wage-stagnation": { licence: "Open Government Licence v3.0", frequency: "Annual" },
+  "inheritance-tax": { licence: "Open Government Licence v3.0", frequency: "Annual" },
 }
 
 const filteredDatasets = computed(() => {
@@ -74,10 +80,12 @@ function formatDatasetName(name: string): string {
     <section class="mb-8 max-w-3xl" aria-labelledby="transparency-heading">
       <h2 id="transparency-heading" class="sr-only">Our commitment to data transparency</h2>
       <p class="text-[var(--wl-ink-body)] leading-relaxed">
-        WealthLens UK is committed to full data transparency. We do not model, extrapolate, or
-        adjust published figures. All datasets are sourced directly from official government
-        publications, academic databases, and reputable research organisations. Each source is
-        linked below so you can verify the data yourself.
+        WealthLens UK is committed to full data transparency. We source datasets directly from
+        official government publications, academic databases, and reputable research organisations,
+        and we do not editorialise the figures. Where values are rounded or composited for clarity,
+        or a live source is temporarily unavailable, the dataset is clearly labelled illustrative
+        (see each chart's methodology). Each source is linked below so you can verify the data
+        yourself.
       </p>
     </section>
 

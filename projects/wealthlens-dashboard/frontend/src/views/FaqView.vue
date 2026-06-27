@@ -38,9 +38,9 @@ const faqs = [
       "WealthLens UK is open-source. You can contribute code, data pipelines, accessibility improvements, or new chart ideas via GitHub. See our Contributing page for details.",
   },
   {
-    question: "Why does the wealth data only go up to 2020?",
+    question: "How recent is the data?",
     answer:
-      "The most recent ONS Wealth and Assets Survey covers April 2018 to March 2020 (Round 7). Round 8 data collection was delayed by COVID-19. We update charts as new rounds are published.",
+      "It varies by dataset. Our long-run wealth-share series (WID) runs to 2024, and the generational-wealth chart draws on the Resolution Foundation's Intergenerational Audit alongside ONS Wealth and Assets Survey data. The 'Where do you fit?' calculator uses the ONS WAS Round 7 decile thresholds (April 2018 to March 2020), the most recent round whose decile breakdown the calculator currently uses. We refresh charts as new data is published.",
   },
   {
     question: "What does 'real terms' mean on wage charts?",
@@ -78,7 +78,7 @@ const glossary: GlossaryEntry[] = [
   {
     term: "Gini coefficient",
     definition:
-      "A measure of inequality from 0 (perfect equality) to 1 (one person owns everything). The UK's wealth Gini is approximately 0.63.",
+      "A measure of inequality from 0 (perfect equality) to 1 (one person owns everything). The UK's total-wealth Gini is approximately 0.63 (ONS Wealth and Assets Survey).",
   },
   {
     term: "CPI (Consumer Price Index)",

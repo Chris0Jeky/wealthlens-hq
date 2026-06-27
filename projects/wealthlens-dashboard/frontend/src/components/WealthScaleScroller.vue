@@ -11,8 +11,12 @@
  * Accessed: 2026-05-16
  */
 import { ref, computed, onMounted, onBeforeUnmount } from "vue"
+import { COMPARISON_STATS, DECILE_BOUNDARIES, DECILE_DATA } from "@/utils/wealthPosition"
 
 // --- Data constants (ONS WAS Round 7, 2018-2020) ---
+// Percentile markers are derived from the SAME ONS WAS Round 7 figures the
+// "Where do you fit?" calculator uses (utils/wealthPosition), so the two
+// surfaces cannot contradict each other (locked by WealthScaleScroller.test.ts).
 
 /** Scale: 1 pixel = £1,000 */
 const SCALE_FACTOR = 1_000
@@ -34,24 +38,24 @@ interface WealthMarker {
 
 const MARKERS: WealthMarker[] = [
   {
-    position: 15_400 / SCALE_FACTOR,
-    value: 15_400,
+    position: DECILE_BOUNDARIES[0] / SCALE_FACTOR,
+    value: DECILE_BOUNDARIES[0],
     label: "Bottom 10%",
     annotation: "£15,400 — 1 in 10 households have less than this",
     color: "var(--wl-red)",
     id: "marker-p10",
   },
   {
-    position: 118_600 / SCALE_FACTOR,
-    value: 118_600,
+    position: COMPARISON_STATS.medianBottom50 / SCALE_FACTOR,
+    value: COMPARISON_STATS.medianBottom50,
     label: "25th percentile",
-    annotation: "£118,600 — a quarter of households below this",
+    annotation: "£82,400 — a quarter of households below this",
     color: "var(--wl-teal)",
     id: "marker-p25",
   },
   {
-    position: 302_500 / SCALE_FACTOR,
-    value: 302_500,
+    position: COMPARISON_STATS.medianUK / SCALE_FACTOR,
+    value: COMPARISON_STATS.medianUK,
     label: "Median (50%)",
     annotation: "£302,500 — the typical UK household",
     color: "var(--wl-ink)",
@@ -66,18 +70,18 @@ const MARKERS: WealthMarker[] = [
     id: "marker-mean",
   },
   {
-    position: 611_200 / SCALE_FACTOR,
-    value: 611_200,
+    position: DECILE_DATA[7].median / SCALE_FACTOR,
+    value: DECILE_DATA[7].median,
     label: "75th percentile",
-    annotation: "£611,200 — three quarters of households below this",
+    annotation: "£829,950 — three quarters of households below this",
     color: "var(--wl-teal)",
     id: "marker-p75",
   },
   {
-    position: 1_340_000 / SCALE_FACTOR,
-    value: 1_340_000,
+    position: COMPARISON_STATS.top10Threshold / SCALE_FACTOR,
+    value: COMPARISON_STATS.top10Threshold,
     label: "Top 10%",
-    annotation: "£1.34m — you're richer than 90% of households",
+    annotation: "£1.48m — you're richer than 90% of households",
     color: "var(--wl-red)",
     id: "marker-p90",
   },
@@ -108,7 +112,7 @@ const MARKERS: WealthMarker[] = [
 const TOTAL_WIDTH_PX = 20_000
 
 /** Median position used for the "you are here" marker */
-const MEDIAN_PX = 302_500 / SCALE_FACTOR
+const MEDIAN_PX = COMPARISON_STATS.medianUK / SCALE_FACTOR
 
 // --- Segment boundaries for background color bands ---
 interface Segment {
@@ -118,10 +122,18 @@ interface Segment {
   color: string
 }
 
+const MEDIAN_BOUNDARY_PX = COMPARISON_STATS.medianUK / SCALE_FACTOR // 302.5
+const TOP10_BOUNDARY_PX = COMPARISON_STATS.top10Threshold / SCALE_FACTOR // 1480
+
 const SEGMENTS: Segment[] = [
-  { start: 0, end: 302.5, label: "Bottom 50%", color: "var(--seg-bottom50)" },
-  { start: 302.5, end: 1340, label: "50th–90th", color: "var(--seg-50-90)" },
-  { start: 1340, end: 3600, label: "Top 10%", color: "var(--seg-top10)" },
+  { start: 0, end: MEDIAN_BOUNDARY_PX, label: "Bottom 50%", color: "var(--seg-bottom50)" },
+  {
+    start: MEDIAN_BOUNDARY_PX,
+    end: TOP10_BOUNDARY_PX,
+    label: "50th–90th",
+    color: "var(--seg-50-90)",
+  },
+  { start: TOP10_BOUNDARY_PX, end: 3600, label: "Top 10%", color: "var(--seg-top10)" },
   { start: 3600, end: 15000, label: "Top 1%", color: "var(--seg-top1)" },
   { start: 15000, end: TOTAL_WIDTH_PX, label: "Top 0.1%", color: "var(--seg-top01)" },
 ]
@@ -146,8 +158,11 @@ const currentWealthPosition = computed(() => {
 
 /** Format a number as GBP with appropriate shorthand */
 function formatGBP(value: number): string {
-  if (value >= 1_000_000_000) return `£${(value / 1_000_000_000).toFixed(1)}bn`
-  if (value >= 1_000_000) return `£${(value / 1_000_000).toFixed(1)}m`
+  // Trim trailing zeros so the visible chip matches the precise marker value
+  // (e.g. £1.48m, not £1.5m, for the £1,480,000 top-10% threshold).
+  const trim = (n: number) => n.toFixed(2).replace(/\.?0+$/, "")
+  if (value >= 1_000_000_000) return `£${trim(value / 1_000_000_000)}bn`
+  if (value >= 1_000_000) return `£${trim(value / 1_000_000)}m`
   if (value >= 1_000) return `£${(value / 1_000).toFixed(0)}k`
   return `£${value.toLocaleString("en-GB")}`
 }
