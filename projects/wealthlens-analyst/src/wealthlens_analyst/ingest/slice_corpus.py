@@ -702,15 +702,18 @@ def ingest_slice(*, engine: Engine | None = None, processed_dir: Path | None = N
     its document is still refreshed so stale rows cannot survive.
     """
     # Only dispose an engine WE created — a caller-supplied (shared) engine is the
-    # caller's to manage (mirrors retrieval/fts.py::search_fts). The try starts here
-    # so the internally-built pool is torn down even on the no-CSV error path below.
+    # caller's to manage (mirrors retrieval/fts.py::search_fts). Engine creation and
+    # dir resolution sit INSIDE the try so the internally-built pool is torn down on
+    # every error path: a failing _processed_dir_default(), the no-CSV RuntimeError,
+    # or write_chunks raising. The `engine is not None` guard covers the case where
+    # engine_from_settings() itself raised (created=True but engine never assigned).
     created = engine is None
-    if engine is None:
-        engine = engine_from_settings(load_settings())
-    if processed_dir is None:
-        processed_dir = _processed_dir_default()
-
     try:
+        if engine is None:
+            engine = engine_from_settings(load_settings())
+        if processed_dir is None:
+            processed_dir = _processed_dir_default()
+
         # The documents this run is authoritative for: every spec whose CSV is on
         # disk (so a present-but-now-empty source still gets its stale rows pruned).
         present_specs = [spec for spec in TABLE_SPECS if (processed_dir / spec.csv_name).is_file()]
@@ -730,7 +733,7 @@ def ingest_slice(*, engine: Engine | None = None, processed_dir: Path | None = N
         )
         return write_chunks(chunks, engine=engine, refresh_documents=refresh_documents)
     finally:
-        if created:
+        if created and engine is not None:
             engine.dispose()
 
 

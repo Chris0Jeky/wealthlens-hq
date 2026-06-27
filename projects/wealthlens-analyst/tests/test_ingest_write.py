@@ -258,6 +258,27 @@ def test_ingest_slice_does_not_dispose_a_caller_supplied_engine(tmp_path: Path) 
     assert engine.disposed == 0
 
 
+def test_ingest_slice_disposes_its_engine_if_dir_resolution_fails(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A failure resolving the processed dir (after the engine is built) still disposes.
+
+    Guards the edge where _processed_dir_default() raises between engine creation and
+    the main body — the self-created engine must not leak (caught in PR #456 review).
+    """
+    created_engine = _DisposeTrackingEngine()
+    monkeypatch.setattr(slice_corpus, "engine_from_settings", lambda _settings: created_engine)
+    monkeypatch.setattr(slice_corpus, "load_settings", lambda: None)
+
+    def _boom() -> Path:
+        raise RuntimeError("cannot locate repo root")
+
+    monkeypatch.setattr(slice_corpus, "_processed_dir_default", _boom)
+    with pytest.raises(RuntimeError, match="cannot locate repo root"):
+        ingest_slice()  # engine=None + processed_dir=None -> dir resolution raises inside try
+    assert created_engine.disposed == 1
+
+
 def test_chunk_row_omits_server_managed_columns() -> None:
     """The INSERT row carries exactly the writable columns — not the server ones."""
     row = _chunk_to_row(_tabular_chunk())
