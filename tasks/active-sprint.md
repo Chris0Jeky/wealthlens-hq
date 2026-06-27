@@ -2,8 +2,15 @@
 
 Last updated: 2026-06-27
 
-> **SESSION 13 (2026-06-27) — 6 PRs MERGED (#456-#460).** Build chain still
-> `OPENAI_API_KEY`-blocked (ACTION-REQUIRED #9), so ran offline sweeps + hygiene:
+> **SESSION 13 (2026-06-27) — 7 PRs MERGED (#456-#461).** Build chain still
+> `OPENAI_API_KEY`-blocked (ACTION-REQUIRED #9), so ran offline sweeps + hygiene.
+> **#461** data-integrity sweep #6 — audited the 3 interactive calculators (these
+> *compute* public numbers from cited constants): fixed an impossible "bottom-50%
+> median" (£12,500 → £82,400, a ~6.6× understatement), a decile-10 percentile anchored
+> on an uncited £3M cap, a "Top 10%" preset using the entry threshold (decile 9), and
+> per-**taxpayer** Wealth-Tax-Commission counts mislabeled as "households" (+ an
+> upper-bound caveat on the linear revenue estimate). 2-lens review + gemini addressed.
+> Earlier this session:
 > **#457/#458** Dependabot drain (fastapi patch, setup-python minor — my #456
 > dependabot.yml fix means analyst+sim packages are now scanned); **#459** prettier
 > full adoption (config fix + 283-file reformat + CI format gate + `.git-blame-ignore-revs`,
