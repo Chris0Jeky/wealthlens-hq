@@ -701,29 +701,37 @@ def ingest_slice(*, engine: Engine | None = None, processed_dir: Path | None = N
     yields no chunks (e.g. wholly illustrative) is legitimate and does not error —
     its document is still refreshed so stale rows cannot survive.
     """
+    # Only dispose an engine WE created — a caller-supplied (shared) engine is the
+    # caller's to manage (mirrors retrieval/fts.py::search_fts). The try starts here
+    # so the internally-built pool is torn down even on the no-CSV error path below.
+    created = engine is None
     if engine is None:
         engine = engine_from_settings(load_settings())
     if processed_dir is None:
         processed_dir = _processed_dir_default()
 
-    # The documents this run is authoritative for: every spec whose CSV is on
-    # disk (so a present-but-now-empty source still gets its stale rows pruned).
-    present_specs = [spec for spec in TABLE_SPECS if (processed_dir / spec.csv_name).is_file()]
-    if not present_specs:
-        raise RuntimeError(
-            f"no processed source CSVs found in {processed_dir} "
-            f"(expected any of {[spec.csv_name for spec in TABLE_SPECS]}); "
-            "regenerate the pipeline outputs (make pipelines) before ingesting"
-        )
-    refresh_documents = {(spec.source_id, spec.document_id) for spec in present_specs}
+    try:
+        # The documents this run is authoritative for: every spec whose CSV is on
+        # disk (so a present-but-now-empty source still gets its stale rows pruned).
+        present_specs = [spec for spec in TABLE_SPECS if (processed_dir / spec.csv_name).is_file()]
+        if not present_specs:
+            raise RuntimeError(
+                f"no processed source CSVs found in {processed_dir} "
+                f"(expected any of {[spec.csv_name for spec in TABLE_SPECS]}); "
+                "regenerate the pipeline outputs (make pipelines) before ingesting"
+            )
+        refresh_documents = {(spec.source_id, spec.document_id) for spec in present_specs}
 
-    chunks = collect_tabular_chunks(processed_dir=processed_dir)
-    logger.info(
-        "collected %d tabular chunk(s) from %d source CSV(s); document corpus pending H1-08 (PDF chunking)",
-        len(chunks),
-        len(present_specs),
-    )
-    return write_chunks(chunks, engine=engine, refresh_documents=refresh_documents)
+        chunks = collect_tabular_chunks(processed_dir=processed_dir)
+        logger.info(
+            "collected %d tabular chunk(s) from %d source CSV(s); document corpus pending H1-08 (PDF chunking)",
+            len(chunks),
+            len(present_specs),
+        )
+        return write_chunks(chunks, engine=engine, refresh_documents=refresh_documents)
+    finally:
+        if created:
+            engine.dispose()
 
 
 def main() -> None:
