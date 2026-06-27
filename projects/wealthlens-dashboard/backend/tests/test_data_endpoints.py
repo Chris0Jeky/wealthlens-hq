@@ -214,3 +214,42 @@ class TestDataTypeSidecar:
 
         assert result is None
         assert "sidecar" not in caplog.text
+
+    def test_non_utf8_sidecar_degrades_not_crashes(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """A binary-corrupt (non-UTF8) sidecar degrades to None, not a crash.
+
+        UnicodeDecodeError is a ValueError, NOT an OSError, so it would escape the
+        read-time guards and (uncaught) 500 the whole /metadata catalog.
+        """
+        monkeypatch.setattr(logging.getLogger("wealthlens"), "propagate", True)
+        monkeypatch.setattr(data_mod, "DATA_DIR", tmp_path)
+        name = next(iter(data_mod.DATASETS))
+        sidecar = (tmp_path / data_mod.DATASETS[name]).with_suffix(".meta.json")
+        sidecar.write_bytes(b"\x80\x81\x82 not valid utf-8")
+
+        with caplog.at_level(logging.WARNING, logger="wealthlens.data"):
+            result = data_mod._get_data_type(name)
+
+        assert result is None
+        assert "Corrupt data_type sidecar" in caplog.text
+
+    def test_metadata_recovery_never_reraises(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """The catalog recovery path keeps a dataset up even if a provenance helper
+        raises — one bad dataset can never 500 every dataset's citations."""
+        monkeypatch.setattr(data_mod, "DATA_DIR", tmp_path)  # no CSV -> _build_metadata fails
+
+        def _boom(_name: str) -> str | None:
+            raise UnicodeDecodeError("utf-8", b"\x80", 0, 1, "invalid start byte")
+
+        monkeypatch.setattr(data_mod, "_get_data_type", _boom)
+        name = next(iter(data_mod.DATASETS))
+
+        entry = data_mod._build_metadata_safe(name)  # must NOT raise
+
+        assert entry["available"] is False
+        assert entry["data_type"] is None
+        assert entry["source"]  # citation still served
