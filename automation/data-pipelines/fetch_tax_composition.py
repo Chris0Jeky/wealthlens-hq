@@ -162,9 +162,18 @@ def _try_parse_live(xlsx_path: Path) -> pd.DataFrame | None:
                         tax_rows[key] = i
                         break
 
-    if len(tax_rows) < 3:
+    # All five components are MANDATORY. process() derives work_taxes_bn /
+    # wealth_taxes_bn from every one of income_tax/nics/cgt/iht/sdlt, so a partial
+    # set would KeyError on the missing column; and a work-vs-wealth COMPOSITION is
+    # only honest when complete (a dropped wealth tax would understate wealth_pct).
+    # A partial parse therefore returns None and routes to the complete, clearly
+    # labelled illustrative fallback rather than crashing or mis-weighting.
+    if len(tax_rows) < len(tax_keywords):
+        missing = [key for key in tax_keywords if key not in tax_rows]
         logger.warning(
-            "Could not find enough tax rows. Found: %s", list(tax_rows.keys())
+            "Live parse incomplete: found %s, missing %s — using fallback.",
+            list(tax_rows.keys()),
+            missing,
         )
         return None
 
