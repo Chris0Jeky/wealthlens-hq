@@ -153,6 +153,14 @@ Every concrete action item extracted from research. Triage into active-sprint, b
   `kind: Literal["tabular","document"]` field to `Chunk` so the gate asserts
   page-presence for documents. Latent until H1-08; no current code path can
   construct the offending chunk. Low severity.
+- [ ] **Auto-load the analyst `.env`** (seeded 2026-06-27, session 12, from the
+  H1-09 review). `config.load_settings()` reads `os.environ` directly, so the
+  documented "copy `.env.example` to `.env`" setup does NOT populate
+  `DATABASE_URL` for `make dev` / `make ingest-slice` — the user must export the
+  vars first (now noted in `.env.example`). Decide the config-layer fix (a small
+  dotenv loader in `main()`/`create_app`, or `pydantic-settings`) — it touches the
+  whole app's config story, so out of H1-09 scope. Low severity; the engine error
+  is already actionable.
 
 ---
 
