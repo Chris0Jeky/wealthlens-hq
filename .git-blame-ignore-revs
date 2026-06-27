@@ -1,0 +1,6 @@
+# Revisions to skip in `git blame` (bulk reformats — not authored line changes).
+# Enable locally with: git config blame.ignoreRevsFile .git-blame-ignore-revs
+# (GitHub applies this file automatically in its blame view.)
+
+# style(frontend): apply prettier --write across the frontend (session 13)
+0f4e00e590fbba5e14766192c2419a699a644f5c
