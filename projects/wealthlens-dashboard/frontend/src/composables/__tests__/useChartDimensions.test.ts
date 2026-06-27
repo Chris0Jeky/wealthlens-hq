@@ -1,8 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { ref } from 'vue'
-import { mount } from '@vue/test-utils'
-import { defineComponent, h } from 'vue'
-import { useChartDimensions } from '@/composables/useChartDimensions'
+import { describe, it, expect, vi, beforeEach } from "vitest"
+import { ref } from "vue"
+import { mount } from "@vue/test-utils"
+import { defineComponent, h } from "vue"
+import { useChartDimensions } from "@/composables/useChartDimensions"
 
 let observeCallback: ((entries: Array<{ contentRect: { width: number } }>) => void) | null = null
 
@@ -15,20 +15,20 @@ class MockResizeObserver {
   unobserve() {}
 }
 
-describe('useChartDimensions', () => {
+describe("useChartDimensions", () => {
   beforeEach(() => {
     observeCallback = null
-    vi.stubGlobal('ResizeObserver', MockResizeObserver)
+    vi.stubGlobal("ResizeObserver", MockResizeObserver)
   })
 
-  it('returns initial dimensions with zero width', () => {
+  it("returns initial dimensions with zero width", () => {
     const containerRef = ref<HTMLElement | null>(null)
     const { dimensions } = useChartDimensions(containerRef)
     expect(dimensions.value.width).toBe(0)
     expect(dimensions.value.height).toBe(200)
   })
 
-  it('updates dimensions from container element', () => {
+  it("updates dimensions from container element", () => {
     const TestComp = defineComponent({
       setup() {
         const containerRef = ref<HTMLElement | null>(null)
@@ -36,9 +36,9 @@ describe('useChartDimensions', () => {
         return { containerRef, dimensions }
       },
       render() {
-        return h('div', {
-          ref: 'containerRef',
-          style: { width: '800px' },
+        return h("div", {
+          ref: "containerRef",
+          style: { width: "800px" },
         })
       },
     })
@@ -56,7 +56,7 @@ describe('useChartDimensions', () => {
     wrapper.unmount()
   })
 
-  it('clamps height to min/max bounds', () => {
+  it("clamps height to min/max bounds", () => {
     const containerRef = ref<HTMLElement | null>(null)
     const { dimensions } = useChartDimensions(containerRef)
 

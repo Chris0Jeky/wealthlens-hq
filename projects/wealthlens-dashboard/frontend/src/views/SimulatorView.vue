@@ -7,21 +7,18 @@
  * data is an illustrative estimate over a synthetic v0.1 population, surfaced
  * honestly via the chart's caveats banner + interval-method label.
  */
-import { computed, ref, watch } from 'vue'
-import ConfidenceFanChart from '@/components/ConfidenceFanChart.vue'
-import RevenueBreakdown from '@/components/RevenueBreakdown.vue'
-import ProvenancePanel from '@/components/ProvenancePanel.vue'
-import {
-  useSimulatorDashboard,
-  useSimulatorScenarios,
-} from '@/composables/useSimulatorDashboard'
-import { usePageMeta } from '@/composables/usePageMeta'
-import { DASHBOARD_SCHEMA_VERSION } from '@/types/simulator'
+import { computed, ref, watch } from "vue"
+import ConfidenceFanChart from "@/components/ConfidenceFanChart.vue"
+import RevenueBreakdown from "@/components/RevenueBreakdown.vue"
+import ProvenancePanel from "@/components/ProvenancePanel.vue"
+import { useSimulatorDashboard, useSimulatorScenarios } from "@/composables/useSimulatorDashboard"
+import { usePageMeta } from "@/composables/usePageMeta"
+import { DASHBOARD_SCHEMA_VERSION } from "@/types/simulator"
 
 usePageMeta({
-  title: 'Policy scenario explorer',
+  title: "Policy scenario explorer",
   description:
-    'Illustrative revenue estimates for wealth-tax policy scenarios from the open WealthLens microsimulator.',
+    "Illustrative revenue estimates for wealth-tax policy scenarios from the open WealthLens microsimulator.",
 })
 
 const {
@@ -30,7 +27,7 @@ const {
   error: scenariosError,
 } = useSimulatorScenarios()
 
-const selectedId = ref('')
+const selectedId = ref("")
 
 // Default to the first scenario once the list arrives, and recover if a refetch
 // drops the currently-selected id (otherwise we'd fetch a now-missing scenario).
@@ -55,17 +52,14 @@ const { data: dashboard, loading, error } = useSimulatorDashboard(selectedId)
 // Fail loud on a contract-version mismatch rather than silently mis-rendering a
 // stale-shaped payload (the field exists for exactly this guard).
 const schemaMismatch = computed(
-  () =>
-    !!dashboard.value &&
-    dashboard.value.schema_version !== DASHBOARD_SCHEMA_VERSION,
+  () => !!dashboard.value && dashboard.value.schema_version !== DASHBOARD_SCHEMA_VERSION,
 )
 
 // A visually-hidden, polite live summary so a screen-reader user hears the new
 // headline when they change scenario (the chart itself is a static role="img").
 const liveSummary = computed(() => {
-  if (loading.value) return 'Loading scenario…'
-  if (error.value || schemaMismatch.value)
-    return 'This scenario could not be displayed.'
+  if (loading.value) return "Loading scenario…"
+  if (error.value || schemaMismatch.value) return "This scenario could not be displayed."
   if (dashboard.value && selectedScenario.value) {
     // Fully mirror ConfidenceFanChart's isValid: guard the interval OBJECT (a null/
     // missing total_revenue_gbp_bn would throw on destructure — reachable via a
@@ -78,7 +72,7 @@ const liveSummary = computed(() => {
     }
     return `Now showing ${selectedScenario.value.name}: estimated annual revenue £${iv.central.toFixed(1)}bn (range £${iv.low.toFixed(1)}bn to £${iv.high.toFixed(1)}bn).`
   }
-  return ''
+  return ""
 })
 </script>
 
@@ -86,33 +80,21 @@ const liveSummary = computed(() => {
   <main class="mx-auto max-w-3xl px-4 py-8">
     <h1 class="text-2xl font-bold text-wl-ink">Policy scenario explorer</h1>
     <p class="mt-2 text-sm text-wl-ink-muted">
-      Headline revenue estimates for wealth-tax policy scenarios, from the open
-      WealthLens microsimulator. Figures are illustrative estimates over a
-      synthetic population (not official forecasts), and every band shows its
-      uncertainty and provenance.
+      Headline revenue estimates for wealth-tax policy scenarios, from the open WealthLens
+      microsimulator. Figures are illustrative estimates over a synthetic population (not official
+      forecasts), and every band shows its uncertainty and provenance.
     </p>
 
-    <div
-      v-if="scenariosLoading"
-      role="status"
-      class="mt-6 text-sm text-wl-ink-muted"
-    >
+    <div v-if="scenariosLoading" role="status" class="mt-6 text-sm text-wl-ink-muted">
       Loading scenarios…
     </div>
-    <div
-      v-else-if="scenariosError"
-      role="alert"
-      class="mt-6 text-sm text-wl-red"
-    >
+    <div v-else-if="scenariosError" role="alert" class="mt-6 text-sm text-wl-red">
       Could not load scenarios: {{ scenariosError }}
     </div>
 
     <template v-else-if="scenarioList?.scenarios.length">
       <div class="mt-6">
-        <label
-          for="scenario-select"
-          class="mb-1 block text-sm font-medium text-wl-ink"
-        >
+        <label for="scenario-select" class="mb-1 block text-sm font-medium text-wl-ink">
           Scenario
         </label>
         <select
@@ -139,24 +121,15 @@ const liveSummary = computed(() => {
       <div aria-live="polite" :aria-busy="loading">
         <span class="sr-only">{{ liveSummary }}</span>
 
-        <div
-          v-if="loading"
-          role="status"
-          class="mt-6 text-sm text-wl-ink-muted"
-        >
+        <div v-if="loading" role="status" class="mt-6 text-sm text-wl-ink-muted">
           Loading scenario…
         </div>
         <div v-else-if="error" role="alert" class="mt-6 text-sm text-wl-red">
           Could not load this scenario: {{ error }}
         </div>
-        <div
-          v-else-if="schemaMismatch"
-          role="alert"
-          class="mt-6 text-sm text-wl-red"
-        >
-          This scenario uses a newer data format than the app supports —
-          refusing to display it rather than risk showing wrong figures. Please
-          refresh.
+        <div v-else-if="schemaMismatch" role="alert" class="mt-6 text-sm text-wl-red">
+          This scenario uses a newer data format than the app supports — refusing to display it
+          rather than risk showing wrong figures. Please refresh.
         </div>
         <div v-else-if="dashboard" class="mt-6">
           <ConfidenceFanChart
@@ -171,8 +144,7 @@ const liveSummary = computed(() => {
             class="mt-2 text-xs text-wl-ink-muted"
           >
             Scored over
-            {{ dashboard.households_scored.toLocaleString() }} synthetic
-            households.
+            {{ dashboard.households_scored.toLocaleString() }} synthetic households.
           </p>
           <RevenueBreakdown
             :by-decile="dashboard.revenue_by_decile ?? []"
@@ -187,11 +159,7 @@ const liveSummary = computed(() => {
     </template>
 
     <!-- Loaded but empty: never a silent blank page. -->
-    <div
-      v-else-if="scenarioList"
-      role="status"
-      class="mt-6 text-sm text-wl-ink-muted"
-    >
+    <div v-else-if="scenarioList" role="status" class="mt-6 text-sm text-wl-ink-muted">
       No scenarios are available yet.
     </div>
   </main>

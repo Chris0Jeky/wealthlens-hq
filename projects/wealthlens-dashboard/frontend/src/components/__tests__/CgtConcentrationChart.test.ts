@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { mount } from "@vue/test-utils";
-import { createPinia, setActivePinia } from "pinia";
-import { ref, shallowRef } from "vue";
+import { describe, it, expect, vi, beforeEach } from "vitest"
+import { mount } from "@vue/test-utils"
+import { createPinia, setActivePinia } from "pinia"
+import { ref, shallowRef } from "vue"
 
 /**
  * CgtConcentrationChart tests — focused on the ADDITIVE concentration-curve
@@ -19,9 +19,9 @@ import { ref, shallowRef } from "vue";
  * (mirroring ChartComponents.test.ts) to drive rows/loading/error directly.
  */
 
-let mockRows: ReturnType<typeof shallowRef>;
-let mockLoading: ReturnType<typeof ref>;
-let mockError: ReturnType<typeof ref>;
+let mockRows: ReturnType<typeof shallowRef>
+let mockLoading: ReturnType<typeof ref>
+let mockError: ReturnType<typeof ref>
 
 vi.mock("@/composables/useChartData", () => ({
   useChartData: () => ({
@@ -29,7 +29,7 @@ vi.mock("@/composables/useChartData", () => ({
     loading: mockLoading,
     error: mockError,
   }),
-}));
+}))
 
 /**
  * Mock vue-echarts: VChart needs a full ECharts registry. Replace it with a
@@ -41,26 +41,26 @@ vi.mock("vue-echarts", () => ({
     template: '<div class="vchart-stub" />',
     props: ["option", "autoresize"],
   },
-}));
+}))
 
 vi.mock("echarts/core", () => ({
   use: vi.fn(),
-}));
+}))
 vi.mock("echarts/renderers", () => ({
   CanvasRenderer: {},
-}));
+}))
 vi.mock("echarts/charts", () => ({
   LineChart: {},
   BarChart: {},
-}));
+}))
 vi.mock("echarts/components", () => ({
   GridComponent: {},
   TooltipComponent: {},
   TitleComponent: {},
   LegendComponent: {},
-}));
+}))
 
-import CgtConcentrationChart from "@/components/CgtConcentrationChart.vue";
+import CgtConcentrationChart from "@/components/CgtConcentrationChart.vue"
 
 /**
  * Fixture mirroring the real HMRC CGT concentration columns. The cumulative
@@ -110,15 +110,15 @@ const CGT_ROWS = [
     cumul_gains_from_top_pct: 67.0,
     cumul_taxpayers_from_top_pct: 13.0,
   },
-];
+]
 
 describe("CgtConcentrationChart concentration-curve view (WL-011)", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    setActivePinia(createPinia());
-    mockRows = shallowRef(CGT_ROWS);
-    mockLoading = ref(false);
-    mockError = ref(null);
+    vi.clearAllMocks()
+    setActivePinia(createPinia())
+    mockRows = shallowRef(CGT_ROWS)
+    mockLoading = ref(false)
+    mockError = ref(null)
 
     Object.defineProperty(window, "matchMedia", {
       writable: true,
@@ -133,105 +133,96 @@ describe("CgtConcentrationChart concentration-curve view (WL-011)", () => {
         removeEventListener: vi.fn(),
         dispatchEvent: vi.fn(),
       })),
-    });
-  });
+    })
+  })
 
   it("defaults to the by-gain-band view (curve view is opt-in)", () => {
-    const wrapper = mount(CgtConcentrationChart);
+    const wrapper = mount(CgtConcentrationChart)
 
     // Two view tabs are present, with "By gain band" selected by default.
-    const tabs = wrapper.findAll("[role='tab']");
-    expect(tabs).toHaveLength(2);
-    const bandTab = tabs.find((t) => t.text() === "By gain band");
-    const curveTab = tabs.find((t) => t.text() === "Concentration curve");
-    expect(bandTab?.attributes("aria-selected")).toBe("true");
-    expect(curveTab?.attributes("aria-selected")).toBe("false");
+    const tabs = wrapper.findAll("[role='tab']")
+    expect(tabs).toHaveLength(2)
+    const bandTab = tabs.find((t) => t.text() === "By gain band")
+    const curveTab = tabs.find((t) => t.text() === "Concentration curve")
+    expect(bandTab?.attributes("aria-selected")).toBe("true")
+    expect(curveTab?.attributes("aria-selected")).toBe("false")
 
     // Default view renders the dual-axis chart and does NOT show the curve
     // view's accessible data table — behaviour is unchanged from before WL-011.
-    expect(wrapper.find(".vchart-stub").exists()).toBe(true);
-    expect(wrapper.text()).not.toContain("View data as table");
+    expect(wrapper.find(".vchart-stub").exists()).toBe(true)
+    expect(wrapper.text()).not.toContain("View data as table")
 
     // The default view keeps the original headline aria-label.
-    const label = wrapper.find("[role='img']").attributes("aria-label") ?? "";
-    expect(label).toContain("Dual-axis chart showing capital gains concentration");
-  });
+    const label = wrapper.find("[role='img']").attributes("aria-label") ?? ""
+    expect(label).toContain("Dual-axis chart showing capital gains concentration")
+  })
 
   it("renders the concentration curve and its data table when the tab is activated", async () => {
-    const wrapper = mount(CgtConcentrationChart);
+    const wrapper = mount(CgtConcentrationChart)
 
-    const curveTab = wrapper
-      .findAll("[role='tab']")
-      .find((t) => t.text() === "Concentration curve");
-    expect(curveTab).toBeDefined();
-    await curveTab!.trigger("click");
+    const curveTab = wrapper.findAll("[role='tab']").find((t) => t.text() === "Concentration curve")
+    expect(curveTab).toBeDefined()
+    await curveTab!.trigger("click")
 
     // The curve view shows a single chart plus the accessible data table.
-    expect(wrapper.findAll(".vchart-stub")).toHaveLength(1);
-    expect(wrapper.text()).toContain("View data as table");
-  });
+    expect(wrapper.findAll(".vchart-stub")).toHaveLength(1)
+    expect(wrapper.text()).toContain("View data as table")
+  })
 
   it("populates the data table with VERBATIM cumulative values, ordered from the top band down", async () => {
-    const wrapper = mount(CgtConcentrationChart);
+    const wrapper = mount(CgtConcentrationChart)
 
-    const curveTab = wrapper
-      .findAll("[role='tab']")
-      .find((t) => t.text() === "Concentration curve");
-    await curveTab!.trigger("click");
+    const curveTab = wrapper.findAll("[role='tab']").find((t) => t.text() === "Concentration curve")
+    await curveTab!.trigger("click")
 
     // One row per band (5 in the fixture), ordered by cumulative taxpayer share
     // ascending — i.e. top band (£1m+) first, bottom band (£0+) last.
-    const bodyRows = wrapper.findAll("tbody tr");
-    expect(bodyRows).toHaveLength(5);
+    const bodyRows = wrapper.findAll("tbody tr")
+    expect(bodyRows).toHaveLength(5)
 
-    const cellTexts = (rowIdx: number) =>
-      bodyRows[rowIdx].findAll("td").map((td) => td.text());
+    const cellTexts = (rowIdx: number) => bodyRows[rowIdx].findAll("td").map((td) => td.text())
 
     // Assert per-row CELL MAPPING (column order: band, cumul taxpayers, cumul
     // gains) — not just presence — so a field/column swap or reorder fails here.
     // Values are the verbatim cumulative figures; numeric columns are locale-
     // formatted (en-GB) by AccessibleDataTable.
-    expect(cellTexts(0)).toEqual(["£1m+", "1.5", "45"]);
-    expect(cellTexts(1)).toEqual(["£500k+", "13", "67"]);
-    expect(cellTexts(2)).toEqual(["£100k+", "22", "85"]);
-    expect(cellTexts(3)).toEqual(["£50k+", "40", "93"]);
+    expect(cellTexts(0)).toEqual(["£1m+", "1.5", "45"])
+    expect(cellTexts(1)).toEqual(["£500k+", "13", "67"])
+    expect(cellTexts(2)).toEqual(["£100k+", "22", "85"])
+    expect(cellTexts(3)).toEqual(["£50k+", "40", "93"])
     // Bottom band keeps the RAW >100 rounding artifact in the table verbatim
     // (it is only clamped for the plotted curve, never in the data table).
-    expect(cellTexts(4)).toEqual(["£0+", "100.1", "100.6"]);
-  });
+    expect(cellTexts(4)).toEqual(["£0+", "100.1", "100.6"])
+  })
 
   it("describes the curve with a data-driven aria-label reading the most concentrated (top) band", async () => {
-    const wrapper = mount(CgtConcentrationChart);
+    const wrapper = mount(CgtConcentrationChart)
 
-    const curveTab = wrapper
-      .findAll("[role='tab']")
-      .find((t) => t.text() === "Concentration curve");
-    await curveTab!.trigger("click");
+    const curveTab = wrapper.findAll("[role='tab']").find((t) => t.text() === "Concentration curve")
+    await curveTab!.trigger("click")
 
     // The curve view's role=img label reads the top band straight from the
     // data, mentions the equality line, and does not rely on colour alone.
-    const label = wrapper.find("[role='img']").attributes("aria-label") ?? "";
-    expect(label).toContain("Concentration curve plotting");
-    expect(label).toContain('"£1m+ or more" band');
-    expect(label).toContain("top 1.5% of taxpayers");
-    expect(label).toContain("45.0% of all gains");
-    expect(label).toContain("equality line");
-  });
+    const label = wrapper.find("[role='img']").attributes("aria-label") ?? ""
+    expect(label).toContain("Concentration curve plotting")
+    expect(label).toContain('"£1m+ or more" band')
+    expect(label).toContain("top 1.5% of taxpayers")
+    expect(label).toContain("45.0% of all gains")
+    expect(label).toContain("equality line")
+  })
 
   it("keeps the HMRC source citation on the curve view", async () => {
-    const wrapper = mount(CgtConcentrationChart);
+    const wrapper = mount(CgtConcentrationChart)
 
-    const curveTab = wrapper
-      .findAll("[role='tab']")
-      .find((t) => t.text() === "Concentration curve");
-    await curveTab!.trigger("click");
+    const curveTab = wrapper.findAll("[role='tab']").find((t) => t.text() === "Concentration curve")
+    await curveTab!.trigger("click")
 
     const link = wrapper.find(
       "a[href='https://www.gov.uk/government/statistics/capital-gains-tax-statistics']",
-    );
-    expect(link.exists()).toBe(true);
-    expect(wrapper.text()).toContain("accessed 2026-05-14");
-  });
+    )
+    expect(link.exists()).toBe(true)
+    expect(wrapper.text()).toContain("accessed 2026-05-14")
+  })
 
   it("shows a graceful message when the curve view has no plottable rows", async () => {
     // The real data uses an explicit null for a missing cumulative taxpayer
@@ -246,19 +237,15 @@ describe("CgtConcentrationChart concentration-curve view (WL-011)", () => {
         cumul_gains_from_top_pct: 100.0,
         cumul_taxpayers_from_top_pct: null,
       },
-    ];
-    const wrapper = mount(CgtConcentrationChart);
+    ]
+    const wrapper = mount(CgtConcentrationChart)
 
-    const curveTab = wrapper
-      .findAll("[role='tab']")
-      .find((t) => t.text() === "Concentration curve");
-    await curveTab!.trigger("click");
+    const curveTab = wrapper.findAll("[role='tab']").find((t) => t.text() === "Concentration curve")
+    await curveTab!.trigger("click")
 
-    expect(wrapper.text()).toContain(
-      "No concentration-curve data available for this chart.",
-    );
-    expect(wrapper.text()).not.toContain("View data as table");
-  });
+    expect(wrapper.text()).toContain("No concentration-curve data available for this chart.")
+    expect(wrapper.text()).not.toContain("View data as table")
+  })
 
   it("drops a band with a null cumulative-taxpayer value from the curve, not plots it at the origin", async () => {
     // Mirrors the real data: the "£3,000+" band has cumul_taxpayers_from_top_pct
@@ -276,94 +263,86 @@ describe("CgtConcentrationChart concentration-curve view (WL-011)", () => {
         cumul_gains_from_top_pct: 100.1,
         cumul_taxpayers_from_top_pct: null,
       },
-    ];
-    const wrapper = mount(CgtConcentrationChart);
+    ]
+    const wrapper = mount(CgtConcentrationChart)
 
-    const curveTab = wrapper
-      .findAll("[role='tab']")
-      .find((t) => t.text() === "Concentration curve");
-    await curveTab!.trigger("click");
+    const curveTab = wrapper.findAll("[role='tab']").find((t) => t.text() === "Concentration curve")
+    await curveTab!.trigger("click")
 
     // The null-taxpayer band is NOT plotted (still 5 valid rows, not 6) and does
     // not appear in the curve table.
-    const bodyRows = wrapper.findAll("tbody tr");
-    expect(bodyRows).toHaveLength(5);
-    const tableText = bodyRows.map((r) => r.text()).join(" ");
-    expect(tableText).not.toContain("£3k+");
+    const bodyRows = wrapper.findAll("tbody tr")
+    expect(bodyRows).toHaveLength(5)
+    const tableText = bodyRows.map((r) => r.text()).join(" ")
+    expect(tableText).not.toContain("£3k+")
 
     // The headline aria-label still reads the genuine top band, not the fabricated 0%.
-    const label = wrapper.find("[role='img']").attributes("aria-label") ?? "";
-    expect(label).toContain('"£1m+ or more" band');
-    expect(label).toContain("top 1.5% of taxpayers");
-    expect(label).not.toContain("0.0% of taxpayers");
-  });
+    const label = wrapper.find("[role='img']").attributes("aria-label") ?? ""
+    expect(label).toContain('"£1m+ or more" band')
+    expect(label).toContain("top 1.5% of taxpayers")
+    expect(label).not.toContain("0.0% of taxpayers")
+  })
 
   it("clamps only the plotted >100 point, keeping the raw value in the table", async () => {
-    const wrapper = mount(CgtConcentrationChart);
+    const wrapper = mount(CgtConcentrationChart)
 
-    const curveTab = wrapper
-      .findAll("[role='tab']")
-      .find((t) => t.text() === "Concentration curve");
-    await curveTab!.trigger("click");
+    const curveTab = wrapper.findAll("[role='tab']").find((t) => t.text() === "Concentration curve")
+    await curveTab!.trigger("click")
 
     // Read the curve VChart's option directly (vue-echarts is stubbed with an
     // `option` prop) to assert the clamp is applied to the PLOTTED series.
-    const vchart = wrapper.findComponent({ name: "VChart" });
+    const vchart = wrapper.findComponent({ name: "VChart" })
     const option = vchart.props("option") as {
-      series: { name: string; data: number[][] }[];
-    };
-    const curve = option.series.find((s) => s.name === "Concentration curve");
+      series: { name: string; data: number[][] }[]
+    }
+    const curve = option.series.find((s) => s.name === "Concentration curve")
     // Bottom band (£0+, raw 100.1/100.6) is last after the ascending sort and is
     // clamped to the (100, 100) corner for the plot.
-    expect(curve?.data[curve.data.length - 1]).toEqual([100, 100]);
+    expect(curve?.data[curve.data.length - 1]).toEqual([100, 100])
     // The equality reference line is the fixed static diagonal.
-    const equality = option.series.find((s) => s.name === "Equality line (y = x)");
+    const equality = option.series.find((s) => s.name === "Equality line (y = x)")
     expect(equality?.data).toEqual([
       [0, 0],
       [100, 100],
-    ]);
+    ])
     // (The verbatim 100.1 / 100.6 staying in the TABLE is asserted above.)
-  });
+  })
 
   it("keeps the exposed chart ref wired on the curve tab so Export targets the visible chart", async () => {
     // TabGroup mounts panel slots with v-if, so switching tabs unmounts the
     // bands VChart. Both VCharts carry ref="chart"; the exposed `chart` must stay
     // populated after the switch, otherwise useChartExport would export a
     // disposed/null instance on the curve tab. (gemini HIGH / codex P2)
-    const wrapper = mount(CgtConcentrationChart);
+    const wrapper = mount(CgtConcentrationChart)
     // Default (bands) view: the ref points at the mounted band chart.
-    expect((wrapper.vm as unknown as { chart: unknown }).chart).toBeTruthy();
+    expect((wrapper.vm as unknown as { chart: unknown }).chart).toBeTruthy()
 
-    const curveTab = wrapper
-      .findAll("[role='tab']")
-      .find((t) => t.text() === "Concentration curve");
-    await curveTab!.trigger("click");
+    const curveTab = wrapper.findAll("[role='tab']").find((t) => t.text() === "Concentration curve")
+    await curveTab!.trigger("click")
 
     // After switching, the ref must still resolve to the now-visible curve chart.
-    expect((wrapper.vm as unknown as { chart: unknown }).chart).toBeTruthy();
-  });
+    expect((wrapper.vm as unknown as { chart: unknown }).chart).toBeTruthy()
+  })
 
   it("tooltip formatter is null-safe (returns empty string for missing/partial params)", async () => {
-    const wrapper = mount(CgtConcentrationChart);
-    const curveTab = wrapper
-      .findAll("[role='tab']")
-      .find((t) => t.text() === "Concentration curve");
-    await curveTab!.trigger("click");
+    const wrapper = mount(CgtConcentrationChart)
+    const curveTab = wrapper.findAll("[role='tab']").find((t) => t.text() === "Concentration curve")
+    await curveTab!.trigger("click")
 
-    const vchart = wrapper.findComponent({ name: "VChart" });
+    const vchart = wrapper.findComponent({ name: "VChart" })
     const option = vchart.props("option") as {
-      tooltip: { formatter: (p: unknown) => string };
-    };
-    const fmt = option.tooltip.formatter;
+      tooltip: { formatter: (p: unknown) => string }
+    }
+    const fmt = option.tooltip.formatter
     // ECharts may call the formatter with no/partial params in some contexts;
     // these must not throw and must yield an empty tooltip.
-    expect(fmt(undefined)).toBe("");
-    expect(fmt(null)).toBe("");
-    expect(fmt({})).toBe("");
-    expect(fmt({ dataIndex: 999 })).toBe(""); // out-of-range index
+    expect(fmt(undefined)).toBe("")
+    expect(fmt(null)).toBe("")
+    expect(fmt({})).toBe("")
+    expect(fmt({ dataIndex: 999 })).toBe("") // out-of-range index
     // A valid index still renders the verbatim values.
-    const ok = fmt({ dataIndex: 0 });
-    expect(ok).toContain("Cumulative taxpayers from top:");
-    expect(ok).toContain("Cumulative gains from top:");
-  });
-});
+    const ok = fmt({ dataIndex: 0 })
+    expect(ok).toContain("Cumulative taxpayers from top:")
+    expect(ok).toContain("Cumulative gains from top:")
+  })
+})

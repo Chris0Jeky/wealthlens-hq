@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch } from "vue"
 
 const props = withDefaults(
   defineProps<{
@@ -7,11 +7,11 @@ const props = withDefaults(
     placeholder?: string
     debounceMs?: number
   }>(),
-  { placeholder: 'Search...', debounceMs: 300 },
+  { placeholder: "Search...", debounceMs: 300 },
 )
 
 const emit = defineEmits<{
-  (e: 'update:modelValue', value: string): void
+  (e: "update:modelValue", value: string): void
 }>()
 
 const localValue = ref(props.modelValue)
@@ -30,13 +30,13 @@ function onInput(event: Event) {
 
   if (timeout) clearTimeout(timeout)
   timeout = setTimeout(() => {
-    emit('update:modelValue', val)
+    emit("update:modelValue", val)
   }, props.debounceMs)
 }
 
 function clear() {
-  localValue.value = ''
-  emit('update:modelValue', '')
+  localValue.value = ""
+  emit("update:modelValue", "")
   if (timeout) clearTimeout(timeout)
 }
 </script>
@@ -53,7 +53,10 @@ function clear() {
       class="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-2 pl-10 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
       @input="onInput"
     />
-    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" aria-hidden="true">
+    <span
+      class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+      aria-hidden="true"
+    >
       &#128269;
     </span>
     <button

@@ -1,4 +1,4 @@
-import { watchEffect, onScopeDispose, type Ref, isRef, computed } from 'vue'
+import { watchEffect, onScopeDispose, type Ref, isRef, computed } from "vue"
 
 /**
  * Options for the usePageMeta composable.
@@ -18,11 +18,11 @@ export interface PageMetaOptions {
   /** Alt text for the social share image */
   imageAlt?: string | Ref<string | undefined>
   /** Twitter card type: "summary" or "summary_large_image" */
-  twitterCard?: 'summary' | 'summary_large_image'
+  twitterCard?: "summary" | "summary_large_image"
 }
 
-const SITE_NAME = 'WealthLens UK'
-const BASE_URL = 'https://chris0jeky.github.io/wealthlens-hq'
+const SITE_NAME = "WealthLens UK"
+const BASE_URL = "https://chris0jeky.github.io/wealthlens-hq"
 
 /** Unwrap a value that may or may not be a Ref. */
 function unwrap(value: string | Ref<string | undefined> | undefined): string | undefined {
@@ -52,7 +52,7 @@ function unwrap(value: string | Ref<string | undefined> | undefined): string | u
  */
 export function usePageMeta(options: PageMetaOptions): void {
   // SSR guard: bail out when document is not available (e.g. Node.js / SSR)
-  if (typeof document === 'undefined') return
+  if (typeof document === "undefined") return
 
   /**
    * Tracks all <meta> elements created by this instance for cleanup.
@@ -65,8 +65,8 @@ export function usePageMeta(options: PageMetaOptions): void {
    * Create a new <meta> element owned exclusively by this instance.
    * Never queries the DOM for existing elements to prevent multi-instance conflicts.
    */
-  function createOwnedMeta(attr: 'property' | 'name', value: string): HTMLMetaElement {
-    const el = document.createElement('meta')
+  function createOwnedMeta(attr: "property" | "name", value: string): HTMLMetaElement {
+    const el = document.createElement("meta")
     el.setAttribute(attr, value)
     document.head.appendChild(el)
     managedElements.push(el)
@@ -77,10 +77,8 @@ export function usePageMeta(options: PageMetaOptions): void {
    * Find a meta element that this instance previously created (by attribute key).
    * Only searches within managedElements, never the global DOM.
    */
-  function findOwned(attr: 'property' | 'name', key: string): HTMLMetaElement | undefined {
-    return managedElements.find(
-      (el) => el.getAttribute(attr) === key,
-    )
+  function findOwned(attr: "property" | "name", key: string): HTMLMetaElement | undefined {
+    return managedElements.find((el) => el.getAttribute(attr) === key)
   }
 
   /**
@@ -89,14 +87,14 @@ export function usePageMeta(options: PageMetaOptions): void {
    * If content is falsy, removes the element if it exists.
    * This ensures stale tags are always cleaned up (e.g. imageAlt going from truthy to falsy).
    */
-  function setMeta(attr: 'property' | 'name', key: string, content: string | undefined): void {
+  function setMeta(attr: "property" | "name", key: string, content: string | undefined): void {
     const existing = findOwned(attr, key)
     if (content) {
       if (existing) {
-        existing.setAttribute('content', content)
+        existing.setAttribute("content", content)
       } else {
         const el = createOwnedMeta(attr, key)
-        el.setAttribute('content', content)
+        el.setAttribute("content", content)
       }
     } else {
       // Remove the element if we own it and content is now empty
@@ -121,33 +119,33 @@ export function usePageMeta(options: PageMetaOptions): void {
     const url = resolvedUrl.value
     const image = resolvedImage.value
     const imageAlt = resolvedImageAlt.value
-    const ogType = options.ogType ?? 'website'
-    const twitterCard = options.twitterCard ?? 'summary_large_image'
+    const ogType = options.ogType ?? "website"
+    const twitterCard = options.twitterCard ?? "summary_large_image"
 
     // Document title
     const fullTitle = title ? `${title} — ${SITE_NAME}` : SITE_NAME
     document.title = fullTitle
 
     // Standard meta description
-    setMeta('name', 'description', description)
+    setMeta("name", "description", description)
 
     // OpenGraph tags
-    setMeta('property', 'og:title', title ?? SITE_NAME)
-    setMeta('property', 'og:description', description)
-    setMeta('property', 'og:type', ogType)
-    setMeta('property', 'og:url', url ?? BASE_URL)
-    setMeta('property', 'og:image', image)
-    setMeta('property', 'og:site_name', SITE_NAME)
+    setMeta("property", "og:title", title ?? SITE_NAME)
+    setMeta("property", "og:description", description)
+    setMeta("property", "og:type", ogType)
+    setMeta("property", "og:url", url ?? BASE_URL)
+    setMeta("property", "og:image", image)
+    setMeta("property", "og:site_name", SITE_NAME)
 
     // Twitter Card tags
-    setMeta('name', 'twitter:card', twitterCard)
-    setMeta('name', 'twitter:title', title ?? SITE_NAME)
-    setMeta('name', 'twitter:description', description)
-    setMeta('name', 'twitter:image', image)
+    setMeta("name", "twitter:card", twitterCard)
+    setMeta("name", "twitter:title", title ?? SITE_NAME)
+    setMeta("name", "twitter:description", description)
+    setMeta("name", "twitter:image", image)
 
     // Image alt — always called unconditionally so stale alt tags are removed
-    setMeta('name', 'twitter:image:alt', imageAlt)
-    setMeta('property', 'og:image:alt', imageAlt)
+    setMeta("name", "twitter:image:alt", imageAlt)
+    setMeta("property", "og:image:alt", imageAlt)
   })
 
   // Cleanup: remove only the meta elements this instance created

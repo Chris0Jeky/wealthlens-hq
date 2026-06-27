@@ -1,22 +1,16 @@
 <script setup lang="ts">
-import { ref, watch, nextTick } from 'vue'
-import { useRouter } from 'vue-router'
-import { useDatasetSearch, DATASET_CATEGORIES } from '@/composables/useDatasetSearch'
-import { isValidChart } from '@/utils/chartConstants'
-import type { DatasetEntry } from '@/composables/useDatasetSearch'
+import { ref, watch, nextTick } from "vue"
+import { useRouter } from "vue-router"
+import { useDatasetSearch, DATASET_CATEGORIES } from "@/composables/useDatasetSearch"
+import { isValidChart } from "@/utils/chartConstants"
+import type { DatasetEntry } from "@/composables/useDatasetSearch"
 
 const router = useRouter()
 const emit = defineEmits<{
-  (e: 'filtered-change', payload: { active: boolean; names: string[] }): void
+  (e: "filtered-change", payload: { active: boolean; names: string[] }): void
 }>()
-const {
-  query,
-  selectedCategories,
-  filteredDatasets,
-  isSearchActive,
-  resultCount,
-  clearSearch,
-} = useDatasetSearch(200)
+const { query, selectedCategories, filteredDatasets, isSearchActive, resultCount, clearSearch } =
+  useDatasetSearch(200)
 
 // Keyboard navigation state
 const activeIndex = ref(-1)
@@ -30,7 +24,7 @@ watch(filteredDatasets, () => {
 watch(
   [filteredDatasets, isSearchActive],
   () => {
-    emit('filtered-change', {
+    emit("filtered-change", {
       active: isSearchActive.value,
       names: filteredDatasets.value.map((entry) => entry.name),
     })
@@ -39,7 +33,7 @@ watch(
 )
 
 function onKeydown(event: KeyboardEvent) {
-  if (event.key === 'Escape') {
+  if (event.key === "Escape") {
     event.preventDefault()
     clearSearch()
     return
@@ -49,17 +43,17 @@ function onKeydown(event: KeyboardEvent) {
   if (count === 0) return
 
   switch (event.key) {
-    case 'ArrowDown':
+    case "ArrowDown":
       event.preventDefault()
       activeIndex.value = Math.min(activeIndex.value + 1, count - 1)
       scrollActiveIntoView()
       break
-    case 'ArrowUp':
+    case "ArrowUp":
       event.preventDefault()
       activeIndex.value = Math.max(activeIndex.value - 1, 0)
       scrollActiveIntoView()
       break
-    case 'Enter':
+    case "Enter":
       event.preventDefault()
       if (activeIndex.value >= 0 && activeIndex.value < count) {
         navigateToDataset(filteredDatasets.value[activeIndex.value])
@@ -71,8 +65,8 @@ function onKeydown(event: KeyboardEvent) {
 function scrollActiveIntoView() {
   nextTick(() => {
     const active = resultsRef.value?.querySelector('[data-active="true"]')
-    if (active && typeof active.scrollIntoView === 'function') {
-      active.scrollIntoView({ block: 'nearest' })
+    if (active && typeof active.scrollIntoView === "function") {
+      active.scrollIntoView({ block: "nearest" })
     }
   })
 }
@@ -93,10 +87,7 @@ function toggleCategory(id: string) {
 </script>
 
 <template>
-  <section
-    class="mb-8"
-    aria-labelledby="dataset-search-heading"
-  >
+  <section class="mb-8" aria-labelledby="dataset-search-heading">
     <h2 id="dataset-search-heading" class="sr-only">Search datasets</h2>
 
     <!-- Search input -->
@@ -115,7 +106,9 @@ function toggleCategory(id: string) {
         role="combobox"
         :aria-expanded="isSearchActive ? 'true' : 'false'"
         :aria-controls="isSearchActive ? 'dataset-search-results' : undefined"
-        :aria-activedescendant="activeIndex >= 0 && isSearchActive ? `search-result-${activeIndex}` : undefined"
+        :aria-activedescendant="
+          activeIndex >= 0 && isSearchActive ? `search-result-${activeIndex}` : undefined
+        "
         maxlength="200"
         @keydown="onKeydown"
       />
@@ -145,8 +138,15 @@ function toggleCategory(id: string) {
         class="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--wl-ink-muted)] hover:text-[var(--wl-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--wl-teal)] rounded"
         @click="clearSearch"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">
-          <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 20 20"
+          fill="currentColor"
+          class="w-4 h-4"
+        >
+          <path
+            d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z"
+          />
         </svg>
       </button>
     </div>
@@ -154,20 +154,18 @@ function toggleCategory(id: string) {
     <!-- Category filter chips -->
     <fieldset class="mb-4">
       <legend class="sr-only">Filter by category</legend>
-      <div
-        class="flex flex-wrap gap-2"
-        role="group"
-        aria-label="Dataset categories"
-      >
+      <div class="flex flex-wrap gap-2" role="group" aria-label="Dataset categories">
         <button
           v-for="cat in DATASET_CATEGORIES"
           :key="cat.id"
           type="button"
           :aria-pressed="selectedCategories.includes(cat.id)"
           class="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium transition-colors border focus:outline-none focus:ring-2 focus:ring-[var(--wl-teal)] focus:ring-offset-1"
-          :class="selectedCategories.includes(cat.id)
-            ? 'bg-[var(--wl-red)] text-white border-[var(--wl-red)]'
-            : 'bg-[var(--wl-paper)] text-[var(--wl-ink-muted)] border-[var(--wl-rule)] hover:border-[var(--wl-ink-muted)]'"
+          :class="
+            selectedCategories.includes(cat.id)
+              ? 'bg-[var(--wl-red)] text-white border-[var(--wl-red)]'
+              : 'bg-[var(--wl-paper)] text-[var(--wl-ink-muted)] border-[var(--wl-rule)] hover:border-[var(--wl-ink-muted)]'
+          "
           @click="toggleCategory(cat.id)"
         >
           {{ cat.label }}
@@ -176,13 +174,8 @@ function toggleCategory(id: string) {
     </fieldset>
 
     <!-- Result count announcement for screen readers -->
-    <div
-      id="search-result-count"
-      class="sr-only"
-      aria-live="polite"
-      aria-atomic="true"
-    >
-      {{ isSearchActive ? `${resultCount} dataset${resultCount === 1 ? '' : 's'} found` : '' }}
+    <div id="search-result-count" class="sr-only" aria-live="polite" aria-atomic="true">
+      {{ isSearchActive ? `${resultCount} dataset${resultCount === 1 ? "" : "s"} found` : "" }}
     </div>
 
     <!-- Search results -->
@@ -211,9 +204,11 @@ function toggleCategory(id: string) {
         :aria-selected="index === activeIndex"
         :data-active="index === activeIndex"
         class="rounded-lg border p-4 cursor-pointer transition-all"
-        :class="index === activeIndex
-          ? 'border-[var(--wl-teal)] bg-[var(--wl-teal)]/5 shadow-sm'
-          : 'border-[var(--wl-rule)] hover:border-[var(--wl-ink-muted)] hover:shadow-sm'"
+        :class="
+          index === activeIndex
+            ? 'border-[var(--wl-teal)] bg-[var(--wl-teal)]/5 shadow-sm'
+            : 'border-[var(--wl-rule)] hover:border-[var(--wl-ink-muted)] hover:shadow-sm'
+        "
         tabindex="-1"
         @click="navigateToDataset(entry)"
         @mouseenter="activeIndex = index"

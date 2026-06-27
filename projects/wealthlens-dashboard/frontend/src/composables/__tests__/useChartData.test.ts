@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { mount, flushPromises } from "@vue/test-utils";
-import { createPinia, setActivePinia } from "pinia";
-import { defineComponent } from "vue";
+import { describe, it, expect, vi, beforeEach } from "vitest"
+import { mount, flushPromises } from "@vue/test-utils"
+import { createPinia, setActivePinia } from "pinia"
+import { defineComponent } from "vue"
 
 /**
  * useChartData must request the FULL dataset. The live API paginates with a
@@ -16,41 +16,41 @@ const fetchDataset = vi.fn().mockResolvedValue({
   limit: 1000,
   total: 1,
   total_pages: 1,
-});
+})
 
 vi.mock("@/stores/data", () => ({
   useDataStore: () => ({ fetchDataset }),
-}));
+}))
 
-import { useChartData } from "@/composables/useChartData";
+import { useChartData } from "@/composables/useChartData"
 
 // Minimal host so the composable's onMounted hook actually fires.
 const Host = defineComponent({
   props: { name: { type: String, required: true } },
   setup(props) {
-    return useChartData(props.name);
+    return useChartData(props.name)
   },
   template: "<div />",
-});
+})
 
 describe("useChartData", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    setActivePinia(createPinia());
-  });
+    vi.clearAllMocks()
+    setActivePinia(createPinia())
+  })
 
   it("requests the full dataset (limit 1000), not the paginated default of 100", async () => {
-    mount(Host, { props: { name: "wealth-shares" } });
-    await flushPromises();
-    expect(fetchDataset).toHaveBeenCalledWith("wealth-shares", 1, 1000);
-  });
+    mount(Host, { props: { name: "wealth-shares" } })
+    await flushPromises()
+    expect(fetchDataset).toHaveBeenCalledWith("wealth-shares", 1, 1000)
+  })
 
   it("exposes the returned rows once loaded", async () => {
-    const wrapper = mount(Host, { props: { name: "wealth-shares" } });
-    await flushPromises();
-    expect((wrapper.vm as unknown as { rows: unknown[] }).rows).toHaveLength(1);
-    expect((wrapper.vm as unknown as { loading: boolean }).loading).toBe(false);
-  });
+    const wrapper = mount(Host, { props: { name: "wealth-shares" } })
+    await flushPromises()
+    expect((wrapper.vm as unknown as { rows: unknown[] }).rows).toHaveLength(1)
+    expect((wrapper.vm as unknown as { loading: boolean }).loading).toBe(false)
+  })
 
   it("warns loudly if a dataset ever exceeds the 1000-row fetch ceiling", async () => {
     fetchDataset.mockResolvedValueOnce({
@@ -59,11 +59,11 @@ describe("useChartData", () => {
       limit: 1000,
       total: 2000,
       total_pages: 2,
-    });
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-    mount(Host, { props: { name: "huge-dataset" } });
-    await flushPromises();
-    expect(warn).toHaveBeenCalledWith(expect.stringContaining("truncated"));
-    warn.mockRestore();
-  });
-});
+    })
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {})
+    mount(Host, { props: { name: "huge-dataset" } })
+    await flushPromises()
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining("truncated"))
+    warn.mockRestore()
+  })
+})

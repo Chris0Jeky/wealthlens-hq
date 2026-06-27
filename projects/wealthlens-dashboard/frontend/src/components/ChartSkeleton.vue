@@ -6,10 +6,7 @@ defineProps<{
 </script>
 
 <template>
-  <div
-    class="w-full motion-safe:animate-pulse"
-    role="status"
-  >
+  <div class="w-full motion-safe:animate-pulse" role="status">
     <div class="h-6 w-48 bg-gray-200 rounded mb-4" />
     <div class="h-4 w-64 bg-gray-200 rounded mb-6" />
     <div class="flex items-end gap-2 h-64">

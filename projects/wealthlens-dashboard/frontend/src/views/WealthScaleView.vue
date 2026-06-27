@@ -7,8 +7,8 @@
  *
  * Route: /tools/wealth-scale
  */
-import WealthScaleScroller from "@/components/WealthScaleScroller.vue";
-import SourceCitation from "@/components/SourceCitation.vue";
+import WealthScaleScroller from "@/components/WealthScaleScroller.vue"
+import SourceCitation from "@/components/SourceCitation.vue"
 </script>
 
 <template>
@@ -25,9 +25,7 @@ import SourceCitation from "@/components/SourceCitation.vue";
           <span class="crumb__sep" aria-hidden="true">/</span>
         </li>
         <li class="crumb__item">
-          <span class="crumb__current" aria-current="page">
-            Wealth to Scale
-          </span>
+          <span class="crumb__current" aria-current="page"> Wealth to Scale </span>
         </li>
       </ol>
     </nav>
@@ -37,15 +35,13 @@ import SourceCitation from "@/components/SourceCitation.vue";
       <h1 class="scale-page__title">1 pixel = £1,000</h1>
       <p class="scale-page__subtitle">UK household wealth, to scale</p>
       <p class="scale-page__description">
-        Scroll horizontally to explore how wealth is distributed across UK
-        households. Each pixel you scroll represents £1,000. The median
-        household sits at just 302 pixels from the left — but the richest
-        individuals would be millions of pixels away.
+        Scroll horizontally to explore how wealth is distributed across UK households. Each pixel
+        you scroll represents £1,000. The median household sits at just 302 pixels from the left —
+        but the richest individuals would be millions of pixels away.
       </p>
       <p class="scale-page__instructions">
-        <strong>How to use:</strong> Scroll horizontally, swipe on mobile,
-        or use arrow keys (Shift+Arrow for larger jumps). Press Home/End to
-        jump to the start or end.
+        <strong>How to use:</strong> Scroll horizontally, swipe on mobile, or use arrow keys
+        (Shift+Arrow for larger jumps). Press Home/End to jump to the start or end.
       </p>
     </header>
 
@@ -55,9 +51,9 @@ import SourceCitation from "@/components/SourceCitation.vue";
     <!-- Disclaimer -->
     <aside class="scale-page__disclaimer" aria-label="Data disclaimer">
       <p>
-        Illustrative. Based on ONS Wealth and Assets Survey Round 7 (2018–2020).
-        Individual circumstances vary. Wealth includes property, pensions,
-        financial assets, and physical possessions minus debts.
+        Illustrative. Based on ONS Wealth and Assets Survey Round 7 (2018–2020). Individual
+        circumstances vary. Wealth includes property, pensions, financial assets, and physical
+        possessions minus debts.
       </p>
     </aside>
 

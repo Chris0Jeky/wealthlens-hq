@@ -18,22 +18,22 @@
  * an accessible tab group, and an AccessibleDataTable fallback for the band
  * view (WCAG 1.1.1 non-text content).
  */
-import { computed, onMounted, ref } from "vue";
-import { use } from "echarts/core";
-import { CanvasRenderer } from "echarts/renderers";
-import { PieChart, BarChart } from "echarts/charts";
+import { computed, onMounted, ref } from "vue"
+import { use } from "echarts/core"
+import { CanvasRenderer } from "echarts/renderers"
+import { PieChart, BarChart } from "echarts/charts"
 import {
   GridComponent,
   TooltipComponent,
   TitleComponent,
   LegendComponent,
-} from "echarts/components";
-import VChart from "vue-echarts";
-import TabGroup, { type Tab } from "@/components/TabGroup.vue";
-import AccessibleDataTable from "@/components/AccessibleDataTable.vue";
-import type { DatasetRow } from "@/stores/data";
-import { escapeHtml } from "@/utils/chart";
-import { fetchWithRetry } from "@/utils/fetchWithRetry";
+} from "echarts/components"
+import VChart from "vue-echarts"
+import TabGroup, { type Tab } from "@/components/TabGroup.vue"
+import AccessibleDataTable from "@/components/AccessibleDataTable.vue"
+import type { DatasetRow } from "@/stores/data"
+import { escapeHtml } from "@/utils/chart"
+import { fetchWithRetry } from "@/utils/fetchWithRetry"
 
 // Register only the ECharts modules we need (tree-shaking)
 use([
@@ -44,65 +44,64 @@ use([
   TooltipComponent,
   TitleComponent,
   LegendComponent,
-]);
+])
 
 /** Shape of the static JSON data file. */
 interface IhtData {
   meta: {
-    source: string;
-    url: string;
-    accessed: string;
-    notes: string;
-  };
+    source: string
+    url: string
+    accessed: string
+    notes: string
+  }
   summary: {
-    total_deaths: number;
-    estates_liable: number;
-    liability_rate_pct: number;
-    total_iht_revenue_bn: number;
-    nil_rate_band: number;
-    residence_nil_rate_band: number;
-  };
+    total_deaths: number
+    estates_liable: number
+    liability_rate_pct: number
+    total_iht_revenue_bn: number
+    nil_rate_band: number
+    residence_nil_rate_band: number
+  }
   by_year: Array<{
-    year: string;
-    deaths: number;
-    liable: number;
-    rate_pct: number;
-    revenue_bn: number;
-  }>;
+    year: string
+    deaths: number
+    liable: number
+    rate_pct: number
+    revenue_bn: number
+  }>
   by_estate_size: Array<{
-    band: string;
-    estates: number;
-    tax_paid_m: number;
-  }>;
+    band: string
+    estates: number
+    tax_paid_m: number
+  }>
 }
 
-const data = ref<IhtData | null>(null);
-const loading = ref(true);
-const error = ref<string | null>(null);
+const data = ref<IhtData | null>(null)
+const loading = ref(true)
+const error = ref<string | null>(null)
 
 /**
  * Respect prefers-reduced-motion (WCAG 2.3.3).
  * Disables ECharts animations when the user has requested reduced motion.
  */
 const prefersReducedMotion =
-  typeof window !== "undefined" &&
-  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches
 
 // WCAG AA colors — graphical objects require 3:1 minimum
 // #b91c1c (red-700) contrast ~5.7:1 — IHT liable (accent)
 // #1a56db (blue) contrast ~7.2:1 — not liable / bar fill
-const COLOR_LIABLE = "#b91c1c";
-const COLOR_NOT_LIABLE = "#1a56db";
-const COLOR_BAR = "#1a56db";
+const COLOR_LIABLE = "#b91c1c"
+const COLOR_NOT_LIABLE = "#1a56db"
+const COLOR_BAR = "#1a56db"
 
 const isFiniteNumber = (value: unknown): value is number =>
-  typeof value === "number" && Number.isFinite(value);
+  typeof value === "number" && Number.isFinite(value)
 
 const isValidIhtData = (value: unknown): value is IhtData => {
-  if (typeof value !== "object" || value === null) return false;
+  if (typeof value !== "object" || value === null) return false
 
-  const candidate = value as Partial<IhtData>;
-  const summary = candidate.summary;
+  const candidate = value as Partial<IhtData>
+  const summary = candidate.summary
 
   return (
     typeof candidate.meta?.source === "string" &&
@@ -134,29 +133,28 @@ const isValidIhtData = (value: unknown): value is IhtData => {
         isFiniteNumber(row.estates) &&
         isFiniteNumber(row.tax_paid_m),
     )
-  );
-};
+  )
+}
 
 onMounted(async () => {
   try {
-    const baseUrl = import.meta.env.BASE_URL ?? "/";
-    const res = await fetchWithRetry(`${baseUrl}data/inheritance-tax.json`, undefined, 0);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const parsed = await res.json();
+    const baseUrl = import.meta.env.BASE_URL ?? "/"
+    const res = await fetchWithRetry(`${baseUrl}data/inheritance-tax.json`, undefined, 0)
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    const parsed = await res.json()
     if (!isValidIhtData(parsed)) {
-      throw new Error("Unexpected data format");
+      throw new Error("Unexpected data format")
     }
-    data.value = parsed;
+    data.value = parsed
   } catch (e) {
-    error.value =
-      e instanceof Error ? e.message : "Failed to load inheritance tax data";
+    error.value = e instanceof Error ? e.message : "Failed to load inheritance tax data"
   } finally {
-    loading.value = false;
+    loading.value = false
   }
-});
+})
 
 /** Whether we have data to show. */
-const hasData = computed(() => data.value !== null);
+const hasData = computed(() => data.value !== null)
 
 /**
  * Additive view toggle. Defaults to "trend" so the existing dual-panel trend
@@ -166,14 +164,14 @@ const hasData = computed(() => data.value !== null);
 const views: Tab[] = [
   { id: "trend", label: "Trend" },
   { id: "bands", label: "By estate size" },
-];
-const activeView = ref<"trend" | "bands">("trend");
+]
+const activeView = ref<"trend" | "bands">("trend")
 
 /** Donut chart option — 4.6% pay IHT vs 95.4% don't. */
 const donutOption = computed(() => {
-  if (!data.value) return {};
-  const { liability_rate_pct } = data.value.summary;
-  const notLiable = +(100 - liability_rate_pct).toFixed(1);
+  if (!data.value) return {}
+  const { liability_rate_pct } = data.value.summary
+  const notLiable = +(100 - liability_rate_pct).toFixed(1)
 
   return {
     animation: !prefersReducedMotion,
@@ -190,7 +188,7 @@ const donutOption = computed(() => {
     tooltip: {
       trigger: "item" as const,
       formatter: (params: { name: string; value: number; percent: number }) => {
-        return `${escapeHtml(params.name)}: ${params.value}%`;
+        return `${escapeHtml(params.name)}: ${params.value}%`
       },
     },
     legend: {
@@ -237,14 +235,14 @@ const donutOption = computed(() => {
         ],
       },
     ],
-  };
-});
+  }
+})
 
 /** Bar chart option — IHT liability rate by year. */
 const barOption = computed(() => {
-  if (!data.value) return {};
-  const years = data.value.by_year.map((d) => d.year);
-  const rates = data.value.by_year.map((d) => d.rate_pct);
+  if (!data.value) return {}
+  const years = data.value.by_year.map((d) => d.year)
+  const rates = data.value.by_year.map((d) => d.rate_pct)
 
   return {
     animation: !prefersReducedMotion,
@@ -261,12 +259,10 @@ const barOption = computed(() => {
     tooltip: {
       trigger: "axis" as const,
       axisPointer: { type: "shadow" as const },
-      formatter: (
-        params: Array<{ seriesName: string; value: number; axisValue: string }>,
-      ) => {
-        if (!Array.isArray(params) || params.length === 0) return "";
-        const p = params[0];
-        return `<strong>${escapeHtml(String(p.axisValue))}</strong><br/>Liability rate: ${escapeHtml(String(p.value))}%`;
+      formatter: (params: Array<{ seriesName: string; value: number; axisValue: string }>) => {
+        if (!Array.isArray(params) || params.length === 0) return ""
+        const p = params[0]
+        return `<strong>${escapeHtml(String(p.axisValue))}</strong><br/>Liability rate: ${escapeHtml(String(p.value))}%`
       },
     },
     grid: {
@@ -312,8 +308,8 @@ const barOption = computed(() => {
         },
       },
     ],
-  };
-});
+  }
+})
 
 /**
  * Bar chart option: IHT paid by estate-size band (£ million).
@@ -325,9 +321,9 @@ const barOption = computed(() => {
  * not rely on colour alone to convey meaning (WCAG 1.4.1).
  */
 const bandOption = computed(() => {
-  if (!data.value) return {};
-  const bands = data.value.by_estate_size.map((d) => d.band);
-  const taxPaid = data.value.by_estate_size.map((d) => d.tax_paid_m);
+  if (!data.value) return {}
+  const bands = data.value.by_estate_size.map((d) => d.band)
+  const taxPaid = data.value.by_estate_size.map((d) => d.tax_paid_m)
 
   return {
     animation: !prefersReducedMotion,
@@ -344,12 +340,10 @@ const bandOption = computed(() => {
     tooltip: {
       trigger: "axis" as const,
       axisPointer: { type: "shadow" as const },
-      formatter: (
-        params: Array<{ seriesName: string; value: number; axisValue: string }>,
-      ) => {
-        if (!Array.isArray(params) || params.length === 0) return "";
-        const p = params[0];
-        return `<strong>${escapeHtml(String(p.axisValue))}</strong><br/>IHT paid: £${escapeHtml(String(p.value))}m`;
+      formatter: (params: Array<{ seriesName: string; value: number; axisValue: string }>) => {
+        if (!Array.isArray(params) || params.length === 0) return ""
+        const p = params[0]
+        return `<strong>${escapeHtml(String(p.axisValue))}</strong><br/>IHT paid: £${escapeHtml(String(p.value))}m`
       },
     },
     grid: {
@@ -397,11 +391,11 @@ const bandOption = computed(() => {
         },
       },
     ],
-  };
-});
+  }
+})
 
 /** Column headers for the by-estate-size accessible data-table fallback. */
-const bandTableColumns = ["Estate size band", "Estates", "IHT paid (£m)"];
+const bandTableColumns = ["Estate size band", "Estates", "IHT paid (£m)"]
 
 /**
  * One row per estate-size band for the AccessibleDataTable fallback
@@ -410,13 +404,13 @@ const bandTableColumns = ["Estate size band", "Estates", "IHT paid (£m)"];
  * locale-formatted by the table component.
  */
 const bandTableRows = computed<DatasetRow[]>(() => {
-  if (!data.value) return [];
+  if (!data.value) return []
   return data.value.by_estate_size.map((d) => ({
     "Estate size band": d.band,
     Estates: d.estates,
     "IHT paid (£m)": d.tax_paid_m,
-  }));
-});
+  }))
+})
 
 /**
  * Descriptive aria-label for the band view (role=img). Reads the first and
@@ -425,17 +419,17 @@ const bandTableRows = computed<DatasetRow[]>(() => {
  */
 const bandAriaLabel = computed(() => {
   if (!data.value || data.value.by_estate_size.length === 0) {
-    return "Bar chart of inheritance tax paid by estate size band.";
+    return "Bar chart of inheritance tax paid by estate size band."
   }
-  const rows = data.value.by_estate_size;
-  const first = rows[0];
-  const last = rows[rows.length - 1];
+  const rows = data.value.by_estate_size
+  const first = rows[0]
+  const last = rows[rows.length - 1]
   return (
     `Bar chart of inheritance tax paid by estate size band, in pounds million. ` +
     `The "${first.band}" band covers ${first.estates.toLocaleString()} estates paying £${first.tax_paid_m.toLocaleString()}m. ` +
     `The "${last.band}" band covers ${last.estates.toLocaleString()} estates paying £${last.tax_paid_m.toLocaleString()}m.`
-  );
-});
+  )
+})
 </script>
 
 <template>
@@ -459,9 +453,7 @@ const bandAriaLabel = computed(() => {
 
   <!-- No data state -->
   <div v-else-if="!hasData" class="py-10 text-center" role="status">
-    <p class="text-[var(--wl-ink-muted)] text-lg">
-      No data available for this chart.
-    </p>
+    <p class="text-[var(--wl-ink-muted)] text-lg">No data available for this chart.</p>
   </div>
 
   <!-- Charts -->
@@ -481,20 +473,10 @@ const bandAriaLabel = computed(() => {
           <!-- Dual panel layout -->
           <div class="iht-panels">
             <div class="iht-panel">
-              <VChart
-                class="w-full"
-                style="height: 360px"
-                :option="donutOption"
-                autoresize
-              />
+              <VChart class="w-full" style="height: 360px" :option="donutOption" autoresize />
             </div>
             <div class="iht-panel">
-              <VChart
-                class="w-full"
-                style="height: 360px"
-                :option="barOption"
-                autoresize
-              />
+              <VChart class="w-full" style="height: 360px" :option="barOption" autoresize />
             </div>
           </div>
         </div>
@@ -502,12 +484,7 @@ const bandAriaLabel = computed(() => {
 
       <template #bands>
         <div role="img" :aria-label="bandAriaLabel" class="w-full">
-          <VChart
-            class="w-full"
-            style="height: 420px"
-            :option="bandOption"
-            autoresize
-          />
+          <VChart class="w-full" style="height: 420px" :option="bandOption" autoresize />
         </div>
 
         <!-- Accessible data-table fallback (WCAG 1.1.1 non-text content). -->
@@ -529,8 +506,9 @@ const bandAriaLabel = computed(() => {
         rel="noopener"
         class="underline hover:text-[var(--wl-ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--wl-red)] rounded"
       >
-        HMRC Inheritance Tax Statistics 2021-22, Table
-        12.1<span class="sr-only"> (opens in new tab)</span></a
+        HMRC Inheritance Tax Statistics 2021-22, Table 12.1<span class="sr-only">
+          (opens in new tab)</span
+        ></a
       >, accessed 2026-05-16
     </p>
   </div>

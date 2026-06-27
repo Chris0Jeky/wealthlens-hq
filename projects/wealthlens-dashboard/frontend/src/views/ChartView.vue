@@ -12,21 +12,25 @@
  * example matching the broadsheet design reference. Other datasets
  * fall back to a simpler layout.
  */
-import { computed, defineAsyncComponent, ref, watch } from "vue";
-import { useRoute } from "vue-router";
-import StatStrip from "@/components/StatStrip.vue";
-import ChartToolbar from "@/components/ChartToolbar.vue";
-import ShareBar from "@/components/ShareBar.vue";
-import SharePanel from "@/components/SharePanel.vue";
-import RelatedCharts from "@/components/RelatedCharts.vue";
-import DataFreshnessBadge from "@/components/DataFreshnessBadge.vue";
-import ExportButton from "@/components/ExportButton.vue";
-import { useAnalytics } from "@/composables/useAnalytics";
-import { useChartExport, type ChartComponentRef, type ExportFormat } from "@/composables/useChartExport";
-import { usePageMeta } from "@/composables/usePageMeta";
-import ChartSkeleton from "@/components/ChartSkeleton.vue";
-import ChartLoadError from "@/components/ChartLoadError.vue";
-import { chartConfigs, simpleChartTitles } from "@/config/chartArticles";
+import { computed, defineAsyncComponent, ref, watch } from "vue"
+import { useRoute } from "vue-router"
+import StatStrip from "@/components/StatStrip.vue"
+import ChartToolbar from "@/components/ChartToolbar.vue"
+import ShareBar from "@/components/ShareBar.vue"
+import SharePanel from "@/components/SharePanel.vue"
+import RelatedCharts from "@/components/RelatedCharts.vue"
+import DataFreshnessBadge from "@/components/DataFreshnessBadge.vue"
+import ExportButton from "@/components/ExportButton.vue"
+import { useAnalytics } from "@/composables/useAnalytics"
+import {
+  useChartExport,
+  type ChartComponentRef,
+  type ExportFormat,
+} from "@/composables/useChartExport"
+import { usePageMeta } from "@/composables/usePageMeta"
+import ChartSkeleton from "@/components/ChartSkeleton.vue"
+import ChartLoadError from "@/components/ChartLoadError.vue"
+import { chartConfigs, simpleChartTitles } from "@/config/chartArticles"
 
 /**
  * Lazy-load chart components to avoid bundling ECharts on every route.
@@ -40,108 +44,104 @@ const WealthSharesChart = defineAsyncComponent({
   errorComponent: ChartLoadError,
   delay: 200,
   timeout: 10000,
-});
+})
 const HousingAffordabilityChart = defineAsyncComponent({
   loader: () => import("@/components/HousingAffordabilityChart.vue"),
   loadingComponent: ChartSkeleton,
   errorComponent: ChartLoadError,
   delay: 200,
   timeout: 10000,
-});
+})
 const CgtConcentrationChart = defineAsyncComponent({
   loader: () => import("@/components/CgtConcentrationChart.vue"),
   loadingComponent: ChartSkeleton,
   errorComponent: ChartLoadError,
   delay: 200,
   timeout: 10000,
-});
+})
 const WealthByDecileChart = defineAsyncComponent({
   loader: () => import("@/components/WealthByDecileChart.vue"),
   loadingComponent: ChartSkeleton,
   errorComponent: ChartLoadError,
   delay: 200,
   timeout: 10000,
-});
+})
 const WageStagChart = defineAsyncComponent({
   loader: () => import("@/components/WageStagChart.vue"),
   loadingComponent: ChartSkeleton,
   errorComponent: ChartLoadError,
   delay: 200,
   timeout: 10000,
-});
+})
 const ProductivityPayChart = defineAsyncComponent({
   loader: () => import("@/components/ProductivityPayChart.vue"),
   loadingComponent: ChartSkeleton,
   errorComponent: ChartLoadError,
   delay: 200,
   timeout: 10000,
-});
+})
 const GdhiByRegionChart = defineAsyncComponent({
   loader: () => import("@/components/GdhiByRegionChart.vue"),
   loadingComponent: ChartSkeleton,
   errorComponent: ChartLoadError,
   delay: 200,
   timeout: 10000,
-});
+})
 const TaxCompositionChart = defineAsyncComponent({
   loader: () => import("@/components/TaxCompositionChart.vue"),
   loadingComponent: ChartSkeleton,
   errorComponent: ChartLoadError,
   delay: 200,
   timeout: 10000,
-});
+})
 const BoeRatesChart = defineAsyncComponent({
   loader: () => import("@/components/BoeRatesChart.vue"),
   loadingComponent: ChartSkeleton,
   errorComponent: ChartLoadError,
   delay: 200,
   timeout: 10000,
-});
+})
 const ChildPovertyChart = defineAsyncComponent({
   loader: () => import("@/components/ChildPovertyChart.vue"),
   loadingComponent: ChartSkeleton,
   errorComponent: ChartLoadError,
   delay: 200,
   timeout: 10000,
-});
+})
 const GenerationalWealthChart = defineAsyncComponent({
   loader: () => import("@/components/GenerationalWealthChart.vue"),
   loadingComponent: ChartSkeleton,
   errorComponent: ChartLoadError,
   delay: 200,
   timeout: 10000,
-});
+})
 const InheritanceTaxChart = defineAsyncComponent({
   loader: () => import("@/components/InheritanceTaxChart.vue"),
   loadingComponent: ChartSkeleton,
   errorComponent: ChartLoadError,
   delay: 200,
   timeout: 10000,
-});
+})
 
-const route = useRoute();
-const { trackEvent } = useAnalytics();
-const chartName = computed(() => route.params.name as string);
-const chartComponentRef = ref<ChartComponentRef>(null);
-const { exportPNG, exportSVG } = useChartExport(chartComponentRef);
+const route = useRoute()
+const { trackEvent } = useAnalytics()
+const chartName = computed(() => route.params.name as string)
+const chartComponentRef = ref<ChartComponentRef>(null)
+const { exportPNG, exportSVG } = useChartExport(chartComponentRef)
 
 /** Whether the current chart has a full article config. */
-const hasFullConfig = computed(
-  () => chartName.value in chartConfigs,
-);
+const hasFullConfig = computed(() => chartName.value in chartConfigs)
 
 /** The full config for the current chart, if available. */
-const config = computed(() => chartConfigs[chartName.value]);
+const config = computed(() => chartConfigs[chartName.value])
 
 /** Whether this chart name is supported at all (full or simple). */
 const isSupported = computed(
-  () =>
-    chartName.value in chartConfigs ||
-    chartName.value in simpleChartTitles,
-);
+  () => chartName.value in chartConfigs || chartName.value in simpleChartTitles,
+)
 
 /** Active range for toolbar (local UI state). */
-const activeRange = ref("");
+const activeRange = ref("")
 
 /**
  * Reset activeRange to the chart's default when navigating between charts.
@@ -151,76 +151,83 @@ const activeRange = ref("");
 watch(
   () => chartName.value,
   (name) => {
-    const cfg = chartConfigs[name];
-    activeRange.value = cfg?.toolbar.defaultRange ?? "";
+    const cfg = chartConfigs[name]
+    activeRange.value = cfg?.toolbar.defaultRange ?? ""
   },
   { immediate: true },
-);
+)
 
 /** Whether the share panel is visible. */
-const sharePanelOpen = ref(false);
+const sharePanelOpen = ref(false)
 
 function toggleSharePanel(): void {
-  sharePanelOpen.value = !sharePanelOpen.value;
+  sharePanelOpen.value = !sharePanelOpen.value
 }
 
 function onRangeChange(range: string) {
-  activeRange.value = range;
+  activeRange.value = range
 }
 
 watch(chartName, () => {
-  chartComponentRef.value = null;
-});
+  chartComponentRef.value = null
+})
 
 function onExport(format: ExportFormat) {
-  const name = chartName.value || "chart";
-  const sourceText = config.value?.source?.name;
-  const options = { filename: `wealthlens-${name}`, source: sourceText };
-  const success = format === "png" ? exportPNG(options) : exportSVG(options);
+  const name = chartName.value || "chart"
+  const sourceText = config.value?.source?.name
+  const options = { filename: `wealthlens-${name}`, source: sourceText }
+  const success = format === "png" ? exportPNG(options) : exportSVG(options)
   if (success) {
-    trackEvent("export_chart", { chart: name, format });
+    trackEvent("export_chart", { chart: name, format })
   }
 }
 
 /** Convert legacy hardcoded HTML snippets to display/meta-safe plain text. */
 function toPlainText(html: string): string {
   if (typeof DOMParser === "undefined") {
-    return html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+    return html
+      .replace(/<[^>]*>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
   }
-  const doc = new DOMParser().parseFromString(html, "text/html");
-  return doc.body.textContent?.replace(/\s+/g, " ").trim() ?? "";
+  const doc = new DOMParser().parseFromString(html, "text/html")
+  return doc.body.textContent?.replace(/\s+/g, " ").trim() ?? ""
 }
 
 /** Track chart views when the chart name changes. */
-watch(chartName, (name) => {
-  if (name && isSupported.value) {
-    trackEvent("view_chart", { chart: name });
-  }
-}, { immediate: true });
+watch(
+  chartName,
+  (name) => {
+    if (name && isSupported.value) {
+      trackEvent("view_chart", { chart: name })
+    }
+  },
+  { immediate: true },
+)
 
 /* ------------------------------------------------------------------ */
 /* Page meta (OpenGraph / Twitter Card)                                */
 /* ------------------------------------------------------------------ */
 
 const chartTitle = computed(() => {
-  if (config.value) return config.value.headline;
-  return simpleChartTitles[chartName.value] ?? chartName.value;
-});
+  if (config.value) return config.value.headline
+  return simpleChartTitles[chartName.value] ?? chartName.value
+})
 
 const chartDescription = computed(() => {
   if (config.value) {
-    return toPlainText(config.value.lede);
+    return toPlainText(config.value.lede)
   }
-  return `UK wealth inequality data — ${chartTitle.value}`;
-});
+  return `UK wealth inequality data — ${chartTitle.value}`
+})
 
 const chartOgImage = computed(
   () => `https://chris0jeky.github.io/wealthlens-hq/og/${chartName.value}.png`,
-);
+)
 
 const chartUrl = computed(
   () => `https://chris0jeky.github.io/wealthlens-hq/charts/${chartName.value}`,
-);
+)
 
 usePageMeta({
   title: chartTitle,
@@ -230,7 +237,7 @@ usePageMeta({
   imageAlt: computed(() => `${chartTitle.value} — WealthLens UK chart`),
   ogType: "article",
   twitterCard: "summary_large_image",
-});
+})
 </script>
 
 <template>
@@ -239,11 +246,7 @@ usePageMeta({
     <!-- Breadcrumb -->
     <nav class="crumb" aria-label="Breadcrumb">
       <ol class="crumb__list">
-        <li
-          v-for="(seg, i) in config.breadcrumb"
-          :key="i"
-          class="crumb__item"
-        >
+        <li v-for="(seg, i) in config.breadcrumb" :key="i" class="crumb__item">
           <router-link
             v-if="seg.to && i < config.breadcrumb.length - 1"
             :to="seg.to"
@@ -254,11 +257,9 @@ usePageMeta({
           <span v-else class="crumb__current" aria-current="page">
             {{ seg.label }}
           </span>
-          <span
-            v-if="i < config.breadcrumb.length - 1"
-            class="crumb__sep"
-            aria-hidden="true"
-          >/</span>
+          <span v-if="i < config.breadcrumb.length - 1" class="crumb__sep" aria-hidden="true"
+            >/</span
+          >
         </li>
       </ol>
     </nav>
@@ -332,23 +333,31 @@ usePageMeta({
         </div>
         <div class="chart-stage">
           <WealthSharesChart v-if="chartName === 'wealth-shares'" ref="chartComponentRef" />
-          <ProductivityPayChart v-else-if="chartName === 'productivity-pay'" ref="chartComponentRef" />
+          <ProductivityPayChart
+            v-else-if="chartName === 'productivity-pay'"
+            ref="chartComponentRef"
+          />
           <GdhiByRegionChart v-else-if="chartName === 'gdhi-by-region'" ref="chartComponentRef" />
-          <TaxCompositionChart v-else-if="chartName === 'tax-composition'" ref="chartComponentRef" />
+          <TaxCompositionChart
+            v-else-if="chartName === 'tax-composition'"
+            ref="chartComponentRef"
+          />
           <BoeRatesChart v-else-if="chartName === 'boe-rates'" ref="chartComponentRef" />
           <ChildPovertyChart v-else-if="chartName === 'child-poverty'" ref="chartComponentRef" />
-          <GenerationalWealthChart v-else-if="chartName === 'generational-wealth'" ref="chartComponentRef" />
-          <InheritanceTaxChart v-else-if="chartName === 'inheritance-tax'" ref="chartComponentRef" />
+          <GenerationalWealthChart
+            v-else-if="chartName === 'generational-wealth'"
+            ref="chartComponentRef"
+          />
+          <InheritanceTaxChart
+            v-else-if="chartName === 'inheritance-tax'"
+            ref="chartComponentRef"
+          />
         </div>
         <div class="chart-source-bar">
           <div class="chart-source-bar__left">
             <span>
               Source:
-              <a
-                :href="config.source.url"
-                target="_blank"
-                rel="noopener"
-              >
+              <a :href="config.source.url" target="_blank" rel="noopener">
                 {{ config.source.name }}
               </a>
             </span>
@@ -357,9 +366,7 @@ usePageMeta({
             <span aria-hidden="true">&middot;</span>
             <span>Accessed {{ config.source.accessed }}</span>
           </div>
-          <span class="wl-num">
-            WealthLens UK &middot; {{ config.source.chartId }}
-          </span>
+          <span class="wl-num"> WealthLens UK &middot; {{ config.source.chartId }} </span>
         </div>
       </div>
 
@@ -380,7 +387,9 @@ usePageMeta({
               stroke-width="1.5"
               aria-hidden="true"
             >
-              <path d="M4 9a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM12 5a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM12 15a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM5.7 8.2l4.6-2.4M5.7 7.8l4.6 2.4" />
+              <path
+                d="M4 9a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM12 5a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM12 15a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM5.7 8.2l4.6-2.4M5.7 7.8l4.6 2.4"
+              />
             </svg>
             {{ sharePanelOpen ? "Close" : "Share & Embed" }}
           </button>
@@ -399,10 +408,7 @@ usePageMeta({
     <!-- Article body -->
     <article class="article-body">
       <!-- First section -->
-      <template
-        v-for="(section, i) in config.article.sections"
-        :key="i"
-      >
+      <template v-for="(section, i) in config.article.sections" :key="i">
         <h2 v-if="section.heading" class="article-body__heading">
           {{ section.heading }}
           <em v-if="section.headingEmphasis">
@@ -411,18 +417,12 @@ usePageMeta({
         </h2>
 
         <!-- Insert pull quote after first section -->
-        <div
-          v-if="i === 0 && config.article.pullQuote"
-          class="article-body__pull"
-        >
+        <div v-if="i === 0 && config.article.pullQuote" class="article-body__pull">
           <p class="article-body__pull-label">&uarr; The takeaway</p>
           <p>{{ toPlainText(config.article.pullQuote.text) }}</p>
         </div>
 
-        <p
-          v-for="(para, j) in section.paragraphs"
-          :key="`p-${i}-${j}`"
-        >
+        <p v-for="(para, j) in section.paragraphs" :key="`p-${i}-${j}`">
           {{ toPlainText(para) }}
         </p>
       </template>
@@ -443,13 +443,11 @@ usePageMeta({
     <footer class="chart-foot" role="contentinfo">
       <div class="chart-foot__inner">
         <span>
-          &copy; 2026 WealthLens UK &middot; MIT licensed &middot;
-          chart-id {{ config.source.chartId }}
+          &copy; 2026 WealthLens UK &middot; MIT licensed &middot; chart-id
+          {{ config.source.chartId }}
         </span>
         <span>
-          <router-link to="/" class="chart-foot__link">
-            Suggest a chart &rarr;
-          </router-link>
+          <router-link to="/" class="chart-foot__link"> Suggest a chart &rarr; </router-link>
         </span>
       </div>
     </footer>
@@ -501,12 +499,8 @@ usePageMeta({
               v-else-if="chartName === 'wealth-by-decile'"
               ref="chartComponentRef"
             />
-            <InheritanceTaxChart
-              v-else-if="chartName === 'inheritance-tax'"
-            />
-            <WageStagChart
-              v-else-if="chartName === 'wage-stagnation'"
-            />
+            <InheritanceTaxChart v-else-if="chartName === 'inheritance-tax'" />
+            <WageStagChart v-else-if="chartName === 'wage-stagnation'" />
           </div>
         </div>
 
@@ -526,7 +520,9 @@ usePageMeta({
               stroke-width="1.5"
               aria-hidden="true"
             >
-              <path d="M4 9a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM12 5a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM12 15a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM5.7 8.2l4.6-2.4M5.7 7.8l4.6 2.4" />
+              <path
+                d="M4 9a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM12 5a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM12 15a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM5.7 8.2l4.6-2.4M5.7 7.8l4.6 2.4"
+              />
             </svg>
             {{ sharePanelOpen ? "Close" : "Share & Embed" }}
           </button>
@@ -558,12 +554,10 @@ usePageMeta({
     <div class="not-found__content">
       <h1 class="not-found__title">Chart not found</h1>
       <p class="not-found__text">
-        No chart is available for
-        "<span class="wl-num">{{ chartName }}</span>".
+        No chart is available for "<span class="wl-num">{{ chartName }}</span
+        >".
       </p>
-      <router-link to="/" class="wl-btn wl-btn--ghost">
-        Return to dashboard
-      </router-link>
+      <router-link to="/" class="wl-btn wl-btn--ghost"> Return to dashboard </router-link>
     </div>
   </div>
 </template>

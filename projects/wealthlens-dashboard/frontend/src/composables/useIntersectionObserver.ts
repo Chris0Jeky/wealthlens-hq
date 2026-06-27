@@ -1,4 +1,4 @@
-import { ref, onMounted, onUnmounted, type Ref } from 'vue'
+import { ref, onMounted, onUnmounted, type Ref } from "vue"
 
 export interface UseIntersectionObserverOptions {
   threshold?: number
@@ -13,10 +13,10 @@ export function useIntersectionObserver(
   const isVisible = ref(false)
   let observer: IntersectionObserver | null = null
 
-  const { threshold = 0.1, rootMargin = '0px', once = true } = options
+  const { threshold = 0.1, rootMargin = "0px", once = true } = options
 
   onMounted(() => {
-    if (typeof window === 'undefined' || !('IntersectionObserver' in window)) {
+    if (typeof window === "undefined" || !("IntersectionObserver" in window)) {
       isVisible.value = true
       return
     }

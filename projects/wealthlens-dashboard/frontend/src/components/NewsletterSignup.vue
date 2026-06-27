@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { ref, computed, onUnmounted } from 'vue'
+import { ref, computed, onUnmounted } from "vue"
 
-type FormState = 'idle' | 'submitting' | 'success' | 'error'
+type FormState = "idle" | "submitting" | "success" | "error"
 
-const email = ref('')
-const state = ref<FormState>('idle')
-const errorMessage = ref('')
+const email = ref("")
+const state = ref<FormState>("idle")
+const errorMessage = ref("")
 
-const newsletterId = import.meta.env.VITE_BUTTONDOWN_NEWSLETTER_ID || 'wealthlens'
+const newsletterId = import.meta.env.VITE_BUTTONDOWN_NEWSLETTER_ID || "wealthlens"
 const apiUrl = `https://buttondown.com/api/emails/embed-subscribe/${newsletterId}`
 
 const isValidEmail = computed(() => {
@@ -15,7 +15,7 @@ const isValidEmail = computed(() => {
   return pattern.test(email.value)
 })
 
-const isDisabled = computed(() => state.value === 'submitting')
+const isDisabled = computed(() => state.value === "submitting")
 
 let abortController: AbortController | null = null
 let inflight = false
@@ -33,8 +33,8 @@ async function handleSubmit() {
   abortController = new AbortController()
   requestTimedOut = false
 
-  state.value = 'submitting'
-  errorMessage.value = ''
+  state.value = "submitting"
+  errorMessage.value = ""
   const timeoutId = window.setTimeout(() => {
     requestTimedOut = true
     abortController?.abort()
@@ -42,58 +42,67 @@ async function handleSubmit() {
 
   try {
     const body = new FormData()
-    body.append('email', email.value)
-    body.append('embed', '1')
+    body.append("email", email.value)
+    body.append("embed", "1")
 
     const response = await fetch(apiUrl, {
-      method: 'POST',
+      method: "POST",
       body,
       signal: abortController.signal,
     })
 
     if (!response.ok) {
-      let detail = ''
+      let detail = ""
       try {
-        const contentType = response.headers.get('content-type') || ''
-        if (contentType.includes('application/json')) {
+        const contentType = response.headers.get("content-type") || ""
+        if (contentType.includes("application/json")) {
           const data = await response.json()
-          detail = data?.detail || data?.message || data?.error || ''
+          detail = data?.detail || data?.message || data?.error || ""
         }
-      } catch { /* non-JSON body */ }
+      } catch {
+        /* non-JSON body */
+      }
 
       if (!detail) {
         switch (response.status) {
-          case 400: detail = 'Invalid email address. Please check and try again.'; break
-          case 409: detail = 'This email is already subscribed.'; break
-          case 429: detail = 'Too many requests. Please wait a moment and try again.'; break
-          default: detail = `Subscription failed (HTTP ${response.status}). Please try again later.`
+          case 400:
+            detail = "Invalid email address. Please check and try again."
+            break
+          case 409:
+            detail = "This email is already subscribed."
+            break
+          case 429:
+            detail = "Too many requests. Please wait a moment and try again."
+            break
+          default:
+            detail = `Subscription failed (HTTP ${response.status}). Please try again later.`
         }
       }
       throw new Error(detail)
     }
 
-    state.value = 'success'
-    email.value = ''
+    state.value = "success"
+    email.value = ""
   } catch (err) {
-    if (err instanceof DOMException && err.name === 'AbortError' && !requestTimedOut) return
+    if (err instanceof DOMException && err.name === "AbortError" && !requestTimedOut) return
     if (
-      (err instanceof DOMException && err.name === 'TimeoutError') ||
-      (err instanceof DOMException && err.name === 'AbortError' && requestTimedOut)
+      (err instanceof DOMException && err.name === "TimeoutError") ||
+      (err instanceof DOMException && err.name === "AbortError" && requestTimedOut)
     ) {
-      state.value = 'error'
-      errorMessage.value = 'Request timed out. Please check your connection and try again.'
+      state.value = "error"
+      errorMessage.value = "Request timed out. Please check your connection and try again."
       return
     }
 
-    state.value = 'error'
+    state.value = "error"
     if (err instanceof TypeError) {
-      console.error('[NewsletterSignup] Network error:', err)
-      errorMessage.value = 'Unable to reach the subscription service. Please try again later.'
+      console.error("[NewsletterSignup] Network error:", err)
+      errorMessage.value = "Unable to reach the subscription service. Please try again later."
     } else if (err instanceof Error) {
       errorMessage.value = err.message
     } else {
-      console.error('[NewsletterSignup] Unknown error:', err)
-      errorMessage.value = 'Something went wrong. Please try again.'
+      console.error("[NewsletterSignup] Unknown error:", err)
+      errorMessage.value = "Something went wrong. Please try again."
     }
   } finally {
     window.clearTimeout(timeoutId)
@@ -136,19 +145,12 @@ async function handleSubmit() {
         :aria-busy="state === 'submitting'"
       >
         <span v-if="state === 'submitting'" class="newsletter__spinner" aria-hidden="true" />
-        {{ state === 'submitting' ? 'Subscribing...' : 'Subscribe' }}
+        {{ state === "submitting" ? "Subscribing..." : "Subscribe" }}
       </button>
     </form>
 
-    <div
-      id="newsletter-status"
-      class="newsletter__status"
-      aria-live="polite"
-      aria-atomic="true"
-    >
-      <p v-if="state === 'success'" class="newsletter__success">
-        You're subscribed!
-      </p>
+    <div id="newsletter-status" class="newsletter__status" aria-live="polite" aria-atomic="true">
+      <p v-if="state === 'success'" class="newsletter__success">You're subscribed!</p>
       <p v-if="state === 'error'" class="newsletter__error">
         {{ errorMessage }}
       </p>
@@ -225,7 +227,9 @@ async function handleSubmit() {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   cursor: pointer;
-  transition: opacity 0.15s ease, background-color 0.15s ease;
+  transition:
+    opacity 0.15s ease,
+    background-color 0.15s ease;
 }
 
 .newsletter__btn:hover:not(:disabled) {

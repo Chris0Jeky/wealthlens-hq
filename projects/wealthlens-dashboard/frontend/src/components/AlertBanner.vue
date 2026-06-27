@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { ref, computed, nextTick } from 'vue'
+import { ref, computed, nextTick } from "vue"
 
-export type AlertVariant = 'info' | 'warning' | 'error' | 'success'
+export type AlertVariant = "info" | "warning" | "error" | "success"
 
 const props = withDefaults(
   defineProps<{
     variant?: AlertVariant
     dismissible?: boolean
   }>(),
-  { variant: 'info', dismissible: false },
+  { variant: "info", dismissible: false },
 )
 
 const emit = defineEmits<{ dismiss: [] }>()
@@ -17,34 +17,37 @@ const dismissed = ref(false)
 const containerRef = ref<HTMLElement | null>(null)
 
 const liveRole = computed(() =>
-  props.variant === 'error' || props.variant === 'warning' ? 'alert' : 'status',
+  props.variant === "error" || props.variant === "warning" ? "alert" : "status",
 )
 
 async function handleDismiss() {
   const parent = containerRef.value?.parentElement
   dismissed.value = true
-  emit('dismiss')
+  emit("dismiss")
   await nextTick()
   if (parent && parent !== document.body) {
-    const hadTabindex = parent.hasAttribute('tabindex')
-    parent.setAttribute('tabindex', '-1')
+    const hadTabindex = parent.hasAttribute("tabindex")
+    parent.setAttribute("tabindex", "-1")
     parent.focus()
-    if (!hadTabindex) parent.removeAttribute('tabindex')
+    if (!hadTabindex) parent.removeAttribute("tabindex")
   }
 }
 
 const variantClasses: Record<AlertVariant, string> = {
-  info: 'bg-blue-50 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700 text-blue-800 dark:text-blue-200',
-  warning: 'bg-yellow-50 dark:bg-yellow-900/30 border-yellow-300 dark:border-yellow-700 text-yellow-800 dark:text-yellow-200',
-  error: 'bg-red-50 dark:bg-red-900/30 border-red-300 dark:border-red-700 text-red-800 dark:text-red-200',
-  success: 'bg-green-50 dark:bg-green-900/30 border-green-300 dark:border-green-700 text-green-800 dark:text-green-200',
+  info: "bg-blue-50 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700 text-blue-800 dark:text-blue-200",
+  warning:
+    "bg-yellow-50 dark:bg-yellow-900/30 border-yellow-300 dark:border-yellow-700 text-yellow-800 dark:text-yellow-200",
+  error:
+    "bg-red-50 dark:bg-red-900/30 border-red-300 dark:border-red-700 text-red-800 dark:text-red-200",
+  success:
+    "bg-green-50 dark:bg-green-900/30 border-green-300 dark:border-green-700 text-green-800 dark:text-green-200",
 }
 
 const iconMap: Record<AlertVariant, string> = {
-  info: 'ℹ️',
-  warning: '⚠️',
-  error: '❌',
-  success: '✅',
+  info: "ℹ️",
+  warning: "⚠️",
+  error: "❌",
+  success: "✅",
 }
 </script>
 

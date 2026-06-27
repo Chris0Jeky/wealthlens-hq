@@ -1,5 +1,5 @@
-import { ref, watch, type Ref } from 'vue'
-import { getStorageItem, setStorageItem } from '@/utils/browserStorage'
+import { ref, watch, type Ref } from "vue"
+import { getStorageItem, setStorageItem } from "@/utils/browserStorage"
 
 export function useLocalStorage<T>(key: string, defaultValue: T): Ref<T> {
   const stored = read(key)

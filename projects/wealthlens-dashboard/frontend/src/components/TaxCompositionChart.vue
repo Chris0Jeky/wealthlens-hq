@@ -9,50 +9,42 @@
  *
  * Accessibility: WCAG AA high-contrast colors, aria-label, keyboard tooltip.
  */
-import { computed, ref } from "vue";
-import { use } from "echarts/core";
-import { CanvasRenderer } from "echarts/renderers";
-import { BarChart } from "echarts/charts";
+import { computed, ref } from "vue"
+import { use } from "echarts/core"
+import { CanvasRenderer } from "echarts/renderers"
+import { BarChart } from "echarts/charts"
 import {
   GridComponent,
   TooltipComponent,
   TitleComponent,
   LegendComponent,
-} from "echarts/components";
-import VChart from "vue-echarts";
-import { useChartData } from "@/composables/useChartData";
-import type { EChartsExportable } from "@/composables/useChartExport";
-import { escapeHtml, toNumberOrNaN, warnIfSignificantDataLoss } from "@/utils/chart";
-import AccessibleDataTable from "@/components/AccessibleDataTable.vue";
+} from "echarts/components"
+import VChart from "vue-echarts"
+import { useChartData } from "@/composables/useChartData"
+import type { EChartsExportable } from "@/composables/useChartExport"
+import { escapeHtml, toNumberOrNaN, warnIfSignificantDataLoss } from "@/utils/chart"
+import AccessibleDataTable from "@/components/AccessibleDataTable.vue"
 
 // Register only the ECharts modules we need (tree-shaking)
-use([
-  CanvasRenderer,
-  BarChart,
-  GridComponent,
-  TooltipComponent,
-  TitleComponent,
-  LegendComponent,
-]);
+use([CanvasRenderer, BarChart, GridComponent, TooltipComponent, TitleComponent, LegendComponent])
 
-const { rows, loading, error } = useChartData("tax-composition");
-const chart = ref<EChartsExportable | null>(null);
+const { rows, loading, error } = useChartData("tax-composition")
+const chart = ref<EChartsExportable | null>(null)
 
-defineExpose({ chart });
+defineExpose({ chart })
 
 /**
  * Respect prefers-reduced-motion (WCAG 2.3.3).
  */
 const prefersReducedMotion =
-  typeof window !== "undefined" &&
-  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches
 
 // WCAG AA high-contrast colors for stacked categories
-const COLOR_INCOME_TAX = "#1a56db"; // Blue — ~7.2:1
-const COLOR_NICS = "#047857"; // Green — ~5.5:1
-const COLOR_CGT = "#dc2626"; // Red — ~4.6:1
-const COLOR_IHT = "#7c3aed"; // Purple — ~5.0:1
-const COLOR_SDLT = "#b45309"; // Amber — ~4.7:1
+const COLOR_INCOME_TAX = "#1a56db" // Blue — ~7.2:1
+const COLOR_NICS = "#047857" // Green — ~5.5:1
+const COLOR_CGT = "#dc2626" // Red — ~4.6:1
+const COLOR_IHT = "#7c3aed" // Purple — ~5.0:1
+const COLOR_SDLT = "#b45309" // Amber — ~4.7:1
 
 /** Sorted data extracted from rows. */
 const chartData = computed(() => {
@@ -65,7 +57,7 @@ const chartData = computed(() => {
     sdlt: toNumberOrNaN(r.sdlt_bn),
     workPct: toNumberOrNaN(r.work_pct),
     wealthPct: toNumberOrNaN(r.wealth_pct),
-  }));
+  }))
   // Require ALL five plotted components to be finite: this is a stacked total, so
   // one missing component would understate the stack and render "£NaNbn" in the
   // tooltip total. Dropping the incomplete year keeps the stacked total honest
@@ -78,9 +70,9 @@ const chartData = computed(() => {
       !isNaN(r.cgt) &&
       !isNaN(r.iht) &&
       !isNaN(r.sdlt),
-  );
+  )
 
-  warnIfSignificantDataLoss("tax-composition", mapped.length, sorted.length);
+  warnIfSignificantDataLoss("tax-composition", mapped.length, sorted.length)
 
   return {
     years: sorted.map((r) => r.year),
@@ -93,11 +85,11 @@ const chartData = computed(() => {
     wealthPct: sorted.map((r) => r.wealthPct),
     latestWorkPct: sorted.length > 0 ? sorted[sorted.length - 1].workPct : 0,
     latestWealthPct: sorted.length > 0 ? sorted[sorted.length - 1].wealthPct : 0,
-  };
-});
+  }
+})
 
 /** True when the API returned actual data to display. */
-const hasData = computed(() => chartData.value.years.length > 0);
+const hasData = computed(() => chartData.value.years.length > 0)
 
 /**
  * Data-honesty flag: the tax-composition dataset is an illustrative composite
@@ -106,10 +98,8 @@ const hasData = computed(() => chartData.value.years.length > 0);
  * ever carried real figures the caveat would correctly stay hidden.
  */
 const isIllustrative = computed(
-  () =>
-    rows.value.length > 0 &&
-    rows.value.some((r) => r.data_source === "illustrative"),
-);
+  () => rows.value.length > 0 && rows.value.some((r) => r.data_source === "illustrative"),
+)
 
 /**
  * Accessible data-table fallback (WCAG 1.1.1). Mirrors the plotted series — the
@@ -125,10 +115,10 @@ const tableColumns = [
   "SDLT (£bn)",
   "Work taxes (%)",
   "Wealth taxes (%)",
-];
-const tableNumericColumns = tableColumns.filter((c) => c !== "Tax year");
+]
+const tableNumericColumns = tableColumns.filter((c) => c !== "Tax year")
 const tableRows = computed(() => {
-  const d = chartData.value;
+  const d = chartData.value
   return d.years.map((year, i) => ({
     "Tax year": year,
     "Income Tax (£bn)": d.incomeTax[i],
@@ -138,8 +128,8 @@ const tableRows = computed(() => {
     "SDLT (£bn)": d.sdlt[i],
     "Work taxes (%)": d.workPct[i],
     "Wealth taxes (%)": d.wealthPct[i],
-  }));
-});
+  }))
+})
 
 /**
  * Table caption — appends the illustrative-provenance hedge only when the data is
@@ -152,10 +142,10 @@ const tableCaption = computed(
     (isIllustrative.value
       ? " Illustrative composite figures approximated from HMRC receipts, not exact published values."
       : ""),
-);
+)
 
 const option = computed(() => {
-  const data = chartData.value;
+  const data = chartData.value
 
   return {
     animation: !prefersReducedMotion,
@@ -172,18 +162,18 @@ const option = computed(() => {
       trigger: "axis" as const,
       axisPointer: { type: "shadow" as const },
       formatter: (params: Array<{ seriesName: string; value: number; axisValue: string }>) => {
-        if (!Array.isArray(params) || params.length === 0) return "";
-        let html = `<strong>${escapeHtml(String(params[0].axisValue))}</strong><br/>`;
-        let total = 0;
+        if (!Array.isArray(params) || params.length === 0) return ""
+        let html = `<strong>${escapeHtml(String(params[0].axisValue))}</strong><br/>`
+        let total = 0
         for (const p of params) {
           // Skip non-finite (NaN/Infinity) so a missing component never renders
           // "£NaNbn" or poisons the running total. (typeof NaN === "number".)
-          if (!Number.isFinite(p.value)) continue;
-          total += p.value;
-          html += `${escapeHtml(String(p.seriesName))}: £${p.value.toFixed(1)}bn<br/>`;
+          if (!Number.isFinite(p.value)) continue
+          total += p.value
+          html += `${escapeHtml(String(p.seriesName))}: £${p.value.toFixed(1)}bn<br/>`
         }
-        html += `<strong>Total: £${total.toFixed(1)}bn</strong>`;
-        return html;
+        html += `<strong>Total: £${total.toFixed(1)}bn</strong>`
+        return html
       },
     },
     legend: {
@@ -256,13 +246,18 @@ const option = computed(() => {
         itemStyle: { color: COLOR_SDLT },
       },
     ],
-  };
-});
+  }
+})
 </script>
 
 <template>
   <!-- Loading state -->
-  <div v-if="loading" class="flex items-center justify-center py-20" role="status" aria-live="polite">
+  <div
+    v-if="loading"
+    class="flex items-center justify-center py-20"
+    role="status"
+    aria-live="polite"
+  >
     <p class="text-[var(--wl-ink-muted)] text-lg">Loading chart data...</p>
   </div>
 
@@ -286,13 +281,7 @@ const option = computed(() => {
       :aria-label="`Stacked bar chart showing UK tax revenue composition from ${chartData.years[0]} to ${chartData.years[chartData.years.length - 1]}. Taxes on work (income tax and NICs) make up approximately ${chartData.latestWorkPct.toFixed(0)}% of the total, while taxes on wealth (CGT, IHT, SDLT) account for just ${chartData.latestWealthPct.toFixed(0)}%.${isIllustrative ? ' Figures are an illustrative composite approximated from HMRC receipts, not exact published values.' : ''}`"
       class="w-full"
     >
-      <VChart
-        ref="chart"
-        class="w-full"
-        style="height: 480px"
-        :option="option"
-        autoresize
-      />
+      <VChart ref="chart" class="w-full" style="height: 480px" :option="option" autoresize />
     </div>
 
     <!-- Accessible data-table fallback (WCAG 1.1.1 non-text content). -->
@@ -306,10 +295,7 @@ const option = computed(() => {
     <!-- Data-honesty caveat — rendered exactly when a plotted row is marked
          illustrative (a positive signal). For the current composite dataset that
          is always true; it would self-hide if genuine HMRC figures were served. -->
-    <p
-      v-if="isIllustrative"
-      class="text-xs text-[var(--wl-ink-muted)] mt-2 text-center italic"
-    >
+    <p v-if="isIllustrative" class="text-xs text-[var(--wl-ink-muted)] mt-2 text-center italic">
       Illustrative composite. Approximated from HMRC receipts, not exact published values.
     </p>
 
@@ -322,7 +308,8 @@ const option = computed(() => {
         rel="noopener"
         class="underline hover:text-[var(--wl-ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--wl-red)] rounded"
       >
-        HMRC Tax Receipts<span class="sr-only"> (opens in new tab)</span></a>, accessed 2026-05-14
+        HMRC Tax Receipts<span class="sr-only"> (opens in new tab)</span></a
+      >, accessed 2026-05-14
     </p>
   </div>
 </template>

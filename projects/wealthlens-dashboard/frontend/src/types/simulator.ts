@@ -20,7 +20,7 @@ export interface Interval {
  * - `alpha_sweep`: the single multiplicative top-tail-Pareto-alpha range.
  * - `monte_carlo`: a Monte-Carlo credible interval over sampled parameters.
  */
-export type IntervalMethod = 'alpha_sweep' | 'monte_carlo'
+export type IntervalMethod = "alpha_sweep" | "monte_carlo"
 
 /**
  * The dashboard JSON schema version these types were written against (mirror of
@@ -28,7 +28,7 @@ export type IntervalMethod = 'alpha_sweep' | 'monte_carlo'
  * bridge should assert `payload.schema_version === DASHBOARD_SCHEMA_VERSION` and
  * surface a loud mismatch rather than silently rendering stale-shaped data.
  */
-export const DASHBOARD_SCHEMA_VERSION = '1.3'
+export const DASHBOARD_SCHEMA_VERSION = "1.3"
 
 /**
  * One modelling assumption consumed by a simulation run, as recorded in the

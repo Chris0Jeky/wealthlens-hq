@@ -15,10 +15,10 @@
  * @example
  * <ExportButton @export="handleExport" />
  */
-import { ref, nextTick, onMounted, onUnmounted } from 'vue'
+import { ref, nextTick, onMounted, onUnmounted } from "vue"
 
 const emit = defineEmits<{
-  (e: 'export', format: 'png' | 'svg'): void
+  (e: "export", format: "png" | "svg"): void
 }>()
 
 const isOpen = ref(false)
@@ -42,13 +42,13 @@ function closeMenu() {
   triggerRef.value?.focus()
 }
 
-function selectFormat(format: 'png' | 'svg') {
-  emit('export', format)
+function selectFormat(format: "png" | "svg") {
+  emit("export", format)
   closeMenu()
 }
 
 function onKeydown(event: KeyboardEvent) {
-  if (event.key === 'Escape') {
+  if (event.key === "Escape") {
     event.preventDefault()
     closeMenu()
     return
@@ -62,13 +62,13 @@ function onKeydown(event: KeyboardEvent) {
   const currentIndex = Array.from(items).findIndex((el) => el === document.activeElement)
 
   switch (event.key) {
-    case 'ArrowDown': {
+    case "ArrowDown": {
       event.preventDefault()
       const next = (currentIndex + 1) % items.length
       items[next]?.focus()
       break
     }
-    case 'ArrowUp': {
+    case "ArrowUp": {
       event.preventDefault()
       const prev = (currentIndex - 1 + items.length) % items.length
       items[prev]?.focus()
@@ -86,11 +86,11 @@ function onClickOutside(event: Event) {
 }
 
 onMounted(() => {
-  document.addEventListener('pointerdown', onClickOutside, true)
+  document.addEventListener("pointerdown", onClickOutside, true)
 })
 
 onUnmounted(() => {
-  document.removeEventListener('pointerdown', onClickOutside, true)
+  document.removeEventListener("pointerdown", onClickOutside, true)
 })
 </script>
 
@@ -121,21 +121,12 @@ onUnmounted(() => {
       </svg>
       Export
     </button>
-    <ul
-      v-if="isOpen"
-      ref="menuRef"
-      class="export-btn__menu"
-      role="menu"
-    >
+    <ul v-if="isOpen" ref="menuRef" class="export-btn__menu" role="menu">
       <li role="none">
-        <button role="menuitem" @click="selectFormat('png')">
-          Download PNG
-        </button>
+        <button role="menuitem" @click="selectFormat('png')">Download PNG</button>
       </li>
       <li role="none">
-        <button role="menuitem" @click="selectFormat('svg')">
-          Download SVG
-        </button>
+        <button role="menuitem" @click="selectFormat('svg')">Download SVG</button>
       </li>
     </ul>
   </div>
@@ -156,7 +147,9 @@ onUnmounted(() => {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
 }
 
 .wl-btn--ghost {

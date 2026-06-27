@@ -5,12 +5,7 @@ defineProps<{
 </script>
 
 <template>
-  <a
-    :href="target ?? '#main-content'"
-    class="skip-link"
-  >
-    Skip to main content
-  </a>
+  <a :href="target ?? '#main-content'" class="skip-link"> Skip to main content </a>
 </template>
 
 <style scoped>

@@ -55,7 +55,7 @@ export interface PaginatedDatasetResponse {
 export interface DatasetFreshnessEntry {
   last_updated: string | null
   age_hours: number | null
-  status: 'fresh' | 'stale' | 'expired' | 'unknown'
+  status: "fresh" | "stale" | "expired" | "unknown"
 }
 
 /** Thresholds used to classify dataset freshness. */

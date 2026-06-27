@@ -1,15 +1,15 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { ref, nextTick } from 'vue'
-import { mount } from '@vue/test-utils'
-import { defineComponent } from 'vue'
-import { useIntersectionObserver } from '@/composables/useIntersectionObserver'
+import { describe, it, expect, vi, beforeEach } from "vitest"
+import { ref, nextTick } from "vue"
+import { mount } from "@vue/test-utils"
+import { defineComponent } from "vue"
+import { useIntersectionObserver } from "@/composables/useIntersectionObserver"
 
 let observeCallback: (entries: Array<{ isIntersecting: boolean }>) => void
 let mockObserve: ReturnType<typeof vi.fn>
 let mockUnobserve: ReturnType<typeof vi.fn>
 let mockDisconnect: ReturnType<typeof vi.fn>
 
-describe('useIntersectionObserver', () => {
+describe("useIntersectionObserver", () => {
   beforeEach(() => {
     mockObserve = vi.fn()
     mockUnobserve = vi.fn()
@@ -28,7 +28,7 @@ describe('useIntersectionObserver', () => {
   function mountWithObserver(options = {}) {
     const Comp = defineComponent({
       setup() {
-        const el = ref<HTMLElement | null>(document.createElement('div'))
+        const el = ref<HTMLElement | null>(document.createElement("div"))
         const { isVisible } = useIntersectionObserver(el, options)
         return { isVisible, el }
       },
@@ -37,33 +37,33 @@ describe('useIntersectionObserver', () => {
     return mount(Comp)
   }
 
-  it('starts with isVisible false', () => {
+  it("starts with isVisible false", () => {
     const wrapper = mountWithObserver()
     expect(wrapper.vm.isVisible).toBe(false)
   })
 
-  it('sets isVisible true when element intersects', async () => {
+  it("sets isVisible true when element intersects", async () => {
     const wrapper = mountWithObserver()
     observeCallback([{ isIntersecting: true }])
     await nextTick()
     expect(wrapper.vm.isVisible).toBe(true)
   })
 
-  it('unobserves after first intersection when once=true', async () => {
+  it("unobserves after first intersection when once=true", async () => {
     mountWithObserver({ once: true })
     observeCallback([{ isIntersecting: true }])
     await nextTick()
     expect(mockUnobserve).toHaveBeenCalled()
   })
 
-  it('does not unobserve when once=false', async () => {
+  it("does not unobserve when once=false", async () => {
     mountWithObserver({ once: false })
     observeCallback([{ isIntersecting: true }])
     await nextTick()
     expect(mockUnobserve).not.toHaveBeenCalled()
   })
 
-  it('resets isVisible when element leaves viewport with once=false', async () => {
+  it("resets isVisible when element leaves viewport with once=false", async () => {
     const wrapper = mountWithObserver({ once: false })
     observeCallback([{ isIntersecting: true }])
     await nextTick()
@@ -74,13 +74,13 @@ describe('useIntersectionObserver', () => {
     expect(wrapper.vm.isVisible).toBe(false)
   })
 
-  it('disconnects observer on unmount', () => {
+  it("disconnects observer on unmount", () => {
     const wrapper = mountWithObserver()
     wrapper.unmount()
     expect(mockDisconnect).toHaveBeenCalled()
   })
 
-  it('calls observe on the target element', () => {
+  it("calls observe on the target element", () => {
     mountWithObserver()
     expect(mockObserve).toHaveBeenCalled()
   })

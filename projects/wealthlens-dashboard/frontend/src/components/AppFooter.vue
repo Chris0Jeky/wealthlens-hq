@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { RouterLink } from 'vue-router'
-import NewsletterSignup from '@/components/NewsletterSignup.vue'
-import HealthStatus from './HealthStatus.vue'
+import { RouterLink } from "vue-router"
+import NewsletterSignup from "@/components/NewsletterSignup.vue"
+import HealthStatus from "./HealthStatus.vue"
 
 const year = new Date().getFullYear()
 </script>
@@ -12,20 +12,8 @@ const year = new Date().getFullYear()
       <!-- Brand column -->
       <div class="foot-col foot-brand">
         <RouterLink to="/" class="brand" aria-label="WealthLens UK — home page">
-          <svg
-            class="brand-mark"
-            viewBox="0 0 68 68"
-            fill="none"
-            aria-hidden="true"
-          >
-            <circle
-              cx="34"
-              cy="34"
-              r="26"
-              stroke="var(--wl-ink)"
-              stroke-width="3"
-              fill="none"
-            />
+          <svg class="brand-mark" viewBox="0 0 68 68" fill="none" aria-hidden="true">
+            <circle cx="34" cy="34" r="26" stroke="var(--wl-ink)" stroke-width="3" fill="none" />
             <path
               d="M 8 60 Q 32 60 44 50 Q 56 36 60 8"
               stroke="var(--wl-red)"
@@ -46,45 +34,53 @@ const year = new Date().getFullYear()
           <span class="brand-text">WealthLens</span>
           <span class="brand-uk">UK</span>
         </RouterLink>
-        <p>{{ $t('footer.description') }}</p>
+        <p>{{ $t("footer.description") }}</p>
       </div>
 
       <!-- Explore column -->
       <div class="foot-col">
-        <h4>{{ $t('footer.explore') }}</h4>
+        <h4>{{ $t("footer.explore") }}</h4>
         <ul>
           <li>
-            <RouterLink to="/charts/wealth-shares">{{ $t('footer.allCharts') }}</RouterLink>
+            <RouterLink to="/charts/wealth-shares">{{ $t("footer.allCharts") }}</RouterLink>
           </li>
           <li>
-            <RouterLink to="/charts/wealth-shares">{{ $t('footer.wealth') }}</RouterLink>
+            <RouterLink to="/charts/wealth-shares">{{ $t("footer.wealth") }}</RouterLink>
           </li>
           <li>
-            <RouterLink to="/charts/housing-affordability">{{ $t('footer.housing') }}</RouterLink>
+            <RouterLink to="/charts/housing-affordability">{{ $t("footer.housing") }}</RouterLink>
           </li>
           <li>
-            <RouterLink to="/charts/cgt-concentration">{{ $t('footer.tax') }}</RouterLink>
+            <RouterLink to="/charts/cgt-concentration">{{ $t("footer.tax") }}</RouterLink>
           </li>
           <li>
-            <RouterLink to="/charts/wealth-by-decile">{{ $t('footer.incomeOpportunity') }}</RouterLink>
+            <RouterLink to="/charts/wealth-by-decile">{{
+              $t("footer.incomeOpportunity")
+            }}</RouterLink>
           </li>
         </ul>
       </div>
 
       <!-- Project column -->
       <div class="foot-col">
-        <h4>{{ $t('footer.project') }}</h4>
+        <h4>{{ $t("footer.project") }}</h4>
         <ul>
-          <li><RouterLink to="/about">{{ $t('nav.about') }}</RouterLink></li>
-          <li><RouterLink to="/methodology">{{ $t('nav.methodology') }}</RouterLink></li>
-          <li><RouterLink to="/contribute">{{ $t('nav.contribute') }}</RouterLink></li>
+          <li>
+            <RouterLink to="/about">{{ $t("nav.about") }}</RouterLink>
+          </li>
+          <li>
+            <RouterLink to="/methodology">{{ $t("nav.methodology") }}</RouterLink>
+          </li>
+          <li>
+            <RouterLink to="/contribute">{{ $t("nav.contribute") }}</RouterLink>
+          </li>
           <li>
             <a
               href="https://github.com/Chris0Jeky/wealthlens-hq/blob/main/LICENSE"
               target="_blank"
               rel="noopener"
             >
-              {{ $t('footer.licence') }}
+              {{ $t("footer.licence") }}
             </a>
           </li>
         </ul>
@@ -92,32 +88,20 @@ const year = new Date().getFullYear()
 
       <!-- Follow column -->
       <div class="foot-col">
-        <h4>{{ $t('footer.follow') }}</h4>
+        <h4>{{ $t("footer.follow") }}</h4>
         <ul>
           <li>
-            <a
-              href="https://github.com/Chris0Jeky/wealthlens-hq"
-              target="_blank"
-              rel="noopener"
-            >
+            <a href="https://github.com/Chris0Jeky/wealthlens-hq" target="_blank" rel="noopener">
               GitHub
             </a>
           </li>
           <li>
-            <a
-              href="https://bsky.app/profile/wealthlens.uk"
-              target="_blank"
-              rel="noopener me"
-            >
+            <a href="https://bsky.app/profile/wealthlens.uk" target="_blank" rel="noopener me">
               Bluesky
             </a>
           </li>
           <li>
-            <a
-              href="https://mastodon.social/@wealthlens"
-              target="_blank"
-              rel="noopener me"
-            >
+            <a href="https://mastodon.social/@wealthlens" target="_blank" rel="noopener me">
               Mastodon
             </a>
           </li>
@@ -132,9 +116,9 @@ const year = new Date().getFullYear()
 
     <!-- Bottom bar -->
     <div class="foot-base">
-      <span>{{ $t('footer.copyright', { year }) }} · {{ $t('footer.mitLicensed') }}</span>
+      <span>{{ $t("footer.copyright", { year }) }} · {{ $t("footer.mitLicensed") }}</span>
       <HealthStatus />
-      <span>{{ $t('footer.tagline') }}</span>
+      <span>{{ $t("footer.tagline") }}</span>
     </div>
   </footer>
 </template>

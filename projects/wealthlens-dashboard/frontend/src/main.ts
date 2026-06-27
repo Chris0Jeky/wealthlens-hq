@@ -1,26 +1,26 @@
-import { createApp } from 'vue'
-import { createPinia } from 'pinia'
-import App from './App.vue'
-import router from '@/router'
-import i18n from '@/i18n'
-import './style.css'
+import { createApp } from "vue"
+import { createPinia } from "pinia"
+import App from "./App.vue"
+import router from "@/router"
+import i18n from "@/i18n"
+import "./style.css"
 
 const app = createApp(App)
 app.use(createPinia())
 app.use(i18n)
 app.use(router)
-app.mount('#app')
+app.mount("#app")
 
 // Register service worker in production
-if (import.meta.env.PROD && 'serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
+if (import.meta.env.PROD && "serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
     navigator.serviceWorker
-      .register('/wealthlens-hq/sw.js', { scope: '/wealthlens-hq/' })
+      .register("/wealthlens-hq/sw.js", { scope: "/wealthlens-hq/" })
       .then((reg) => {
-        console.log('[SW] Registered:', reg.scope)
+        console.log("[SW] Registered:", reg.scope)
       })
       .catch((err) => {
-        console.warn('[SW] Registration failed:', err)
+        console.warn("[SW] Registration failed:", err)
       })
   })
 }

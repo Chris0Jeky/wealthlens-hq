@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref } from "vue"
 
 withDefaults(
   defineProps<{
     text: string
-    position?: 'top' | 'bottom'
+    position?: "top" | "bottom"
   }>(),
-  { position: 'top' },
+  { position: "top" },
 )
 
 const visible = ref(false)

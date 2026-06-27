@@ -1,23 +1,23 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useRoute } from 'vue-router'
-import ThemeToggle from '@/components/ThemeToggle.vue'
+import { ref } from "vue"
+import { useRoute } from "vue-router"
+import ThemeToggle from "@/components/ThemeToggle.vue"
 
 const route = useRoute()
 const mobileOpen = ref(false)
 
 const navLinks = [
-  { to: '/', label: 'Dashboard' },
-  { to: '/charts/wealth-shares', label: 'Wealth Shares' },
-  { to: '/charts/housing-affordability', label: 'Housing' },
-  { to: '/charts/wealth-by-decile', label: 'Wealth by Decile' },
-  { to: '/charts/cgt-concentration', label: 'CGT' },
-  { to: '/simulator', label: 'Simulator' },
+  { to: "/", label: "Dashboard" },
+  { to: "/charts/wealth-shares", label: "Wealth Shares" },
+  { to: "/charts/housing-affordability", label: "Housing" },
+  { to: "/charts/wealth-by-decile", label: "Wealth by Decile" },
+  { to: "/charts/cgt-concentration", label: "CGT" },
+  { to: "/simulator", label: "Simulator" },
 ]
 
 function isActive(to: string): boolean {
-  if (to === '/') return route.path === '/'
-  return route.path === to || route.path.startsWith(to + '/')
+  if (to === "/") return route.path === "/"
+  return route.path === to || route.path.startsWith(to + "/")
 }
 
 function closeMobile() {
@@ -37,10 +37,7 @@ function closeMobile() {
           WealthLens<span class="text-blue-600"> UK</span>
         </router-link>
 
-        <nav
-          aria-label="Main navigation"
-          class="hidden md:flex items-center gap-1"
-        >
+        <nav aria-label="Main navigation" class="hidden md:flex items-center gap-1">
           <router-link
             v-for="link in navLinks"
             :key="link.to"

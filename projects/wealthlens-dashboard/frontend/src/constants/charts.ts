@@ -11,4 +11,4 @@ export const VALID_CHART_NAMES = new Set([
   "boe-rates",
   "child-poverty",
   "generational-wealth",
-]);
+])

@@ -8,22 +8,22 @@
  *
  * Accessibility: WCAG AA high-contrast colors, aria-label, keyboard tooltip.
  */
-import { computed, ref } from "vue";
-import { use } from "echarts/core";
-import { CanvasRenderer } from "echarts/renderers";
-import { BarChart } from "echarts/charts";
+import { computed, ref } from "vue"
+import { use } from "echarts/core"
+import { CanvasRenderer } from "echarts/renderers"
+import { BarChart } from "echarts/charts"
 import {
   GridComponent,
   TooltipComponent,
   TitleComponent,
   LegendComponent,
   MarkLineComponent,
-} from "echarts/components";
-import VChart from "vue-echarts";
-import { useChartData } from "@/composables/useChartData";
-import type { EChartsExportable } from "@/composables/useChartExport";
-import { escapeHtml, safeMinMax, toNumberOrNaN, warnIfSignificantDataLoss } from "@/utils/chart";
-import AccessibleDataTable from "@/components/AccessibleDataTable.vue";
+} from "echarts/components"
+import VChart from "vue-echarts"
+import { useChartData } from "@/composables/useChartData"
+import type { EChartsExportable } from "@/composables/useChartExport"
+import { escapeHtml, safeMinMax, toNumberOrNaN, warnIfSignificantDataLoss } from "@/utils/chart"
+import AccessibleDataTable from "@/components/AccessibleDataTable.vue"
 
 // Register only the ECharts modules we need (tree-shaking)
 use([
@@ -34,24 +34,23 @@ use([
   TitleComponent,
   LegendComponent,
   MarkLineComponent,
-]);
+])
 
-const { rows, loading, error } = useChartData("child-poverty");
-const chart = ref<EChartsExportable | null>(null);
+const { rows, loading, error } = useChartData("child-poverty")
+const chart = ref<EChartsExportable | null>(null)
 
-defineExpose({ chart });
+defineExpose({ chart })
 
 /**
  * Respect prefers-reduced-motion (WCAG 2.3.3).
  */
 const prefersReducedMotion =
-  typeof window !== "undefined" &&
-  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches
 
 // WCAG AA high-contrast colors
-const COLOR_ABOVE_AVG = "#b91c1c"; // Red-700 — ~5.7:1 (above national avg)
-const COLOR_BELOW_AVG = "#1a56db"; // Blue — ~7.2:1 (below national avg)
-const COLOR_NATIONAL_AVG = "#374151"; // Dark gray for reference line
+const COLOR_ABOVE_AVG = "#b91c1c" // Red-700 — ~5.7:1 (above national avg)
+const COLOR_BELOW_AVG = "#1a56db" // Blue — ~7.2:1 (below national avg)
+const COLOR_NATIONAL_AVG = "#374151" // Dark gray for reference line
 
 /** Sorted data extracted from rows (sorted by poverty rate descending). */
 const chartData = computed(() => {
@@ -60,19 +59,18 @@ const chartData = computed(() => {
     povertyPct: toNumberOrNaN(r.child_poverty_pct),
     childrenInPoverty: toNumberOrNaN(r.children_in_poverty),
     aboveAvg: Boolean(r.above_national_avg),
-  }));
+  }))
   const sorted = mapped
     .filter((r) => r.region && !isNaN(r.povertyPct))
-    .sort((a, b) => b.povertyPct - a.povertyPct);
+    .sort((a, b) => b.povertyPct - a.povertyPct)
 
-  warnIfSignificantDataLoss("child-poverty", mapped.length, sorted.length);
+  warnIfSignificantDataLoss("child-poverty", mapped.length, sorted.length)
 
   // Extract national average from the first row (all rows have same value).
   // toNumberOrNaN (not bare Number) so a missing value is NaN, not a fabricated
   // 0 — the markLine self-hides, the table shows "—", and the aria-label below
   // omits the sentence rather than reading "NaN%".
-  const nationalAvg =
-    rows.value.length > 0 ? toNumberOrNaN(rows.value[0].national_avg_pct) : NaN;
+  const nationalAvg = rows.value.length > 0 ? toNumberOrNaN(rows.value[0].national_avg_pct) : NaN
 
   return {
     regions: sorted.map((r) => r.region),
@@ -80,14 +78,14 @@ const chartData = computed(() => {
     children: sorted.map((r) => r.childrenInPoverty),
     aboveAvg: sorted.map((r) => r.aboveAvg),
     nationalAvg,
-  };
-});
+  }
+})
 
 /** True when the API returned actual data to display. */
-const hasData = computed(() => chartData.value.regions.length > 0);
+const hasData = computed(() => chartData.value.regions.length > 0)
 
 /** Poverty rate range for aria-label. */
-const povertyRange = computed(() => safeMinMax(chartData.value.values));
+const povertyRange = computed(() => safeMinMax(chartData.value.values))
 
 /**
  * Accessible data-table fallback (WCAG 1.1.1). Mirrors the plotted series — the
@@ -96,15 +94,10 @@ const povertyRange = computed(() => safeMinMax(chartData.value.values));
  * tooltip and the national-average reference line the chart draws. Figures are
  * verbatim: it reuses chartData, never re-fetching or recomputing.
  */
-const tableColumns = [
-  "Region",
-  "Child poverty (%)",
-  "Children in poverty",
-  "National average (%)",
-];
-const tableNumericColumns = tableColumns.filter((c) => c !== "Region");
+const tableColumns = ["Region", "Child poverty (%)", "Children in poverty", "National average (%)"]
+const tableNumericColumns = tableColumns.filter((c) => c !== "Region")
 const tableRows = computed(() => {
-  const d = chartData.value;
+  const d = chartData.value
   return d.regions.map((region, i) => {
     // Re-derive the children-in-poverty count from the raw row so a missing
     // source value (null/undefined/"") stays missing instead of becoming 0.
@@ -112,20 +105,20 @@ const tableRows = computed(() => {
     // which would otherwise make AccessibleDataTable render "0" (claiming zero
     // children in poverty) where the tooltip honestly shows "N/A". Mapping to
     // null lets the table render "—", keeping the visual and the fallback honest.
-    const rawRow = rows.value.find((r) => String(r.region ?? "") === region);
-    const rawChildren = rawRow?.children_in_poverty;
+    const rawRow = rows.value.find((r) => String(r.region ?? "") === region)
+    const rawChildren = rawRow?.children_in_poverty
     const children: number | null =
       rawChildren === null || rawChildren === undefined || rawChildren === ""
         ? null
-        : Number(rawChildren);
+        : Number(rawChildren)
     return {
       Region: region,
       "Child poverty (%)": d.values[i],
       "Children in poverty": children,
       "National average (%)": d.nationalAvg,
-    };
-  });
-});
+    }
+  })
+})
 
 /**
  * Table caption — cites the same registered source the chart's footer credits
@@ -135,10 +128,10 @@ const tableRows = computed(() => {
  * as the visual and points at the same dataset.
  */
 const tableCaption =
-  "Child poverty rate (%) by UK region, with the estimated number of children in poverty and the UK national-average rate (%). Source: DWP/HMRC Children in Low Income Families. Children-in-poverty figures are estimates.";
+  "Child poverty rate (%) by UK region, with the estimated number of children in poverty and the UK national-average rate (%). Source: DWP/HMRC Children in Low Income Families. Children-in-poverty figures are estimates."
 
 const option = computed(() => {
-  const data = chartData.value;
+  const data = chartData.value
 
   return {
     animation: !prefersReducedMotion,
@@ -154,13 +147,15 @@ const option = computed(() => {
     tooltip: {
       trigger: "axis" as const,
       axisPointer: { type: "shadow" as const },
-      formatter: (params: Array<{ seriesName: string; value: number; name: string; dataIndex: number }>) => {
-        if (!Array.isArray(params) || params.length === 0) return "";
-        const p = params[0];
-        const idx = data.regions.length - 1 - p.dataIndex;
-        const children = data.children[idx];
-        const childrenStr = children ? children.toLocaleString() : "N/A";
-        return `<strong>${escapeHtml(String(p.name))}</strong><br/>Child poverty rate: ${p.value}%<br/>Children in poverty: ~${escapeHtml(childrenStr)}`;
+      formatter: (
+        params: Array<{ seriesName: string; value: number; name: string; dataIndex: number }>,
+      ) => {
+        if (!Array.isArray(params) || params.length === 0) return ""
+        const p = params[0]
+        const idx = data.regions.length - 1 - p.dataIndex
+        const children = data.children[idx]
+        const childrenStr = children ? children.toLocaleString() : "N/A"
+        return `<strong>${escapeHtml(String(p.name))}</strong><br/>Child poverty rate: ${p.value}%<br/>Children in poverty: ~${escapeHtml(childrenStr)}`
       },
     },
     grid: {
@@ -179,9 +174,7 @@ const option = computed(() => {
         color: "#374151",
         formatter: "{value}%",
       },
-      max: data.values.length > 0
-        ? Math.ceil(Math.max(...data.values) * 1.1 / 5) * 5
-        : 45,
+      max: data.values.length > 0 ? Math.ceil((Math.max(...data.values) * 1.1) / 5) * 5 : 45,
     },
     yAxis: {
       type: "category" as const,
@@ -198,9 +191,7 @@ const option = computed(() => {
         data: [...data.values].reverse().map((val, i) => ({
           value: val,
           itemStyle: {
-            color: data.aboveAvg[data.regions.length - 1 - i]
-              ? COLOR_ABOVE_AVG
-              : COLOR_BELOW_AVG,
+            color: data.aboveAvg[data.regions.length - 1 - i] ? COLOR_ABOVE_AVG : COLOR_BELOW_AVG,
           },
         })),
         barMaxWidth: 24,
@@ -222,13 +213,18 @@ const option = computed(() => {
           : undefined,
       },
     ],
-  };
-});
+  }
+})
 </script>
 
 <template>
   <!-- Loading state -->
-  <div v-if="loading" class="flex items-center justify-center py-20" role="status" aria-live="polite">
+  <div
+    v-if="loading"
+    class="flex items-center justify-center py-20"
+    role="status"
+    aria-live="polite"
+  >
     <p class="text-[var(--wl-ink-muted)] text-lg">Loading chart data...</p>
   </div>
 
@@ -252,13 +248,7 @@ const option = computed(() => {
       :aria-label="`Bar chart showing child poverty rates across ${chartData.regions.length} UK regions. Rates range from ${povertyRange.min}% to ${povertyRange.max}%.${Number.isFinite(chartData.nationalAvg) ? ` The national average is ${chartData.nationalAvg}%.` : ''} Regions above the national average are highlighted in red.`"
       class="w-full"
     >
-      <VChart
-        ref="chart"
-        class="w-full"
-        style="height: 520px"
-        :option="option"
-        autoresize
-      />
+      <VChart ref="chart" class="w-full" style="height: 520px" :option="option" autoresize />
     </div>
 
     <!-- Accessible data-table fallback (WCAG 1.1.1 non-text content). -->
@@ -278,7 +268,8 @@ const option = computed(() => {
         rel="noopener"
         class="underline hover:text-[var(--wl-ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--wl-red)] rounded"
       >
-        DWP/HMRC Children in Low Income Families<span class="sr-only"> (opens in new tab)</span></a>, accessed 2026-05-16
+        DWP/HMRC Children in Low Income Families<span class="sr-only"> (opens in new tab)</span></a
+      >, accessed 2026-05-16
     </p>
   </div>
 </template>

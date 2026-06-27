@@ -8,84 +8,83 @@
  * @example
  * <EmbedCode chart-name="wealth-shares" />
  */
-import { ref, computed, onBeforeUnmount } from "vue";
-import { CHARTS_BASE_URL } from "@/constants/urls";
+import { ref, computed, onBeforeUnmount } from "vue"
+import { CHARTS_BASE_URL } from "@/constants/urls"
 
 const props = defineProps<{
-  chartName: string;
-}>();
+  chartName: string
+}>()
 
 const widthOptions = [
   { label: "600px", value: "600" },
   { label: "800px", value: "800" },
   { label: "100%", value: "100%" },
-] as const;
+] as const
 
-type EmbedWidth = (typeof widthOptions)[number]["value"];
-const selectedWidth = ref<EmbedWidth>("100%");
+type EmbedWidth = (typeof widthOptions)[number]["value"]
+const selectedWidth = ref<EmbedWidth>("100%")
 
 const embedSnippet = computed(() => {
-  const widthAttr =
-    selectedWidth.value === "100%" ? "100%" : selectedWidth.value;
-  return `<iframe src="${CHARTS_BASE_URL}/${props.chartName}" width="${widthAttr}" height="500" frameborder="0" sandbox="allow-scripts" title="WealthLens UK chart"></iframe>`;
-});
+  const widthAttr = selectedWidth.value === "100%" ? "100%" : selectedWidth.value
+  return `<iframe src="${CHARTS_BASE_URL}/${props.chartName}" width="${widthAttr}" height="500" frameborder="0" sandbox="allow-scripts" title="WealthLens UK chart"></iframe>`
+})
 
-const copied = ref(false);
-const copyError = ref(false);
-let timeoutId: ReturnType<typeof setTimeout> | null = null;
+const copied = ref(false)
+const copyError = ref(false)
+let timeoutId: ReturnType<typeof setTimeout> | null = null
 
 function clearTimer(): void {
   if (timeoutId) {
-    clearTimeout(timeoutId);
-    timeoutId = null;
+    clearTimeout(timeoutId)
+    timeoutId = null
   }
 }
 
 const isClipboardSupported = computed(
   () => typeof navigator !== "undefined" && !!navigator.clipboard,
-);
+)
 
 async function copyEmbed(): Promise<void> {
   if (!isClipboardSupported.value) {
-    copyError.value = true;
-    clearTimer();
-    timeoutId = setTimeout(() => { copyError.value = false; timeoutId = null; }, 3000);
-    return;
+    copyError.value = true
+    clearTimer()
+    timeoutId = setTimeout(() => {
+      copyError.value = false
+      timeoutId = null
+    }, 3000)
+    return
   }
 
   try {
-    await navigator.clipboard.writeText(embedSnippet.value);
-    copied.value = true;
-    copyError.value = false;
-    clearTimer();
+    await navigator.clipboard.writeText(embedSnippet.value)
+    copied.value = true
+    copyError.value = false
+    clearTimer()
     timeoutId = setTimeout(() => {
-      copied.value = false;
-      timeoutId = null;
-    }, 2000);
+      copied.value = false
+      timeoutId = null
+    }, 2000)
   } catch {
-    copyError.value = true;
-    clearTimer();
-    timeoutId = setTimeout(() => { copyError.value = false; timeoutId = null; }, 3000);
+    copyError.value = true
+    clearTimer()
+    timeoutId = setTimeout(() => {
+      copyError.value = false
+      timeoutId = null
+    }, 3000)
   }
 }
 
-onBeforeUnmount(clearTimer);
+onBeforeUnmount(clearTimer)
 </script>
 
 <template>
   <div class="embed-code" aria-labelledby="embed-code-heading">
-    <h3 id="embed-code-heading" class="embed-code__heading">
-      Embed this chart
-    </h3>
+    <h3 id="embed-code-heading" class="embed-code__heading">Embed this chart</h3>
 
     <!-- Width selector -->
     <fieldset class="embed-code__widths">
       <legend class="embed-code__legend">Width</legend>
-      <label
-        v-for="opt in widthOptions"
-        :key="opt.value"
-        class="embed-code__radio-label"
-      >
+      <label v-for="opt in widthOptions" :key="opt.value" class="embed-code__radio-label">
         <input
           v-model="selectedWidth"
           type="radio"
@@ -107,7 +106,9 @@ onBeforeUnmount(clearTimer);
       type="button"
       class="embed-code__copy"
       :class="{ 'embed-code__copy--error': copyError }"
-      :aria-label="copyError ? 'Copy failed — try again' : copied ? 'Embed code copied' : 'Copy embed code'"
+      :aria-label="
+        copyError ? 'Copy failed — try again' : copied ? 'Embed code copied' : 'Copy embed code'
+      "
       @click="copyEmbed"
     >
       <svg
@@ -138,7 +139,13 @@ onBeforeUnmount(clearTimer);
 
     <!-- Live region for screen readers -->
     <span role="status" aria-live="polite" class="sr-only">
-      {{ copyError ? "Copy failed — try selecting the code manually" : copied ? "Embed code copied to clipboard" : "" }}
+      {{
+        copyError
+          ? "Copy failed — try selecting the code manually"
+          : copied
+            ? "Embed code copied to clipboard"
+            : ""
+      }}
     </span>
   </div>
 </template>

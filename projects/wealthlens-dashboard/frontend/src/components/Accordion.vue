@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, useId } from 'vue'
+import { ref, useId } from "vue"
 
 defineProps<{
   title: string
@@ -31,7 +31,8 @@ function toggle() {
           aria-hidden="true"
           class="ml-2 shrink-0 transition-transform duration-200"
           :class="{ 'rotate-180': open }"
-        >&#9660;</span>
+          >&#9660;</span
+        >
       </button>
     </h3>
     <div

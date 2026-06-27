@@ -8,22 +8,22 @@
  *
  * Accessibility: WCAG AA high-contrast colors, aria-label, keyboard tooltip.
  */
-import { computed, ref } from "vue";
-import { use } from "echarts/core";
-import { CanvasRenderer } from "echarts/renderers";
-import { BarChart } from "echarts/charts";
+import { computed, ref } from "vue"
+import { use } from "echarts/core"
+import { CanvasRenderer } from "echarts/renderers"
+import { BarChart } from "echarts/charts"
 import {
   GridComponent,
   TooltipComponent,
   TitleComponent,
   LegendComponent,
   MarkLineComponent,
-} from "echarts/components";
-import VChart from "vue-echarts";
-import { useChartData } from "@/composables/useChartData";
-import type { EChartsExportable } from "@/composables/useChartExport";
-import { escapeHtml, safeMinMax, toNumberOrNaN, warnIfSignificantDataLoss } from "@/utils/chart";
-import AccessibleDataTable from "@/components/AccessibleDataTable.vue";
+} from "echarts/components"
+import VChart from "vue-echarts"
+import { useChartData } from "@/composables/useChartData"
+import type { EChartsExportable } from "@/composables/useChartExport"
+import { escapeHtml, safeMinMax, toNumberOrNaN, warnIfSignificantDataLoss } from "@/utils/chart"
+import AccessibleDataTable from "@/components/AccessibleDataTable.vue"
 
 // Register only the ECharts modules we need (tree-shaking)
 use([
@@ -34,23 +34,22 @@ use([
   TitleComponent,
   LegendComponent,
   MarkLineComponent,
-]);
+])
 
-const { rows, loading, error } = useChartData("gdhi-by-region");
-const chart = ref<EChartsExportable | null>(null);
+const { rows, loading, error } = useChartData("gdhi-by-region")
+const chart = ref<EChartsExportable | null>(null)
 
-defineExpose({ chart });
+defineExpose({ chart })
 
 /**
  * Respect prefers-reduced-motion (WCAG 2.3.3).
  */
 const prefersReducedMotion =
-  typeof window !== "undefined" &&
-  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches
 
 // WCAG AA high-contrast colors
-const COLOR_BAR = "#1a56db"; // Blue — ~7.2:1
-const COLOR_UK_AVG = "#b91c1c"; // Red-700 — ~5.7:1
+const COLOR_BAR = "#1a56db" // Blue — ~7.2:1
+const COLOR_UK_AVG = "#b91c1c" // Red-700 — ~5.7:1
 
 /** Sorted data extracted from rows (sorted by GDHI descending). */
 const chartData = computed(() => {
@@ -58,18 +57,18 @@ const chartData = computed(() => {
     region: String(r.region ?? ""),
     gdhi: toNumberOrNaN(r.gdhi_per_head),
     year: String(r.year ?? ""),
-  }));
+  }))
   const sorted = mapped
     .filter((r) => r.region && !isNaN(r.gdhi) && r.region !== "United Kingdom")
-    .sort((a, b) => b.gdhi - a.gdhi);
+    .sort((a, b) => b.gdhi - a.gdhi)
 
-  warnIfSignificantDataLoss("gdhi-by-region", mapped.length, sorted.length);
+  warnIfSignificantDataLoss("gdhi-by-region", mapped.length, sorted.length)
 
   // Extract the UK average for reference line. Use the null-safe helper (NOT bare
   // Number(), which coerces a missing/blank cell to 0 — a fabricated "£0 average").
   // A non-finite ukAvg means "no usable UK reference"; consumers guard on it.
-  const ukRow = rows.value.find((r) => String(r.region) === "United Kingdom");
-  const ukAvg = ukRow ? toNumberOrNaN(ukRow.gdhi_per_head) : NaN;
+  const ukRow = rows.value.find((r) => String(r.region) === "United Kingdom")
+  const ukAvg = ukRow ? toNumberOrNaN(ukRow.gdhi_per_head) : NaN
 
   return {
     // The sorted/filtered objects themselves — the data-table maps over these
@@ -78,14 +77,14 @@ const chartData = computed(() => {
     regions: sorted.map((r) => r.region),
     values: sorted.map((r) => r.gdhi),
     ukAvg,
-  };
-});
+  }
+})
 
 /** True when the API returned actual data to display. */
-const hasData = computed(() => chartData.value.regions.length > 0);
+const hasData = computed(() => chartData.value.regions.length > 0)
 
 /** GDHI range for aria-label. */
-const gdhiRange = computed(() => safeMinMax(chartData.value.values));
+const gdhiRange = computed(() => safeMinMax(chartData.value.values))
 
 /**
  * Accessible data-table fallback (WCAG 1.1.1). Mirrors the plotted series — one
@@ -93,25 +92,25 @@ const gdhiRange = computed(() => safeMinMax(chartData.value.values));
  * exactly as the chart bars are — reusing the same already-loaded, verbatim
  * figures the chart draws (no re-fetch, no recompute).
  */
-const tableColumns = ["Region", "GDHI per head (£)", "Year"];
-const tableNumericColumns = ["GDHI per head (£)"];
+const tableColumns = ["Region", "GDHI per head (£)", "Year"]
+const tableNumericColumns = ["GDHI per head (£)"]
 const tableRows = computed(() =>
   chartData.value.sorted.map((r) => ({
     Region: r.region,
     "GDHI per head (£)": r.gdhi,
     Year: r.year,
   })),
-);
+)
 
 /**
  * Table caption — cites the same ONS Regional GDHI source the chart shows. These
  * are official published ONS figures (no projection/illustrative caveat needed).
  */
 const tableCaption =
-  "Gross Disposable Household Income per head (£) by UK region, highest first, from ONS Regional GDHI. Excludes the United Kingdom aggregate, which the chart shows as a reference line.";
+  "Gross Disposable Household Income per head (£) by UK region, highest first, from ONS Regional GDHI. Excludes the United Kingdom aggregate, which the chart shows as a reference line."
 
 const option = computed(() => {
-  const data = chartData.value;
+  const data = chartData.value
 
   return {
     animation: !prefersReducedMotion,
@@ -128,10 +127,10 @@ const option = computed(() => {
       trigger: "axis" as const,
       axisPointer: { type: "shadow" as const },
       formatter: (params: Array<{ seriesName: string; value: number; name: string }>) => {
-        if (!Array.isArray(params) || params.length === 0) return "";
-        const p = params[0];
-        const val = typeof p.value === "number" ? `£${p.value.toLocaleString()}` : String(p.value);
-        return `<strong>${escapeHtml(String(p.name))}</strong><br/>GDHI per head: ${escapeHtml(val)}`;
+        if (!Array.isArray(params) || params.length === 0) return ""
+        const p = params[0]
+        const val = typeof p.value === "number" ? `£${p.value.toLocaleString()}` : String(p.value)
+        return `<strong>${escapeHtml(String(p.name))}</strong><br/>GDHI per head: ${escapeHtml(val)}`
       },
     },
     grid: {
@@ -181,18 +180,25 @@ const option = computed(() => {
               silent: true,
               symbol: "none",
               lineStyle: { color: COLOR_UK_AVG, type: "dashed" as const, width: 2 },
-              data: [{ xAxis: data.ukAvg, label: { formatter: "UK avg", position: "end" as const } }],
+              data: [
+                { xAxis: data.ukAvg, label: { formatter: "UK avg", position: "end" as const } },
+              ],
             }
           : undefined,
       },
     ],
-  };
-});
+  }
+})
 </script>
 
 <template>
   <!-- Loading state -->
-  <div v-if="loading" class="flex items-center justify-center py-20" role="status" aria-live="polite">
+  <div
+    v-if="loading"
+    class="flex items-center justify-center py-20"
+    role="status"
+    aria-live="polite"
+  >
     <p class="text-[var(--wl-ink-muted)] text-lg">Loading chart data...</p>
   </div>
 
@@ -216,13 +222,7 @@ const option = computed(() => {
       :aria-label="`Bar chart showing Gross Disposable Household Income per head across ${chartData.regions.length} UK regions in 2023. Values range from £${gdhiRange.min.toLocaleString()} to £${gdhiRange.max.toLocaleString()} per head.${Number.isFinite(chartData.ukAvg) ? ` UK average is £${chartData.ukAvg.toLocaleString()}.` : ''}`"
       class="w-full"
     >
-      <VChart
-        ref="chart"
-        class="w-full"
-        style="height: 600px"
-        :option="option"
-        autoresize
-      />
+      <VChart ref="chart" class="w-full" style="height: 600px" :option="option" autoresize />
     </div>
 
     <!-- Accessible data-table fallback (WCAG 1.1.1 non-text content). -->
@@ -242,7 +242,8 @@ const option = computed(() => {
         rel="noopener"
         class="underline hover:text-[var(--wl-ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--wl-red)] rounded"
       >
-        ONS Regional GDHI<span class="sr-only"> (opens in new tab)</span></a>, accessed 2026-05-14
+        ONS Regional GDHI<span class="sr-only"> (opens in new tab)</span></a
+      >, accessed 2026-05-14
     </p>
   </div>
 </template>

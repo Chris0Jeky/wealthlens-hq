@@ -10,7 +10,7 @@ const props = defineProps<{
   label: string
 }>()
 
-const emit = defineEmits<{ 'update:selected': [ids: string[]] }>()
+const emit = defineEmits<{ "update:selected": [ids: string[]] }>()
 
 function toggle(id: string) {
   const current = new Set(props.selected)
@@ -19,7 +19,7 @@ function toggle(id: string) {
   } else {
     current.add(id)
   }
-  emit('update:selected', [...current])
+  emit("update:selected", [...current])
 }
 
 function isSelected(id: string): boolean {
@@ -39,9 +39,11 @@ function isSelected(id: string): boolean {
         type="button"
         :aria-pressed="isSelected(option.id)"
         class="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
-        :class="isSelected(option.id)
-          ? 'bg-blue-600 text-white dark:bg-blue-500'
-          : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'"
+        :class="
+          isSelected(option.id)
+            ? 'bg-blue-600 text-white dark:bg-blue-500'
+            : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+        "
         @click="toggle(option.id)"
       >
         {{ option.label }}

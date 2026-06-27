@@ -1,10 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { ref } from 'vue'
-import { mount } from '@vue/test-utils'
-import type {
-  SimulatorDashboardData,
-  SimulatorScenarioList,
-} from '@/types/simulator'
+import { describe, it, expect, vi, beforeEach } from "vitest"
+import { ref } from "vue"
+import { mount } from "@vue/test-utils"
+import type { SimulatorDashboardData, SimulatorScenarioList } from "@/types/simulator"
 
 const scenarioList = ref<SimulatorScenarioList | null>(null)
 const scenariosLoading = ref(false)
@@ -13,7 +10,7 @@ const dashboard = ref<SimulatorDashboardData | null>(null)
 const dashLoading = ref(false)
 const dashError = ref<string | null>(null)
 
-vi.mock('@/composables/useSimulatorDashboard', () => ({
+vi.mock("@/composables/useSimulatorDashboard", () => ({
   useSimulatorScenarios: () => ({
     data: scenarioList,
     loading: scenariosLoading,
@@ -25,32 +22,32 @@ vi.mock('@/composables/useSimulatorDashboard', () => ({
     error: dashError,
   }),
 }))
-vi.mock('@/composables/usePageMeta', () => ({ usePageMeta: () => {} }))
+vi.mock("@/composables/usePageMeta", () => ({ usePageMeta: () => {} }))
 
-import SimulatorView from '@/views/SimulatorView.vue'
-import ConfidenceFanChart from '@/components/ConfidenceFanChart.vue'
+import SimulatorView from "@/views/SimulatorView.vue"
+import ConfidenceFanChart from "@/components/ConfidenceFanChart.vue"
 
 const SCENARIOS: SimulatorScenarioList = {
   scenarios: [
     {
-      id: 'one-percent-wealth-tax',
-      name: '1% wealth tax',
-      description: 'Illustrative synthetic estimate.',
+      id: "one-percent-wealth-tax",
+      name: "1% wealth tax",
+      description: "Illustrative synthetic estimate.",
     },
     {
-      id: 'two-percent-wealth-tax',
-      name: '2% wealth tax',
-      description: 'Illustrative.',
+      id: "two-percent-wealth-tax",
+      name: "2% wealth tax",
+      description: "Illustrative.",
     },
   ],
 }
 
 const DASHBOARD: SimulatorDashboardData = {
-  schema_version: '1.3',
-  scenario_name: '1% wealth tax',
+  schema_version: "1.3",
+  scenario_name: "1% wealth tax",
   provenance_complete: true,
   caveats: [],
-  interval_method: 'alpha_sweep',
+  interval_method: "alpha_sweep",
   total_revenue_gbp_bn: { low: 14, central: 19, high: 27 },
   households_scored: 2000,
   revenue_by_decile: Array.from({ length: 10 }, (_, i) =>
@@ -64,26 +61,26 @@ const DASHBOARD: SimulatorDashboardData = {
     complete: true,
     assumptions_consumed: [
       {
-        assumption_id: 'toptail.pareto_alpha.overall.v1',
-        domain: 'top-tail',
-        source: 'Vermeulen (2018); calibrated to UK WAS',
-        source_urls: ['https://doi.org/10.1111/roiw.12279'],
+        assumption_id: "toptail.pareto_alpha.overall.v1",
+        domain: "top-tail",
+        source: "Vermeulen (2018); calibrated to UK WAS",
+        source_urls: ["https://doi.org/10.1111/roiw.12279"],
       },
     ],
   },
   population_provenance: [
     {
-      id: 'ons-was-wealth',
-      name: 'ONS Wealth and Assets Survey (WAS)',
-      url: 'https://www.ons.gov.uk/file?uri=/x/totalwealthtables.xlsx',
-      access_date: '2026-05-30',
-      licence: 'OGL-3.0',
+      id: "ons-was-wealth",
+      name: "ONS Wealth and Assets Survey (WAS)",
+      url: "https://www.ons.gov.uk/file?uri=/x/totalwealthtables.xlsx",
+      access_date: "2026-05-30",
+      licence: "OGL-3.0",
     },
-    { id: 'synth.pareto_alpha' },
+    { id: "synth.pareto_alpha" },
   ],
 }
 
-describe('SimulatorView', () => {
+describe("SimulatorView", () => {
   beforeEach(() => {
     scenarioList.value = null
     scenariosLoading.value = false
@@ -93,49 +90,49 @@ describe('SimulatorView', () => {
     dashError.value = null
   })
 
-  it('shows a loading state while scenarios load', () => {
+  it("shows a loading state while scenarios load", () => {
     scenariosLoading.value = true
     const wrapper = mount(SimulatorView)
     expect(wrapper.find('[role="status"]').exists()).toBe(true)
   })
 
-  it('shows an error when the scenario list fails', () => {
-    scenariosError.value = 'network down'
+  it("shows an error when the scenario list fails", () => {
+    scenariosError.value = "network down"
     const wrapper = mount(SimulatorView)
-    expect(wrapper.find('[role="alert"]').text()).toContain('network down')
+    expect(wrapper.find('[role="alert"]').text()).toContain("network down")
   })
 
-  it('renders a scenario selector and the chart when data is present', () => {
+  it("renders a scenario selector and the chart when data is present", () => {
     scenarioList.value = SCENARIOS
     dashboard.value = DASHBOARD
     const wrapper = mount(SimulatorView)
-    const options = wrapper.findAll('#scenario-select option')
+    const options = wrapper.findAll("#scenario-select option")
     expect(options).toHaveLength(2)
-    expect(options[0].text()).toContain('1% wealth tax')
+    expect(options[0].text()).toContain("1% wealth tax")
     const chart = wrapper.findComponent(ConfidenceFanChart)
     expect(chart.exists()).toBe(true)
-    expect(chart.props('interval')).toEqual(DASHBOARD.total_revenue_gbp_bn)
-    expect(chart.props('intervalMethod')).toBe('alpha_sweep')
-    expect(wrapper.text()).toContain('synthetic households')
+    expect(chart.props("interval")).toEqual(DASHBOARD.total_revenue_gbp_bn)
+    expect(chart.props("intervalMethod")).toBe("alpha_sweep")
+    expect(wrapper.text()).toContain("synthetic households")
   })
 
-  it('surfaces the consumed assumptions and their citation links', () => {
+  it("surfaces the consumed assumptions and their citation links", () => {
     scenarioList.value = SCENARIOS
     dashboard.value = DASHBOARD
     const wrapper = mount(SimulatorView)
-    expect(wrapper.text()).toContain('Sources')
-    expect(wrapper.text()).toContain('Vermeulen (2018)')
+    expect(wrapper.text()).toContain("Sources")
+    expect(wrapper.text()).toContain("Vermeulen (2018)")
     const cite = wrapper
-      .findAll('a')
-      .find((a) => a.attributes('href') === 'https://doi.org/10.1111/roiw.12279')
+      .findAll("a")
+      .find((a) => a.attributes("href") === "https://doi.org/10.1111/roiw.12279")
     expect(cite).toBeTruthy()
-    expect(cite?.attributes('rel')).toContain('noopener')
+    expect(cite?.attributes("rel")).toContain("noopener")
     // The population data source is surfaced too.
-    expect(wrapper.text()).toContain('Population data sources')
-    expect(wrapper.text()).toContain('ONS Wealth and Assets Survey')
+    expect(wrapper.text()).toContain("Population data sources")
+    expect(wrapper.text()).toContain("ONS Wealth and Assets Survey")
   })
 
-  it('degrades gracefully (chart still renders, no sources panel) when all provenance is absent', () => {
+  it("degrades gracefully (chart still renders, no sources panel) when all provenance is absent", () => {
     scenarioList.value = SCENARIOS
     dashboard.value = {
       ...DASHBOARD,
@@ -145,58 +142,56 @@ describe('SimulatorView', () => {
     const wrapper = mount(SimulatorView)
     // The headline chart still renders; the whole sources panel is hidden.
     expect(wrapper.findComponent(ConfidenceFanChart).exists()).toBe(true)
-    expect(wrapper.text()).not.toContain('Sources & assumptions')
+    expect(wrapper.text()).not.toContain("Sources & assumptions")
   })
 
-  it('surfaces the revenue breakdown (by nation + decile)', () => {
+  it("surfaces the revenue breakdown (by nation + decile)", () => {
     scenarioList.value = SCENARIOS
     dashboard.value = DASHBOARD
     const wrapper = mount(SimulatorView)
-    expect(wrapper.text()).toContain('Where the revenue comes from')
-    expect(wrapper.text()).toContain('England')
-    expect(wrapper.text()).toContain('Decile 10 (wealthiest)')
+    expect(wrapper.text()).toContain("Where the revenue comes from")
+    expect(wrapper.text()).toContain("England")
+    expect(wrapper.text()).toContain("Decile 10 (wealthiest)")
   })
 
-  it('passes the contract caveats through to the chart', () => {
+  it("passes the contract caveats through to the chart", () => {
     scenarioList.value = SCENARIOS
-    dashboard.value = { ...DASHBOARD, caveats: ['Provenance incomplete'] }
+    dashboard.value = { ...DASHBOARD, caveats: ["Provenance incomplete"] }
     const wrapper = mount(SimulatorView)
-    expect(wrapper.findComponent(ConfidenceFanChart).props('caveats')).toEqual([
-      'Provenance incomplete',
+    expect(wrapper.findComponent(ConfidenceFanChart).props("caveats")).toEqual([
+      "Provenance incomplete",
     ])
   })
 
-  it('shows an error when the selected scenario fails to load', () => {
+  it("shows an error when the selected scenario fails to load", () => {
     scenarioList.value = SCENARIOS
-    dashError.value = 'scenario 503'
+    dashError.value = "scenario 503"
     const wrapper = mount(SimulatorView)
-    expect(wrapper.find('[role="alert"]').text()).toContain('scenario 503')
+    expect(wrapper.find('[role="alert"]').text()).toContain("scenario 503")
   })
 
-  it('shows an empty-state message when the list is loaded but empty', () => {
+  it("shows an empty-state message when the list is loaded but empty", () => {
     scenarioList.value = { scenarios: [] }
     const wrapper = mount(SimulatorView)
-    expect(wrapper.find('[role="status"]').text()).toContain(
-      'No scenarios are available',
-    )
-    expect(wrapper.find('#scenario-select').exists()).toBe(false)
+    expect(wrapper.find('[role="status"]').text()).toContain("No scenarios are available")
+    expect(wrapper.find("#scenario-select").exists()).toBe(false)
   })
 
-  it('refuses to render the chart on a schema-version mismatch', () => {
+  it("refuses to render the chart on a schema-version mismatch", () => {
     scenarioList.value = SCENARIOS
-    dashboard.value = { ...DASHBOARD, schema_version: '99.0' }
+    dashboard.value = { ...DASHBOARD, schema_version: "99.0" }
     const wrapper = mount(SimulatorView)
     expect(wrapper.findComponent(ConfidenceFanChart).exists()).toBe(false)
-    expect(wrapper.find('[role="alert"]').text()).toContain('newer data format')
+    expect(wrapper.find('[role="alert"]').text()).toContain("newer data format")
   })
 
-  it('announces the current scenario in a polite live region', () => {
+  it("announces the current scenario in a polite live region", () => {
     scenarioList.value = SCENARIOS
     dashboard.value = DASHBOARD
     const wrapper = mount(SimulatorView)
     const live = wrapper.find('[aria-live="polite"]')
     expect(live.exists()).toBe(true)
-    expect(live.text()).toContain('Now showing 1% wealth tax')
+    expect(live.text()).toContain("Now showing 1% wealth tax")
   })
 
   it('the live summary says "unavailable" (never £NaNbn) for a non-finite interval', () => {
@@ -208,12 +203,12 @@ describe('SimulatorView', () => {
     const wrapper = mount(SimulatorView)
     // Scope to the sr-only summary span (the unit under test) — the chart's own
     // "Interval data unavailable" also sits in the aria-live region.
-    const summary = wrapper.find('.sr-only')
-    expect(summary.text()).toContain('revenue figures are unavailable')
-    expect(summary.text()).not.toContain('NaN')
+    const summary = wrapper.find(".sr-only")
+    expect(summary.text()).toContain("revenue figures are unavailable")
+    expect(summary.text()).not.toContain("NaN")
   })
 
-  it('the live summary degrades (no throw) when the interval object is null/missing', () => {
+  it("the live summary degrades (no throw) when the interval object is null/missing", () => {
     scenarioList.value = SCENARIOS
     dashboard.value = {
       ...DASHBOARD,
@@ -222,6 +217,6 @@ describe('SimulatorView', () => {
       total_revenue_gbp_bn: null as unknown as { low: number; central: number; high: number },
     }
     const wrapper = mount(SimulatorView)
-    expect(wrapper.find('.sr-only').text()).toContain('revenue figures are unavailable')
+    expect(wrapper.find(".sr-only").text()).toContain("revenue figures are unavailable")
   })
 })

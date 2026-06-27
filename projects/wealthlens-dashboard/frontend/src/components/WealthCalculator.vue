@@ -16,7 +16,7 @@
  * URL: https://www.ons.gov.uk/peoplepopulationandcommunity/personalandhouseholdfinances/incomeandwealth/bulletins/totalwealthingreatbritain/april2018tomarch2020
  * Accessed: 2026-05-16
  */
-import { ref, computed } from "vue";
+import { ref, computed } from "vue"
 import {
   getDecile,
   getPercentile,
@@ -25,36 +25,36 @@ import {
   DECILE_DATA,
   COMPARISON_STATS,
   MAX_DISPLAYABLE_WEALTH,
-} from "@/utils/wealthPosition";
+} from "@/utils/wealthPosition"
 
 /** Calculator mode: single value or compare two values */
-type CalcMode = "single" | "compare";
+type CalcMode = "single" | "compare"
 
 /** Current mode */
-const mode = ref<CalcMode>("single");
+const mode = ref<CalcMode>("single")
 
 // ============================================================
 // SINGLE MODE STATE
 // ============================================================
 
 /** Raw text input from the user (single mode) */
-const wealthInput = ref("");
+const wealthInput = ref("")
 
 function parseWealthInput(input: string): number | null {
-  const cleaned = input.replace(/[£,\s]/g, "");
-  if (cleaned.length === 0) return null;
-  const num = Number(cleaned);
-  return Number.isFinite(num) ? num : null;
+  const cleaned = input.replace(/[£,\s]/g, "")
+  if (cleaned.length === 0) return null
+  const num = Number(cleaned)
+  return Number.isFinite(num) ? num : null
 }
 
 /** Whether the user has triggered a calculation (single mode) */
-const hasCalculated = ref(false);
+const hasCalculated = ref(false)
 
 /** Parse the input, stripping £, commas, and whitespace */
-const parsedWealth = computed(() => parseWealthInput(wealthInput.value));
+const parsedWealth = computed(() => parseWealthInput(wealthInput.value))
 
 /** Whether the current input is valid */
-const isValid = computed(() => parsedWealth.value !== null);
+const isValid = computed(() => parsedWealth.value !== null)
 
 /**
  * Whether the input exceeds the displayable cap (£100 billion).
@@ -63,57 +63,53 @@ const isValid = computed(() => parsedWealth.value !== null);
  */
 const exceedsDisplayCap = computed(
   () => parsedWealth.value !== null && parsedWealth.value > MAX_DISPLAYABLE_WEALTH,
-);
+)
 
 /** Current decile (1-10) */
-const decile = computed(() =>
-  parsedWealth.value !== null ? getDecile(parsedWealth.value) : null,
-);
+const decile = computed(() => (parsedWealth.value !== null ? getDecile(parsedWealth.value) : null))
 
 /** Approximate percentile (0-100) */
 const percentile = computed(() =>
   parsedWealth.value !== null ? getPercentile(parsedWealth.value) : null,
-);
+)
 
 /** Contextual explanation message */
-const contextMessage = computed(() =>
-  decile.value !== null ? getContext(decile.value) : "",
-);
+const contextMessage = computed(() => (decile.value !== null ? getContext(decile.value) : ""))
 
 /** Ordinal suffix for decile display */
 const decileOrdinal = computed(() => {
-  if (decile.value === null) return "";
-  const n = decile.value;
-  if (n === 1) return "1st";
-  if (n === 2) return "2nd";
-  if (n === 3) return "3rd";
-  return `${n}th`;
-});
+  if (decile.value === null) return ""
+  const n = decile.value
+  if (n === 1) return "1st"
+  if (n === 2) return "2nd"
+  if (n === 3) return "3rd"
+  return `${n}th`
+})
 
 /** Apply a preset value to the input (single mode) */
 function applyPreset(value: number) {
-  wealthInput.value = value.toLocaleString("en-GB");
-  hasCalculated.value = false;
+  wealthInput.value = value.toLocaleString("en-GB")
+  hasCalculated.value = false
 }
 
 /** Run the calculation (single mode) */
 function calculate() {
   if (isValid.value) {
-    hasCalculated.value = true;
+    hasCalculated.value = true
   }
 }
 
 /** Handle Enter key on the input (single mode) */
 function onKeydown(e: KeyboardEvent) {
   if (e.key === "Enter") {
-    calculate();
+    calculate()
   }
 }
 
 /** Reset the calculator (single mode) */
 function reset() {
-  wealthInput.value = "";
-  hasCalculated.value = false;
+  wealthInput.value = ""
+  hasCalculated.value = false
 }
 
 // ============================================================
@@ -121,128 +117,120 @@ function reset() {
 // ============================================================
 
 /** Raw text input for Amount A */
-const compareInputA = ref("");
+const compareInputA = ref("")
 
 /** Raw text input for Amount B */
-const compareInputB = ref("");
+const compareInputB = ref("")
 
 /** Whether the user has triggered comparison */
-const hasCompared = ref(false);
+const hasCompared = ref(false)
 
 /** Parse Amount A */
-const parsedA = computed(() => parseWealthInput(compareInputA.value));
+const parsedA = computed(() => parseWealthInput(compareInputA.value))
 
 /** Parse Amount B */
-const parsedB = computed(() => parseWealthInput(compareInputB.value));
+const parsedB = computed(() => parseWealthInput(compareInputB.value))
 
 /** Whether both comparison inputs are valid */
-const isCompareValid = computed(() => parsedA.value !== null && parsedB.value !== null);
+const isCompareValid = computed(() => parsedA.value !== null && parsedB.value !== null)
 
 /** Decile for Amount A */
-const decileA = computed(() =>
-  parsedA.value !== null ? getDecile(parsedA.value) : null,
-);
+const decileA = computed(() => (parsedA.value !== null ? getDecile(parsedA.value) : null))
 
 /** Decile for Amount B */
-const decileB = computed(() =>
-  parsedB.value !== null ? getDecile(parsedB.value) : null,
-);
+const decileB = computed(() => (parsedB.value !== null ? getDecile(parsedB.value) : null))
 
 /** Percentile for Amount A */
-const percentileA = computed(() =>
-  parsedA.value !== null ? getPercentile(parsedA.value) : null,
-);
+const percentileA = computed(() => (parsedA.value !== null ? getPercentile(parsedA.value) : null))
 
 /** Percentile for Amount B */
-const percentileB = computed(() =>
-  parsedB.value !== null ? getPercentile(parsedB.value) : null,
-);
+const percentileB = computed(() => (parsedB.value !== null ? getPercentile(parsedB.value) : null))
 
 /** Difference in deciles between A and B */
 const decileDifference = computed(() => {
-  if (decileA.value === null || decileB.value === null) return null;
-  return decileA.value - decileB.value;
-});
+  if (decileA.value === null || decileB.value === null) return null
+  return decileA.value - decileB.value
+})
 
 /** Difference in wealth between A and B */
 const wealthDifference = computed(() => {
-  if (parsedA.value === null || parsedB.value === null) return null;
-  return parsedA.value - parsedB.value;
-});
+  if (parsedA.value === null || parsedB.value === null) return null
+  return parsedA.value - parsedB.value
+})
 
 /** Human-readable comparison summary */
 const comparisonSummary = computed(() => {
-  if (decileDifference.value === null) return "";
-  const diff = decileDifference.value;
-  if (diff === 0) return "Both amounts fall in the same decile.";
-  const higher = diff > 0 ? "A" : "B";
-  const absDiff = Math.abs(diff);
-  const decileWord = absDiff === 1 ? "decile" : "deciles";
-  return `Amount ${higher} is ${absDiff} ${decileWord} higher than Amount ${diff > 0 ? "B" : "A"}.`;
-});
+  if (decileDifference.value === null) return ""
+  const diff = decileDifference.value
+  if (diff === 0) return "Both amounts fall in the same decile."
+  const higher = diff > 0 ? "A" : "B"
+  const absDiff = Math.abs(diff)
+  const decileWord = absDiff === 1 ? "decile" : "deciles"
+  return `Amount ${higher} is ${absDiff} ${decileWord} higher than Amount ${diff > 0 ? "B" : "A"}.`
+})
 
 /** Comparison presets */
 interface ComparePreset {
-  label: string;
-  valueA: number;
-  valueB: number;
+  label: string
+  valueA: number
+  valueB: number
 }
 
 const COMPARE_PRESETS: readonly ComparePreset[] = [
   { label: "Median vs Top 10%", valueA: 302_500, valueB: 1_480_000 },
   { label: "Renter vs Homeowner", valueA: 5_000, valueB: 302_500 },
   { label: "With vs Without Pension", valueA: 302_500, valueB: 175_000 },
-] as const;
+] as const
 
 /** Apply a comparison preset */
 function applyComparePreset(preset: ComparePreset) {
-  compareInputA.value = preset.valueA.toLocaleString("en-GB");
-  compareInputB.value = preset.valueB.toLocaleString("en-GB");
-  hasCompared.value = false;
+  compareInputA.value = preset.valueA.toLocaleString("en-GB")
+  compareInputB.value = preset.valueB.toLocaleString("en-GB")
+  hasCompared.value = false
 }
 
 /** Run comparison calculation */
 function compareCalculate() {
   if (isCompareValid.value) {
-    hasCompared.value = true;
+    hasCompared.value = true
   }
 }
 
 /** Handle Enter key on comparison inputs */
 function onCompareKeydown(e: KeyboardEvent) {
   if (e.key === "Enter") {
-    compareCalculate();
+    compareCalculate()
   }
 }
 
 /** Reset comparison */
 function resetCompare() {
-  compareInputA.value = "";
-  compareInputB.value = "";
-  hasCompared.value = false;
+  compareInputA.value = ""
+  compareInputB.value = ""
+  hasCompared.value = false
 }
 
 /** Switch mode */
 function setMode(newMode: CalcMode) {
-  mode.value = newMode;
+  mode.value = newMode
 }
 
 function onTabKeydown(e: KeyboardEvent) {
   if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
-    e.preventDefault();
-    const newMode: CalcMode = mode.value === "single" ? "compare" : "single";
-    setMode(newMode);
-    const targetId = newMode === "single" ? "tab-single" : "tab-compare";
-    (document.getElementById(targetId) as HTMLElement)?.focus();
+    e.preventDefault()
+    const newMode: CalcMode = mode.value === "single" ? "compare" : "single"
+    setMode(newMode)
+    const targetId = newMode === "single" ? "tab-single" : "tab-compare"
+    ;(document.getElementById(targetId) as HTMLElement)?.focus()
   }
 }
 
 /** Get ordinal for a given decile number */
 function getOrdinal(n: number): string {
-  if (n === 1) return "1st";
-  if (n === 2) return "2nd";
-  if (n === 3) return "3rd";
-  return `${n}th`;
+  if (n === 1) return "1st"
+  if (n === 2) return "2nd"
+  if (n === 3) return "3rd"
+  return `${n}th`
 }
 </script>
 
@@ -256,26 +244,20 @@ function getOrdinal(n: number): string {
         <em>UK wealth?</em>
       </h1>
       <p class="calc__lede">
-        Enter your estimated total household net wealth — property equity,
-        pensions, savings and investments, minus any mortgages and debts —
-        and see where you rank among UK households.
+        Enter your estimated total household net wealth — property equity, pensions, savings and
+        investments, minus any mortgages and debts — and see where you rank among UK households.
       </p>
       <p class="calc__privacy">
-        All calculation happens in your browser. No data is stored or
-        transmitted.
+        All calculation happens in your browser. No data is stored or transmitted.
       </p>
       <p class="calc__staleness">
-        Based on ONS Wealth and Assets Survey Round 7 (April 2018 to
-        March 2020). More recent data may show different thresholds.
+        Based on ONS Wealth and Assets Survey Round 7 (April 2018 to March 2020). More recent data
+        may show different thresholds.
       </p>
     </header>
 
     <!-- Mode toggle (tablist) -->
-    <div
-      class="calc__mode-toggle"
-      role="tablist"
-      aria-label="Calculator mode"
-    >
+    <div class="calc__mode-toggle" role="tablist" aria-label="Calculator mode">
       <button
         id="tab-single"
         role="tab"
@@ -315,12 +297,10 @@ function getOrdinal(n: number): string {
     >
       <!-- Input section -->
       <section class="calc__input-section" aria-label="Wealth input">
-        <label for="wealth-input" class="calc__label">
-          Your total household net wealth
-        </label>
+        <label for="wealth-input" class="calc__label"> Your total household net wealth </label>
         <p id="wealth-input-help" class="calc__help">
-          Add up: property equity + pension value + savings + investments,
-          then subtract mortgages + debts. This is about
+          Add up: property equity + pension value + savings + investments, then subtract mortgages +
+          debts. This is about
           <strong>household</strong> wealth, not individual.
         </p>
 
@@ -337,49 +317,28 @@ function getOrdinal(n: number): string {
             :aria-invalid="wealthInput.length > 0 && !isValid ? 'true' : undefined"
             @keydown="onKeydown"
           />
-          <button
-            class="wl-btn wl-btn--red calc__btn"
-            :disabled="!isValid"
-            @click="calculate"
-          >
+          <button class="wl-btn wl-btn--red calc__btn" :disabled="!isValid" @click="calculate">
             Calculate
           </button>
         </div>
 
-        <p
-          v-if="wealthInput.length > 0 && !isValid"
-          class="calc__error"
-          role="alert"
-        >
-          Please enter a valid number. You can include negative values for
-          net debt.
+        <p v-if="wealthInput.length > 0 && !isValid" class="calc__error" role="alert">
+          Please enter a valid number. You can include negative values for net debt.
         </p>
 
         <!-- Quick presets -->
         <div class="calc__presets" role="group" aria-label="Quick presets">
           <p class="calc__presets-label">Quick estimates:</p>
-          <button
-            class="wl-btn wl-btn--ghost wl-btn--sm"
-            @click="applyPreset(5_000)"
-          >
+          <button class="wl-btn wl-btn--ghost wl-btn--sm" @click="applyPreset(5_000)">
             Renter, ~&pound;5k savings
           </button>
-          <button
-            class="wl-btn wl-btn--ghost wl-btn--sm"
-            @click="applyPreset(100_000)"
-          >
+          <button class="wl-btn wl-btn--ghost wl-btn--sm" @click="applyPreset(100_000)">
             Homeowner, &pound;100k equity
           </button>
-          <button
-            class="wl-btn wl-btn--ghost wl-btn--sm"
-            @click="applyPreset(302_500)"
-          >
+          <button class="wl-btn wl-btn--ghost wl-btn--sm" @click="applyPreset(302_500)">
             UK median (&pound;302,500)
           </button>
-          <button
-            class="wl-btn wl-btn--ghost wl-btn--sm"
-            @click="applyPreset(-5_000)"
-          >
+          <button class="wl-btn wl-btn--ghost wl-btn--sm" @click="applyPreset(-5_000)">
             Net debt (-&pound;5k)
           </button>
         </div>
@@ -408,9 +367,8 @@ function getOrdinal(n: number): string {
             of UK households
           </p>
           <p class="calc__cap-note">
-            The value entered exceeds the range of available survey data.
-            At this level, you are firmly in the wealthiest 10% of UK
-            households.
+            The value entered exceeds the range of available survey data. At this level, you are
+            firmly in the wealthiest 10% of UK households.
           </p>
         </div>
 
@@ -439,18 +397,11 @@ function getOrdinal(n: number): string {
             <div
               v-for="d in DECILE_DATA"
               :key="d.decile"
-              :class="[
-                'calc__bar-block',
-                { 'calc__bar-block--active': d.decile === decile },
-              ]"
+              :class="['calc__bar-block', { 'calc__bar-block--active': d.decile === decile }]"
               :aria-label="`Decile ${d.decile}: ${d.rangeLabel}${d.decile === decile ? ' (your position)' : ''}`"
             >
               <span class="calc__bar-label">{{ d.decile }}</span>
-              <span
-                v-if="d.decile === decile"
-                class="calc__bar-marker"
-                aria-hidden="true"
-              >
+              <span v-if="d.decile === decile" class="calc__bar-marker" aria-hidden="true">
                 &#9660;
               </span>
             </div>
@@ -459,10 +410,7 @@ function getOrdinal(n: number): string {
             <div
               v-for="d in DECILE_DATA"
               :key="`range-${d.decile}`"
-              :class="[
-                'calc__bar-range',
-                { 'calc__bar-range--active': d.decile === decile },
-              ]"
+              :class="['calc__bar-range', { 'calc__bar-range--active': d.decile === decile }]"
             >
               {{ d.rangeLabel }}
             </div>
@@ -515,11 +463,7 @@ function getOrdinal(n: number): string {
             {{ COMPARISON_STATS.source }}
           </span>
           <p class="calc__source-detail">
-            <a
-              :href="COMPARISON_STATS.sourceUrl"
-              target="_blank"
-              rel="noopener"
-            >
+            <a :href="COMPARISON_STATS.sourceUrl" target="_blank" rel="noopener">
               View source data on ONS
             </a>
             &middot; Accessed {{ COMPARISON_STATS.accessed }}
@@ -527,9 +471,7 @@ function getOrdinal(n: number): string {
         </div>
 
         <!-- Reset -->
-        <button class="wl-btn wl-btn--ghost calc__reset" @click="reset">
-          Try another amount
-        </button>
+        <button class="wl-btn wl-btn--ghost calc__reset" @click="reset">Try another amount</button>
       </section>
     </div>
 
@@ -545,16 +487,14 @@ function getOrdinal(n: number): string {
       <!-- Compare input section -->
       <section class="calc__input-section" aria-label="Comparison inputs">
         <p class="calc__help">
-          Enter two wealth amounts to compare their positions side by side.
-          Use cases: current vs goal, with vs without pension, or two different households.
+          Enter two wealth amounts to compare their positions side by side. Use cases: current vs
+          goal, with vs without pension, or two different households.
         </p>
 
         <div class="calc__compare-inputs">
           <!-- Amount A -->
           <div class="calc__compare-field">
-            <label for="compare-input-a" class="calc__label calc__label--a">
-              Amount A
-            </label>
+            <label for="compare-input-a" class="calc__label calc__label--a"> Amount A </label>
             <p id="compare-input-a-help" class="calc__help calc__help--sm">
               First wealth value to compare
             </p>
@@ -576,9 +516,7 @@ function getOrdinal(n: number): string {
 
           <!-- Amount B -->
           <div class="calc__compare-field">
-            <label for="compare-input-b" class="calc__label calc__label--b">
-              Amount B
-            </label>
+            <label for="compare-input-b" class="calc__label calc__label--b"> Amount B </label>
             <p id="compare-input-b-help" class="calc__help calc__help--sm">
               Second wealth value to compare
             </p>
@@ -623,7 +561,15 @@ function getOrdinal(n: number): string {
 
       <!-- Compare results section -->
       <section
-        v-if="hasCompared && decileA !== null && decileB !== null && parsedA !== null && parsedB !== null && percentileA !== null && percentileB !== null"
+        v-if="
+          hasCompared &&
+          decileA !== null &&
+          decileB !== null &&
+          parsedA !== null &&
+          parsedB !== null &&
+          percentileA !== null &&
+          percentileB !== null
+        "
         class="calc__results"
         aria-live="polite"
         aria-label="Comparison results"
@@ -732,26 +678,26 @@ function getOrdinal(n: number): string {
             </div>
             <div class="calc__stat calc__stat--a">
               <span class="calc__stat-label">Percentile (A)</span>
-              <span class="calc__stat-value wl-num">
-                {{ percentileA }}%
-              </span>
+              <span class="calc__stat-value wl-num"> {{ percentileA }}% </span>
             </div>
             <div class="calc__stat calc__stat--b">
               <span class="calc__stat-label">Percentile (B)</span>
-              <span class="calc__stat-value wl-num">
-                {{ percentileB }}%
-              </span>
+              <span class="calc__stat-value wl-num"> {{ percentileB }}% </span>
             </div>
             <div class="calc__stat">
               <span class="calc__stat-label">Wealth difference</span>
               <span class="calc__stat-value wl-num">
-                {{ wealthDifference !== null ? formatGBP(wealthDifference) : '—' }}
+                {{ wealthDifference !== null ? formatGBP(wealthDifference) : "—" }}
               </span>
             </div>
             <div class="calc__stat">
               <span class="calc__stat-label">Percentile difference</span>
               <span class="calc__stat-value wl-num">
-                {{ percentileA !== null && percentileB !== null ? `${Math.abs(percentileA - percentileB)} points` : '—' }}
+                {{
+                  percentileA !== null && percentileB !== null
+                    ? `${Math.abs(percentileA - percentileB)} points`
+                    : "—"
+                }}
               </span>
             </div>
           </div>
@@ -763,11 +709,7 @@ function getOrdinal(n: number): string {
             {{ COMPARISON_STATS.source }}
           </span>
           <p class="calc__source-detail">
-            <a
-              :href="COMPARISON_STATS.sourceUrl"
-              target="_blank"
-              rel="noopener"
-            >
+            <a :href="COMPARISON_STATS.sourceUrl" target="_blank" rel="noopener">
               View source data on ONS
             </a>
             &middot; Accessed {{ COMPARISON_STATS.accessed }}
@@ -867,7 +809,9 @@ function getOrdinal(n: number): string {
   color: var(--wl-ink-muted);
   border: none;
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
 }
 .calc__mode-tab:hover {
   background: var(--wl-paper-tint);
@@ -1122,20 +1066,42 @@ function getOrdinal(n: number): string {
   padding: 14px 2px 10px;
   background: var(--wl-paper-tint);
   border: 1px solid var(--wl-rule);
-  transition: background 0.2s ease, border-color 0.2s ease;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
 }
 
 /* Gradient from light (decile 1) to darker (decile 10) */
-.calc__bar-block:nth-child(1) { background: var(--wl-paper); }
-.calc__bar-block:nth-child(2) { background: color-mix(in srgb, var(--wl-paper) 90%, var(--wl-ink)); }
-.calc__bar-block:nth-child(3) { background: color-mix(in srgb, var(--wl-paper) 82%, var(--wl-ink)); }
-.calc__bar-block:nth-child(4) { background: color-mix(in srgb, var(--wl-paper) 74%, var(--wl-ink)); }
-.calc__bar-block:nth-child(5) { background: color-mix(in srgb, var(--wl-paper) 66%, var(--wl-ink)); }
-.calc__bar-block:nth-child(6) { background: color-mix(in srgb, var(--wl-paper) 58%, var(--wl-ink)); }
-.calc__bar-block:nth-child(7) { background: color-mix(in srgb, var(--wl-paper) 50%, var(--wl-ink)); }
-.calc__bar-block:nth-child(8) { background: color-mix(in srgb, var(--wl-paper) 42%, var(--wl-ink)); }
-.calc__bar-block:nth-child(9) { background: color-mix(in srgb, var(--wl-paper) 34%, var(--wl-ink)); }
-.calc__bar-block:nth-child(10) { background: color-mix(in srgb, var(--wl-paper) 26%, var(--wl-ink)); }
+.calc__bar-block:nth-child(1) {
+  background: var(--wl-paper);
+}
+.calc__bar-block:nth-child(2) {
+  background: color-mix(in srgb, var(--wl-paper) 90%, var(--wl-ink));
+}
+.calc__bar-block:nth-child(3) {
+  background: color-mix(in srgb, var(--wl-paper) 82%, var(--wl-ink));
+}
+.calc__bar-block:nth-child(4) {
+  background: color-mix(in srgb, var(--wl-paper) 74%, var(--wl-ink));
+}
+.calc__bar-block:nth-child(5) {
+  background: color-mix(in srgb, var(--wl-paper) 66%, var(--wl-ink));
+}
+.calc__bar-block:nth-child(6) {
+  background: color-mix(in srgb, var(--wl-paper) 58%, var(--wl-ink));
+}
+.calc__bar-block:nth-child(7) {
+  background: color-mix(in srgb, var(--wl-paper) 50%, var(--wl-ink));
+}
+.calc__bar-block:nth-child(8) {
+  background: color-mix(in srgb, var(--wl-paper) 42%, var(--wl-ink));
+}
+.calc__bar-block:nth-child(9) {
+  background: color-mix(in srgb, var(--wl-paper) 34%, var(--wl-ink));
+}
+.calc__bar-block:nth-child(10) {
+  background: color-mix(in srgb, var(--wl-paper) 26%, var(--wl-ink));
+}
 
 /* Active decile highlighted in red (single mode) */
 .calc__bar-block--active {
@@ -1171,7 +1137,7 @@ function getOrdinal(n: number): string {
   font-weight: 600;
   color: var(--wl-ink-muted);
 }
-.calc__bar-block:nth-child(n+6) .calc__bar-label {
+.calc__bar-block:nth-child(n + 6) .calc__bar-label {
   color: var(--wl-paper);
 }
 .calc__bar-block--active .calc__bar-label,

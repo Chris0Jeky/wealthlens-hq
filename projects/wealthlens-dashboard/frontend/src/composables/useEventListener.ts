@@ -1,4 +1,4 @@
-import { onMounted, onUnmounted, type Ref, watch, isRef } from 'vue'
+import { onMounted, onUnmounted, type Ref, watch, isRef } from "vue"
 
 type Target = EventTarget | Ref<EventTarget | null | undefined>
 

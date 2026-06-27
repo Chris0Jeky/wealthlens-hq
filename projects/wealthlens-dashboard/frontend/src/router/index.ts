@@ -1,5 +1,5 @@
-import { createRouter, createWebHistory } from "vue-router";
-import { VALID_CHART_NAMES } from "@/constants/charts";
+import { createRouter, createWebHistory } from "vue-router"
+import { VALID_CHART_NAMES } from "@/constants/charts"
 
 // The /simulator scenario page is always registered. In dev it reads the live
 // /api/simulator endpoint; on the static deploy it reads the JSON published by
@@ -7,9 +7,9 @@ import { VALID_CHART_NAMES } from "@/constants/charts";
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   scrollBehavior(to, _from, savedPosition) {
-    if (savedPosition) return savedPosition;
-    if (to.hash) return { el: to.hash };
-    return { top: 0 };
+    if (savedPosition) return savedPosition
+    if (to.hash) return { el: to.hash }
+    return { top: 0 }
   },
   routes: [
     {
@@ -28,7 +28,7 @@ const router = createRouter({
       component: () => import("@/views/ChartView.vue"),
       beforeEnter(to) {
         if (!VALID_CHART_NAMES.has(to.params.name as string)) {
-          return { name: "not-found", params: { pathMatch: ["charts", to.params.name as string] } };
+          return { name: "not-found", params: { pathMatch: ["charts", to.params.name as string] } }
         }
       },
     },
@@ -88,6 +88,6 @@ const router = createRouter({
       component: () => import("@/views/NotFoundView.vue"),
     },
   ],
-});
+})
 
-export default router;
+export default router

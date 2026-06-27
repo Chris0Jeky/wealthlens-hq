@@ -17,7 +17,7 @@
  */
 
 /** Top 10% (WID p90p100) series colour. */
-export const COLOR_TOP_10 = "#1a56db";
+export const COLOR_TOP_10 = "#1a56db"
 
 /** Top 1% (WID p99p100) series colour. */
-export const COLOR_TOP_1 = "#dc2626";
+export const COLOR_TOP_1 = "#dc2626"

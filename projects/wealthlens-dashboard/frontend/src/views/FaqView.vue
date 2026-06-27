@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import Accordion from "@/components/Accordion.vue";
+import Accordion from "@/components/Accordion.vue"
 
 interface GlossaryEntry {
-  term: string;
-  definition: string;
+  term: string
+  definition: string
 }
 
 const faqs = [
@@ -47,22 +47,70 @@ const faqs = [
     answer:
       "Real terms means adjusted for inflation (using CPI). A wage figure 'in real terms' shows what the money is actually worth in today's purchasing power, removing the effect of price increases over time.",
   },
-] as const;
+] as const
 
 const glossary: GlossaryEntry[] = [
-  { term: "Decile", definition: "One-tenth of a population when sorted by a measure (e.g., wealth). The bottom decile is the poorest 10%, the top decile is the richest 10%." },
-  { term: "Percentile", definition: "One-hundredth of a population. Being in the 90th percentile means you have more than 90% of the population." },
-  { term: "Net wealth", definition: "Total assets (property, pensions, savings, possessions) minus total debts (mortgages, loans, credit cards)." },
-  { term: "Household wealth", definition: "The combined net wealth of everyone living in a household. Most UK wealth surveys measure at the household level." },
-  { term: "Median", definition: "The middle value when all values are sorted. Half the population is above, half below. Less affected by extreme values than the mean." },
-  { term: "Gini coefficient", definition: "A measure of inequality from 0 (perfect equality) to 1 (one person owns everything). The UK's wealth Gini is approximately 0.63." },
-  { term: "CPI (Consumer Price Index)", definition: "A measure of inflation tracking the cost of a basket of goods and services. Used to convert nominal values to real terms." },
-  { term: "Capital gains", definition: "Profit from selling an asset (property, shares, etc.) for more than you paid. Taxed at lower rates than income in the UK." },
-  { term: "Inheritance Tax (IHT)", definition: "A 40% tax on estates above £325,000 (with a £175,000 residence nil-rate band). Only about 4-5% of deaths result in an IHT charge." },
-  { term: "Wealth and Assets Survey (WAS)", definition: "The ONS's main survey measuring household wealth in Great Britain. Covers financial, property, pension, and physical wealth." },
-  { term: "WID (World Inequality Database)", definition: "An academic database combining tax records and national accounts to estimate wealth and income distributions globally." },
-  { term: "ASHE", definition: "Annual Survey of Hours and Earnings. The ONS's main source for earnings data, covering 1% of all UK employees via PAYE records." },
-];
+  {
+    term: "Decile",
+    definition:
+      "One-tenth of a population when sorted by a measure (e.g., wealth). The bottom decile is the poorest 10%, the top decile is the richest 10%.",
+  },
+  {
+    term: "Percentile",
+    definition:
+      "One-hundredth of a population. Being in the 90th percentile means you have more than 90% of the population.",
+  },
+  {
+    term: "Net wealth",
+    definition:
+      "Total assets (property, pensions, savings, possessions) minus total debts (mortgages, loans, credit cards).",
+  },
+  {
+    term: "Household wealth",
+    definition:
+      "The combined net wealth of everyone living in a household. Most UK wealth surveys measure at the household level.",
+  },
+  {
+    term: "Median",
+    definition:
+      "The middle value when all values are sorted. Half the population is above, half below. Less affected by extreme values than the mean.",
+  },
+  {
+    term: "Gini coefficient",
+    definition:
+      "A measure of inequality from 0 (perfect equality) to 1 (one person owns everything). The UK's wealth Gini is approximately 0.63.",
+  },
+  {
+    term: "CPI (Consumer Price Index)",
+    definition:
+      "A measure of inflation tracking the cost of a basket of goods and services. Used to convert nominal values to real terms.",
+  },
+  {
+    term: "Capital gains",
+    definition:
+      "Profit from selling an asset (property, shares, etc.) for more than you paid. Taxed at lower rates than income in the UK.",
+  },
+  {
+    term: "Inheritance Tax (IHT)",
+    definition:
+      "A 40% tax on estates above £325,000 (with a £175,000 residence nil-rate band). Only about 4-5% of deaths result in an IHT charge.",
+  },
+  {
+    term: "Wealth and Assets Survey (WAS)",
+    definition:
+      "The ONS's main survey measuring household wealth in Great Britain. Covers financial, property, pension, and physical wealth.",
+  },
+  {
+    term: "WID (World Inequality Database)",
+    definition:
+      "An academic database combining tax records and national accounts to estimate wealth and income distributions globally.",
+  },
+  {
+    term: "ASHE",
+    definition:
+      "Annual Survey of Hours and Earnings. The ONS's main source for earnings data, covering 1% of all UK employees via PAYE records.",
+  },
+]
 </script>
 
 <template>
@@ -75,12 +123,10 @@ const glossary: GlossaryEntry[] = [
     <!-- FAQ Section -->
     <section class="mb-14">
       <h2 class="text-xl font-semibold mb-6 dark:text-gray-100">Frequently Asked Questions</h2>
-      <div class="divide-y divide-gray-200 dark:divide-gray-700 border-t border-gray-200 dark:border-gray-700">
-        <Accordion
-          v-for="(item, index) in faqs"
-          :key="index"
-          :title="item.question"
-        >
+      <div
+        class="divide-y divide-gray-200 dark:divide-gray-700 border-t border-gray-200 dark:border-gray-700"
+      >
+        <Accordion v-for="(item, index) in faqs" :key="index" :title="item.question">
           <p class="leading-relaxed">{{ item.answer }}</p>
         </Accordion>
       </div>

@@ -8,7 +8,7 @@
  */
 
 function retry() {
-  window.location.reload();
+  window.location.reload()
 }
 </script>
 
@@ -18,13 +18,7 @@ function retry() {
     <p class="chart-load-error__message">
       Failed to load chart. This may be a temporary network issue.
     </p>
-    <button
-      class="chart-load-error__retry"
-      type="button"
-      @click="retry"
-    >
-      Retry
-    </button>
+    <button class="chart-load-error__retry" type="button" @click="retry">Retry</button>
   </div>
 </template>
 
@@ -70,7 +64,9 @@ function retry() {
   background: transparent;
   color: var(--wl-ink, #111827);
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
 }
 
 .chart-load-error__retry:hover {

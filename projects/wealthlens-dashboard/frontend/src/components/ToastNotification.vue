@@ -1,17 +1,17 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref } from "vue"
 
 const props = withDefaults(
   defineProps<{
     message: string
-    type?: 'info' | 'success' | 'error'
+    type?: "info" | "success" | "error"
     durationMs?: number
   }>(),
-  { type: 'info', durationMs: 5000 },
+  { type: "info", durationMs: 5000 },
 )
 
 const emit = defineEmits<{
-  (e: 'dismiss'): void
+  (e: "dismiss"): void
 }>()
 
 const visible = ref(true)
@@ -19,7 +19,7 @@ let timer: ReturnType<typeof setTimeout> | null = null
 
 function dismiss() {
   visible.value = false
-  emit('dismiss')
+  emit("dismiss")
 }
 
 onMounted(() => {
@@ -33,9 +33,11 @@ onUnmounted(() => {
 })
 
 const typeStyles = {
-  info: 'bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-700 text-blue-800 dark:text-blue-200',
-  success: 'bg-green-50 dark:bg-green-900/30 border-green-200 dark:border-green-700 text-green-800 dark:text-green-200',
-  error: 'bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-700 text-red-800 dark:text-red-200',
+  info: "bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-700 text-blue-800 dark:text-blue-200",
+  success:
+    "bg-green-50 dark:bg-green-900/30 border-green-200 dark:border-green-700 text-green-800 dark:text-green-200",
+  error:
+    "bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-700 text-red-800 dark:text-red-200",
 }
 </script>
 

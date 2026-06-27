@@ -10,26 +10,26 @@
  * URL: https://www.ons.gov.uk/peoplepopulationandcommunity/personalandhouseholdfinances/incomeandwealth/bulletins/totalwealthingreatbritain/april2018tomarch2020
  * Accessed: 2026-05-16
  */
-import { ref, computed, onMounted, onBeforeUnmount } from "vue";
+import { ref, computed, onMounted, onBeforeUnmount } from "vue"
 
 // --- Data constants (ONS WAS Round 7, 2018-2020) ---
 
 /** Scale: 1 pixel = £1,000 */
-const SCALE_FACTOR = 1_000;
+const SCALE_FACTOR = 1_000
 
 interface WealthMarker {
   /** Position in pixels (value / SCALE_FACTOR) */
-  position: number;
+  position: number
   /** Wealth value in GBP */
-  value: number;
+  value: number
   /** Human-readable label */
-  label: string;
+  label: string
   /** Short annotation shown below the marker */
-  annotation: string;
+  annotation: string
   /** CSS color for the marker */
-  color: string;
+  color: string
   /** Unique id for aria references */
-  id: string;
+  id: string
 }
 
 const MARKERS: WealthMarker[] = [
@@ -97,7 +97,7 @@ const MARKERS: WealthMarker[] = [
     color: "var(--wl-red)",
     id: "marker-p999",
   },
-];
+]
 
 /**
  * Total scrollable width. We cap at £20m (20,000px) to keep the scroller
@@ -105,17 +105,17 @@ const MARKERS: WealthMarker[] = [
  * Beyond the top 0.1% marker we show an "infinity arrow" indicating
  * wealth extends far beyond what can be shown.
  */
-const TOTAL_WIDTH_PX = 20_000;
+const TOTAL_WIDTH_PX = 20_000
 
 /** Median position used for the "you are here" marker */
-const MEDIAN_PX = 302_500 / SCALE_FACTOR;
+const MEDIAN_PX = 302_500 / SCALE_FACTOR
 
 // --- Segment boundaries for background color bands ---
 interface Segment {
-  start: number;
-  end: number;
-  label: string;
-  color: string;
+  start: number
+  end: number
+  label: string
+  color: string
 }
 
 const SEGMENTS: Segment[] = [
@@ -124,63 +124,63 @@ const SEGMENTS: Segment[] = [
   { start: 1340, end: 3600, label: "Top 10%", color: "var(--seg-top10)" },
   { start: 3600, end: 15000, label: "Top 1%", color: "var(--seg-top1)" },
   { start: 15000, end: TOTAL_WIDTH_PX, label: "Top 0.1%", color: "var(--seg-top01)" },
-];
+]
 
 // --- Reactive state ---
-const scrollContainer = ref<HTMLElement | null>(null);
-const scrollLeft = ref(0);
-const containerWidth = ref(0);
+const scrollContainer = ref<HTMLElement | null>(null)
+const scrollLeft = ref(0)
+const containerWidth = ref(0)
 
 /** Progress through total scrollable width, as a percentage */
 const scrollProgress = computed(() => {
-  if (!containerWidth.value) return 0;
-  const maxScroll = TOTAL_WIDTH_PX - containerWidth.value;
-  if (maxScroll <= 0) return 100;
-  return Math.min(100, (scrollLeft.value / maxScroll) * 100);
-});
+  if (!containerWidth.value) return 0
+  const maxScroll = TOTAL_WIDTH_PX - containerWidth.value
+  if (maxScroll <= 0) return 100
+  return Math.min(100, (scrollLeft.value / maxScroll) * 100)
+})
 
 /** Current approximate wealth position based on scroll */
 const currentWealthPosition = computed(() => {
-  return Math.round(scrollLeft.value * SCALE_FACTOR);
-});
+  return Math.round(scrollLeft.value * SCALE_FACTOR)
+})
 
 /** Format a number as GBP with appropriate shorthand */
 function formatGBP(value: number): string {
-  if (value >= 1_000_000_000) return `£${(value / 1_000_000_000).toFixed(1)}bn`;
-  if (value >= 1_000_000) return `£${(value / 1_000_000).toFixed(1)}m`;
-  if (value >= 1_000) return `£${(value / 1_000).toFixed(0)}k`;
-  return `£${value.toLocaleString("en-GB")}`;
+  if (value >= 1_000_000_000) return `£${(value / 1_000_000_000).toFixed(1)}bn`
+  if (value >= 1_000_000) return `£${(value / 1_000_000).toFixed(1)}m`
+  if (value >= 1_000) return `£${(value / 1_000).toFixed(0)}k`
+  return `£${value.toLocaleString("en-GB")}`
 }
 
 // --- Scroll handling ---
 function onScroll() {
   if (scrollContainer.value) {
-    scrollLeft.value = scrollContainer.value.scrollLeft;
+    scrollLeft.value = scrollContainer.value.scrollLeft
   }
 }
 
 function updateContainerWidth() {
   if (scrollContainer.value) {
-    containerWidth.value = scrollContainer.value.clientWidth;
+    containerWidth.value = scrollContainer.value.clientWidth
   }
 }
 
 /** Keyboard navigation: arrow keys scroll horizontally */
 function onKeydown(event: KeyboardEvent) {
-  if (!scrollContainer.value) return;
-  const step = event.shiftKey ? 500 : 100;
+  if (!scrollContainer.value) return
+  const step = event.shiftKey ? 500 : 100
   if (event.key === "ArrowRight") {
-    event.preventDefault();
-    scrollContainer.value.scrollLeft += step;
+    event.preventDefault()
+    scrollContainer.value.scrollLeft += step
   } else if (event.key === "ArrowLeft") {
-    event.preventDefault();
-    scrollContainer.value.scrollLeft -= step;
+    event.preventDefault()
+    scrollContainer.value.scrollLeft -= step
   } else if (event.key === "Home") {
-    event.preventDefault();
-    scrollContainer.value.scrollLeft = 0;
+    event.preventDefault()
+    scrollContainer.value.scrollLeft = 0
   } else if (event.key === "End") {
-    event.preventDefault();
-    scrollContainer.value.scrollLeft = TOTAL_WIDTH_PX;
+    event.preventDefault()
+    scrollContainer.value.scrollLeft = TOTAL_WIDTH_PX
   }
 }
 
@@ -190,30 +190,30 @@ function scrollToMedian() {
     scrollContainer.value.scrollTo({
       left: Math.max(0, MEDIAN_PX - containerWidth.value / 2),
       behavior: "smooth",
-    });
+    })
   }
 }
 
 // --- Lifecycle ---
-let resizeObserver: ResizeObserver | null = null;
+let resizeObserver: ResizeObserver | null = null
 
 onMounted(() => {
-  updateContainerWidth();
+  updateContainerWidth()
   if (scrollContainer.value && typeof ResizeObserver !== "undefined") {
-    resizeObserver = new ResizeObserver(updateContainerWidth);
-    resizeObserver.observe(scrollContainer.value);
-    return;
+    resizeObserver = new ResizeObserver(updateContainerWidth)
+    resizeObserver.observe(scrollContainer.value)
+    return
   }
 
-  window.addEventListener("resize", updateContainerWidth);
-});
+  window.addEventListener("resize", updateContainerWidth)
+})
 
 onBeforeUnmount(() => {
   if (resizeObserver) {
-    resizeObserver.disconnect();
+    resizeObserver.disconnect()
   }
-  window.removeEventListener("resize", updateContainerWidth);
-});
+  window.removeEventListener("resize", updateContainerWidth)
+})
 </script>
 
 <template>
@@ -235,10 +235,7 @@ onBeforeUnmount(() => {
 
     <!-- Progress indicator -->
     <div class="wealth-scroller__progress" aria-hidden="true">
-      <div
-        class="wealth-scroller__progress-bar"
-        :style="{ width: `${scrollProgress}%` }"
-      />
+      <div class="wealth-scroller__progress-bar" :style="{ width: `${scrollProgress}%` }" />
       <span class="wealth-scroller__progress-label">
         {{ formatGBP(currentWealthPosition) }} scrolled
       </span>
@@ -249,8 +246,8 @@ onBeforeUnmount(() => {
       Scrollable UK household wealth distribution
     </h3>
     <p id="wealth-scale-scroll-instructions" class="sr-only">
-      Use arrow keys, Home, End, or horizontal scrolling to explore the wealth scale. Marker
-      labels remain visible as you move through the scale.
+      Use arrow keys, Home, End, or horizontal scrolling to explore the wealth scale. Marker labels
+      remain visible as you move through the scale.
     </p>
     <div
       ref="scrollContainer"
@@ -263,10 +260,7 @@ onBeforeUnmount(() => {
       @keydown="onKeydown"
     >
       <!-- Inner track with full width -->
-      <div
-        class="wealth-scroller__track"
-        :style="{ width: `${TOTAL_WIDTH_PX}px` }"
-      >
+      <div class="wealth-scroller__track" :style="{ width: `${TOTAL_WIDTH_PX}px` }">
         <!-- Colored segments -->
         <div
           v-for="seg in SEGMENTS"
@@ -326,11 +320,7 @@ onBeforeUnmount(() => {
 
     <!-- Segment legend below -->
     <div class="wealth-scroller__segment-legend" aria-label="Segment colour key">
-      <div
-        v-for="seg in SEGMENTS"
-        :key="seg.label"
-        class="wealth-scroller__segment-key"
-      >
+      <div v-for="seg in SEGMENTS" :key="seg.label" class="wealth-scroller__segment-key">
         <span
           class="wealth-scroller__segment-swatch"
           :style="{ backgroundColor: seg.color }"
@@ -341,12 +331,7 @@ onBeforeUnmount(() => {
     </div>
 
     <!-- Screen reader summary -->
-    <div
-      id="wealth-scale-current-position"
-      class="sr-only"
-      aria-live="polite"
-      aria-atomic="true"
-    >
+    <div id="wealth-scale-current-position" class="sr-only" aria-live="polite" aria-atomic="true">
       Currently viewing approximately {{ formatGBP(currentWealthPosition) }} on the wealth scale.
     </div>
   </div>
@@ -404,7 +389,9 @@ onBeforeUnmount(() => {
   background: transparent;
   color: var(--wl-ink);
   cursor: pointer;
-  transition: border-color 0.15s, color 0.15s;
+  transition:
+    border-color 0.15s,
+    color 0.15s;
 }
 .wealth-scroller__reset-btn:hover {
   border-color: var(--wl-red);

@@ -11,48 +11,44 @@
  * Shows a tooltip on hover with the full date and source name.
  * Gracefully handles missing/unavailable freshness data by rendering nothing.
  */
-import { computed, toRef } from "vue";
-import {
-  useDataFreshness,
-  daysAgo,
-  relativeTime,
-} from "@/composables/useDataFreshness";
+import { computed, toRef } from "vue"
+import { useDataFreshness, daysAgo, relativeTime } from "@/composables/useDataFreshness"
 
 const props = defineProps<{
-  dataset: string;
-}>();
+  dataset: string
+}>()
 
-const { freshnessInfo, loading } = useDataFreshness(toRef(props, "dataset"));
+const { freshnessInfo, loading } = useDataFreshness(toRef(props, "dataset"))
 
 /** Number of days since last update. */
 const age = computed(() => {
-  if (!freshnessInfo.value) return 0;
-  return daysAgo(freshnessInfo.value.lastUpdated);
-});
+  if (!freshnessInfo.value) return 0
+  return daysAgo(freshnessInfo.value.lastUpdated)
+})
 
 /** CSS class for color coding based on data age. */
 const colorClass = computed(() => {
-  if (age.value > 30) return "freshness-badge__dot--red";
-  if (age.value >= 7) return "freshness-badge__dot--amber";
-  return "freshness-badge__dot--green";
-});
+  if (age.value > 30) return "freshness-badge__dot--red"
+  if (age.value >= 7) return "freshness-badge__dot--amber"
+  return "freshness-badge__dot--green"
+})
 
 /** Relative time display text. */
 const timeText = computed(() => {
-  if (!freshnessInfo.value) return "";
-  return relativeTime(freshnessInfo.value.lastUpdated);
-});
+  if (!freshnessInfo.value) return ""
+  return relativeTime(freshnessInfo.value.lastUpdated)
+})
 
 /** Full tooltip text with date and source. */
 const tooltipText = computed(() => {
-  if (!freshnessInfo.value) return "";
+  if (!freshnessInfo.value) return ""
   const dateStr = freshnessInfo.value.lastUpdated.toLocaleDateString("en-GB", {
     day: "numeric",
     month: "long",
     year: "numeric",
-  });
-  return `Last updated: ${dateStr}\nSource: ${freshnessInfo.value.source}`;
-});
+  })
+  return `Last updated: ${dateStr}\nSource: ${freshnessInfo.value.source}`
+})
 </script>
 
 <template>
@@ -63,14 +59,8 @@ const tooltipText = computed(() => {
     :aria-label="`Data updated ${timeText}`"
     :title="tooltipText"
   >
-    <span
-      class="freshness-badge__dot"
-      :class="colorClass"
-      aria-hidden="true"
-    ></span>
-    <span class="freshness-badge__text">
-      Data: {{ timeText }}
-    </span>
+    <span class="freshness-badge__dot" :class="colorClass" aria-hidden="true"></span>
+    <span class="freshness-badge__text"> Data: {{ timeText }} </span>
   </span>
 </template>
 

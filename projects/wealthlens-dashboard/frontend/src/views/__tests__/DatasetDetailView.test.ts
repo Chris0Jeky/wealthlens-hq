@@ -1,34 +1,34 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { mount, flushPromises } from '@vue/test-utils'
-import { defineComponent, h } from 'vue'
-import { createPinia, setActivePinia } from 'pinia'
+import { describe, it, expect, vi, beforeEach } from "vitest"
+import { mount, flushPromises } from "@vue/test-utils"
+import { defineComponent, h } from "vue"
+import { createPinia, setActivePinia } from "pinia"
 
-const mockRoute = { params: { name: 'wealth-shares' } }
+const mockRoute = { params: { name: "wealth-shares" } }
 
 const mockMetadata = {
-  name: 'wealth-shares',
-  description: 'Top 1%/10% wealth shares in GB',
-  source: 'World Inequality Database',
-  source_url: 'https://wid.world/',
-  access_date: '2026-05-14',
+  name: "wealth-shares",
+  description: "Top 1%/10% wealth shares in GB",
+  source: "World Inequality Database",
+  source_url: "https://wid.world/",
+  access_date: "2026-05-14",
   row_count: 150,
-  columns: ['year', 'percentile', 'value'],
+  columns: ["year", "percentile", "value"],
 }
 
 const mockRows = [
-  { year: 2020, percentile: 'p99p100', value: 21.3 },
-  { year: 2020, percentile: 'p90p100', value: 52.1 },
+  { year: 2020, percentile: "p99p100", value: 21.3 },
+  { year: 2020, percentile: "p90p100", value: 52.1 },
 ]
 
 const RouterLinkStub = defineComponent({
-  name: 'RouterLink',
+  name: "RouterLink",
   props: { to: { type: String, required: true } },
   setup(props, { slots }) {
-    return () => h('a', { href: props.to }, slots.default?.())
+    return () => h("a", { href: props.to }, slots.default?.())
   },
 })
 
-vi.mock('vue-router', () => ({
+vi.mock("vue-router", () => ({
   useRoute: () => mockRoute,
 }))
 
@@ -39,13 +39,13 @@ vi.mock('vue-router', () => ({
  */
 const mockFetchDataset = vi.fn()
 
-vi.mock('@/stores/data', () => ({
+vi.mock("@/stores/data", () => ({
   useDataStore: () => ({
     fetchDataset: mockFetchDataset,
   }),
 }))
 
-import DatasetDetailView from '@/views/DatasetDetailView.vue'
+import DatasetDetailView from "@/views/DatasetDetailView.vue"
 
 function mountView() {
   return mount(DatasetDetailView, {
@@ -62,72 +62,75 @@ function mountView() {
  */
 function stubSuccessfulFetches() {
   vi.stubGlobal(
-    'fetch',
+    "fetch",
     vi.fn().mockResolvedValue({
       ok: true,
       json: () => Promise.resolve(mockMetadata),
     }),
   )
-  mockFetchDataset.mockResolvedValue({ data: mockRows, page: 1, limit: 100, total: mockRows.length, total_pages: 1 })
+  mockFetchDataset.mockResolvedValue({
+    data: mockRows,
+    page: 1,
+    limit: 100,
+    total: mockRows.length,
+    total_pages: 1,
+  })
 }
 
-describe('DatasetDetailView', () => {
+describe("DatasetDetailView", () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     vi.restoreAllMocks()
     mockFetchDataset.mockReset()
   })
 
-  it('shows loading state initially', () => {
+  it("shows loading state initially", () => {
     vi.stubGlobal(
-      'fetch',
+      "fetch",
       vi.fn().mockImplementation(() => new Promise(() => {})),
     )
     mockFetchDataset.mockReturnValue(new Promise(() => {}))
     const wrapper = mountView()
-    expect(wrapper.text()).toContain('Loading dataset...')
+    expect(wrapper.text()).toContain("Loading dataset...")
     vi.unstubAllGlobals()
   })
 
-  it('shows error state when fetch fails', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockRejectedValue(new Error('Network error')),
-    )
-    mockFetchDataset.mockRejectedValue(new Error('Network error'))
+  it("shows error state when fetch fails", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("Network error")))
+    mockFetchDataset.mockRejectedValue(new Error("Network error"))
     const wrapper = mountView()
     await flushPromises()
-    expect(wrapper.text()).toContain('Network error')
+    expect(wrapper.text()).toContain("Network error")
     vi.unstubAllGlobals()
   })
 
-  it('renders metadata after successful fetch', async () => {
+  it("renders metadata after successful fetch", async () => {
     stubSuccessfulFetches()
 
     const wrapper = mountView()
     await flushPromises()
 
-    expect(wrapper.text()).toContain('wealth-shares')
-    expect(wrapper.text()).toContain('World Inequality Database')
-    expect(wrapper.text()).toContain('2026-05-14')
+    expect(wrapper.text()).toContain("wealth-shares")
+    expect(wrapper.text()).toContain("World Inequality Database")
+    expect(wrapper.text()).toContain("2026-05-14")
     vi.unstubAllGlobals()
   })
 
-  it('renders a data preview table with column headers', async () => {
+  it("renders a data preview table with column headers", async () => {
     stubSuccessfulFetches()
 
     const wrapper = mountView()
     await flushPromises()
 
-    const headers = wrapper.findAll('th')
+    const headers = wrapper.findAll("th")
     const headerTexts = headers.map((h) => h.text())
-    expect(headerTexts).toContain('year')
-    expect(headerTexts).toContain('percentile')
-    expect(headerTexts).toContain('value')
+    expect(headerTexts).toContain("year")
+    expect(headerTexts).toContain("percentile")
+    expect(headerTexts).toContain("value")
     vi.unstubAllGlobals()
   })
 
-  it('shows a View Chart link for supported datasets', async () => {
+  it("shows a View Chart link for supported datasets", async () => {
     stubSuccessfulFetches()
 
     const wrapper = mountView()
@@ -138,20 +141,20 @@ describe('DatasetDetailView', () => {
     vi.unstubAllGlobals()
   })
 
-  it('has a back link to the dashboard', () => {
+  it("has a back link to the dashboard", () => {
     vi.stubGlobal(
-      'fetch',
+      "fetch",
       vi.fn().mockImplementation(() => new Promise(() => {})),
     )
     mockFetchDataset.mockReturnValue(new Promise(() => {}))
     const wrapper = mountView()
     const backLink = wrapper.find('a[href="/"]')
     expect(backLink.exists()).toBe(true)
-    expect(backLink.text()).toContain('Back to datasets')
+    expect(backLink.text()).toContain("Back to datasets")
     vi.unstubAllGlobals()
   })
 
-  it('uses semantic sections with aria-labelledby', async () => {
+  it("uses semantic sections with aria-labelledby", async () => {
     stubSuccessfulFetches()
 
     const wrapper = mountView()

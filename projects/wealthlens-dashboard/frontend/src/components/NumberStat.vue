@@ -7,7 +7,9 @@ defineProps<{
 </script>
 
 <template>
-  <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6 text-center">
+  <div
+    class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6 text-center"
+  >
     <p class="text-3xl font-bold text-gray-900 dark:text-gray-100" aria-hidden="true">
       {{ value }}
     </p>

@@ -8,12 +8,9 @@
  * follow the link. Citations open via {@link ExternalLink} (safe-href guard,
  * `rel="noopener noreferrer"`, an accessible "opens in new tab" hint).
  */
-import { computed, useId } from 'vue'
-import ExternalLink from '@/components/ExternalLink.vue'
-import type {
-  ConsumedAssumption,
-  PopulationProvenanceEntry,
-} from '@/types/simulator'
+import { computed, useId } from "vue"
+import ExternalLink from "@/components/ExternalLink.vue"
+import type { ConsumedAssumption, PopulationProvenanceEntry } from "@/types/simulator"
 
 const props = defineProps<{
   // Optional: callers pass the (possibly absent) provenance.assumptions_consumed
@@ -25,9 +22,7 @@ const props = defineProps<{
 
 // Stable, deterministic order by id. Robust to an absent/empty list.
 const sorted = computed(() =>
-  [...(props.assumptions ?? [])].sort((a, b) =>
-    a.assumption_id.localeCompare(b.assumption_id),
-  ),
+  [...(props.assumptions ?? [])].sort((a, b) => a.assumption_id.localeCompare(b.assumption_id)),
 )
 
 // Only registered data sources are citable (they carry a URL); synthetic
@@ -36,9 +31,7 @@ const sorted = computed(() =>
 // Sorted by id for a stable, deterministic render order.
 const dataSources = computed(() =>
   (props.populationSources ?? [])
-    .filter(
-      (s): s is PopulationProvenanceEntry & { url: string } => Boolean(s.url?.trim()),
-    )
+    .filter((s): s is PopulationProvenanceEntry & { url: string } => Boolean(s.url?.trim()))
     .sort((a, b) => a.id.localeCompare(b.id)),
 )
 
@@ -67,11 +60,11 @@ function citationLinks(urls: string[] | undefined): CitationLink[] {
   const parsed = (urls ?? []).map((url) => {
     try {
       const u = new URL(url)
-      const host = u.hostname.replace(/^www\./, '')
-      const segs = u.pathname.split('/').filter(Boolean)
-      return { url, host, lastSeg: segs.length ? segs[segs.length - 1] : '' }
+      const host = u.hostname.replace(/^www\./, "")
+      const segs = u.pathname.split("/").filter(Boolean)
+      return { url, host, lastSeg: segs.length ? segs[segs.length - 1] : "" }
     } catch {
-      return { url, host: url, lastSeg: '' }
+      return { url, host: url, lastSeg: "" }
     }
   })
   const hostCounts = parsed.reduce<Record<string, number>>((acc, p) => {
@@ -87,7 +80,7 @@ function citationLinks(urls: string[] | undefined): CitationLink[] {
 /** The single host label for one data-source URL. */
 function hostLabel(url: string): string {
   try {
-    return new URL(url).hostname.replace(/^www\./, '')
+    return new URL(url).hostname.replace(/^www\./, "")
   } catch {
     return url
   }
@@ -100,15 +93,12 @@ function hostLabel(url: string): string {
     :aria-labelledby="headingId"
     class="mt-8 border-t border-wl-rule pt-6"
   >
-    <h2 :id="headingId" class="text-base font-semibold text-wl-ink">
-      Sources &amp; assumptions
-    </h2>
+    <h2 :id="headingId" class="text-base font-semibold text-wl-ink">Sources &amp; assumptions</h2>
 
     <template v-if="sorted.length">
       <h3 class="mt-4 text-sm font-semibold text-wl-ink">Modelling assumptions</h3>
       <p class="mt-1 text-sm text-wl-ink-muted">
-        Each linked to its original source — a peer-reviewed paper or official
-        statistics.
+        Each linked to its original source — a peer-reviewed paper or official statistics.
       </p>
       <ul class="mt-3 space-y-3">
         <li v-for="a in sorted" :key="a.assumption_id" class="text-sm">
@@ -131,9 +121,7 @@ function hostLabel(url: string): string {
     </template>
 
     <template v-if="dataSources.length">
-      <h3 class="mt-5 text-sm font-semibold text-wl-ink">
-        Population data sources
-      </h3>
+      <h3 class="mt-5 text-sm font-semibold text-wl-ink">Population data sources</h3>
       <p class="mt-1 text-sm text-wl-ink-muted">
         The official datasets the synthetic population is calibrated to.
       </p>

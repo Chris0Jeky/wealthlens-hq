@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, nextTick, onUnmounted, useId } from 'vue'
+import { ref, watch, nextTick, onUnmounted, useId } from "vue"
 
 export interface DropdownItem {
   id: string
@@ -55,13 +55,13 @@ async function toggle() {
 
 function selectItem(item: DropdownItem) {
   if (item.disabled) return
-  emit('select', item.id)
+  emit("select", item.id)
   close()
   triggerRef.value?.focus()
 }
 
 function handleKeydown(event: KeyboardEvent) {
-  if (event.key === 'Escape') {
+  if (event.key === "Escape") {
     close()
     triggerRef.value?.focus()
     return
@@ -72,23 +72,23 @@ function handleKeydown(event: KeyboardEvent) {
   const enabled = getEnabledIndices()
   if (!enabled.length) return
 
-  if (event.key === 'ArrowDown') {
+  if (event.key === "ArrowDown") {
     event.preventDefault()
     const currentPos = enabled.indexOf(focusedIndex.value)
     const next = currentPos < enabled.length - 1 ? enabled[currentPos + 1] : enabled[0]
     focusItem(next)
-  } else if (event.key === 'ArrowUp') {
+  } else if (event.key === "ArrowUp") {
     event.preventDefault()
     const currentPos = enabled.indexOf(focusedIndex.value)
     const prev = currentPos > 0 ? enabled[currentPos - 1] : enabled[enabled.length - 1]
     focusItem(prev)
-  } else if (event.key === 'Home') {
+  } else if (event.key === "Home") {
     event.preventDefault()
     focusItem(enabled[0])
-  } else if (event.key === 'End') {
+  } else if (event.key === "End") {
     event.preventDefault()
     focusItem(enabled[enabled.length - 1])
-  } else if (event.key === 'Tab') {
+  } else if (event.key === "Tab") {
     close()
   }
 }
@@ -108,14 +108,14 @@ function handleClickOutside(event: MouseEvent) {
 
 watch(open, (isOpen) => {
   if (isOpen) {
-    document.addEventListener('mousedown', handleClickOutside)
+    document.addEventListener("mousedown", handleClickOutside)
   } else {
-    document.removeEventListener('mousedown', handleClickOutside)
+    document.removeEventListener("mousedown", handleClickOutside)
   }
 })
 
 onUnmounted(() => {
-  document.removeEventListener('mousedown', handleClickOutside)
+  document.removeEventListener("mousedown", handleClickOutside)
 })
 </script>
 

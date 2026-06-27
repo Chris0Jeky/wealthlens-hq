@@ -1,5 +1,5 @@
 <script setup lang="ts">
-export type StatusVariant = 'online' | 'offline' | 'warning' | 'idle'
+export type StatusVariant = "online" | "offline" | "warning" | "idle"
 
 const props = withDefaults(
   defineProps<{
@@ -11,10 +11,10 @@ const props = withDefaults(
 )
 
 const colorClasses: Record<StatusVariant, string> = {
-  online: 'bg-green-500',
-  offline: 'bg-red-500',
-  warning: 'bg-yellow-500',
-  idle: 'bg-gray-400',
+  online: "bg-green-500",
+  offline: "bg-red-500",
+  warning: "bg-yellow-500",
+  idle: "bg-gray-400",
 }
 </script>
 

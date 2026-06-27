@@ -1,14 +1,14 @@
-import { createI18n } from 'vue-i18n'
-import { getStorageItem } from '@/utils/browserStorage'
-import en from './locales/en.json'
+import { createI18n } from "vue-i18n"
+import { getStorageItem } from "@/utils/browserStorage"
+import en from "./locales/en.json"
 
-const LOCALE_STORAGE_KEY = 'wl-locale'
+const LOCALE_STORAGE_KEY = "wl-locale"
 
-const savedLocale = getStorageItem(LOCALE_STORAGE_KEY) || 'en'
+const savedLocale = getStorageItem(LOCALE_STORAGE_KEY) || "en"
 
 const i18n = createI18n({
   locale: savedLocale,
-  fallbackLocale: 'en',
+  fallbackLocale: "en",
   legacy: false,
   globalInjection: true,
   messages: {
