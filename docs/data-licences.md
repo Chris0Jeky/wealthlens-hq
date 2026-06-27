@@ -29,7 +29,7 @@ Every dataset used in WealthLens UK must document its source, licence, URL, and 
 - **URL:** <https://www.ons.gov.uk/peoplepopulationandcommunity/personalandhouseholdfinances/incomeandwealth/datasets/totalwealthwealthingreatbritain>
 - **Licence:** Open Government Licence v3.0
 - **Access date:** 2026-05-14
-- **Update frequency:** Biennial
+- **Update frequency:** Biennial (suspended — WAS lost accredited-official-statistics status, June 2025)
 
 ## HMRC — Capital Gains Tax Statistics
 
@@ -58,4 +58,4 @@ Every dataset used in WealthLens UK must document its source, licence, URL, and 
 - **URL (ONS WAS):** <https://www.ons.gov.uk/peoplepopulationandcommunity/personalandhouseholdfinances/incomeandwealth/bulletins/totalwealthingreatbritain/latest>
 - **Licence:** Resolution Foundation series: CC BY-NC-ND 4.0 (non-commercial, no-derivatives); ONS WAS: OGL v3.0
 - **Access date:** 2026-05-16
-- **Update frequency:** Periodic (Resolution Foundation reports)
+- **Update frequency:** Annual (Resolution Foundation reports)
