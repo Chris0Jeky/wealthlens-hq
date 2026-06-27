@@ -117,3 +117,67 @@ def test_fallback_data_matches_known_figures():
     assert latest["cgt_bn"] == 15.0
     assert latest["iht_bn"] == 7.5
     assert latest["sdlt_bn"] == 12.0
+
+
+# --- live-parse completeness guard (sweep fix) -------------------------------
+# process() derives work/wealth totals from ALL FIVE tax columns, so _try_parse_live
+# must reject a partial parse (return None -> complete illustrative fallback) rather
+# than hand back a DataFrame missing a column (which would KeyError in process()).
+
+_FIXTURE_LABELS_COMPLETE = {
+    "income_tax_bn": "Income Tax",
+    "nics_bn": "National Insurance contributions",
+    "cgt_bn": "Capital Gains Tax",
+    "iht_bn": "Inheritance Tax",
+    "sdlt_bn": "Stamp Duty Land Tax",
+}
+# Values in £m (the parser divides by 1000 -> £bn); chosen to land on the fallback bn figures.
+_FIXTURE_VALUES_M = {
+    "income_tax_bn": [250000, 260000, 270000],
+    "nics_bn": [170000, 175000, 180000],
+    "cgt_bn": [14000, 14500, 15000],
+    "iht_bn": [7000, 7200, 7500],
+    "sdlt_bn": [11000, 11500, 12000],
+}
+_FIXTURE_YEARS = ["2021-22", "2022-23", "2023-24"]
+
+
+def _write_annual_xlsx(path: Path, labels: dict[str, str]) -> None:
+    """Write a minimal HMRC-style 'Annual' sheet: a year header row + one row per
+    tax in ``labels`` (column 0 = label, then one £m value per year)."""
+    rows: list[list[object]] = [["Tax", *_FIXTURE_YEARS]]
+    for key, label in labels.items():
+        rows.append([label, *_FIXTURE_VALUES_M[key]])
+    pd.DataFrame(rows).to_excel(path, sheet_name="Annual totals", header=False, index=False)
+
+
+def test_try_parse_live_accepts_a_complete_five_tax_sheet(tmp_path: Path):
+    """A complete sheet parses to a frame carrying all five tax columns."""
+    from fetch_tax_composition import _try_parse_live
+
+    xlsx = tmp_path / "complete.xlsx"
+    _write_annual_xlsx(xlsx, _FIXTURE_LABELS_COMPLETE)
+    df = _try_parse_live(xlsx)
+
+    assert df is not None
+    assert set(_FIXTURE_LABELS_COMPLETE).issubset(df.columns)  # all 5 present
+    latest = df[df["year"] == "2023-24"].iloc[0]
+    assert latest["income_tax_bn"] == 270.0  # 270000 £m / 1000
+    assert latest["sdlt_bn"] == 12.0
+
+
+def test_try_parse_live_rejects_an_incomplete_tax_set(tmp_path: Path):
+    """A sheet whose IHT/SDLT labels don't match (3 of 5) returns None, NOT a
+    column-short frame — so process() falls back instead of raising KeyError."""
+    from fetch_tax_composition import _try_parse_live
+
+    partial = {
+        "income_tax_bn": "Income Tax",
+        "nics_bn": "National Insurance contributions",
+        "cgt_bn": "Capital Gains Tax",
+        "iht_bn": "Death duties",  # no "inheritance" keyword -> unmatched
+        "sdlt_bn": "Property transfer levy",  # no "stamp duty land" keyword -> unmatched
+    }
+    xlsx = tmp_path / "partial.xlsx"
+    _write_annual_xlsx(xlsx, partial)
+    assert _try_parse_live(xlsx) is None
