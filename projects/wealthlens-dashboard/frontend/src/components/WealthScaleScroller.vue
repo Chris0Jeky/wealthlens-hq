@@ -158,8 +158,11 @@ const currentWealthPosition = computed(() => {
 
 /** Format a number as GBP with appropriate shorthand */
 function formatGBP(value: number): string {
-  if (value >= 1_000_000_000) return `£${(value / 1_000_000_000).toFixed(1)}bn`
-  if (value >= 1_000_000) return `£${(value / 1_000_000).toFixed(1)}m`
+  // Trim trailing zeros so the visible chip matches the precise marker value
+  // (e.g. £1.48m, not £1.5m, for the £1,480,000 top-10% threshold).
+  const trim = (n: number) => n.toFixed(2).replace(/\.?0+$/, "")
+  if (value >= 1_000_000_000) return `£${trim(value / 1_000_000_000)}bn`
+  if (value >= 1_000_000) return `£${trim(value / 1_000_000)}m`
   if (value >= 1_000) return `£${(value / 1_000).toFixed(0)}k`
   return `£${value.toLocaleString("en-GB")}`
 }

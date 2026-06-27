@@ -40,7 +40,7 @@ const faqs = [
   {
     question: "How recent is the data?",
     answer:
-      "It varies by dataset. Our long-run wealth-share series (WID) runs to 2024, and the generational-wealth chart draws on ONS Wealth and Assets Survey waves to 2024. The 'Where do you fit?' calculator uses the ONS WAS Round 7 decile thresholds (April 2018 to March 2020), the most recent round with the published decile breakdown we use. We refresh charts as new data is published.",
+      "It varies by dataset. Our long-run wealth-share series (WID) runs to 2024, and the generational-wealth chart draws on the Resolution Foundation's Intergenerational Audit alongside ONS Wealth and Assets Survey data. The 'Where do you fit?' calculator uses the ONS WAS Round 7 decile thresholds (April 2018 to March 2020), the most recent round whose decile breakdown the calculator currently uses. We refresh charts as new data is published.",
   },
   {
     question: "What does 'real terms' mean on wage charts?",

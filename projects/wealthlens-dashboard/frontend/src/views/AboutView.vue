@@ -34,9 +34,9 @@ usePageMeta({
       <h2 class="text-xl font-semibold mb-3">Data Sources</h2>
       <p class="text-gray-700 leading-relaxed mb-4">
         All data is sourced from official government and academic publications. Key datasets are
-        cited below; the full
+        cited below; the
         <RouterLink to="/data-sources" class="text-blue-600 underline">Data Sources</RouterLink>
-        page lists every dataset with its source URL and the date it was accessed.
+        page documents our data sources with their URLs and access dates.
       </p>
       <ul class="space-y-4">
         <li class="border-l-4 border-blue-500 pl-4">

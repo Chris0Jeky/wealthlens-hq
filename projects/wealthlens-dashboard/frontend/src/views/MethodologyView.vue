@@ -107,7 +107,7 @@ const datasets: DatasetSource[] = [
   },
   {
     name: "wage-stagnation",
-    description: "Real (CPIH-adjusted) median weekly pay, indexed",
+    description: "Real (CPI-adjusted, 2024 prices) median weekly pay (£/week)",
     source: "ONS Annual Survey of Hours and Earnings (ASHE)",
     sourceUrl:
       "https://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/earningsandworkinghours/datasets/ashe1702",
