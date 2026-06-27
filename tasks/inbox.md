@@ -74,6 +74,27 @@ Every concrete action item extracted from research. Triage into active-sprint, b
 
 ## Reliability follow-ups
 
+- [ ] **Surface inheritance-tax + wage-stagnation on the Data Sources page (reach 12)**
+  (seeded 2026-06-27, sweep #7 #462). MethodologyView now cites all 12 charts' sources,
+  but DataSourcesView renders from the generated `all-metadata.json`, which `scripts/
+  generate_static_api.py` builds from the **10 CSV-pipeline datasets only**. The other 2
+  charts are served from static/hand-curated JSON outside that pipeline: `inheritance-tax`
+  has a committed `inheritance-tax-metadata.json` sidecar (easy to append to all-metadata
+  via a STATIC list), but **`wage-stagnation.json` is a hand-curated rich format the chart
+  reads directly** — it must NOT be regenerated from `wage_stagnation.csv` (different
+  shape; would break WageStagChart), and its committed metadata sidecar lacks a `name`
+  field. To do: append both sidecars to all-metadata (give wage-stagnation's sidecar a
+  `name`), update the DataSourcesView test fixture 10→12. `EXTRA_SOURCE_INFO` already
+  pre-registers both. (Homepage curation — whether to add them to HomeView's grid — is a
+  separate product decision, intentionally left out.)
+- [ ] **Reconcile productivity-pay + tax-composition update frequency vs the registry**
+  (seeded 2026-06-27, sweep #7 review). The provenance pages show productivity-pay
+  "Quarterly" + tax-composition "Monthly" (the source's native publishing cadence), but
+  `registries/sources.yml` records both as `annual`. Decide one canonical meaning for the
+  "Frequency" column (native release cadence vs pipeline refresh) and align the pages +
+  registry. The reviewer leaned toward setting the REGISTRY to quarterly/monthly (the
+  pages are arguably more user-useful). Low priority; pre-existing.
+
 - [~] Fix `make ci-quick` false-positive and dashboard backend failures observed
   2026-05-30. A valid POSIX-shell run reports 11 pytest failures + 2 errors but
   still exits 0 because backend commands are guarded with `|| echo ...`.

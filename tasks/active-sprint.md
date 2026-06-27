@@ -2,8 +2,17 @@
 
 Last updated: 2026-06-27
 
-> **SESSION 13 (2026-06-27) — 7 PRs MERGED (#456-#461).** Build chain still
-> `OPENAI_API_KEY`-blocked (ACTION-REQUIRED #9), so ran offline sweeps + hygiene.
+> **SESSION 13 (2026-06-27) — 8 PRs MERGED (#456-#462).** Build chain still
+> `OPENAI_API_KEY`-blocked (ACTION-REQUIRED #9), so ran a full **data-honesty audit of
+> the public dashboard** (charts #460, calculators #461, content + scale viz #462) +
+> hygiene (sweep #4 #456, dependabot #457/#458, prettier #459).
+> **#462** data-integrity sweep #7 — the "wealth to scale" scroller publicly
+> CONTRADICTED the calculator (Top 10% £1.34m vs £1.48m; impossible P25/P75 markers) →
+> derived from `utils/wealthPosition` with a drift-lock test; fixed false
+> "No modelling/extrapolation/adjustment" claims on About/Methodology/DataSources,
+> a stale FAQ, an uncited Gini, +2 uncited charts on Methodology, 3 frequency
+> reconciliations. 3-finder audit + 2-lens review + gemini. Two follow-ups seeded
+> (DataSources/Home→12; productivity/tax frequency vs registry). Earlier:
 > **#461** data-integrity sweep #6 — audited the 3 interactive calculators (these
 > *compute* public numbers from cited constants): fixed an impossible "bottom-50%
 > median" (£12,500 → £82,400, a ~6.6× understatement), a decile-10 percentile anchored
