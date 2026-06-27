@@ -21,6 +21,25 @@ updates:
       day: "monday"
     open-pull-requests-limit: 5
 
+  # Hero #1 RAG analyst — its runtime deps (fastapi, uvicorn, sqlalchemy, alembic,
+  # pgvector, psycopg, httpx, anthropic) live only in its own pyproject.toml, so
+  # without this block Dependabot opens no version-update PRs for them.
+  - package-ecosystem: "pip"
+    directory: "/projects/wealthlens-analyst"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+
+  # Microsimulator package — deps (numpy/pandas/scipy/pydantic/pyyaml) live only in
+  # its own pyproject.toml; the root "/" entry does not recurse into it.
+  - package-ecosystem: "pip"
+    directory: "/packages/wealthlens-sim"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+
   - package-ecosystem: "npm"
     directory: "/projects/wealthlens-dashboard/frontend"
     schedule:
