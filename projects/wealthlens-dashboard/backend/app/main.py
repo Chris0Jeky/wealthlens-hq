@@ -220,12 +220,17 @@ def version() -> dict:
 def version_debug() -> dict:
     """Return detailed runtime info for debugging deployments.
 
-    Only available in non-production environments.  Returns 404 when
-    APP_ENV is set to 'production'.
+    Closed by default (fail-closed): served ONLY for an explicitly-recognised
+    non-production ``APP_ENV`` (development/dev/local/staging/test; unset defaults
+    to development, so local dev still works). Any production-like or unrecognised
+    value returns 404 — unlike the old exact ``== "production"`` check, which left
+    the endpoint open when APP_ENV was unset or any case variant ("Production",
+    "PROD").
     """
     from fastapi import HTTPException
 
-    if os.environ.get("APP_ENV") == "production":
+    env = os.environ.get("APP_ENV", "development").strip().lower()
+    if env not in {"development", "dev", "local", "staging", "test"}:
         raise HTTPException(status_code=404, detail="Not found")
     return {
         "version": app.version,

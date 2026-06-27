@@ -249,6 +249,21 @@ def _build_metadata_safe(dataset_name: str) -> dict[str, Any]:
     except Exception:
         logger.exception("metadata: %s unavailable; serving citation-only entry", dataset_name)
         meta = DATASET_META[dataset_name]
+        # The recovery path must NOT itself raise — its whole purpose is to keep the
+        # catalog up when one dataset fails — so degrade each provenance helper to
+        # None on any error (a single bad sidecar can never 500 every dataset's
+        # citations). The helpers already swallow expected errors; this is the
+        # belt-and-braces backstop for anything unexpected.
+        try:
+            last_updated = _get_last_updated(dataset_name)
+        except Exception:
+            logger.exception("metadata recovery: last_updated failed for %s", dataset_name)
+            last_updated = None
+        try:
+            data_type = _get_data_type(dataset_name)
+        except Exception:
+            logger.exception("metadata recovery: data_type failed for %s", dataset_name)
+            data_type = None
         return {
             "name": dataset_name,
             "description": meta["description"],
@@ -258,8 +273,8 @@ def _build_metadata_safe(dataset_name: str) -> dict[str, Any]:
             "available": False,
             "row_count": None,
             "columns": [],
-            "last_updated": _get_last_updated(dataset_name),
-            "data_type": _get_data_type(dataset_name),
+            "last_updated": last_updated,
+            "data_type": data_type,
         }
 
 
@@ -305,8 +320,24 @@ def _get_data_type(dataset_name: str) -> str | None:
     """
     sidecar_path = (DATA_DIR / DATASETS[dataset_name]).with_suffix(".meta.json")
     try:
-        sidecar = json.loads(sidecar_path.read_text(encoding="utf-8"))
-    except (json.JSONDecodeError, OSError):
+        raw = sidecar_path.read_bytes()
+    except FileNotFoundError:
+        return None  # no sidecar -> no provenance metadata (backward-compatible)
+    except OSError as exc:
+        # A present-but-unreadable sidecar is an error, not "no provenance": for an
+        # illustrative dataset, silently returning None would DROP the data-honesty
+        # caveat (the frontend only shows it on a positive match). Surface it so a
+        # corrupt sidecar is detectable, while still degrading to None.
+        logger.warning("Cannot read data_type sidecar for %s: %s", dataset_name, exc)
+        return None
+    try:
+        # json.loads decodes the bytes itself: malformed JSON raises JSONDecodeError,
+        # and non-UTF8 byte corruption raises UnicodeDecodeError (a ValueError, NOT an
+        # OSError) — both must be caught here, or a binary-corrupt sidecar would
+        # escape and 500 the whole /metadata catalog.
+        sidecar = json.loads(raw)
+    except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+        logger.warning("Corrupt data_type sidecar for %s: %s", dataset_name, exc)
         return None
     value = sidecar.get("data_type")
     return value if isinstance(value, str) else None

@@ -65,9 +65,11 @@ const chartData = computed(() => {
 
   warnIfSignificantDataLoss("gdhi-by-region", mapped.length, sorted.length);
 
-  // Extract the UK average for reference line
+  // Extract the UK average for reference line. Use the null-safe helper (NOT bare
+  // Number(), which coerces a missing/blank cell to 0 — a fabricated "£0 average").
+  // A non-finite ukAvg means "no usable UK reference"; consumers guard on it.
   const ukRow = rows.value.find((r) => String(r.region) === "United Kingdom");
-  const ukAvg = ukRow ? Number(ukRow.gdhi_per_head) : 0;
+  const ukAvg = ukRow ? toNumberOrNaN(ukRow.gdhi_per_head) : NaN;
 
   return {
     // The sorted/filtered objects themselves — the data-table maps over these
@@ -164,13 +166,17 @@ const option = computed(() => {
         data: [...data.values].reverse().map((val, i) => ({
           value: val,
           itemStyle: {
-            color: data.values[data.regions.length - 1 - i] >= data.ukAvg
-              ? COLOR_BAR
-              : "#6b7280",
+            // Highlight above-average only when there IS a finite UK average;
+            // otherwise show every bar in the default colour (never falsely grey
+            // them against a fabricated £0 reference).
+            color:
+              !Number.isFinite(data.ukAvg) || data.values[data.regions.length - 1 - i] >= data.ukAvg
+                ? COLOR_BAR
+                : "#6b7280",
           },
         })),
         barMaxWidth: 24,
-        markLine: data.ukAvg
+        markLine: Number.isFinite(data.ukAvg)
           ? {
               silent: true,
               symbol: "none",
@@ -207,7 +213,7 @@ const option = computed(() => {
   <div v-else>
     <div
       role="img"
-      :aria-label="`Bar chart showing Gross Disposable Household Income per head across ${chartData.regions.length} UK regions in 2023. Values range from £${gdhiRange.min.toLocaleString()} to £${gdhiRange.max.toLocaleString()} per head. UK average is £${chartData.ukAvg.toLocaleString()}.`"
+      :aria-label="`Bar chart showing Gross Disposable Household Income per head across ${chartData.regions.length} UK regions in 2023. Values range from £${gdhiRange.min.toLocaleString()} to £${gdhiRange.max.toLocaleString()} per head.${Number.isFinite(chartData.ukAvg) ? ` UK average is £${chartData.ukAvg.toLocaleString()}.` : ''}`"
       class="w-full"
     >
       <VChart

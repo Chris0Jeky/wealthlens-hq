@@ -107,6 +107,35 @@ def test_version_debug_returns_404_in_production() -> None:
     assert response.status_code == 404
 
 
+def test_version_debug_closed_for_production_variants() -> None:
+    """Any production-like value (case-insensitive) is 404 — not just exact 'production'."""
+    for value in ("Production", "PRODUCTION", "PROD", "prod"):
+        with patch.dict(os.environ, {"APP_ENV": value}):
+            response = client.get("/api/version/debug")
+        assert response.status_code == 404, f"APP_ENV={value!r} should be closed"
+
+
+def test_version_debug_closed_for_unknown_env() -> None:
+    """An unrecognised APP_ENV fails CLOSED (not open)."""
+    with patch.dict(os.environ, {"APP_ENV": "totally-unknown"}):
+        response = client.get("/api/version/debug")
+    assert response.status_code == 404
+
+
+def test_version_debug_open_for_unset_app_env() -> None:
+    """APP_ENV unset defaults to development -> open (local dev still works)."""
+    with patch.dict(os.environ):
+        os.environ.pop("APP_ENV", None)
+        response = client.get("/api/version/debug")
+    assert response.status_code == 200
+
+
+def test_version_debug_open_for_staging() -> None:
+    with patch.dict(os.environ, {"APP_ENV": "staging"}):
+        response = client.get("/api/version/debug")
+    assert response.status_code == 200
+
+
 def test_version_debug_uses_git_commit_env_var() -> None:
     """GIT_COMMIT env var should be preferred over local Git metadata."""
     with patch.dict(os.environ, {"GIT_COMMIT": "abc1234567890", "APP_ENV": "development"}):
