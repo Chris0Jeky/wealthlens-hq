@@ -1,6 +1,6 @@
 # ⚑ ACTION REQUIRED — Chris's outstanding tasks
 
-Last updated: 2026-06-13 (session 8; private-split DONE + ADR-D3 hosting DECIDED=Hetzner CAX21; H1-02=reword+map, stat-cards=correct-to-WID chosen)
+Last updated: 2026-06-27 (session 12; added item 9 — OPENAI_API_KEY blocks the Analyst's dense-retrieval chain H1-11→H1-13→H1-18)
 
 > **This file is the single curated list of things that need _Chris_ (a human),
 > not the autonomous agent.** It exists so high-leverage actions never get lost in
@@ -92,6 +92,14 @@ Last updated: 2026-06-13 (session 8; private-split DONE + ADR-D3 hosting DECIDED
    - **Decision needed:** for each card, EITHER (a) cite the specific alternative source/definition that yields 28% / 50% (e.g. a different vintage, income vs wealth, or household basis) on the card, OR (b) approve correcting them to the WID values the chart draws (and re-check the "more than the bottom 70% combined" / "bottom 50% = 6%" claims against a cited source). The 57% headline card is already correct.
    - **Agent-doable once you decide:** I can apply (b) with WID-cited values, or wire (a) citations, in a small reviewed PR. I did NOT change your public headline numbers unilaterally.
    - **Done when:** the stat cards + lede either cite their source or match the WID series, with no within-page contradiction.
+
+9. - [ ] **Provide an `OPENAI_API_KEY` (+ a small spend cap) to unblock the Analyst's dense retrieval** — **P1 (blocks the M2→M3 chain)**
+   - **Why:** As of 2026-06-27 the ingestion write path (H1-09, #450) and FTS retrieval (H1-10, #451) are MERGED, so the corpus is searchable lexically. The next steps — **H1-11** (embed the corpus via OpenAI `text-embedding-3-small`, ADR 0003 D2), then **H1-13** hybrid retrieval, **H1-18** answer composition — all make **real, paid model calls**. The agent will not incur spend without your authorisation, so the whole dense/hybrid/answer chain is blocked on this one credential. (FTS-only retrieval works today; embeddings add the semantic leg.)
+   - **How:**
+     1. Create an OpenAI API key (platform.openai.com) and set a **low usage limit** on the project (e.g. $5) so a bug can't run up a bill. Embedding the ~23-chunk frozen slice with `text-embedding-3-small` costs well under 1 cent; this is for safety, not capacity.
+     2. Give me the key via the environment (do **not** commit it): `export OPENAI_API_KEY=sk-...` before `make ingest-slice` / `make dev`, or set it in the deploy env. It is already in `.env.example` as a placeholder; `config.py` reads it.
+     3. Tell me the monthly cap you want for `BUDGET_MONTHLY_CAP_GBP` (the in-app hard cap, ADR 0002) — default in `.env.example` is £10.
+   - **Done when:** a key is available in the agent's environment (then I build H1-11: embed the corpus, verify cosine neighbours, and wire H1-13 hybrid retrieval).
 
 ---
 
