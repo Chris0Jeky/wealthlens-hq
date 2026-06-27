@@ -235,14 +235,16 @@ const option = computed(() => {
       >, accessed 2026-05-15
     </p>
 
-    <!-- Provenance caveat: household surveys like the WAS under-record wealth at
-         the very top (the wealthiest few are missed or under-sampled), so the
-         richest-decile total is, if anything, conservative. Stated so the chart
-         is never read as a hard ceiling on top-decile wealth, and consistent with
-         how the wealth-shares chart already notes the same top-tail limitation. -->
+    <!-- Provenance caveat mandated by research/methodology/was-caveats.md: any
+         WAS-sourced chart MUST flag that the survey lost accredited official
+         statistics status (June 2025, OSR Report 396, on a response-rate fall
+         66%->41%). Paired with the top-tail under-count note — household surveys
+         miss the wealthiest few — so the chart is never read as a hard ceiling on
+         top-decile wealth; the richest-vs-poorest gap is, if anything, wider. -->
     <p :id="caveatId" class="text-xs text-[var(--wl-ink-muted)] mt-2 text-center max-w-2xl mx-auto">
-      Note: household surveys such as the Wealth and Assets Survey under-record wealth at the very
-      top, so the true gap between the richest and poorest deciles is likely wider than shown.
+      Note: the Wealth and Assets Survey lost accredited official statistics status in June 2025
+      (declining response rates), and household surveys under-record wealth at the very top — so the
+      true gap between the richest and poorest deciles is likely wider than shown.
     </p>
   </div>
 </template>

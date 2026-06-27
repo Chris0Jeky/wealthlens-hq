@@ -294,7 +294,8 @@ const datasets: DatasetSource[] = DATASET_CITATIONS.map((d) => ({
           <li>
             <strong>Survey sample sizes</strong> — the Wealth and Assets Survey samples
             approximately 20,000 households. Extreme wealth is systematically underrepresented
-            because the very wealthy are less likely to respond.
+            because the very wealthy are less likely to respond. The WAS also lost accredited
+            official statistics status in June 2025 after its response rate fell from 66% to 41%.
           </li>
           <li>
             <strong>Time lag</strong> — official statistics are published months or years after the
