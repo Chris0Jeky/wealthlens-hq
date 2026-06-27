@@ -22,9 +22,7 @@ sys.path.insert(0, str(_CHECKS))
 import deterministic as det  # noqa: E402  (path-dependent import of the eval checker)
 
 
-def test_draft_record_with_fabricated_answer_is_rejected(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_draft_record_with_fabricated_answer_is_rejected(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """A DRAFT record carrying expected_answer/required_citations fails the check."""
     real = [json.loads(line) for line in det.GOLDEN_SET.read_text(encoding="utf-8").splitlines() if line.strip()]
     draft = next(r for r in real if r.get("status") == "DRAFT" and r.get("expected_behaviour") == "answer")
