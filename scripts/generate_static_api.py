@@ -193,10 +193,13 @@ def _read_data_type(csv_path: Path) -> str | None:
     """Return the ``data_type`` recorded in the CSV's ``.meta.json`` sidecar.
 
     The pipelines write a sidecar (e.g. ``productivity_pay_gap.meta.json``)
-    next to each processed CSV recording provenance — ``"live_ons"`` for live
-    data or ``"illustrative_fallback"`` when illustrative data was used. The
-    frontend surfaces a data-honesty caveat when the value is
-    ``"illustrative_fallback"``.
+    next to each processed CSV recording provenance:
+    - ``"live_ons"`` — fetched live from the official source;
+    - ``"illustrative_fallback"`` — an illustrative composite (figures are
+      examples); the frontend surfaces a data-honesty caveat;
+    - ``"static_published"`` — real published figures compiled statically (not a
+      live fetch and not invented), e.g. child poverty / generational wealth.
+    Any value is passed straight through into the static metadata artifact.
 
     Returns None when no sidecar exists or it cannot be read/parsed, so a
     dataset without provenance metadata stays backward-compatible (no caveat).
