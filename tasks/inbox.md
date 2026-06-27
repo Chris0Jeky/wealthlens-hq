@@ -1,10 +1,15 @@
 # Inbox
 
-Last updated: 2026-06-04
+Last updated: 2026-06-27
 
-> Latest: 11 PRs merged 2026-06-04 (#338-#348). The simulator dashboard pipeline
+> Latest (2026-06-27, session 13): offline-defect sweep #4 merged (PR #456). Stale
+> checkboxes reconciled against the code: the a11y data-table thread is COMPLETE (9/9
+> charts, #419-#427) and the engine uncertainty-propagation WIRING is done (only the
+> Sobol/extra-params extension remains). See ORCHESTRATION.md for full session history.
+>
+> Prior: 11 PRs merged 2026-06-04 (#338-#348). The simulator dashboard pipeline
 > is live end-to-end: `/api/simulator` bridge (#348) + the `/simulator` scenario
-> page (#349, open/newest, fully reviewed, aging). See ORCHESTRATION.md.
+> page (#349, merged, PR #351). See ORCHESTRATION.md.
 
 Every concrete action item extracted from research. Triage into active-sprint, backlog, or done.
 
@@ -186,12 +191,17 @@ the build + its adversarial reviews:
   runs a scalar `evaluate` once per joint draw and summarises a cited Interval
   (quantile band + median-or-point-estimate central) + per-draw outputs (for Sobol)
   + reproducible provenance. Engine-free.
-- [ ] **Wire propagation into the engine (default OFF)** — add optional
-  `uncertainty: SamplingConfig | None = None` to `engine.simulate`; when set, sample
-  the top-tail alpha from its registry range and `propagate` each revenue figure
-  (total/by-nation/by-decile) into Monte-Carlo quantile bands with `central` = the
-  point estimate at central alpha. Default None = today's single alpha band. Then
-  add more sampled parameters (assumption RangeValues) + Sobol sensitivity.
+- [x] **Wire propagation into the engine (default OFF)** — DONE (verified 2026-06-27,
+  session 13): `engine.simulate(..., uncertainty: SamplingConfig | None = None)` is
+  wired (default None = single alpha band); when set it samples the top-tail alpha and
+  `propagate`s each revenue figure into Monte-Carlo quantile bands, recording
+  `uncertainty_provenance_ids`. `uncertainty/propagation.py` + `sampling.py` exist and
+  are tested (`tests/test_engine.py`).
+- [ ] **Extend the engine uncertainty layer** — remaining follow-ups on the wired
+  propagation above: sample MORE parameters (assumption RangeValues, not just the
+  top-tail alpha) + surface Sobol sensitivity (`uncertainty/sobol.py` exists from #359)
+  in the dashboard JSON. Plus the Vue ConfidenceFanChart that renders the band +
+  caveats (separate item below).
 - [x] **Calibrate the synth generator to cited public WAS/ONS marginals** — PR #335
   merged; default synth calibration is Great Britain scoped, cites ONS/WAS sources,
   and threads source IDs through population provenance. [completed: 2026-05-30]
@@ -247,25 +257,23 @@ the build + its adversarial reviews:
 
 ## Accessibility: chart data-table fallbacks (WCAG 1.1.1)
 
-Seeded 2026-06-19 (session 9). Audit: only 3 of 12 data charts ship an
-`AccessibleDataTable` fallback (CgtConcentration, InheritanceTax, WealthShares).
-Per "Charts must meet WCAG AA" + "accessible by default", every data chart should
-offer a verbatim data-table alternative to its `role="img"` canvas. Pattern is
-established (see `WealthSharesChart.vue` / `CgtConcentrationChart.vue`): import
-`AccessibleDataTable`, map the chart's already-loaded rows to `columns` + `rows`,
-mark numeric columns, add a sourced `caption`. Additive, default-visible table
-below the chart; no data changes. One small reviewable PR per chart (or tight
-group). Each: real per-row cell-mapping test + 2 adversarial reviews.
+Seeded 2026-06-19 (session 9). **COMPLETE — all 12 data charts now ship an
+`AccessibleDataTable` fallback** (verified 2026-06-27, session 13: every chart below
+imports `AccessibleDataTable`). The original audit found only 3 (CgtConcentration,
+InheritanceTax, WealthShares); the remaining 9 were added in #419-#427 via parallel
+worktree fan-outs + 2-lens reviews (session 9). Pattern: import `AccessibleDataTable`,
+map the chart's loaded rows to `columns` + `rows`, mark numeric columns, sourced
+`caption`; additive, default-visible, no data changes.
 
-- [ ] BoeRatesChart — accessible data table (boe-rates.json)
-- [ ] ChildPovertyChart — accessible data table (child-poverty.json)
-- [ ] GdhiByRegionChart — accessible data table (gdhi-by-region.json)
-- [ ] GenerationalWealthChart — accessible data table (generational-wealth.json)
-- [ ] HousingAffordabilityChart — accessible data table (housing-affordability.json)
-- [ ] ProductivityPayChart — accessible data table (productivity-pay.json)
-- [ ] TaxCompositionChart — accessible data table (tax-composition.json)
-- [ ] WageStagChart — accessible data table (wage-stagnation.json)
-- [ ] WealthByDecileChart — accessible data table (wealth-by-decile.json)
+- [x] BoeRatesChart — accessible data table (boe-rates.json) [#425]
+- [x] ChildPovertyChart — accessible data table (child-poverty.json) [#421]
+- [x] GdhiByRegionChart — accessible data table (gdhi-by-region.json) [#420]
+- [x] GenerationalWealthChart — accessible data table (generational-wealth.json) [#423]
+- [x] HousingAffordabilityChart — accessible data table (housing-affordability.json) [#427]
+- [x] ProductivityPayChart — accessible data table (productivity-pay.json) [#426]
+- [x] TaxCompositionChart — accessible data table (tax-composition.json) [#419]
+- [x] WageStagChart — accessible data table (wage-stagnation.json) [#424]
+- [x] WealthByDecileChart — accessible data table (wealth-by-decile.json) [#422]
 
 ### Data-quality follow-ups surfaced during the a11y audit (2026-06-19)
 

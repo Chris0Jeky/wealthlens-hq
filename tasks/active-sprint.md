@@ -2,6 +2,25 @@
 
 Last updated: 2026-06-27
 
+> **SESSION 13 (2026-06-27) — offline-defect sweep #4; PR #456 MERGED.** Build chain
+> still `OPENAI_API_KEY`-blocked (ACTION-REQUIRED #9), so ran sweep #4 (5-finder +
+> adversarial-verify workflow → **12 confirmed offline defects**) then a **3-lens
+> adversarial review** of the fixes (caught 11 real consistency gaps incl. a *second*
+> `data-licences.md` and a gemini-caught engine-leak edge — all folded in). Fixed:
+> **CI/config** — weekly drift schedules on ci-backend/ci-frontend, dependabot coverage
+> for the analyst + sim packages, a docker-compose mount that pointed at a non-existent
+> `./data/processed` (compose backend served **zero** datasets), mypy strict-override
+> sync (10+2 omitted automation modules); **docs** — AGENT_INDEX "no production code"
+> → built, dead `.codex` link, "E2E not configured" (all false); **data-provenance** —
+> generational-wealth RF licence OGL→**CC BY-NC-ND 4.0** (chart + pipeline + both
+> data-licences.md), a fabricated housing teaser ("UK 8.6× highest since records began"
+> — no UK series), GDHI **Westminster→Kensington & Chelsea** misattribution across
+> registry/pipeline/mockups, +3 omitted `data-licences.md` chart rows + a flagged
+> output-licence conflict; **analyst** — `ingest_slice` engine-leak. Added
+> **ACTION-REQUIRED #10** (RF chart output-licence decision). Reconciled stale docs:
+> a11y data-table thread is 9/9 COMPLETE; engine uncertainty-propagation wiring done.
+> Full state: `../hq-private/projects/wealthlens/memories/session_notes/ORCHESTRATION.md`.
+
 > **SESSION 12 (2026-06-27) — Hero #1 ingest+lexical-retrieval done; 6 PRs MERGED.**
 > **#450** H1-09 — ingestion integrity gate (`validate_chunk_provenance`, fail-closed
 > per-type rule) + atomic `write_chunks` (idempotent, refresh-prunes stale docs) +
