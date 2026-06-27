@@ -228,5 +228,15 @@ const option = computed(() => {
         ONS Wealth and Assets Survey<span class="sr-only"> (opens in new tab)</span></a
       >, accessed 2026-05-15
     </p>
+
+    <!-- Provenance caveat: household surveys like the WAS under-record wealth at
+         the very top (the wealthiest few are missed or under-sampled), so the
+         richest-decile total is, if anything, conservative. Stated so the chart
+         is never read as a hard ceiling on top-decile wealth, and consistent with
+         how the wealth-shares chart already notes the same top-tail limitation. -->
+    <p class="text-xs text-[var(--wl-ink-muted)] mt-2 text-center max-w-2xl mx-auto">
+      Note: household surveys such as the Wealth and Assets Survey under-record wealth at the very
+      top, so the true gap between the richest and poorest deciles is likely wider than shown.
+    </p>
   </div>
 </template>
