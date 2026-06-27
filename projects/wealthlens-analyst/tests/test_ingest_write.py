@@ -1,0 +1,166 @@
+"""Lock the ingestion integrity gate + write path (H1-09, ADR 0001 §4).
+
+Pure-Python and DB-free by design: CI has no Postgres service, so these tests
+exercise the provenance gate and the fail-closed ordering of write_chunks
+against a stand-in engine that explodes if a connection is ever opened. The live
+write + FTS path is verified locally against the analyst-db container (recorded
+in the PR), not here.
+
+Headline guarantee (the H1-09 done-when): a deliberately provenance-stripped
+chunk fails ingestion before anything is written.
+"""
+
+from __future__ import annotations
+
+from datetime import date
+
+import pytest
+
+from wealthlens_analyst.ingest.slice_corpus import (
+    TABLE_SPECS,
+    Chunk,
+    ProvenanceError,
+    _chunk_to_row,
+    render_table_chunks,
+    validate_chunk_provenance,
+    write_chunks,
+)
+
+_WAS = next(spec for spec in TABLE_SPECS if spec.source_id == "ons-was-wealth")
+
+
+def _tabular_chunk(**overrides: object) -> Chunk:
+    """A conformant tabular chunk (section + span, no page); override one field."""
+    fields: dict[str, object] = {
+        "source_id": "ons-was-wealth",
+        "document_id": "was-total-wealth-by-decile",
+        "section": "Total household wealth by decile, Great Britain: 5th",
+        "page": None,
+        "span": "decile=5th",
+        "text": "Total household wealth by decile (ONS WAS). Wealth decile 5th: aggregate total net wealth £652.0bn.",
+        "token_count": 14,
+        "access_date": date(2026, 5, 30),
+    }
+    fields.update(overrides)
+    return Chunk(**fields)  # type: ignore[arg-type]  # tests inject invalid values on purpose
+
+
+def _document_chunk(**overrides: object) -> Chunk:
+    """A conformant document chunk (page + span; section optional per the rule)."""
+    fields: dict[str, object] = {
+        "source_id": "rf-intergenerational-audit-2024",
+        "document_id": "rf-audit-2024.pdf",
+        "section": "Executive summary",
+        "page": 7,
+        "span": "p7:¶2",
+        "text": "Wealth has grown far faster than incomes since the 1980s.",
+        "token_count": 10,
+        "access_date": date(2026, 6, 1),
+    }
+    fields.update(overrides)
+    return Chunk(**fields)  # type: ignore[arg-type]
+
+
+class _ExplodingEngine:
+    """Stand-in engine that fails if any connection is opened.
+
+    Proves write_chunks validates the whole batch BEFORE touching the database:
+    on an invalid chunk it must raise ProvenanceError, never reach begin().
+    """
+
+    def begin(self) -> object:
+        raise AssertionError("database connection opened despite invalid/empty input")
+
+
+# --- the gate accepts conformant chunks ---------------------------------------
+
+
+def test_gate_accepts_conformant_tabular_chunk() -> None:
+    validate_chunk_provenance(_tabular_chunk())  # no raise
+
+
+def test_gate_accepts_conformant_document_chunk_without_section() -> None:
+    """A document chunk needs page + span; section is optional (the per-type rule)."""
+    validate_chunk_provenance(_document_chunk(section=None))  # no raise
+
+
+def test_every_rendered_tabular_chunk_passes_the_gate() -> None:
+    """Real renderer output (H1-07) always satisfies the gate it feeds."""
+    rows = [
+        {"decile": "1st (poorest)", "total_wealth_bn": "13.9"},
+        {"decile": "10th (richest)", "total_wealth_bn": "5523.2"},
+    ]
+    rendered = render_table_chunks(rows, _WAS)
+    assert rendered  # guard against a vacuous pass
+    for chunk in rendered:
+        validate_chunk_provenance(chunk)
+
+
+# --- the gate rejects missing provenance --------------------------------------
+
+
+def test_provenance_stripped_chunk_fails_ingestion() -> None:
+    """The H1-09 done-when: section AND page both stripped -> uncitable -> rejected."""
+    stripped = _tabular_chunk(section=None, page=None)
+    with pytest.raises(ProvenanceError, match="section"):
+        validate_chunk_provenance(stripped)
+
+
+@pytest.mark.parametrize(
+    ("overrides", "match"),
+    [
+        ({"source_id": ""}, "source_id"),
+        ({"source_id": "   "}, "source_id"),
+        ({"document_id": ""}, "document_id"),
+        ({"document_id": None}, "document_id"),
+        ({"span": None}, "span"),
+        ({"span": ""}, "span"),
+        ({"text": ""}, "text"),
+        ({"text": "   "}, "text"),
+        ({"section": None, "page": None}, "section"),  # provenance-stripped tabular
+    ],
+)
+def test_gate_rejects_missing_provenance(overrides: dict[str, object], match: str) -> None:
+    with pytest.raises(ProvenanceError, match=match):
+        validate_chunk_provenance(_tabular_chunk(**overrides))
+
+
+@pytest.mark.parametrize("page", [0, -1])
+def test_gate_rejects_non_positive_document_page(page: int) -> None:
+    with pytest.raises(ProvenanceError, match="page"):
+        validate_chunk_provenance(_document_chunk(page=page))
+
+
+# --- write_chunks: fail-closed ordering + row projection ----------------------
+
+
+def test_write_chunks_validates_before_touching_the_db() -> None:
+    """One invalid chunk aborts the batch before any connection is opened."""
+    good = _tabular_chunk()
+    bad = _tabular_chunk(span=None)
+    with pytest.raises(ProvenanceError, match="span"):
+        write_chunks([good, bad], engine=_ExplodingEngine())  # type: ignore[arg-type]
+
+
+def test_write_chunks_empty_is_a_noop_without_db() -> None:
+    """An empty slice writes nothing and never connects (returns 0)."""
+    assert write_chunks([], engine=_ExplodingEngine()) == 0  # type: ignore[arg-type]
+
+
+def test_chunk_row_omits_server_managed_columns() -> None:
+    """The INSERT row carries exactly the writable columns — not the server ones."""
+    row = _chunk_to_row(_tabular_chunk())
+    assert set(row) == {
+        "source_id",
+        "document_id",
+        "section",
+        "page",
+        "span",
+        "text",
+        "token_count",
+        "access_date",
+    }
+    # chunk_id (Identity), ts (generated), created_at (server default) are never supplied.
+    assert "chunk_id" not in row
+    assert "ts" not in row
+    assert "created_at" not in row

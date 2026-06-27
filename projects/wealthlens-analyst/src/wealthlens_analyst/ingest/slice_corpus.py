@@ -43,8 +43,12 @@ review; serves golden G-007/G-008):
 The span still pins the raw HMRC band label, so provenance stays faithful while
 the rendered text is unambiguous.
 
-Entrypoint: `make ingest-slice` (fetch -> chunk -> write -> FTS -> embed),
-wired in task H1-09.
+Entrypoint: `make ingest-slice` -> main() (task H1-09): collect chunks ->
+validate provenance (fail-closed) -> write to the chunks table. The STORED
+tsvector (migration 0001_chunks) keeps the FTS index current on every insert,
+so ingestion cannot forget it; dense embeddings are a separate step (task
+H1-11). The PDF document path (task H1-08) is not built yet, so today's slice is
+the tabular sources only.
 """
 
 from __future__ import annotations
@@ -57,6 +61,12 @@ from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
+
+import sqlalchemy as sa
+from sqlalchemy import Engine
+
+from wealthlens_analyst.config import load_settings
+from wealthlens_analyst.db import chunks_table, engine_from_settings
 
 logger = logging.getLogger(__name__)
 
@@ -538,18 +548,139 @@ def collect_tabular_chunks(processed_dir: Path | None = None) -> list[Chunk]:
     return chunks
 
 
-def ingest_slice() -> int:
-    """Run the full slice ingestion; return the number of chunks written.
+# --- Ingestion integrity gate + write path (H1-09) -----------------------------
 
-    Tabular rendering is available via collect_tabular_chunks() (H1-07); the PDF
-    path (H1-08) and the write/FTS/embed wiring (H1-09) complete this.
+
+class ProvenanceError(ValueError):
+    """A chunk violates the ingestion provenance contract (ADR 0001 §4).
+
+    Raised by validate_chunk_provenance when a chunk lacks the provenance a
+    citation needs. Ingestion is fail-closed: write_chunks validates every chunk
+    BEFORE writing any row, so one offending chunk aborts the whole batch with
+    nothing persisted — the corpus can never hold a chunk that cannot be cited
+    back to its source.
     """
-    raise NotImplementedError("H1-08/H1-09: PDF chunking + write/FTS/embed wiring not yet implemented")
+
+
+# One INSERT row for the chunks table: text/int columns, a date, and None for
+# the nullable section/page/span columns.
+_ChunkRow = dict[str, str | int | date | None]
+
+
+def _is_blank(value: str | None) -> bool:
+    """True when a required text field is absent or only whitespace."""
+    return value is None or not value.strip()
+
+
+def validate_chunk_provenance(chunk: Chunk) -> None:
+    """Enforce the per-type provenance contract; raise ProvenanceError if broken.
+
+    The chunks DDL (migration 0001_chunks) makes source_id/document_id/text NOT
+    NULL but leaves section/page/span nullable, because the requirement is
+    source-type-specific and is enforced HERE (one place), not in the schema:
+
+    - Universal: source_id, document_id, span and text must be present.
+    - Tabular chunk (no page): must carry a section (its table + band).
+    - Document chunk (page set): the page must be a real 1-based number.
+
+    Surfacing these as a clear ProvenanceError up front beats an opaque database
+    IntegrityError at INSERT, and guarantees citation resolution (H1-19) always
+    has the coordinates it needs.
+    """
+    if _is_blank(chunk.source_id):
+        raise ProvenanceError("chunk has no source_id (the citation root)")
+    label = f"{chunk.source_id}/{chunk.document_id}"
+    if _is_blank(chunk.document_id):
+        raise ProvenanceError(f"chunk for source {chunk.source_id!r} has no document_id")
+    if _is_blank(chunk.span):
+        raise ProvenanceError(f"chunk {label} has no span (the in-source locator)")
+    if _is_blank(chunk.text):
+        raise ProvenanceError(f"chunk {label} span={chunk.span!r} has empty text")
+    if chunk.page is None:
+        if _is_blank(chunk.section):
+            raise ProvenanceError(
+                f"tabular chunk {label} span={chunk.span!r} has no section (tabular chunks require section + span)"
+            )
+    elif chunk.page < 1:
+        raise ProvenanceError(f"document chunk {label} span={chunk.span!r} has a non-positive page ({chunk.page})")
+
+
+def _chunk_to_row(chunk: Chunk) -> _ChunkRow:
+    """Project a validated Chunk onto the chunks-table INSERT columns.
+
+    chunk_id (Identity), ts (generated tsvector) and created_at (server default)
+    are server-managed and intentionally omitted (see db.chunks_table).
+    """
+    return {
+        "source_id": chunk.source_id,
+        "document_id": chunk.document_id,
+        "section": chunk.section,
+        "page": chunk.page,
+        "span": chunk.span,
+        "text": chunk.text,
+        "token_count": chunk.token_count,
+        "access_date": chunk.access_date,
+    }
+
+
+def write_chunks(chunks: list[Chunk], *, engine: Engine, replace: bool = True) -> int:
+    """Validate every chunk, then write the batch to the chunks table atomically.
+
+    Fail-closed in two senses: (1) provenance is validated for ALL chunks before
+    any row is written, so a single bad chunk aborts ingestion with nothing
+    persisted; (2) the write runs in one transaction, so a mid-batch database
+    error rolls the whole batch back.
+
+    Idempotent by default (replace=True): the existing rows for each
+    (source_id, document_id) being ingested are deleted first, so re-running the
+    ingest refreshes those documents in place instead of duplicating them.
+    Embeddings for replaced chunks cascade away (FK ON DELETE CASCADE, migration
+    0002) and are regenerated by the embed step (H1-11). Returns the number of
+    chunks written.
+    """
+    for chunk in chunks:
+        validate_chunk_provenance(chunk)
+    if not chunks:
+        logger.warning("write_chunks: no chunks to write (nothing ingested)")
+        return 0
+
+    rows = [_chunk_to_row(chunk) for chunk in chunks]
+    doc_keys = sorted({(chunk.source_id, chunk.document_id) for chunk in chunks})
+    with engine.begin() as conn:
+        if replace:
+            deleted = conn.execute(
+                chunks_table.delete().where(
+                    sa.tuple_(chunks_table.c.source_id, chunks_table.c.document_id).in_(doc_keys)
+                )
+            ).rowcount
+            if deleted:
+                logger.info("write_chunks: replaced %d existing chunk(s) across %d document(s)", deleted, len(doc_keys))
+        conn.execute(chunks_table.insert(), rows)
+    logger.info("write_chunks: wrote %d chunk(s) across %d document(s)", len(rows), len(doc_keys))
+    return len(rows)
+
+
+def ingest_slice(*, engine: Engine | None = None, processed_dir: Path | None = None) -> int:
+    """Run the corpus-slice ingestion end-to-end; return the chunks written.
+
+    Collects the tabular-source chunks (H1-07), validates provenance, and writes
+    them to the chunks table (the STORED tsvector keeps FTS current with no extra
+    step). The PDF document path (H1-08) is not built yet, so today's slice is the
+    tabular sources only; dense embeddings are a separate step (H1-11). ``engine``
+    defaults to one built from the environment (DATABASE_URL).
+    """
+    if engine is None:
+        engine = engine_from_settings(load_settings())
+    chunks = collect_tabular_chunks(processed_dir=processed_dir)
+    logger.info("collected %d tabular chunk(s); document corpus pending H1-08 (PDF chunking)", len(chunks))
+    return write_chunks(chunks, engine=engine)
 
 
 def main() -> None:
     """CLI entrypoint for `make ingest-slice`."""
-    raise NotImplementedError("H1-09: ingestion CLI not yet implemented")
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
+    written = ingest_slice()
+    logger.info("ingest-slice complete: %d chunk(s) in the corpus", written)
 
 
 if __name__ == "__main__":
