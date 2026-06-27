@@ -299,6 +299,8 @@ def main() -> None:
 
     available: list[str] = []
     errors: list[str] = []
+    # Normalised metadata for static (committed-JSON) datasets, keyed by slug.
+    STATIC_META: dict[str, dict[str, Any]] = {}
 
     for slug, filename in DATASETS.items():
         csv_path = DATA_DIR / filename
@@ -345,16 +347,42 @@ def main() -> None:
 
         print(f"  OK {slug}: {len(records)} rows")
 
-    # Dataset listing
+    # Datasets served from committed static JSON (no pipeline CSV): normalise their
+    # committed metadata sidecars to the API DatasetMetadata shape so the public
+    # provenance page (all-metadata) cites every routed chart — not just the CSV-pipeline
+    # ones. They are deliberately NOT added to datasets.json (the fetchable-data listing):
+    # their data JSON is hand-curated and not in the API {data,total,...} shape, so the
+    # data-contract validation only covers the CSV-pipeline datasets.
+    STATIC_DATASETS = ("inheritance-tax", "wage-stagnation")
+    for slug in STATIC_DATASETS:
+        sidecar = OUT_DIR / f"{slug}-metadata.json"
+        if slug in available or not sidecar.exists():
+            continue
+        m = json.loads(sidecar.read_text(encoding="utf-8"))
+        STATIC_META[slug] = {
+            "name": m.get("name", m.get("slug", slug)),
+            "description": m.get("description", ""),
+            "source": m.get("source", ""),
+            "source_url": m.get("source_url", ""),
+            # chart-meta sidecars use "last_updated"; API metadata uses "access_date".
+            "access_date": m.get("access_date", m.get("last_updated", "")),
+            "row_count": m.get("row_count", 0),
+            "columns": m.get("columns", []),
+        }
+
+    # Dataset listing (CSV-pipeline datasets only — what the data API can serve)
     listing = {"datasets": available}
     listing_path = OUT_DIR / "datasets.json"
     listing_path.write_text(json.dumps(listing, allow_nan=False), encoding="utf-8")
 
-    # All metadata combined
-    all_meta = {"datasets": []}
+    # All metadata combined: CSV-pipeline datasets + the static-JSON datasets, so the
+    # provenance page lists every routed chart.
+    all_meta: dict[str, list[dict[str, Any]]] = {"datasets": []}
     for slug in available:
         meta_path = OUT_DIR / f"{slug}-metadata.json"
         all_meta["datasets"].append(json.loads(meta_path.read_text(encoding="utf-8")))
+    for static_entry in STATIC_META.values():
+        all_meta["datasets"].append(static_entry)
     all_meta_path = OUT_DIR / "all-metadata.json"
     all_meta_path.write_text(json.dumps(all_meta, allow_nan=False), encoding="utf-8")
 

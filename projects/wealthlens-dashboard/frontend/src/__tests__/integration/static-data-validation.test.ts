@@ -303,12 +303,17 @@ describe("Static data validation", () => {
       validateDataset(slug)
     })
 
-    it("all-metadata.json covers exactly the datasets.json slugs", () => {
+    it("all-metadata.json covers the datasets.json slugs plus the static-JSON datasets", () => {
       expect(present("all-metadata.json")).toBe(true)
       const all = readJson("all-metadata.json")
       expect(isValidAllMetadata(all)).toBe(true)
       const covered = (all as { datasets: DatasetMetadata[] }).datasets.map((d) => d.name).sort()
-      expect(covered).toEqual([...slugs].sort())
+      // all-metadata is a deliberate SUPERSET of datasets.json: the CSV-pipeline datasets
+      // (the fetchable-data listing) plus the static-JSON charts (inheritance-tax,
+      // wage-stagnation), which are cited on the provenance page but served from
+      // hand-curated JSON rather than the data API.
+      const STATIC = ["inheritance-tax", "wage-stagnation"]
+      expect(covered).toEqual([...slugs, ...STATIC].sort())
     })
 
     it("every dataset slug has a freshness.json entry", () => {
