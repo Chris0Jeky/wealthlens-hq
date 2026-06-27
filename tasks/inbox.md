@@ -302,10 +302,19 @@ map the chart's loaded rows to `columns` + `rows`, mark numeric columns, sourced
   has "net negative wealth" / is "highlighted in red"** while the committed ONS
   data is +£13.9bn (positive) — fixed in #422 (gated the claim on a
   `poorestIsNegative` computed; tooltip + bar colour were already conditional).
-- [ ] **Frontend `.prettierrc` is stale / unenforced — adopt prettier properly.**
+- [x] **Frontend `.prettierrc` is stale / unenforced — adopt prettier properly.**
+  **DONE 2026-06-27 (session 13, PR #459, merge-committed `9d1df07`).** Executed the
+  plan below exactly: `.prettierrc` → `{semi:false, singleQuote:false, trailingComma:"all",
+  printWidth:100}`; added `public/data` to `.prettierignore`; `prettier --write` (283-file
+  reformat, isolated commit `0f4e00e`); `.git-blame-ignore-revs` added referencing it
+  (merge-committed, NOT squashed, so the SHA survives); wired `npm run format:check` into
+  `ci-frontend.yml`. The reformat exposed ONE real Vue-template break — `LazyImage.vue`'s
+  multi-statement inline `@error` handler became invalid under `semi:false` (vue compiler +
+  vitest + build all failed) → refactored to a `handleError()` method; also updated
+  `serviceWorker.test.ts` (asserts sw.js's literal quotes). Verified: tsc + build + eslint
+  (0 err) + vitest 1331/1331 + the new format gate, all green. Original scoping below:
   Surfaced 2026-06-19 (#430); **fully scoped 2026-06-26/27 (session 11) by running
-  prettier; Chris AUTHORIZED it ("do it, however you think is best").** Ready to
-  execute in one clean-context PR next session. Findings (empirical):
+  prettier; Chris AUTHORIZED it ("do it, however you think is best").** Findings (empirical):
   - The real house style is **double-quote + NO semicolons** (`src/main.ts`/`App.vue`/
     `stores/data.ts` have 0 semicolon-terminated lines). So `.prettierrc`'s `semi:false`
     is CORRECT but `singleQuote:true` is WRONG (code uses double quotes).
