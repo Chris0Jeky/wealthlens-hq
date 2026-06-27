@@ -648,9 +648,13 @@ def get_dataset(
     response.headers["Cache-Control"] = _CACHE_DATA
     df = _read_csv(dataset_name)
 
-    # Replace NaN with None so JSON serialization produces explicit nulls
-    # rather than silently converting pandas NaN.
-    df = df.where(pd.notna(df), other=None)  # type: ignore[arg-type]
+    # Replace NaN with None so JSON serialization produces explicit nulls rather
+    # than silently leaking pandas NaN. NOTE: df.where(cond, other=None) is a no-op
+    # for NaN under pandas 3.x (it leaves NaN in place), so cast to object first —
+    # that makes the substitution actually apply across pandas 2.x and 3.x. (A
+    # leaked non-finite float would otherwise rely entirely on FastAPI's serializer
+    # to coerce it to null, masking any missing/suppressed source cell.)
+    df = df.astype(object).where(pd.notna(df), None)  # type: ignore[arg-type]
 
     total = len(df)
     total_pages = math.ceil(total / limit) if total > 0 else 1
