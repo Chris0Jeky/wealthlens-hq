@@ -144,4 +144,27 @@ describe("GdhiByRegionChart accessible data table", () => {
     expect(caption).toContain("Gross Disposable Household Income per head");
     expect(caption).toContain("ONS Regional GDHI");
   });
+
+  it("announces the UK average when the UK row carries a real value", () => {
+    const wrapper = mount(GdhiByRegionChart);
+    const label = wrapper.find('[role="img"]').attributes("aria-label") ?? "";
+    expect(label).toContain(`UK average is £${gbp(25502)}.`);
+  });
+
+  it("omits the UK-average reference when the UK row's value is missing (no fabricated £0)", () => {
+    // UK row present but its gdhi_per_head is null: bare Number() would have made
+    // a £0 average and announced "UK average is £0." to screen readers.
+    mockRows.value = [
+      { region: "London", gdhi_per_head: 37564, year: 2023 },
+      { region: "Scotland", gdhi_per_head: 22891, year: 2023 },
+      { region: "United Kingdom", gdhi_per_head: null, year: 2023 },
+    ];
+    const wrapper = mount(GdhiByRegionChart);
+    const label = wrapper.find('[role="img"]').attributes("aria-label") ?? "";
+    expect(label).not.toContain("UK average");
+    expect(label).not.toContain("£0");
+    expect(label).not.toContain("NaN");
+    // The genuine regions are still announced.
+    expect(label).toContain("2 UK regions");
+  });
 });
