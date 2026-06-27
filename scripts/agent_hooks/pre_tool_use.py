@@ -76,23 +76,33 @@ def main() -> int:
     tool_input = payload.get("tool_input", {}) or {}
     command = str(tool_input.get("command") or tool_input.get("code") or "")
 
-    # A *pure* `git commit` is exempted from scanning so a secret-like or example
-    # string inside the commit MESSAGE never trips a false positive. But do NOT
-    # exempt a command that merely STARTS with `git commit` and then runs something
-    # else via shell chaining (`git commit -m wip && git push --force`; `…; rm -rf
-    # /`) OR command substitution (`git commit $(rm -rf /) -m wip`) — that would let
-    # a destructive sibling bypass every deny pattern. The exemption is taken only
-    # for a commit with NO shell metacharacters; otherwise the quoted -m/--message
-    # body is stripped (so inert message text can't false-positive) and the
-    # remainder is scanned.
+    # A git-commit with NO way to run a sibling command is exempt from scanning, so
+    # a secret-like or dangerous-looking string inside the commit MESSAGE never
+    # trips a false positive. "No way to run a sibling command" = no shell
+    # metacharacter: chaining (&& || ; | &), command substitution ($() or `…`),
+    # process substitution (<() >()), or a newline.
     is_git_commit = re.match(r"\s*git\s+commit\b", command) is not None
-    has_shell_meta = re.search(r"&&|\|\||;|\||&|\$\(|`|\n", command) is not None
+    has_shell_meta = re.search(r"&&|\|\||;|\||&|\$\(|`|<\(|>\(|\n", command) is not None
     if is_git_commit and not has_shell_meta:
         return 0
 
     compact = " ".join(command.split())
     if is_git_commit:
-        compact = re.sub(r"(?:-m|--message)[=\s]+(\"[^\"]*\"|'[^']*')", "-m MSG", compact)
+        # This commit reached here because it has shell metacharacters (it chains
+        # another command and/or uses substitution). Strip the INERT quoted message
+        # body so a message that merely MENTIONS a dangerous command can't
+        # false-positive — covering -m / -am / --message, the attached and `=`
+        # forms, and both quote styles incl. escaped inner quotes. A SINGLE-quoted
+        # body is always inert. A DOUBLE-quoted body is inert only if it has no
+        # unescaped $ or backtick (the shell expands those); a double-quoted body
+        # that DOES contain substitution is left in place and denied just below,
+        # because the shell executes it.
+        _MSG_FLAG = r"(?:--message=?|-[A-Za-z]*m)\s*"
+        compact = re.sub(_MSG_FLAG + r"'[^']*'", "-m MSG", compact)  # single-quoted: inert
+        compact = re.sub(_MSG_FLAG + r'"(?:\\.|[^"\\$`])*"', "-m MSG", compact)  # double-quoted, no $/`: inert
+        if re.search(r"\$\(|`", compact):
+            deny("git commit uses shell command substitution that cannot be safely vetted.")
+            return 0
 
     for pattern, reason in DENY_PATTERNS:
         if pattern.search(compact):

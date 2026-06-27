@@ -17,6 +17,15 @@ export function useChartData(datasetName: string) {
       // static-build path ignores these args.
       const response = await store.fetchDataset(datasetName, 1, 1000);
       rows.value = response.data;
+      // Guard the 1000-row ceiling: if a dataset ever grows past it, surface the
+      // truncation loudly instead of silently dropping rows (the bug this fix
+      // addressed). The fix then is to paginate; today no dataset approaches 1000.
+      if (response.total > response.data.length) {
+        console.warn(
+          `useChartData: "${datasetName}" has ${response.total} rows but only ${response.data.length} were ` +
+            `fetched (limit 1000) — chart data is truncated; paginate to load the rest.`,
+        );
+      }
     } catch (e) {
       error.value = e instanceof Error ? e.message : `Failed to load ${datasetName}`;
     } finally {

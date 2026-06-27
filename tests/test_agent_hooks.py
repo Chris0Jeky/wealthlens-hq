@@ -27,6 +27,7 @@ POST = HOOKS / "post_tool_failure.py"
 # contain the literal blocked strings.
 _FORCE_PUSH = "git push --for" + "ce origin main"
 _RM_RF = "rm -" + "rf /"
+_NPM_PUBLISH = "npm " + "publish"
 
 
 def _pre_decision(command: str) -> str:
@@ -55,10 +56,39 @@ def test_commit_chained_rm_rf_denied() -> None:
     assert _pre_decision(f"git commit -m wip; {_RM_RF}") == "deny"
 
 
-def test_commit_with_command_substitution_is_scanned() -> None:
-    # A command substitution runs during the commit, so the commit must NOT be
-    # fast-exempted: the substituted command is scanned (force-push -> deny).
+def test_commit_with_command_substitution_outside_message_denied() -> None:
+    # Substitution outside the message runs during the commit -> denied.
     assert _pre_decision(f"git commit $({_FORCE_PUSH}) -m wip") == "deny"
+
+
+def test_commit_substitution_inside_double_quoted_message_denied() -> None:
+    # Double quotes EXPAND $(...), so a substitution inside a "..." message executes
+    # and must be denied (it must NOT be stripped-then-missed).
+    assert _pre_decision('git commit -m "wip $(echo pwned)"') == "deny"
+
+
+def test_commit_substitution_inside_single_quoted_message_allowed() -> None:
+    # Single quotes do NOT expand, so the text is inert -> allowed.
+    assert _pre_decision("git commit -m 'wip $(echo pwned)'") == "allow"
+
+
+def test_commit_process_substitution_is_scanned() -> None:
+    # <(...) runs its inner command; it must be scanned (npm publish -> deny).
+    assert _pre_decision(f"git commit -F <({_NPM_PUBLISH})") == "deny"
+
+
+def test_commit_am_flag_with_dangerous_message_text_allowed() -> None:
+    # Combined -am flag + chaining; the message merely MENTIONS a dangerous command
+    # (inert text) — must not false-positive.
+    assert _pre_decision(f'git commit -am "describe the {_FORCE_PUSH} bug" && git push') == "allow"
+
+
+def test_commit_attached_m_flag_with_dangerous_message_text_allowed() -> None:
+    assert _pre_decision(f'git commit -m"mention {_RM_RF} here" && git push') == "allow"
+
+
+def test_commit_escaped_quote_in_message_allowed() -> None:
+    assert _pre_decision('git commit -m "document the \\"safe\\" flag" && git push') == "allow"
 
 
 def test_post_tool_failure_survives_whitespace_target() -> None:

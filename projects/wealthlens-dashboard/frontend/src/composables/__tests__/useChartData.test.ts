@@ -51,4 +51,19 @@ describe("useChartData", () => {
     expect((wrapper.vm as unknown as { rows: unknown[] }).rows).toHaveLength(1);
     expect((wrapper.vm as unknown as { loading: boolean }).loading).toBe(false);
   });
+
+  it("warns loudly if a dataset ever exceeds the 1000-row fetch ceiling", async () => {
+    fetchDataset.mockResolvedValueOnce({
+      data: new Array(1000).fill({ region: "x", value: 1 }),
+      page: 1,
+      limit: 1000,
+      total: 2000,
+      total_pages: 2,
+    });
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    mount(Host, { props: { name: "huge-dataset" } });
+    await flushPromises();
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining("truncated"));
+    warn.mockRestore();
+  });
 });
