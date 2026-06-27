@@ -87,17 +87,25 @@ def search_fts(query: str, *, limit: int = 50, engine: Engine | None = None) -> 
 
     Deterministic: equal ts_rank scores break on chunk_id, so the same corpus +
     query always yields the same order (a stable input to RRF fusion, H1-12).
-    A non-positive `limit` is rejected (fail-loud, matching fuse_rrf); a query
-    that matches nothing returns []. `engine` defaults to one built from the
-    environment, but callers in the request path should pass a shared engine
-    (wired in H1-13) rather than building one per query.
+    A negative `limit` is rejected (fail-loud, matching fuse_rrf); `limit=0` and a
+    query that matches nothing both return []. `engine` defaults to one built from
+    the environment (and disposed after use, since it owns its own pool); callers
+    in the request path should pass a shared engine (wired in H1-13) rather than
+    building one per query.
     """
     if limit < 0:
         raise ValueError(f"search_fts limit must be non-negative, got {limit}")
     if limit == 0:
         return []
+    # Only dispose an engine WE created — a caller-supplied (shared) engine is the
+    # caller's to manage; disposing it would tear down a pool still in use.
+    created = engine is None
     if engine is None:
         engine = engine_from_settings(load_settings())
-    with engine.connect() as conn:
-        rows = conn.execute(_FTS_SQL, {"query": query, "limit": limit}).all()
+    try:
+        with engine.connect() as conn:
+            rows = conn.execute(_FTS_SQL, {"query": query, "limit": limit}).all()
+    finally:
+        if created:
+            engine.dispose()
     return _hits_from_rows(rows)

@@ -25,7 +25,8 @@ def _row(**overrides: object) -> SimpleNamespace:
         "section": "Capital Gains Tax by size of gain: £1,000,000 to under £2,000,000",
         "page": None,
         "span": "gain_band=£1,000,000+",
-        "text": "Capital Gains Tax by size of gain ...",
+        # Deliberately distinct from `section` so a text<->section swap is caught.
+        "text": "EVIDENCE BODY: taxpayers with gains of £1,000,000 and above accounted for 60.9% of gains.",
         "score": 0.5,
     }
     fields.update(overrides)
@@ -36,7 +37,7 @@ class _ExplodingEngine:
     """Fails if a connection is opened — proves the guards short-circuit first."""
 
     def connect(self) -> object:
-        raise AssertionError("database connection opened despite a non-positive limit")
+        raise AssertionError("database connection opened despite a guard that should short-circuit")
 
 
 def test_hits_from_rows_maps_provenance_and_ranks() -> None:
@@ -52,6 +53,10 @@ def test_hits_from_rows_maps_provenance_and_ranks() -> None:
     assert first.document_id == "hmrc-cgt-size-of-gain"
     assert first.span == "gain_band=£1,000,000+"
     assert first.page is None
+    # Lock section AND text (the evidence body a citation surfaces) so a
+    # text<->section swap in the mapper is caught.
+    assert first.section == "Capital Gains Tax by size of gain: £1,000,000 to under £2,000,000"
+    assert first.text == "EVIDENCE BODY: taxpayers with gains of £1,000,000 and above accounted for 60.9% of gains."
     assert first.score == pytest.approx(0.9)
 
 
