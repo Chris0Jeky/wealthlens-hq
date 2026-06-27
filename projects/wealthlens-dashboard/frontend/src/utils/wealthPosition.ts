@@ -115,8 +115,14 @@ export const DECILE_DATA: readonly DecileInfo[] = [
 export const COMPARISON_STATS = {
   /** Median total household net wealth across all households */
   medianUK: 302_500,
-  /** Approximate median for the bottom 50% of households */
-  medianBottom50: 12_500,
+  /**
+   * Median of the bottom 50% of households = the 25th percentile of the full
+   * distribution, which falls in decile 3 (the 20th–30th-percentile band). Kept
+   * consistent with this file's own decile data (DECILE_DATA[2].median = £82,400).
+   * The prior £12,500 was below the decile-1 boundary (£15,400) — impossible for a
+   * bottom-HALF median, since that value sits inside the bottom TENTH.
+   */
+  medianBottom50: 82_400,
   /** Threshold to enter the top 10% of households by wealth */
   top10Threshold: 1_480_000,
   /** Source citation text */
@@ -163,9 +169,9 @@ export const MAX_DISPLAYABLE_WEALTH = 100_000_000_000
  * and 10, which have open-ended ranges and highly skewed distributions.
  * For decile 1, many households cluster near zero or negative values.
  * For decile 10, wealth is extremely right-skewed (a few households
- * hold billions). We clamp the percentile to 1-9 for decile 1 and
- * 91-99 for decile 10 rather than extrapolating linearly into
- * unbounded territory.
+ * hold billions). The percentile spans 0-10 for decile 1 and 90-99
+ * for decile 10 rather than extrapolating linearly into unbounded
+ * territory.
  *
  * @param wealth - Total net household wealth in GBP
  * @returns Approximate percentile from 0 to 100
@@ -188,13 +194,15 @@ export function getPercentile(wealth: number): number {
     return Math.round(basePercentile + fraction * 10)
   }
 
-  // For decile 10 (open-ended upper range): clamp to 91–99 percentile.
+  // For decile 10 (open-ended upper range): spans 90–99 percentile.
   // Linear interpolation is inaccurate here because wealth is extremely
   // right-skewed — the top 0.1% holds vastly more than the rest of the
   // decile. We use a conservative estimate rather than extrapolating.
   if (info.upperBound === null) {
-    // Rough interpolation: assume the 10th decile spans to ~3M for display
-    const estimatedTop = 3_000_000
+    // Anchor the interpolation so this decile's own median (DECILE_DATA[9].median
+    // = £2.5M) lands at the 95th percentile — the median's definitional percentile.
+    // estimatedTop = 2 * median − lowerBound.
+    const estimatedTop = 3_520_000 // = 2 * 2_500_000 − 1_480_000
     const range = estimatedTop - info.lowerBound
     const fraction = Math.min((wealth - info.lowerBound) / range, 1)
     return Math.min(Math.round(basePercentile + fraction * 10), 99)

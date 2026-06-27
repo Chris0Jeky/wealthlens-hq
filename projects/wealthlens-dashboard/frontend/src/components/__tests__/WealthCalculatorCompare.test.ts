@@ -276,7 +276,9 @@ describe("WealthCalculator — compare presets", () => {
     const inputA = wrapper.find("#compare-input-a")
     const inputB = wrapper.find("#compare-input-b")
     expect((inputA.element as HTMLInputElement).value).toContain("302,500")
-    expect((inputB.element as HTMLInputElement).value).toContain("1,480,000")
+    // Top-10% side is a representative top-decile household (£2.5M = decile-10
+    // median), not the £1.48M ENTRY threshold (which is decile 9, boundary-inclusive).
+    expect((inputB.element as HTMLInputElement).value).toContain("2,500,000")
   })
 
   it("Renter vs Homeowner preset populates both fields", async () => {
