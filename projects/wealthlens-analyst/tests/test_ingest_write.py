@@ -13,6 +13,7 @@ chunk fails ingestion before anything is written.
 from __future__ import annotations
 
 from datetime import date
+from pathlib import Path
 
 import pytest
 
@@ -22,6 +23,7 @@ from wealthlens_analyst.ingest.slice_corpus import (
     Chunk,
     ProvenanceError,
     _chunk_to_row,
+    ingest_slice,
     render_table_chunks,
     validate_chunk_provenance,
     write_chunks,
@@ -71,6 +73,37 @@ class _ExplodingEngine:
 
     def begin(self) -> object:
         raise AssertionError("database connection opened despite invalid/empty input")
+
+
+class _RecordingConn:
+    """Records the SQL statement TYPES executed (Delete / Insert), no real DB."""
+
+    def __init__(self) -> None:
+        self.executed: list[str] = []
+
+    def execute(self, statement: object, *args: object, **kwargs: object) -> object:
+        self.executed.append(type(statement).__name__)
+
+        class _Result:
+            rowcount = 0
+
+        return _Result()
+
+    def __enter__(self) -> _RecordingConn:
+        return self
+
+    def __exit__(self, *exc: object) -> bool:
+        return False
+
+
+class _RecordingEngine:
+    """Stand-in engine that records the statements write_chunks issues."""
+
+    def __init__(self) -> None:
+        self.conn = _RecordingConn()
+
+    def begin(self) -> _RecordingConn:
+        return self.conn
 
 
 # --- the gate accepts conformant chunks ---------------------------------------
@@ -144,8 +177,45 @@ def test_write_chunks_validates_before_touching_the_db() -> None:
 
 
 def test_write_chunks_empty_is_a_noop_without_db() -> None:
-    """An empty slice writes nothing and never connects (returns 0)."""
+    """An empty slice with nothing to refresh writes nothing and never connects."""
     assert write_chunks([], engine=_ExplodingEngine()) == 0  # type: ignore[arg-type]
+
+
+def test_write_chunks_replaces_then_inserts() -> None:
+    """The default path deletes the document's stale rows, then inserts the batch."""
+    engine = _RecordingEngine()
+    written = write_chunks([_tabular_chunk()], engine=engine)  # type: ignore[arg-type]
+    assert written == 1
+    assert engine.conn.executed == ["Delete", "Insert"]
+
+
+def test_write_chunks_no_replace_skips_the_delete() -> None:
+    engine = _RecordingEngine()
+    written = write_chunks([_tabular_chunk()], engine=engine, replace=False)  # type: ignore[arg-type]
+    assert written == 1
+    assert engine.conn.executed == ["Insert"]
+
+
+def test_refresh_documents_prunes_a_source_that_rendered_zero_chunks() -> None:
+    """A document that yields no chunks this run is still pruned (no stale citations).
+
+    Models a source that reverted to illustrative/empty: write_chunks must DELETE
+    its prior rows even though there is nothing to insert for it.
+    """
+    engine = _RecordingEngine()
+    written = write_chunks(
+        [],
+        engine=engine,  # type: ignore[arg-type]
+        refresh_documents={("hmrc-tax-receipts", "hmrc-tax-nic-receipts")},
+    )
+    assert written == 0
+    assert engine.conn.executed == ["Delete"]  # pruned the stale document, inserted nothing
+
+
+def test_ingest_slice_raises_when_no_source_csvs_present(tmp_path: Path) -> None:
+    """A fresh checkout with no processed inputs fails loudly, not silently empty."""
+    with pytest.raises(RuntimeError, match="no processed source CSVs"):
+        ingest_slice(engine=_ExplodingEngine(), processed_dir=tmp_path)  # type: ignore[arg-type]
 
 
 def test_chunk_row_omits_server_managed_columns() -> None:
