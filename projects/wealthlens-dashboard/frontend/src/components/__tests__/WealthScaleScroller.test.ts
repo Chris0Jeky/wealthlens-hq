@@ -200,4 +200,26 @@ describe("WealthScaleScroller", () => {
     wrapper.unmount()
     expect(mockDisconnect).toHaveBeenCalled()
   })
+
+  it("percentile markers stay consistent with the wealth calculator (no drift)", () => {
+    // The scroller derives its percentile markers from utils/wealthPosition (the same
+    // ONS WAS Round 7 figures the calculator uses), so the two surfaces cannot
+    // contradict each other. Assert the corrected figures, not the old hardcoded ones
+    // that were impossible against the decile boundaries. The precise figures live in
+    // the marker aria-labels (annotations); the visible chips use rounded formatGBP.
+    const html = mount(WealthScaleScroller).html()
+    // Precise annotation figures (aria-labels):
+    expect(html).toContain("£82,400") // P25 = decile-3 median (was £118,600, above the P30 boundary)
+    expect(html).toContain("£829,950") // P75 = decile-8 median (was £611,200, below the P70 boundary)
+    expect(html).toContain("£1.48m") // Top 10% threshold, matching the calculator (was £1.34m)
+    // Rounded visible chips:
+    expect(html).toContain("£82k")
+    expect(html).toContain("£830k")
+    // The contradicting old values must never reappear (annotation or chip).
+    expect(html).not.toContain("£118,600")
+    expect(html).not.toContain("£611,200")
+    expect(html).not.toContain("£1.34m")
+    expect(html).not.toContain("£119k") // old P25 chip
+    expect(html).not.toContain("£611k") // old P75 chip
+  })
 })

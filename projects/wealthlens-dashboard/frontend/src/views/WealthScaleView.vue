@@ -51,9 +51,10 @@ import SourceCitation from "@/components/SourceCitation.vue"
     <!-- Disclaimer -->
     <aside class="scale-page__disclaimer" aria-label="Data disclaimer">
       <p>
-        Illustrative. Based on ONS Wealth and Assets Survey Round 7 (2018–2020). Individual
-        circumstances vary. Wealth includes property, pensions, financial assets, and physical
-        possessions minus debts.
+        Illustrative. Household percentiles are based on the ONS Wealth and Assets Survey Round 7
+        (2018–2020); the wealthiest-individual figure (~£37bn) is from the Sunday Times Rich List
+        2024 (the ONS survey does not publish individual net worths). Individual circumstances vary.
+        Wealth includes property, pensions, financial assets, and physical possessions minus debts.
       </p>
     </aside>
 
