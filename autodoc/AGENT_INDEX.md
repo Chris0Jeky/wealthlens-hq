@@ -1,6 +1,6 @@
 # Agent Index — WealthLens HQ
 
-> Fast agent orientation. Last reviewed: 2026-05-14.
+> Fast agent orientation. Last reviewed: 2026-06-27.
 
 ## Do-not-read list
 
@@ -16,12 +16,14 @@ These paths are large, generated, or low-signal for most tasks. Skip unless the 
 
 | Domain | Key paths | Status |
 | --- | --- | --- |
-| Dashboard backend | `projects/wealthlens-dashboard/backend/` | Stub (`.gitkeep`) |
-| Dashboard frontend | `projects/wealthlens-dashboard/frontend/` | Stub (`.gitkeep`) |
-| Data pipelines | `automation/data-pipelines/` | Stubs (`NotImplementedError`) |
-| Research analysis | `automation/analysis/` | Stubs (`NotImplementedError`) |
-| Social media gen | `automation/social-media/` | Stub (`NotImplementedError`) |
-| CI/CD workflows | `automation/workflows/` | Placeholder YAML |
+| Dashboard backend | `projects/wealthlens-dashboard/backend/` | Built — FastAPI (health/data/metadata/columns/summary/CSV) + tests |
+| Dashboard frontend | `projects/wealthlens-dashboard/frontend/` | Built — Vue 3 + TS + Pinia + TailwindCSS (80+ `.vue` files) + vitest/Playwright |
+| Data pipelines | `automation/data-pipelines/` | Built — 11 `fetch_*` scripts + `run_all.py` + `validate.py` + tests |
+| Research analysis | `automation/analysis/` | Built — `extract_action_items.py`, `summarise_research.py` |
+| Social media gen | `automation/social-media/` | Built — `chart_to_social.py` (4 platform sizes) |
+| Hero #1 RAG analyst | `projects/wealthlens-analyst/` | Active build — ingest + FTS retrieval + evals + Alembic migrations (locked plan) |
+| Microsimulator | `packages/wealthlens-sim/` | Built — engine + 7 policy families (A–G) + uncertainty layer |
+| CI/CD workflows | `.github/workflows/` | Active — ci-backend/frontend/analyst/sim/pipelines, CodeQL, deploy, e2e, lighthouse |
 
 ## Operational seams
 
@@ -39,7 +41,7 @@ These paths are large, generated, or low-signal for most tasks. Skip unless the 
 - Claude Code harness: fully configured (settings, hooks, skills, protocols)
 - Codex skills: basic set (onramp, worker, verification, question batch)
 - Control plane: `../hq-private/projects/wealthlens/memories/00_ACTIVE.md` as status board (private sibling repo)
-- No production code — all product directories are stubs
+- Product code is BUILT and live: dashboard backend (FastAPI) + frontend (Vue 3, deployed to GitHub Pages), 11 data pipelines, the `wealthlens-sim` microsimulator, and the Hero #1 `wealthlens-analyst` RAG service (active build). See AGENTS.md "Repo map" for the authoritative inventory.
 - Strategy and research documentation is comprehensive and coherent
 
 ## Minimum handoff format

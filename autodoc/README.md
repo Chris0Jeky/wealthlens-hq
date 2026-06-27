@@ -10,7 +10,7 @@ Quick orientation layer for agents. Points to interfaces and seams, not implemen
 
 - [CLAUDE.md](../CLAUDE.md) — Claude Code session contract
 - [AGENTS.md](../AGENTS.md) — repo-wide operating rules
-- [.codex/README.md](../.codex/README.md) — Codex control plane
+- [.agents/skills/README.md](../.agents/skills/README.md) — Codex skills (repo-scoped)
 - [docs/agentic/](../docs/agentic/) — shared protocols
 
 ## Conventions
