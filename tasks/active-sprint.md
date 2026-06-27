@@ -2,21 +2,25 @@
 
 Last updated: 2026-06-27
 
-> **SESSION 12 (2026-06-27) — Hero #1 M1 ingest/retrieval advancing: 2 PRs MERGED.**
+> **SESSION 12 (2026-06-27) — Hero #1 ingest+lexical-retrieval done; 6 PRs MERGED.**
 > **#450** H1-09 — ingestion integrity gate (`validate_chunk_provenance`, fail-closed
-> per-type provenance rule) + atomic `write_chunks` (idempotent, refresh-prunes stale
-> docs so a source that reverts to illustrative can't leave stale citations) + the
-> `make ingest-slice` CLI; live-verified writing 23 chunks (10 WAS + 13 CGT) with the
-> STORED tsvector auto-populating FTS. **#451** H1-10 — `retrieval/fts.py::search_fts`
-> over the GIN-indexed tsvector (websearch_to_tsquery + ts_rank, deterministic
-> chunk_id tie-break; EXPLAIN confirms `chunks_ts_gin` is used). Each: 3-lens
-> adversarial-review workflow (all "sound") + every gemini/codex finding addressed +
-> CI green + live verification. Backlog H1-07 also ticked (shipped #445/#446).
-> **BLOCKED next:** **H1-11** (embed) → H1-13 (hybrid) → H1-18 (compose) all need a
-> real `OPENAI_API_KEY` + spend — surfaced as **ACTION-REQUIRED item 9**. FTS-only
-> retrieval works today. While that's pending, continuing with offline-verifiable work
-> (defect sweeps; the pgvector cosine-query half of H1-11 is buildable with synthetic
-> vectors). Full state: `../hq-private/projects/wealthlens/memories/session_notes/ORCHESTRATION.md`.
+> per-type rule) + atomic `write_chunks` (idempotent, refresh-prunes stale docs) +
+> `make ingest-slice`; live-verified 23 chunks (10 WAS + 13 CGT). **#451** H1-10 —
+> `retrieval/fts.py::search_fts` over the GIN-indexed tsvector (deterministic ranking;
+> EXPLAIN confirms the GIN index). With the next build step (H1-11 embed → H1-13
+> hybrid → H1-18 compose) **blocked on a real `OPENAI_API_KEY` + spend**
+> (**ACTION-REQUIRED #9**), ran offline-defect sweeps: **#452** (tax_composition
+> all-5-tax KeyError guard + honest `static_published` provenance for child-poverty/
+> generational-wealth), **#453** (gdhi UK-avg null→0; `/api/version/debug` fail-closed;
+> rate-limit rightmost-XFF anti-spoof; corrupt/non-UTF8 sidecar resilience so one bad
+> sidecar can't 503 the `/metadata` catalog), **#454** (useChartData full-dataset
+> fetch; agent safety-hook fail-open + crash; golden DRAFT-empty enforcement), **#455**
+> (ci-analyst weekly schedule for dependency-drift). **13 real defects fixed across 3
+> sweeps**, each gated by a multi-agent adversarial review that repeatedly caught real
+> issues in the fixes themselves (incl. a HIGH security residual in the hook fix). Sim
+> + analyst api/budget swept clean. Sweep #4 (CI/config/docs) hit the account session
+> limit; continued by direct inspection (the #455 schedule + this doc-sync).
+> Full state: `../hq-private/projects/wealthlens/memories/session_notes/ORCHESTRATION.md`.
 
 > **SESSION 11 (2026-06-26) — CHECKPOINT: 4 PRs merged, 0 open, main green.**
 > H1-08/H1-09 stayed infra-blocked (Docker daemon down, no report PDFs), so the

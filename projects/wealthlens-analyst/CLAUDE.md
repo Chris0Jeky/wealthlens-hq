@@ -56,6 +56,8 @@ milestone: `docs/plan/HERO1_PLAN.md`.
 
 ```
 src/wealthlens_analyst/
+  config.py   settings from env (DATABASE_URL, model ids, spend cap)
+  db.py       SQLAlchemy engine factory + chunks Core table (H1-09 write path)
   retrieval/  fts.py dense.py fuse_rrf.py rerank.py   # ADR 0001
   answer/     compose.py citations.py abstain.py
   llm/        client.py                               # THE seam (ADR 0002)
