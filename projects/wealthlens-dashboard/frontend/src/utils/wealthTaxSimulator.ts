@@ -224,7 +224,7 @@ export function estimateExcessWealth(threshold: number): number {
  * Bands should be provided in ascending order of threshold.
  *
  * @param bands - Array of wealth tax bands (threshold + rate), sorted by threshold ascending
- * @returns Simulation results including revenue, affected households, and comparisons
+ * @returns Simulation results including revenue, affected taxpayers, and comparisons
  */
 export function simulateWealthTax(bands: WealthTaxBand[]): SimulationResult {
   if (bands.length === 0) {
@@ -256,7 +256,7 @@ export function simulateWealthTax(bands: WealthTaxBand[]): SimulationResult {
     const excessAboveNext = nextThreshold === Infinity ? 0 : estimateExcessWealth(nextThreshold)
 
     // Wealth in this band = excess above this threshold minus excess above next
-    // But we also need to account for the number of households at each level
+    // But we also need to account for the number of taxpayers at each level
     // Simplified: revenue from this band's marginal rate on its slice
     const wealthInBand = excessAboveThis - excessAboveNext
     const revenueFromBand = wealthInBand * band.rate

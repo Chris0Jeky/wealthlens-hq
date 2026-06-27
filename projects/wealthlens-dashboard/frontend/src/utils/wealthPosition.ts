@@ -199,10 +199,12 @@ export function getPercentile(wealth: number): number {
   // right-skewed — the top 0.1% holds vastly more than the rest of the
   // decile. We use a conservative estimate rather than extrapolating.
   if (info.upperBound === null) {
-    // Anchor the interpolation so this decile's own median (DECILE_DATA[9].median
-    // = £2.5M) lands at the 95th percentile — the median's definitional percentile.
-    // estimatedTop = 2 * median − lowerBound.
-    const estimatedTop = 3_520_000 // = 2 * 2_500_000 − 1_480_000
+    // Anchor the interpolation so this decile's own median lands at the 95th
+    // percentile (the median's definitional percentile). Derived from the median +
+    // lowerBound (= 2 * median − lowerBound) so the invariant self-maintains if the
+    // cited ONS median is ever revised. (lowerBound is non-null here: the decile-1
+    // branch above returns on all paths.)
+    const estimatedTop = 2 * info.median - info.lowerBound
     const range = estimatedTop - info.lowerBound
     const fraction = Math.min((wealth - info.lowerBound) / range, 1)
     return Math.min(Math.round(basePercentile + fraction * 10), 99)

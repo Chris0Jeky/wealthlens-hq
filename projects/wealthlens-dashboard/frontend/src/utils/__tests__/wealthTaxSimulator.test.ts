@@ -38,7 +38,7 @@ describe("simulateWealthTax", () => {
     expect(result.revenueAsPercentGDP).toBeGreaterThan(0)
   })
 
-  it("higher threshold reduces affected households", () => {
+  it("higher threshold reduces affected taxpayers", () => {
     const low = simulateWealthTax([{ threshold: 1_000_000, rate: 0.01 }])
     const high = simulateWealthTax([{ threshold: 10_000_000, rate: 0.01 }])
     expect(high.affectedTaxpayers).toBeLessThan(low.affectedTaxpayers)
@@ -67,7 +67,7 @@ describe("simulateWealthTax", () => {
     expect(result.revenueAsPercentGDP).toBeCloseTo(expectedPct, 1)
   })
 
-  it("averageTaxPerTaxpayer equals revenue / affected households", () => {
+  it("averageTaxPerTaxpayer equals revenue / affected taxpayers", () => {
     const result = simulateWealthTax([{ threshold: 1_000_000, rate: 0.01 }])
     const expected = result.annualRevenue / result.affectedTaxpayers
     expect(result.averageTaxPerTaxpayer).toBeCloseTo(expected, -2) // within rounding
@@ -105,7 +105,7 @@ describe("estimateTaxpayersAbove", () => {
     expect(estimateTaxpayersAbove(0)).toBe(TOTAL_HOUSEHOLDS)
   })
 
-  it("returns fewer households for higher thresholds", () => {
+  it("returns fewer taxpayers for higher thresholds", () => {
     const low = estimateTaxpayersAbove(1_000_000)
     const high = estimateTaxpayersAbove(5_000_000)
     expect(high).toBeLessThan(low)
@@ -122,7 +122,7 @@ describe("estimateTaxpayersAbove", () => {
   })
 
   it("returns approximately correct values for known data points", () => {
-    // £1m should be around 2.8 million households
+    // £1m should be around 3 million taxpayers (the per-taxpayer anchor)
     const at1m = estimateTaxpayersAbove(1_000_000)
     expect(at1m).toBeGreaterThan(2_000_000)
     expect(at1m).toBeLessThan(4_000_000)

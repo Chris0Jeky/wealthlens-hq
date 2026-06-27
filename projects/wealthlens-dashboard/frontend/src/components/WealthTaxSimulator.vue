@@ -252,7 +252,7 @@ function onSliderChange() {
         <p class="wl-eyebrow">Estimated annual revenue</p>
         <p class="sim__revenue">{{ formatRevenue(results.annualRevenue) }}</p>
         <p class="sim__comparison">
-          Illustrative gross estimate — it scales linearly with the rate and assumes no behavioural
+          Illustrative gross estimate: it scales linearly with the rate and assumes no behavioural
           response or avoidance, so treat it as an upper bound.
         </p>
         <p v-if="spendingText" class="sim__comparison">
