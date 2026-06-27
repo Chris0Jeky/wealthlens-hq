@@ -2,10 +2,22 @@
 
 Last updated: 2026-06-27
 
-> Latest (2026-06-27, session 13): offline-defect sweep #4 merged (PR #456). Stale
-> checkboxes reconciled against the code: the a11y data-table thread is COMPLETE (9/9
-> charts, #419-#427) and the engine uncertainty-propagation WIRING is done (only the
-> Sobol/extra-params extension remains). See ORCHESTRATION.md for full session history.
+> Latest (2026-06-27, session 13): 10 PRs merged (#456-#464). **#464** reconciled
+> the public data-source licence/frequency claims + added a shared
+> `datasetProvenance.ts` source-of-truth + enforced the `was-caveats.md` WAS
+> accredited-status caveat on all WAS charts. Earlier: offline-defect sweep #4 (#456).
+> Stale checkboxes reconciled against the code: the a11y data-table thread is
+> COMPLETE (9/9 charts, #419-#427) and the engine uncertainty-propagation WIRING is
+> done (only the Sobol/extra-params extension remains). See ORCHESTRATION.md.
+>
+> **Low-priority security hygiene (no action available yet, 2026-06-27):** Dependabot
+> alert #9 — `js-yaml` ≤ 4.1.1 (moderate, quadratic-DoS on untrusted YAML merge keys),
+> patched only in `js-yaml@4.2.0`. It is a **dev/CI-only transitive** dep pulled solely
+> by `@lhci/cli` (Lighthouse CI), which is already at its latest release (0.15.1) and
+> still pins `js-yaml@^3.13.1`. Forcing a `4.2.0` override would break lhci (v3→v4 is a
+> breaking API change) and the vulnerable path is not exercised (lhci parses its own
+> trusted local config, not attacker YAML). **No safe fix today** — wait for `@lhci`
+> to migrate upstream, or Chris can dismiss the alert as "vulnerable code not in use".
 >
 > Prior: 11 PRs merged 2026-06-04 (#338-#348). The simulator dashboard pipeline
 > is live end-to-end: `/api/simulator` bridge (#348) + the `/simulator` scenario

@@ -2,7 +2,22 @@
 
 Last updated: 2026-06-27
 
-> **SESSION 13 (2026-06-27) — 9 PRs MERGED (#456-#463).** (#463 closed sweep #7's
+> **SESSION 13 (2026-06-27) — 10 PRs MERGED (#456-#464).**
+> **#464** data-provenance accuracy — reconciled the public Data Sources
+> licence/frequency claims against the registry (wealth-shares → CC-BY 4.0 /
+> Annual (irregular); generational-wealth → CC BY-NC-ND 4.0; wealth-by-decile →
+> Biennial (suspended); boe-rates verified-correct as OGL v3.0, left as-is),
+> then extracted a shared `constants/datasetProvenance.ts` source-of-truth (with
+> a keyset guard test) so the Data Sources + Methodology pages can no longer
+> drift — a 2nd-page contradiction the 3-lens review AND codex both caught.
+> Enforced `research/methodology/was-caveats.md`: the mandated **June-2025 WAS
+> accredited-status-loss** note now appears on every WAS-sourced chart
+> (wealth-by-decile, generational-wealth, wealth-shares) + Methodology limits
+> (gemini HIGH); surfaced the WAS top-tail under-count on wealth-by-decile and
+> wired it to the chart via aria-describedby. (Confirmed in passing: the
+> simulator render surface is exemplary, 0 orphaned datasets, and #8's
+> wealth-shares stat-cards are already WID-correct in code + guarded.)
+> (#463 closed sweep #7's
 > last gap: Data Sources page now lists all 12 charts via the static-JSON metadata
 > normaliser.) Build chain still
 > `OPENAI_API_KEY`-blocked (ACTION-REQUIRED #9), so ran a full **data-honesty audit of
