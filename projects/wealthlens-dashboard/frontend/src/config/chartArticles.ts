@@ -217,7 +217,7 @@ export const chartConfigs: Record<string, ChartConfig> = {
         title: "Total household wealth by decile",
         finding: "The richest decile holds <b>£5.5tn</b> — the poorest just £13.9bn.",
         to: "/charts/wealth-by-decile",
-        sparkType: "line",
+        sparkType: "bar",
       },
       {
         domain: "Tax · UK",
