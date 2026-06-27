@@ -257,8 +257,11 @@ export function simulateWealthTax(bands: WealthTaxBand[]): SimulationResult {
 
     // Wealth in this band = excess above this threshold minus excess above next
     // But we also need to account for the number of taxpayers at each level
-    // Simplified: revenue from this band's marginal rate on its slice
-    const wealthInBand = excessAboveThis - excessAboveNext
+    // Simplified: revenue from this band's marginal rate on its slice.
+    // Math.max(0, ...) is a fail-safe: excess wealth is monotonic in the threshold
+    // (more wealth sits above a lower threshold), so this is always >= 0 today, but
+    // the guard prevents a negative band slice if the empirical anchors ever drift.
+    const wealthInBand = Math.max(0, excessAboveThis - excessAboveNext)
     const revenueFromBand = wealthInBand * band.rate
 
     totalRevenue += revenueFromBand
