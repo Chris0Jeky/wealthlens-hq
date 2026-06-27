@@ -190,4 +190,27 @@ describe("COMPARISON_STATS", () => {
     expect(COMPARISON_STATS.source).toContain("ONS")
     expect(COMPARISON_STATS.source).toContain("Round 7")
   })
+
+  it("bottom-50% median is internally consistent (= P25, in decile 3, not the bottom tenth)", () => {
+    // The median of the bottom 50% is the 25th percentile of the full distribution,
+    // so it must sit ABOVE the decile-1 boundary (P10) and inside decile 3 (P20–P30).
+    // The prior £12,500 was below the £15,400 P10 boundary — impossible.
+    expect(COMPARISON_STATS.medianBottom50).toBeGreaterThan(DECILE_BOUNDARIES[0])
+    expect(getDecile(COMPARISON_STATS.medianBottom50)).toBe(3)
+    expect(COMPARISON_STATS.medianBottom50).toBe(DECILE_DATA[2].median)
+  })
+})
+
+describe("percentile interpolation is consistent with the decile medians", () => {
+  it("maps the decile-10 median to ~the 95th percentile (its definitional percentile)", () => {
+    // The median of the top decile (P90–P100) is the 95th overall percentile.
+    // This locks the open-ended estimatedTop anchor (£3.52M) that makes it land at 95.
+    expect(getPercentile(DECILE_DATA[9].median)).toBe(95)
+  })
+
+  it("never reports the decile-10 ENTRY threshold as already in the top 10%", () => {
+    // A household exactly at the £1.48M threshold is in decile 9 (boundary-inclusive);
+    // only strictly above it enters decile 10.
+    expect(getDecile(COMPARISON_STATS.top10Threshold)).toBe(9)
+  })
 })

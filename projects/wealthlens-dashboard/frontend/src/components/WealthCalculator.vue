@@ -177,7 +177,10 @@ interface ComparePreset {
 }
 
 const COMPARE_PRESETS: readonly ComparePreset[] = [
-  { label: "Median vs Top 10%", valueA: 302_500, valueB: 1_480_000 },
+  // Top-10% side uses a representative top-decile household (decile-10 median,
+  // £2.5M) rather than the £1.48M ENTRY threshold — a household exactly at the
+  // threshold is in decile 9 (boundaries are inclusive of the lower decile).
+  { label: "Median vs Top 10%", valueA: 302_500, valueB: 2_500_000 },
   { label: "Renter vs Homeowner", valueA: 5_000, valueB: 302_500 },
   { label: "With vs Without Pension", valueA: 302_500, valueB: 175_000 },
 ] as const
