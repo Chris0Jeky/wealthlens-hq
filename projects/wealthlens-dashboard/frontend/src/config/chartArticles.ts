@@ -223,14 +223,14 @@ export const chartConfigs: Record<string, ChartConfig> = {
         domain: "Tax · UK",
         title: "Capital gains concentration by size of gain",
         finding:
-          "The top <b>1%</b> of CGT recipients take roughly <b>44%</b> of all taxable gains.",
+          "Taxpayers with gains over <b>£2m</b> (the top ~1.4%) take over <b>half</b> of all taxable gains.",
         to: "/charts/cgt-concentration",
         sparkType: "bar",
       },
       {
         domain: "Housing · UK",
         title: "House price to earnings ratio, 1997–2025",
-        finding: "England & Wales ratio peaked at <b>9.0×</b> in 2021 (7.6× in 2025).",
+        finding: "London's ratio peaked at <b>12.9×</b> in 2021 (10.6× in 2025).",
         to: "/charts/housing-affordability",
         sparkType: "line",
       },
@@ -504,7 +504,7 @@ export const chartConfigs: Record<string, ChartConfig> = {
       {
         domain: "Housing · UK",
         title: "House price to earnings ratio by region",
-        finding: "England & Wales ratio peaked at <b>9.0×</b> in 2021 (7.6× in 2025).",
+        finding: "London's ratio peaked at <b>12.9×</b> in 2021 (10.6× in 2025).",
         to: "/charts/housing-affordability",
         sparkType: "line",
       },
@@ -633,7 +633,7 @@ export const chartConfigs: Record<string, ChartConfig> = {
         domain: "Tax · UK",
         title: "Capital gains concentration by size of gain",
         finding:
-          "The top <b>1%</b> of CGT recipients take roughly <b>44%</b> of all taxable gains.",
+          "Taxpayers with gains over <b>£2m</b> (the top ~1.4%) take over <b>half</b> of all taxable gains.",
         to: "/charts/cgt-concentration",
         sparkType: "bar",
       },
@@ -666,7 +666,7 @@ export const chartConfigs: Record<string, ChartConfig> = {
     ],
     pills: [
       { text: "Economy", accent: true },
-      { text: "Annual snapshots · 2000–present" },
+      { text: "2000–present" },
       { text: "United Kingdom" },
       { text: "Updated 16 May 2026" },
     ],
@@ -683,7 +683,7 @@ export const chartConfigs: Record<string, ChartConfig> = {
       { label: "Coverage", value: "2000 — present" },
       { label: "Updated", value: "16 May 2026" },
       { label: "Licence", value: "OGL v3.0" },
-      { label: "Frequency", value: "Annual snapshots (denser 2020–24)" },
+      { label: "Source cadence", value: "BoE monthly series (IUDBEDR)" },
       { label: "Chart ID", value: "WL-E-001" },
     ],
     stats: [
@@ -735,7 +735,7 @@ export const chartConfigs: Record<string, ChartConfig> = {
         {
           heading: "What this chart shows",
           paragraphs: [
-            "Two series, sampled as annual snapshots (denser through 2020–24): the <em>Bank of England official Bank Rate</em> (the interest rate the BoE charges to commercial banks, which directly influences mortgage and savings rates) and the <em>CPI annual inflation rate</em> (the 12-month percentage change in consumer prices). Together they show how monetary policy responds to — and sometimes lags behind — price pressures.",
+            "Two series across 2000–present: the <em>Bank of England official Bank Rate</em> (the BoE's monthly series — the interest rate it charges to commercial banks, which directly influences mortgage and savings rates) and the <em>CPI annual inflation rate</em> (the 12-month percentage change in consumer prices). Together they show how monetary policy responds to — and sometimes lags behind — price pressures.",
           ],
         },
         {
@@ -769,7 +769,7 @@ export const chartConfigs: Record<string, ChartConfig> = {
       {
         domain: "Housing · UK",
         title: "House price to earnings ratio, 1997–2025",
-        finding: "England & Wales ratio peaked at <b>9.0×</b> in 2021 (7.6× in 2025).",
+        finding: "London's ratio peaked at <b>12.9×</b> in 2021 (10.6× in 2025).",
         to: "/charts/housing-affordability",
         sparkType: "line",
       },
@@ -1051,7 +1051,7 @@ export const chartConfigs: Record<string, ChartConfig> = {
       {
         domain: "Housing · UK",
         title: "House price to earnings ratio, 1997–2025",
-        finding: "England & Wales ratio peaked at <b>9.0×</b> in 2021 (7.6× in 2025).",
+        finding: "London's ratio peaked at <b>12.9×</b> in 2021 (10.6× in 2025).",
         to: "/charts/housing-affordability",
         sparkType: "line",
       },
