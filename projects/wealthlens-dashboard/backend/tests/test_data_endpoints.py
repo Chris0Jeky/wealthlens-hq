@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 
 import pytest
@@ -173,3 +174,43 @@ class TestPaginatedData:
         monkeypatch.setattr(data_mod, "DATA_DIR", empty_dir)
         resp = client.get("/api/data/wealth-shares")
         assert resp.status_code == 503
+
+
+class TestDataTypeSidecar:
+    """_get_data_type distinguishes an absent sidecar from a corrupt one."""
+
+    def test_corrupt_sidecar_logs_and_returns_none(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """A present-but-unparseable sidecar warns (not silent) and degrades to None.
+
+        Silently dropping it would hide the data-honesty caveat for an illustrative
+        dataset — the exact failure the project guards against.
+        """
+        # The "wealthlens" logger sets propagate=False (logging_config), so caplog
+        # (rooted at the real root logger) only sees these records with propagation on.
+        monkeypatch.setattr(logging.getLogger("wealthlens"), "propagate", True)
+        monkeypatch.setattr(data_mod, "DATA_DIR", tmp_path)
+        name = next(iter(data_mod.DATASETS))
+        sidecar = (tmp_path / data_mod.DATASETS[name]).with_suffix(".meta.json")
+        sidecar.write_text("{ not valid json", encoding="utf-8")
+
+        with caplog.at_level(logging.WARNING, logger="wealthlens.data"):
+            result = data_mod._get_data_type(name)
+
+        assert result is None
+        assert "Corrupt data_type sidecar" in caplog.text
+
+    def test_absent_sidecar_is_silent_none(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """A genuinely absent sidecar returns None with NO warning (backward-compatible)."""
+        monkeypatch.setattr(logging.getLogger("wealthlens"), "propagate", True)
+        monkeypatch.setattr(data_mod, "DATA_DIR", tmp_path)
+        name = next(iter(data_mod.DATASETS))
+
+        with caplog.at_level(logging.WARNING, logger="wealthlens.data"):
+            result = data_mod._get_data_type(name)
+
+        assert result is None
+        assert "sidecar" not in caplog.text

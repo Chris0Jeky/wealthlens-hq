@@ -305,8 +305,20 @@ def _get_data_type(dataset_name: str) -> str | None:
     """
     sidecar_path = (DATA_DIR / DATASETS[dataset_name]).with_suffix(".meta.json")
     try:
-        sidecar = json.loads(sidecar_path.read_text(encoding="utf-8"))
-    except (json.JSONDecodeError, OSError):
+        raw = sidecar_path.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        return None  # no sidecar -> no provenance metadata (backward-compatible)
+    except OSError as exc:
+        # A present-but-unreadable sidecar is an error, not "no provenance": for an
+        # illustrative dataset, silently returning None would DROP the data-honesty
+        # caveat (the frontend only shows it on a positive match). Surface it so a
+        # corrupt sidecar is detectable, while still degrading to None.
+        logger.warning("Cannot read data_type sidecar for %s: %s", dataset_name, exc)
+        return None
+    try:
+        sidecar = json.loads(raw)
+    except json.JSONDecodeError as exc:
+        logger.warning("Corrupt data_type sidecar for %s: %s", dataset_name, exc)
         return None
     value = sidecar.get("data_type")
     return value if isinstance(value, str) else None
