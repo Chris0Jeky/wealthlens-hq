@@ -214,22 +214,23 @@ export const chartConfigs: Record<string, ChartConfig> = {
     related: [
       {
         domain: "Wealth · UK",
-        title: "Composition of household wealth, 1995–2023",
-        finding: "Housing is now <b>36%</b> of all household wealth — up from 22% in 1995.",
+        title: "Total household wealth by decile",
+        finding: "The richest decile holds <b>£5.5tn</b> — the poorest just £13.9bn.",
         to: "/charts/wealth-by-decile",
-        sparkType: "line",
+        sparkType: "bar",
       },
       {
         domain: "Tax · UK",
-        title: "Capital gains concentration by decile",
-        finding: "<b>92%</b> of taxable gains accrue to the top 1% of recipients.",
+        title: "Capital gains concentration by size of gain",
+        finding:
+          "Taxpayers with gains over <b>£2m</b> (the top ~1.4%) take over <b>half</b> of all taxable gains.",
         to: "/charts/cgt-concentration",
         sparkType: "bar",
       },
       {
         domain: "Housing · UK",
         title: "House price to earnings ratio, 1997–2025",
-        finding: "England & Wales ratio peaked at <b>9.0×</b> in 2021 (7.6× in 2025).",
+        finding: "London's ratio peaked at <b>12.9×</b> in 2021 (10.6× in 2025).",
         to: "/charts/housing-affordability",
         sparkType: "line",
       },
@@ -284,7 +285,7 @@ export const chartConfigs: Record<string, ChartConfig> = {
       },
       {
         label: "Gap opened since 1997",
-        value: "~19",
+        value: "~21",
         unit: "pp",
         description: "Productivity gained 32 index points; pay gained only 11",
       },
@@ -323,7 +324,7 @@ export const chartConfigs: Record<string, ChartConfig> = {
         {
           heading: "",
           paragraphs: [
-            'From 1970 to the late 1990s, productivity and pay roughly tracked each other. After 2000, productivity continued to climb while real pay growth slowed. The 2008 financial crisis broke the link entirely: productivity stagnated (the UK\'s "productivity puzzle") while real pay <em>fell</em>, and did not recover its 2008 level until around 2020.',
+            'From 1970 to the late 1990s, productivity and pay roughly tracked each other. After 2000, productivity continued to climb while real pay growth slowed. The 2008 financial crisis broke the link entirely: productivity stagnated (the UK\'s "productivity puzzle") while real pay <em>fell</em>, and had still not recovered its 2008 level by 2023.',
           ],
         },
         {
@@ -489,7 +490,7 @@ export const chartConfigs: Record<string, ChartConfig> = {
       {
         domain: "Work & Pay · UK",
         title: "Productivity vs pay — the growing divergence",
-        finding: "Pay has lagged <b>~19 points</b> behind productivity since 1997.",
+        finding: "Pay has lagged <b>~21 points</b> behind productivity since 1997.",
         to: "/charts/productivity-pay",
         sparkType: "line",
       },
@@ -503,7 +504,7 @@ export const chartConfigs: Record<string, ChartConfig> = {
       {
         domain: "Housing · UK",
         title: "House price to earnings ratio by region",
-        finding: "England & Wales ratio peaked at <b>9.0×</b> in 2021 (7.6× in 2025).",
+        finding: "London's ratio peaked at <b>12.9×</b> in 2021 (10.6× in 2025).",
         to: "/charts/housing-affordability",
         sparkType: "line",
       },
@@ -616,7 +617,7 @@ export const chartConfigs: Record<string, ChartConfig> = {
       },
     },
     methodology: `
-      <p>Data is drawn from HMRC's published "Tax and NIC Receipts" tables, which give annual outturn figures for each tax head.</p>
+      <p>Figures are an illustrative composite approximated from HMRC's published "Tax and NIC Receipts" tables, rounded for clarity rather than exact published outturn.</p>
       <ul>
         <li><strong>Income Tax:</strong> PAYE + Self-Assessment, the largest single revenue stream.</li>
         <li><strong>NICs:</strong> Employee + employer contributions, paid on earnings.</li>
@@ -630,8 +631,9 @@ export const chartConfigs: Record<string, ChartConfig> = {
     related: [
       {
         domain: "Tax · UK",
-        title: "Capital gains concentration by decile",
-        finding: "<b>92%</b> of taxable gains accrue to the top 1% of recipients.",
+        title: "Capital gains concentration by size of gain",
+        finding:
+          "Taxpayers with gains over <b>£2m</b> (the top ~1.4%) take over <b>half</b> of all taxable gains.",
         to: "/charts/cgt-concentration",
         sparkType: "bar",
       },
@@ -664,13 +666,13 @@ export const chartConfigs: Record<string, ChartConfig> = {
     ],
     pills: [
       { text: "Economy", accent: true },
-      { text: "Monthly · 2000–present" },
+      { text: "2000–present" },
       { text: "United Kingdom" },
       { text: "Updated 16 May 2026" },
     ],
     headline: "The cost of borrowing:",
-    headlineEmphasis: "30 years of interest rate history.",
-    lede: "From <strong>6% in 2000</strong> to a historic low of <strong>0.1% in 2020–21</strong>, then the fastest rise in decades to <strong>5.25% by late 2023</strong>. The Bank Rate shapes mortgages, savings, and the real value of money.",
+    headlineEmphasis: "25 years of interest rate history.",
+    lede: "From <strong>around 6% in 2000–01</strong> to a historic low of <strong>0.1% in 2020–21</strong>, then the fastest rise in decades to <strong>5.25% by late 2023</strong>. The Bank Rate shapes mortgages, savings, and the real value of money.",
     meta: [
       {
         label: "Source",
@@ -681,7 +683,7 @@ export const chartConfigs: Record<string, ChartConfig> = {
       { label: "Coverage", value: "2000 — present" },
       { label: "Updated", value: "16 May 2026" },
       { label: "Licence", value: "OGL v3.0" },
-      { label: "Frequency", value: "Monthly" },
+      { label: "Source cadence", value: "BoE monthly series (IUDBEDR)" },
       { label: "Chart ID", value: "WL-E-001" },
     ],
     stats: [
@@ -733,13 +735,13 @@ export const chartConfigs: Record<string, ChartConfig> = {
         {
           heading: "What this chart shows",
           paragraphs: [
-            "Two monthly series: the <em>Bank of England official Bank Rate</em> (the interest rate the BoE charges to commercial banks, which directly influences mortgage and savings rates) and the <em>CPI annual inflation rate</em> (the 12-month percentage change in consumer prices). Together they show how monetary policy responds to — and sometimes lags behind — price pressures.",
+            "Two series across 2000–present: the <em>Bank of England official Bank Rate</em> (the BoE's monthly series — the interest rate it charges to commercial banks, which directly influences mortgage and savings rates) and the <em>CPI annual inflation rate</em> (the 12-month percentage change in consumer prices). Together they show how monetary policy responds to — and sometimes lags behind — price pressures.",
           ],
         },
         {
           heading: "",
           paragraphs: [
-            "The story has three distinct chapters. From 2000 to 2008, rates were relatively stable at 4–5%, keeping inflation near the 2% target. The 2008 crisis triggered emergency cuts to 0.5%, then 0.25%, and finally 0.1% in 2020. When inflation surged past 10% in 2022 — driven by energy prices and post-COVID supply shocks — the Bank raised rates 14 consecutive times in under two years, the fastest tightening cycle since the early 1990s.",
+            "The story has three distinct chapters. From 2000 to 2008, rates were relatively stable at 4–5%, keeping inflation near the 2% target. The 2008 crisis triggered emergency cuts to 0.5%, then 0.25%, and finally 0.1% in 2020. When inflation surged past 10% in 2022 — driven by energy prices and post-COVID supply shocks — the Bank raised rates 14 consecutive times in under two years, the fastest tightening cycle since the 1980s.",
           ],
         },
         {
@@ -767,7 +769,7 @@ export const chartConfigs: Record<string, ChartConfig> = {
       {
         domain: "Housing · UK",
         title: "House price to earnings ratio, 1997–2025",
-        finding: "England & Wales ratio peaked at <b>9.0×</b> in 2021 (7.6× in 2025).",
+        finding: "London's ratio peaked at <b>12.9×</b> in 2021 (10.6× in 2025).",
         to: "/charts/housing-affordability",
         sparkType: "line",
       },
@@ -1049,7 +1051,7 @@ export const chartConfigs: Record<string, ChartConfig> = {
       {
         domain: "Housing · UK",
         title: "House price to earnings ratio, 1997–2025",
-        finding: "England & Wales ratio peaked at <b>9.0×</b> in 2021 (7.6× in 2025).",
+        finding: "London's ratio peaked at <b>12.9×</b> in 2021 (10.6× in 2025).",
         to: "/charts/housing-affordability",
         sparkType: "line",
       },

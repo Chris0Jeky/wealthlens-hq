@@ -58,6 +58,13 @@ const REGION_COLORS = [
 /** Maximum number of region lines to display before grouping. */
 const MAX_REGIONS = 8
 
+// National/country AGGREGATE series that must NOT be ranked as "regions": the
+// source data mixes true ITL regions with "England" and "England and Wales"
+// totals. Ranking those into the least-affordable-regions top-N mixes aggregation
+// levels (an aggregate outranks and displaces genuine regions) and mislabels them
+// as regions in the legend, aria-label count, and accessible table.
+const AGGREGATE_REGIONS = new Set(["England", "England and Wales"])
+
 /** Group data by region, returning sorted region names and their series. */
 const regionData = computed(() => {
   // Accumulate per region in a year-keyed Map so a repeated (region, year) is
@@ -69,6 +76,9 @@ const regionData = computed(() => {
 
   for (const row of rows.value) {
     const region = String(row.region ?? "")
+    // Drop national/country aggregates ("England", "England and Wales") so the
+    // chart, legend, aria-label count, and accessible table stay region-only.
+    if (AGGREGATE_REGIONS.has(region)) continue
     // toNumberOrNaN: coerce nullish/empty/non-finite values to NaN, because
     // Number(null) and Number("") both return 0 — which would silently fabricate
     // a "year 0" or a 0 ratio. Mapping them to NaN lets the guard below drop the

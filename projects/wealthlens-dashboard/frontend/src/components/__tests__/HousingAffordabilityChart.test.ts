@@ -160,6 +160,26 @@ describe("HousingAffordabilityChart accessible data table", () => {
     )
   })
 
+  it("excludes national aggregates ('England', 'England and Wales') from the region set", () => {
+    // The source data mixes true regions with national/country AGGREGATE series.
+    // Ranked by latest ratio those aggregates would outrank and displace genuine
+    // regions in the top-8 and be mislabelled as "regions" — they must be dropped.
+    mockRows.value = [
+      { region: "London", year: 2025, ratio: 10.6 },
+      { region: "England", year: 2025, ratio: 7.6 }, // aggregate → excluded
+      { region: "England and Wales", year: 2025, ratio: 7.5 }, // aggregate → excluded
+      { region: "Wales", year: 2025, ratio: 6.0 },
+      { region: "North East", year: 2025, ratio: 5.0 },
+    ]
+
+    const wrapper = mount(HousingAffordabilityChart)
+    const tableRegions = wrapper.findAll("tbody tr").map((r) => r.findAll("td")[0].text())
+    expect(tableRegions).not.toContain("England")
+    expect(tableRegions).not.toContain("England and Wales")
+    // Only the three genuine regions remain.
+    expect(new Set(tableRegions)).toEqual(new Set(["London", "Wales", "North East"]))
+  })
+
   it("drops rows with a null/empty ratio or year instead of fabricating 0", () => {
     // Number(null) and Number("") are both 0, so a naive Number() coercion would
     // silently invent a "year 0" / a 0 ratio. These rows must be DROPPED from

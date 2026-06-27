@@ -92,7 +92,7 @@ const deciles = computed(() => {
       <h3 class="mt-4 text-sm font-semibold text-wl-ink">By nation</h3>
       <table class="mt-2 w-full text-sm">
         <caption class="sr-only">
-          Estimated annual revenue by UK nation, central estimate and low–high range.
+          Estimated annual revenue by nation, central estimate and low–high range.
         </caption>
         <thead>
           <tr class="text-left text-wl-ink-muted">
