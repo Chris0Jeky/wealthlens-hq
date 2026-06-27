@@ -76,11 +76,33 @@ def main() -> int:
     tool_input = payload.get("tool_input", {}) or {}
     command = str(tool_input.get("command") or tool_input.get("code") or "")
 
-    # For git commit commands, only scan the git verb, not the message body
-    if re.match(r"\s*git\s+commit\b", command):
+    # A git-commit with NO way to run a sibling command is exempt from scanning, so
+    # a secret-like or dangerous-looking string inside the commit MESSAGE never
+    # trips a false positive. "No way to run a sibling command" = no shell
+    # metacharacter: chaining (&& || ; | &), command substitution ($() or `…`),
+    # process substitution (<() >()), or a newline.
+    is_git_commit = re.match(r"\s*git\s+commit\b", command) is not None
+    has_shell_meta = re.search(r"&&|\|\||;|\||&|\$\(|`|<\(|>\(|\n", command) is not None
+    if is_git_commit and not has_shell_meta:
         return 0
 
     compact = " ".join(command.split())
+    if is_git_commit:
+        # This commit reached here because it has shell metacharacters (it chains
+        # another command and/or uses substitution). Strip the INERT quoted message
+        # body so a message that merely MENTIONS a dangerous command can't
+        # false-positive — covering -m / -am / --message, the attached and `=`
+        # forms, and both quote styles incl. escaped inner quotes. A SINGLE-quoted
+        # body is always inert. A DOUBLE-quoted body is inert only if it has no
+        # unescaped $ or backtick (the shell expands those); a double-quoted body
+        # that DOES contain substitution is left in place and denied just below,
+        # because the shell executes it.
+        _MSG_FLAG = r"(?:--message=?|-[A-Za-z]*m)\s*"
+        compact = re.sub(_MSG_FLAG + r"'[^']*'", "-m MSG", compact)  # single-quoted: inert
+        compact = re.sub(_MSG_FLAG + r'"(?:\\.|[^"\\$`])*"', "-m MSG", compact)  # double-quoted, no $/`: inert
+        if re.search(r"\$\(|`", compact):
+            deny("git commit uses shell command substitution that cannot be safely vetted.")
+            return 0
 
     for pattern, reason in DENY_PATTERNS:
         if pattern.search(compact):

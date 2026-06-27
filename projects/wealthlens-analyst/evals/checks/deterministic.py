@@ -78,6 +78,18 @@ def check_golden_static() -> list[str]:
             if record.get("required_citations"):
                 failures.append(f"{record['id']}: REVIEWED refuse question must have no required_citations")
 
+    # DRAFT records MUST keep expected_answer/required_citations empty: a human flips
+    # status to REVIEWED only after authoring real ground truth, so a DRAFT carrying
+    # a (machine-fabricated) answer or citation defeats the audit trail. Enforce the
+    # "Empty while status is DRAFT" invariant the schema only describes in prose
+    # (analyst NEVER-DO: never fabricate golden answers/citations of any kind).
+    for record in records:
+        if record.get("status") == "DRAFT":
+            if record.get("expected_answer"):
+                failures.append(f"{record.get('id', '<no id>')}: DRAFT question must have empty expected_answer")
+            if record.get("required_citations"):
+                failures.append(f"{record.get('id', '<no id>')}: DRAFT question must have no required_citations")
+
     drafts = len(records) - len(reviewed)
     print(
         f"golden set: {len(records)} records ({len(reviewed)} reviewed, {drafts} draft, {len(refusal_probes)} refusal probes)"
