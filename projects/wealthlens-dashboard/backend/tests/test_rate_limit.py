@@ -121,6 +121,19 @@ class TestForwardedFor:
         response = client.get("/test", headers={"X-Forwarded-For": "2.2.2.2"})
         assert response.status_code == 200
 
+    def test_uses_rightmost_forwarded_for_so_spoofed_leftmost_cannot_bypass(self) -> None:
+        """The RIGHTMOST X-Forwarded-For entry (appended by the trusted proxy)
+        identifies the client; rotating the spoofable LEFTMOST value must NOT mint
+        a fresh rate-limit bucket. Before the fix (leftmost), each distinct first
+        value bypassed the limit; now all three share the same real client.
+        """
+        client = TestClient(_create_app(requests_per_minute=2, trust_forwarded_for=True))
+        # Same real client (rightmost 9.9.9.9); attacker rotates the leftmost.
+        client.get("/test", headers={"X-Forwarded-For": "1.1.1.1, 9.9.9.9"})
+        client.get("/test", headers={"X-Forwarded-For": "2.2.2.2, 9.9.9.9"})
+        response = client.get("/test", headers={"X-Forwarded-For": "3.3.3.3, 9.9.9.9"})
+        assert response.status_code == 429
+
 
 class TestRateLimitAppConfig:
     """Application-level rate limit toggle behavior."""

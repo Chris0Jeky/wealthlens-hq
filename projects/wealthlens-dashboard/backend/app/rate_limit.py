@@ -40,7 +40,17 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         if self.trust_forwarded_for:
             forwarded = request.headers.get("x-forwarded-for")
             if forwarded:
-                return forwarded.split(",")[0].strip()
+                # Take the RIGHTMOST entry, not the leftmost. Each proxy APPENDS the
+                # address it received the request from, so the last hop is what our
+                # trusted reverse proxy actually observed. The LEFTMOST value is the
+                # original client-supplied one and is spoofable — using it would let
+                # a client send a rotating X-Forwarded-For to get a fresh rate-limit
+                # bucket per request and bypass the per-IP limit entirely. Assumes a
+                # single trusted proxy (the documented deployment); a multi-proxy
+                # chain would need a configured trusted-hop count.
+                parts = [p.strip() for p in forwarded.split(",") if p.strip()]
+                if parts:
+                    return parts[-1]
         return request.client.host if request.client else None
 
     def _clean_window(self, hits: list[float], now: float) -> list[float]:
