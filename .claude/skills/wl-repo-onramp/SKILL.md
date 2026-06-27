@@ -17,7 +17,7 @@ Establish current truth before editing code, content, or docs.
 
 Read when relevant:
 
-- `autodoc/AGENT_INDEX.md` for code orientation (once code exists)
+- `autodoc/AGENT_INDEX.md` for code orientation
 - `strategy/branding-playbook.md` for content/voice work
 - `vision/north-stars.md` for prioritisation decisions
 - `research/data-sources/data-source-registry.md` for data work

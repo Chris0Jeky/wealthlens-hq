@@ -109,19 +109,39 @@ ignore_missing_imports = true
 module = ["wealthlens_sim.*"]
 ignore_missing_imports = true
 
-# automation/data-pipelines/ has a hyphen so it can't be a Python package;
-# list modules explicitly instead of using a glob pattern.
+# automation/'s subdirs have hyphens so they can't be Python packages / glob
+# patterns; list modules explicitly. Keep this list in sync with EVERY top-level
+# module the `mypy automation` gate checks (all of automation/data-pipelines/,
+# automation/analysis/, automation/social-media/, automation/og-images/): a module
+# omitted here silently drops to the looser (untyped-defs-allowed) bar the root
+# config sets, weakening the gate for that module.
 [[tool.mypy.overrides]]
 module = [
-    "fetch_wid_data",
+    # automation/data-pipelines/
+    "_cells",
+    "chart_html",
+    "fetch_boe_rates",
+    "fetch_child_poverty",
+    "fetch_generational_wealth",
+    "fetch_hmrc_stats",
+    "fetch_ons_gdhi",
     "fetch_ons_housing",
     "fetch_ons_wealth",
-    "fetch_hmrc_stats",
-    "chart_html",
+    "fetch_productivity_pay",
+    "fetch_tax_composition",
+    "fetch_wage_stagnation",
+    "fetch_wid_data",
+    "generate_simulator_dashboards",
+    "http_retry",
     "run_all",
     "validate",
+    # automation/analysis/
     "extract_action_items",
     "summarise_research",
+    # automation/social-media/
+    "chart_to_social",
+    # automation/og-images/
+    "generate_og_images",
 ]
 disallow_untyped_defs = true
 

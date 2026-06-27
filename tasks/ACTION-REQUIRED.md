@@ -1,6 +1,6 @@
 # ⚑ ACTION REQUIRED — Chris's outstanding tasks
 
-Last updated: 2026-06-27 (session 12; added item 9 — OPENAI_API_KEY blocks the Analyst's dense-retrieval chain H1-11→H1-13→H1-18)
+Last updated: 2026-06-27 (session 13; added item 10 — Generational Wealth Gap chart output-licence decision, RF source is CC BY-NC-ND 4.0)
 
 > **This file is the single curated list of things that need _Chris_ (a human),
 > not the autonomous agent.** It exists so high-leverage actions never get lost in
@@ -100,6 +100,12 @@ Last updated: 2026-06-27 (session 12; added item 9 — OPENAI_API_KEY blocks the
      2. Give me the key via the environment (do **not** commit it): `export OPENAI_API_KEY=sk-...` before `make ingest-slice` / `make dev`, or set it in the deploy env. It is already in `.env.example` as a placeholder; `config.py` reads it.
      3. Tell me the monthly cap you want for `BUDGET_MONTHLY_CAP_GBP` (the in-app hard cap, ADR 0002) — default in `.env.example` is £10.
    - **Done when:** a key is available in the agent's environment (then I build H1-11: embed the corpus, verify cosine neighbours, and wire H1-13 hybrid retrieval).
+
+10. - [ ] **Decide the Generational Wealth Gap chart's output licence (RF source is CC BY-NC-ND 4.0)** — **P3, data-integrity/legal nuance**
+    - **Why:** Surfaced by offline-defect sweep #4 (2026-06-27). The generational-wealth chart derives from Resolution Foundation data licensed **CC BY-NC-ND 4.0** (NonCommercial, NoDerivatives) — the licence is now correctly recorded in `registries/sources.yml`, both `data-licences.md` files, `chartArticles.ts`, and the pipeline. But WealthLens's blanket output licence re-publishes all chart images as **CC-BY 4.0** (commercial + derivatives OK). Re-publishing a chart built from a NC/ND source under CC-BY may exceed what the source licence permits.
+    - **Decision needed:** EITHER (a) apply a narrower per-chart output-licence carve-out for this chart (attribution-only, non-commercial, no-derivatives), OR (b) confirm (with reasoning) that the chart is a sufficiently transformed/factual re-presentation that CC-BY is defensible, OR (c) drop/replace the RF-derived series. The conflict is flagged in `projects/wealthlens-dashboard/docs/data-licences.md` ("WealthLens output licence" section).
+    - **Agent-doable once you decide:** I can wire a per-chart licence field + caveat, or adjust the output-licence docs, in a small reviewed PR.
+    - **Done when:** the generational-wealth chart's output licence is decided and the docs reflect it with no internal contradiction.
 
 ---
 

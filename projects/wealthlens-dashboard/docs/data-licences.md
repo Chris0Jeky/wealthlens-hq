@@ -1,6 +1,6 @@
 # Data Sources and Licences
 
-Last updated: 2026-05-30
+Last updated: 2026-06-27
 
 Every dataset used in WealthLens charts is listed here with its licence and attribution requirements. See also `research/data-sources/data-source-registry.md` for the full source catalogue.
 
@@ -17,7 +17,13 @@ Every dataset used in WealthLens charts is listed here with its licence and attr
 | Tax and NIC Receipts | HMRC | OGL v3.0 | Yes — "Contains public sector information licensed under the Open Government Licence v3.0" | https://www.gov.uk/government/statistics/hmrc-tax-and-nics-receipts-for-the-uk |
 | Bank Rate and CPI Inflation | Bank of England | OGL v3.0 | Yes — "Source: Bank of England" | https://www.bankofengland.co.uk/boeapps/database/ |
 | Real Wage Stagnation | ONS | OGL v3.0 | Yes — "Source: ONS ASHE" | https://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/earningsandworkinghours/datasets/ashe1702 |
-| Families and households in Great Britain: 2022 | ONS | OGL v3.0 | Yes — "Source: ONS" | https://www.ons.gov.uk/peoplepopulationandcommunity/birthsdeathsandmarriages/families/datasets/householdsbytypeofhouseholdandfamilyregionsofenglandandgbconstituentcountries/2022 |
+| Child Poverty by Region | DWP / HMRC (Children in Low Income Families) | OGL v3.0 | Yes — "Source: DWP/HMRC CiLIF" | https://www.gov.uk/government/statistics/children-in-low-income-families-local-area-statistics-2014-to-2023 |
+| Productivity-Pay Gap | ONS (Labour Productivity & AWE) | OGL v3.0 | Yes — "Source: ONS" | https://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/labourproductivity/timeseries/lzvd/prdy/data |
+| Generational Wealth Gap | Resolution Foundation / ONS WAS | RF series: CC BY-NC-ND 4.0; ONS WAS: OGL v3.0 | Yes — "Source: Resolution Foundation / ONS WAS" | https://www.resolutionfoundation.org/publications/ |
+
+> The "Families and households in Great Britain: 2022" (ONS, OGL v3.0) dataset is a
+> simulator/synth-generator anchor, not a chart — it is listed under "Currently used
+> in tools" below.
 
 ## Currently used in tools
 
@@ -51,8 +57,22 @@ Every dataset used in WealthLens charts is listed here with its licence and attr
 - **Requires:** give appropriate credit, indicate changes, link to licence
 - **Full text:** https://creativecommons.org/licenses/by/4.0/
 
+### CC BY-NC-ND 4.0 (Attribution-NonCommercial-NoDerivatives)
+
+- **Permits:** copy and redistribute the material unmodified
+- **Forbids:** commercial use; distributing modified or derived material
+- **Requires:** give appropriate credit, link to licence, indicate if changes were made
+- **Applies to:** Resolution Foundation publications (e.g. the Intergenerational Audit for the UK behind the Generational Wealth Gap chart)
+- **Full text:** https://creativecommons.org/licenses/by-nc-nd/4.0/
+
 ## WealthLens output licence
 
 - Code: MIT
 - Chart images and visualisations: CC-BY 4.0
 - When sharing WealthLens charts, please credit "WealthLens UK" and link to the source data
+- **Known conflict to resolve (flagged 2026-06-27):** the Generational Wealth Gap chart
+  derives from Resolution Foundation data licensed CC BY-NC-ND 4.0 (NonCommercial,
+  NoDerivatives). Re-publishing a chart built from that source under the blanket CC-BY 4.0
+  output licence above may exceed what the source licence permits. This chart likely needs
+  a narrower per-chart output-licence carve-out (attribution-only, non-commercial,
+  no-derivatives) — pending a decision (see `tasks/ACTION-REQUIRED.md`).

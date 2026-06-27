@@ -74,8 +74,9 @@ sources:
     pipeline: fetch_ons_gdhi.py
     notes: >
       GDHI per head at current prices by ITL3 region. Most recent edition
-      covers 1997-2023. Ranges from Westminster (£79,500) to Blackpool
-      (£14,200). Fallback URL available for 1997-2022 edition.
+      covers 1997-2023. Ranges from Kensington and Chelsea, and Hammersmith
+      and Fulham (£79,500) to Blackpool (£14,200). Fallback URL available for
+      1997-2022 edition.
 
   - id: ons-housing-affordability
     name: ONS Housing Affordability in England and Wales

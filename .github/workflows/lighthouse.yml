@@ -11,6 +11,10 @@ on:
     paths:
       - "projects/wealthlens-dashboard/frontend/**"
       - ".github/workflows/lighthouse.yml"
+  # No weekly `schedule:` by design: ci-frontend carries the weekly drift catch-all,
+  # but this Lighthouse-CI perf/a11y gate needs an app build + headless run and is
+  # heavier/noisier on an idle schedule, so it runs on frontend PR/push only. Add a
+  # cron here if scheduled Lighthouse-drift coverage is wanted.
 
 permissions:
   contents: read

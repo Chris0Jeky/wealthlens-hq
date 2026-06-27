@@ -7,6 +7,11 @@ on:
     branches: [main]
     paths:
       - 'projects/wealthlens-dashboard/frontend/**'
+  # No weekly `schedule:` by design: ci-frontend carries the weekly lint/typecheck/
+  # vitest/build drift catch-all, but this Playwright/chromium e2e gate needs a
+  # browser install + app build and is heavier/flakier on an idle schedule, so it
+  # runs on frontend PR/push only. Add a cron here if scheduled browser-drift coverage
+  # is wanted (the trade-off is scheduled chromium-install cost + flakiness).
 
 permissions:
   contents: read

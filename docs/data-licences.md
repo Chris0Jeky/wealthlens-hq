@@ -1,6 +1,6 @@
 # Data Licences and Source Citations
 
-Last updated: 2026-05-16
+Last updated: 2026-06-27
 
 Every dataset used in WealthLens UK must document its source, licence, URL, and the date it was accessed. This file is the central reference. Static `.meta.json` sidecars live in `automation/data-pipelines/metadata/`; some pipelines (e.g. generational wealth) generate their sidecar at runtime into `data/processed/`.
 
@@ -56,6 +56,6 @@ Every dataset used in WealthLens UK must document its source, licence, URL, and 
 - **Description:** Median total household wealth by generation at age milestones
 - **URL:** <https://www.resolutionfoundation.org/publications/>
 - **URL (ONS WAS):** <https://www.ons.gov.uk/peoplepopulationandcommunity/personalandhouseholdfinances/incomeandwealth/bulletins/totalwealthingreatbritain/latest>
-- **Licence:** Open / public report (Resolution Foundation), OGL v3.0 (ONS)
+- **Licence:** Resolution Foundation series: CC BY-NC-ND 4.0 (non-commercial, no-derivatives); ONS WAS: OGL v3.0
 - **Access date:** 2026-05-16
 - **Update frequency:** Periodic (Resolution Foundation reports)

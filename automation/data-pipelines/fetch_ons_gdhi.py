@@ -12,7 +12,7 @@ GDHI by the resident population of each region.  The ONS publishes at
 ITL1 (nations/regions), ITL2 (counties/groups), and ITL3 (local
 authority groups).  This pipeline extracts **ITL3-level** per-head data
 for the most recent year available, to show the full range of regional
-inequality from Westminster to Blackpool.  Parent/aggregate rows (ITL1,
+inequality from Kensington & Chelsea to Blackpool.  Parent/aggregate rows (ITL1,
 ITL2, UK total) are filtered out so they do not distort the chart.
 The fallback dataset includes a curated mix of ITL regions plus the UK
 average for context.
@@ -460,8 +460,9 @@ def build_chart(df: pd.DataFrame, *, is_fallback: bool = False) -> None:
             ONS data.  Controls the data-quality warning shown on the
             chart.
 
-    Westminster and Blackpool are highlighted to show the extremes
-    of regional income inequality.
+    The wealthiest London boroughs (led by Kensington & Chelsea, the highest
+    ITL3 area) and Blackpool are highlighted to show the extremes of regional
+    income inequality.
     """
     CHART_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -586,8 +587,8 @@ def build_chart(df: pd.DataFrame, *, is_fallback: bool = False) -> None:
         description=(
             "Horizontal bar chart showing gross disposable household "
             f"income per head across UK regions in {year}, sorted from "
-            "highest to lowest. Westminster and wealthy London boroughs "
-            "are highlighted in red; deprived areas like Blackpool in "
+            "highest to lowest. Kensington & Chelsea and other wealthy London "
+            "boroughs are highlighted in red; deprived areas like Blackpool in "
             "blue."
         ),
     )

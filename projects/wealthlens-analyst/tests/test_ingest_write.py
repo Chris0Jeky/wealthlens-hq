@@ -18,6 +18,7 @@ from pathlib import Path
 import pytest
 
 from wealthlens_analyst.db import chunks_table
+from wealthlens_analyst.ingest import slice_corpus
 from wealthlens_analyst.ingest.slice_corpus import (
     TABLE_SPECS,
     Chunk,
@@ -73,6 +74,23 @@ class _ExplodingEngine:
 
     def begin(self) -> object:
         raise AssertionError("database connection opened despite invalid/empty input")
+
+
+class _DisposeTrackingEngine:
+    """Stand-in engine that records dispose() calls (and explodes if used).
+
+    Lets the DB-free tests assert ingest_slice tears down an engine it created,
+    via the no-CSV error path (which raises before any begin()).
+    """
+
+    def __init__(self) -> None:
+        self.disposed = 0
+
+    def begin(self) -> object:
+        raise AssertionError("database connection opened despite invalid/empty input")
+
+    def dispose(self) -> None:
+        self.disposed += 1
 
 
 class _RecordingConn:
@@ -216,6 +234,49 @@ def test_ingest_slice_raises_when_no_source_csvs_present(tmp_path: Path) -> None
     """A fresh checkout with no processed inputs fails loudly, not silently empty."""
     with pytest.raises(RuntimeError, match="no processed source CSVs"):
         ingest_slice(engine=_ExplodingEngine(), processed_dir=tmp_path)  # type: ignore[arg-type]
+
+
+def test_ingest_slice_disposes_an_engine_it_created(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """ingest_slice tears down an engine it built itself (mirrors search_fts).
+
+    Uses the no-CSV error path (empty dir) so no DB is needed: even when ingestion
+    raises, the internally-created connection pool must be disposed in the finally.
+    """
+    created_engine = _DisposeTrackingEngine()
+    monkeypatch.setattr(slice_corpus, "engine_from_settings", lambda _settings: created_engine)
+    monkeypatch.setattr(slice_corpus, "load_settings", lambda: None)
+    with pytest.raises(RuntimeError, match="no processed source CSVs"):
+        ingest_slice(processed_dir=tmp_path)  # engine=None -> built here -> must dispose
+    assert created_engine.disposed == 1
+
+
+def test_ingest_slice_does_not_dispose_a_caller_supplied_engine(tmp_path: Path) -> None:
+    """A shared/caller-supplied engine is the caller's to manage — never disposed here."""
+    engine = _DisposeTrackingEngine()
+    with pytest.raises(RuntimeError, match="no processed source CSVs"):
+        ingest_slice(engine=engine, processed_dir=tmp_path)  # type: ignore[arg-type]
+    assert engine.disposed == 0
+
+
+def test_ingest_slice_disposes_its_engine_if_dir_resolution_fails(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A failure resolving the processed dir (after the engine is built) still disposes.
+
+    Guards the edge where _processed_dir_default() raises between engine creation and
+    the main body — the self-created engine must not leak (caught in PR #456 review).
+    """
+    created_engine = _DisposeTrackingEngine()
+    monkeypatch.setattr(slice_corpus, "engine_from_settings", lambda _settings: created_engine)
+    monkeypatch.setattr(slice_corpus, "load_settings", lambda: None)
+
+    def _boom() -> Path:
+        raise RuntimeError("cannot locate repo root")
+
+    monkeypatch.setattr(slice_corpus, "_processed_dir_default", _boom)
+    with pytest.raises(RuntimeError, match="cannot locate repo root"):
+        ingest_slice()  # engine=None + processed_dir=None -> dir resolution raises inside try
+    assert created_engine.disposed == 1
 
 
 def test_chunk_row_omits_server_managed_columns() -> None:

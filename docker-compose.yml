@@ -27,7 +27,14 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./data/processed:/data/processed:ro
+      # The backend resolves DATA_DIR to /data/processed and SIMULATOR_DIR to
+      # /data/simulator in-container (parents[3] of app/routers/*.py == /), so the
+      # real host data dirs must be mounted there. (This previously pointed at
+      # ./data/processed — a path that does not exist at the repo root — so the
+      # compose backend served zero datasets and /api/health/data reported all
+      # missing. The CSVs/JSON live under projects/wealthlens-dashboard/data/.)
+      - ./projects/wealthlens-dashboard/data/processed:/data/processed:ro
+      - ./projects/wealthlens-dashboard/data/simulator:/data/simulator:ro
       - ./projects/wealthlens-dashboard/backend/app:/app/app
     environment:
       - CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000

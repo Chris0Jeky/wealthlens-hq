@@ -84,7 +84,7 @@ Use imperative mood in the format `<area>: <summary>`:
 
 - **Backend**: pytest (`projects/wealthlens-dashboard/backend/tests/`)
 - **Frontend**: vitest (`src/components/__tests__/`)
-- **E2E**: Playwright (planned — not yet configured)
+- **E2E**: Playwright (`projects/wealthlens-dashboard/frontend/e2e/`; CI: `.github/workflows/e2e.yml`)
 - **Full CI**: `make ci-full` (lint + tests + build + type check)
 
 ## Accessibility requirements

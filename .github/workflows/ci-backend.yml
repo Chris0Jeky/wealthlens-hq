@@ -17,6 +17,14 @@ on:
       - "automation/**"
       - "pyproject.toml"
       - ".github/workflows/ci-backend.yml"
+  # Weekly catch-all: the path-filtered triggers above don't fire while the backend
+  # is idle, so a dependency/tooling drift (a new ruff/mypy/bandit release, or a
+  # fastapi/pydantic bump) that breaks backend lint/type/security/tests would go
+  # unnoticed until the next backend change. ci-backend is the ONLY gate that runs
+  # mypy backend/, bandit on backend, and the backend pytest+coverage suite. Run
+  # weekly regardless of paths, mirroring ci-analyst / ci-sim / ci-pipelines.
+  schedule:
+    - cron: "0 9 * * 1"
 
 permissions:
   contents: read

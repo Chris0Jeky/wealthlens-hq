@@ -99,7 +99,7 @@ const GUT_CARDS = [
     n: '06',
     q: 'London might as well be a different country.',
     stat: [{ pct: '£79.5k' }, ' vs ', { pct: '£14.2k' }, '.'],
-    body: 'Gross disposable income per head, Westminster vs Blackpool. Same currency. Same passport. Same NHS, in theory. Your postcode at 18 forecasts your retirement at 67 better than your A‑levels do.',
+    body: 'Gross disposable income per head, Kensington & Chelsea vs Blackpool. Same currency. Same passport. Same NHS, in theory. Your postcode at 18 forecasts your retirement at 67 better than your A‑levels do.',
     src: 'Source: ONS Regional GDHI 2023'
   },
   {
@@ -293,8 +293,8 @@ const PILLARS = [
   },
   {
     n: '05', name: 'Place',
-    find: 'Westminster: <b>£79.5k</b> per head. Blackpool: <b>£14.2k</b>. Same country. Same NHS, in theory.',
-    columns: [{ v: 79.5, label: 'WSM' }, { v: 24.8, label: 'UK' }, { v: 14.2, label: 'BLA' }]
+    find: 'Kensington & Chelsea: <b>£79.5k</b> per head. Blackpool: <b>£14.2k</b>. Same country. Same NHS, in theory.',
+    columns: [{ v: 79.5, label: 'KC' }, { v: 24.8, label: 'UK' }, { v: 14.2, label: 'BLA' }]
   },
 ];
 

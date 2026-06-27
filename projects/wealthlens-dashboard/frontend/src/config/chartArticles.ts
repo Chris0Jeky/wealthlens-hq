@@ -236,9 +236,9 @@ export const chartConfigs: Record<string, ChartConfig> = {
       },
       {
         domain: "Housing · UK",
-        title: "House price to earnings ratio, 1969–2024",
+        title: "House price to earnings ratio, 1997–2025",
         finding:
-          'UK ratio is <b>8.6×</b> — the highest since records began.',
+          'England & Wales ratio peaked at <b>9.0×</b> in 2021 (7.6× in 2025).',
         to: "/charts/housing-affordability",
         sparkType: "line",
       },
@@ -516,7 +516,7 @@ export const chartConfigs: Record<string, ChartConfig> = {
         domain: "Housing · UK",
         title: "House price to earnings ratio by region",
         finding:
-          'UK ratio is <b>8.6×</b> — the highest since records began.',
+          'England & Wales ratio peaked at <b>9.0×</b> in 2021 (7.6× in 2025).',
         to: "/charts/housing-affordability",
         sparkType: "line",
       },
@@ -780,9 +780,9 @@ export const chartConfigs: Record<string, ChartConfig> = {
     related: [
       {
         domain: "Housing · UK",
-        title: "House price to earnings ratio, 1969–2024",
+        title: "House price to earnings ratio, 1997–2025",
         finding:
-          'UK ratio is <b>8.6×</b> — the highest since records began.',
+          'England & Wales ratio peaked at <b>9.0×</b> in 2021 (7.6× in 2025).',
         to: "/charts/housing-affordability",
         sparkType: "line",
       },
@@ -968,7 +968,7 @@ export const chartConfigs: Record<string, ChartConfig> = {
       { label: "Series", value: "Median household wealth by generation" },
       { label: "Coverage", value: "1994 — 2026 (measured & projected)" },
       { label: "Updated", value: "16 May 2026" },
-      { label: "Licence", value: "OGL v3.0 / Open" },
+      { label: "Licence", value: "CC BY-NC-ND 4.0" },
       { label: "Generations", value: "3 (Boomers, Gen X, Millennials)" },
       { label: "Chart ID", value: "WL-G-001" },
     ],
@@ -1016,7 +1016,7 @@ export const chartConfigs: Record<string, ChartConfig> = {
     source: {
       name: "Resolution Foundation / ONS Wealth and Assets Survey",
       url: "https://www.resolutionfoundation.org/publications/",
-      licence: "OGL v3.0",
+      licence: "CC BY-NC-ND 4.0",
       accessed: "2026-05-16",
       chartId: "WL-G-001",
     },
@@ -1067,9 +1067,9 @@ export const chartConfigs: Record<string, ChartConfig> = {
       },
       {
         domain: "Housing · UK",
-        title: "House price to earnings ratio, 1969–2024",
+        title: "House price to earnings ratio, 1997–2025",
         finding:
-          'UK ratio is <b>8.6×</b> — the highest since records began.',
+          'England & Wales ratio peaked at <b>9.0×</b> in 2021 (7.6× in 2025).',
         to: "/charts/housing-affordability",
         sparkType: "line",
       },
