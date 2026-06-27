@@ -76,11 +76,21 @@ def main() -> int:
     tool_input = payload.get("tool_input", {}) or {}
     command = str(tool_input.get("command") or tool_input.get("code") or "")
 
-    # For git commit commands, only scan the git verb, not the message body
-    if re.match(r"\s*git\s+commit\b", command):
+    # A *pure* `git commit` is exempted from scanning so a secret-like or example
+    # string inside the commit MESSAGE never trips a false positive. But do NOT
+    # exempt a command that merely STARTS with `git commit` and then CHAINS
+    # something else (e.g. `git commit -m wip && git push --force`, `git commit …;
+    # rm -rf /`) — that would let the destructive tail bypass every deny pattern.
+    # When chained, strip the quoted -m/--message body (so the message text alone
+    # can't false-positive) and fall through to scan the remainder.
+    is_git_commit = re.match(r"\s*git\s+commit\b", command) is not None
+    has_chaining = re.search(r"&&|\|\||;|\||&|\n", command) is not None
+    if is_git_commit and not has_chaining:
         return 0
 
     compact = " ".join(command.split())
+    if is_git_commit:
+        compact = re.sub(r"(?:-m|--message)[=\s]+(\"[^\"]*\"|'[^']*')", "-m MSG", compact)
 
     for pattern, reason in DENY_PATTERNS:
         if pattern.search(compact):

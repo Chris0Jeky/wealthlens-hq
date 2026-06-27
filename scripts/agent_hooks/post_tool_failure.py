@@ -47,7 +47,10 @@ def scrub(text: object, limit: int = 240) -> str:
 
 def summarize_target(value: object) -> str:
     s = str(value or "")
-    if not s:
+    if not s.strip():
+        # Empty OR whitespace-only: nothing to summarise. (A whitespace-only value
+        # is truthy, so a bare `if not s` let it through and `split()[0]` below then
+        # raised IndexError — crashing the very hook meant to RECORD failures.)
         return ""
     scrubbed = scrub(s, 500)
     first = scrubbed.split(maxsplit=1)[0]
@@ -64,7 +67,7 @@ def main() -> int:
     tool_name = payload.get("tool_name", "unknown")
     tool_input = payload.get("tool_input", {}) or {}
     entry = {
-        "ts": dt.datetime.now(dt.timezone.utc).isoformat(),
+        "ts": dt.datetime.now(dt.UTC).isoformat(),
         "class": "unclassified",
         "surface": scrub(tool_name, 80),
         "command_or_target": summarize_target(
