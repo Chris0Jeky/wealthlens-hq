@@ -192,7 +192,11 @@ def _write_meta(csv_path: Path) -> None:
                 "name": "Resolution Foundation",
                 "publication": "An Intergenerational Audit for the UK (2024)",
                 "url": "https://www.resolutionfoundation.org/publications/",
-                "licence": "Open / public report",
+                # RF publications are site-wide CC BY-NC-ND 4.0 (non-commercial,
+                # no-derivatives), NOT "Open" — matches registries/sources.yml
+                # (resolution-generational-wealth). The ONS WAS component below
+                # stays OGL v3.0.
+                "licence": "CC BY-NC-ND 4.0",
             },
             {
                 "name": "ONS Wealth and Assets Survey",
