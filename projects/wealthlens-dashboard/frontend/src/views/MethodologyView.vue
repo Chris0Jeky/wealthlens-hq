@@ -6,6 +6,8 @@
  * Route: /methodology
  */
 
+import { DATASET_PROVENANCE } from "@/constants/datasetProvenance"
+
 /** Dataset source citation used in the template. */
 interface DatasetSource {
   name: string
@@ -17,16 +19,18 @@ interface DatasetSource {
 }
 
 /**
- * All 12 datasets with full source citations (one per routed chart).
+ * Descriptive citation fields per dataset (one per routed chart). The update
+ * cadence is intentionally omitted here and injected from the shared
+ * DATASET_PROVENANCE map below, so this page and the Data Sources table can
+ * never disagree on a dataset's frequency.
  */
-const datasets: DatasetSource[] = [
+const DATASET_CITATIONS: Omit<DatasetSource, "updateFrequency">[] = [
   {
     name: "wealth-shares",
     description: "Top 1%/10% wealth shares in GB",
     source: "World Inequality Database",
     sourceUrl: "https://wid.world/",
     accessDate: "2026-05-14",
-    updateFrequency: "Periodic",
   },
   {
     name: "housing-affordability",
@@ -35,7 +39,6 @@ const datasets: DatasetSource[] = [
     sourceUrl:
       "https://www.ons.gov.uk/peoplepopulationandcommunity/housing/datasets/ratioofhousepricetoworkplacebasedearningslowerquartileandmedian",
     accessDate: "2026-05-14",
-    updateFrequency: "Annual",
   },
   {
     name: "wealth-by-decile",
@@ -44,7 +47,6 @@ const datasets: DatasetSource[] = [
     sourceUrl:
       "https://www.ons.gov.uk/peoplepopulationandcommunity/personalandhouseholdfinances/incomeandwealth/datasets/totalwealthwealthingreatbritain",
     accessDate: "2026-05-14",
-    updateFrequency: "Biennial",
   },
   {
     name: "cgt-concentration",
@@ -52,7 +54,6 @@ const datasets: DatasetSource[] = [
     source: "HMRC",
     sourceUrl: "https://www.gov.uk/government/statistics/capital-gains-tax-statistics",
     accessDate: "2026-05-14",
-    updateFrequency: "Annual",
   },
   {
     name: "productivity-pay",
@@ -61,7 +62,6 @@ const datasets: DatasetSource[] = [
     sourceUrl:
       "https://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/labourproductivity/timeseries/lzvd/prdy",
     accessDate: "2026-05-16",
-    updateFrequency: "Quarterly",
   },
   {
     name: "gdhi-by-region",
@@ -70,7 +70,6 @@ const datasets: DatasetSource[] = [
     sourceUrl:
       "https://www.ons.gov.uk/economy/regionalaccounts/grossdisposablehouseholdincome/datasets/regionalgrossdisposablehouseholdincomegdhi",
     accessDate: "2026-05-16",
-    updateFrequency: "Annual",
   },
   {
     name: "tax-composition",
@@ -78,7 +77,6 @@ const datasets: DatasetSource[] = [
     source: "HMRC Tax and NIC Receipts",
     sourceUrl: "https://www.gov.uk/government/statistics/hmrc-tax-and-nics-receipts-for-the-uk",
     accessDate: "2026-05-16",
-    updateFrequency: "Monthly",
   },
   {
     name: "boe-rates",
@@ -86,7 +84,6 @@ const datasets: DatasetSource[] = [
     source: "Bank of England Interactive Analytical Database",
     sourceUrl: "https://www.bankofengland.co.uk/boeapps/database/",
     accessDate: "2026-05-16",
-    updateFrequency: "Monthly",
   },
   {
     name: "child-poverty",
@@ -95,7 +92,6 @@ const datasets: DatasetSource[] = [
     sourceUrl:
       "https://www.gov.uk/government/statistics/children-in-low-income-families-local-area-statistics-2014-to-2023",
     accessDate: "2026-05-16",
-    updateFrequency: "Annual",
   },
   {
     name: "generational-wealth",
@@ -103,7 +99,6 @@ const datasets: DatasetSource[] = [
     source: "Resolution Foundation / ONS Wealth and Assets Survey",
     sourceUrl: "https://www.resolutionfoundation.org/publications/",
     accessDate: "2026-05-16",
-    updateFrequency: "Annual",
   },
   {
     name: "wage-stagnation",
@@ -112,7 +107,6 @@ const datasets: DatasetSource[] = [
     sourceUrl:
       "https://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/earningsandworkinghours/datasets/ashe1702",
     accessDate: "2026-05-16",
-    updateFrequency: "Annual",
   },
   {
     name: "inheritance-tax",
@@ -120,9 +114,18 @@ const datasets: DatasetSource[] = [
     source: "HMRC Inheritance Tax Statistics",
     sourceUrl: "https://www.gov.uk/government/statistics/inheritance-tax-statistics",
     accessDate: "2026-05-16",
-    updateFrequency: "Annual",
   },
 ]
+
+/**
+ * Full citations with the update cadence merged in from the shared source of
+ * truth. Falls back to an em dash if a slug ever lacks a provenance entry (the
+ * datasetProvenance.test.ts keyset guard prevents that in practice).
+ */
+const datasets: DatasetSource[] = DATASET_CITATIONS.map((d) => ({
+  ...d,
+  updateFrequency: DATASET_PROVENANCE[d.name]?.updateFrequency ?? "—",
+}))
 </script>
 
 <template>

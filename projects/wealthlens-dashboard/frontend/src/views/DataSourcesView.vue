@@ -12,6 +12,10 @@ import PageHeader from "@/components/PageHeader.vue"
 import SearchInput from "@/components/SearchInput.vue"
 import ExternalLink from "@/components/ExternalLink.vue"
 import SkeletonLoader from "@/components/SkeletonLoader.vue"
+// Licence + update-frequency facts live in a single shared map so this page and
+// MethodologyView cannot drift apart (they previously held separate copies that
+// disagreed on the wealth-shares / wealth-by-decile cadence).
+import { DATASET_PROVENANCE } from "@/constants/datasetProvenance"
 
 const store = useDataStore()
 
@@ -19,30 +23,6 @@ const allMetadata = ref<DatasetMetadata[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
 const searchQuery = ref("")
-
-/** Additional source info not in the API metadata (licence, update frequency). */
-const EXTRA_SOURCE_INFO: Record<string, { licence: string; frequency: string }> = {
-  "wealth-shares": { licence: "CC-BY 4.0", frequency: "Annual (irregular)" },
-  "housing-affordability": { licence: "Open Government Licence v3.0", frequency: "Annual" },
-  "wealth-by-decile": {
-    licence: "Open Government Licence v3.0",
-    frequency: "Biennial (suspended)",
-  },
-  "cgt-concentration": { licence: "Open Government Licence v3.0", frequency: "Annual" },
-  "productivity-pay": { licence: "Open Government Licence v3.0", frequency: "Quarterly" },
-  "gdhi-by-region": { licence: "Open Government Licence v3.0", frequency: "Annual" },
-  "tax-composition": { licence: "Open Government Licence v3.0", frequency: "Monthly" },
-  "boe-rates": { licence: "Open Government Licence v3.0", frequency: "Monthly" },
-  "child-poverty": { licence: "Open Government Licence v3.0", frequency: "Annual" },
-  "generational-wealth": { licence: "CC BY-NC-ND 4.0", frequency: "Annual" },
-  // inheritance-tax + wage-stagnation are served from static/hand-curated JSON
-  // (outside the CSV metadata pipeline). Since #463 they ARE appended to the
-  // generated all-metadata this page renders, so these entries are live (not
-  // merely pre-registered): they supply the licence/frequency the static
-  // sidecars omit, matching the slugs the generator emits.
-  "wage-stagnation": { licence: "Open Government Licence v3.0", frequency: "Annual" },
-  "inheritance-tax": { licence: "Open Government Licence v3.0", frequency: "Annual" },
-}
 
 const filteredDatasets = computed(() => {
   if (!searchQuery.value.trim()) return allMetadata.value
@@ -160,10 +140,10 @@ function formatDatasetName(name: string): string {
                 </ExternalLink>
               </td>
               <td class="py-3 px-4 text-[var(--wl-ink-body)]">
-                {{ EXTRA_SOURCE_INFO[ds.name]?.licence ?? "Unknown" }}
+                {{ DATASET_PROVENANCE[ds.name]?.licence ?? "Unknown" }}
               </td>
               <td class="py-3 px-4 text-[var(--wl-ink-body)]">
-                {{ EXTRA_SOURCE_INFO[ds.name]?.frequency ?? "Unknown" }}
+                {{ DATASET_PROVENANCE[ds.name]?.updateFrequency ?? "Unknown" }}
               </td>
               <td class="py-3 px-4 text-[var(--wl-ink-muted)] whitespace-nowrap">
                 {{ ds.access_date }}
@@ -202,13 +182,13 @@ function formatDatasetName(name: string): string {
             <div class="flex gap-2">
               <dt class="font-medium text-[var(--wl-ink)] min-w-[5rem]">Licence:</dt>
               <dd class="text-[var(--wl-ink-body)]">
-                {{ EXTRA_SOURCE_INFO[ds.name]?.licence ?? "Unknown" }}
+                {{ DATASET_PROVENANCE[ds.name]?.licence ?? "Unknown" }}
               </dd>
             </div>
             <div class="flex gap-2">
               <dt class="font-medium text-[var(--wl-ink)] min-w-[5rem]">Frequency:</dt>
               <dd class="text-[var(--wl-ink-body)]">
-                {{ EXTRA_SOURCE_INFO[ds.name]?.frequency ?? "Unknown" }}
+                {{ DATASET_PROVENANCE[ds.name]?.updateFrequency ?? "Unknown" }}
               </dd>
             </div>
             <div class="flex gap-2">
