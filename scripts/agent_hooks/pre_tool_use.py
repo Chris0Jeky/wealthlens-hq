@@ -78,14 +78,16 @@ def main() -> int:
 
     # A *pure* `git commit` is exempted from scanning so a secret-like or example
     # string inside the commit MESSAGE never trips a false positive. But do NOT
-    # exempt a command that merely STARTS with `git commit` and then CHAINS
-    # something else (e.g. `git commit -m wip && git push --force`, `git commit …;
-    # rm -rf /`) — that would let the destructive tail bypass every deny pattern.
-    # When chained, strip the quoted -m/--message body (so the message text alone
-    # can't false-positive) and fall through to scan the remainder.
+    # exempt a command that merely STARTS with `git commit` and then runs something
+    # else via shell chaining (`git commit -m wip && git push --force`; `…; rm -rf
+    # /`) OR command substitution (`git commit $(rm -rf /) -m wip`) — that would let
+    # a destructive sibling bypass every deny pattern. The exemption is taken only
+    # for a commit with NO shell metacharacters; otherwise the quoted -m/--message
+    # body is stripped (so inert message text can't false-positive) and the
+    # remainder is scanned.
     is_git_commit = re.match(r"\s*git\s+commit\b", command) is not None
-    has_chaining = re.search(r"&&|\|\||;|\||&|\n", command) is not None
-    if is_git_commit and not has_chaining:
+    has_shell_meta = re.search(r"&&|\|\||;|\||&|\$\(|`|\n", command) is not None
+    if is_git_commit and not has_shell_meta:
         return 0
 
     compact = " ".join(command.split())

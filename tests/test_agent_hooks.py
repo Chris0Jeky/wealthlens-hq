@@ -55,6 +55,12 @@ def test_commit_chained_rm_rf_denied() -> None:
     assert _pre_decision(f"git commit -m wip; {_RM_RF}") == "deny"
 
 
+def test_commit_with_command_substitution_is_scanned() -> None:
+    # A command substitution runs during the commit, so the commit must NOT be
+    # fast-exempted: the substituted command is scanned (force-push -> deny).
+    assert _pre_decision(f"git commit $({_FORCE_PUSH}) -m wip") == "deny"
+
+
 def test_post_tool_failure_survives_whitespace_target() -> None:
     """A failing tool call whose command is whitespace-only must still be recorded
     (before the fix, summarize_target('   ') raised IndexError and crashed the hook)."""
