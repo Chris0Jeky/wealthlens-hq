@@ -22,20 +22,24 @@ const searchQuery = ref("")
 
 /** Additional source info not in the API metadata (licence, update frequency). */
 const EXTRA_SOURCE_INFO: Record<string, { licence: string; frequency: string }> = {
-  "wealth-shares": { licence: "Creative Commons", frequency: "Periodic" },
+  "wealth-shares": { licence: "CC-BY 4.0", frequency: "Annual (irregular)" },
   "housing-affordability": { licence: "Open Government Licence v3.0", frequency: "Annual" },
-  "wealth-by-decile": { licence: "Open Government Licence v3.0", frequency: "Biennial" },
+  "wealth-by-decile": {
+    licence: "Open Government Licence v3.0",
+    frequency: "Biennial (suspended)",
+  },
   "cgt-concentration": { licence: "Open Government Licence v3.0", frequency: "Annual" },
   "productivity-pay": { licence: "Open Government Licence v3.0", frequency: "Quarterly" },
   "gdhi-by-region": { licence: "Open Government Licence v3.0", frequency: "Annual" },
   "tax-composition": { licence: "Open Government Licence v3.0", frequency: "Monthly" },
   "boe-rates": { licence: "Open Government Licence v3.0", frequency: "Monthly" },
   "child-poverty": { licence: "Open Government Licence v3.0", frequency: "Annual" },
-  "generational-wealth": { licence: "Creative Commons", frequency: "Annual" },
+  "generational-wealth": { licence: "CC BY-NC-ND 4.0", frequency: "Annual" },
   // inheritance-tax + wage-stagnation are served from static/hand-curated JSON
-  // (outside the CSV metadata pipeline), so they are not yet in the generated
-  // all-metadata this page renders. Pre-registered here so they show the correct
-  // licence/frequency once wired into all-metadata (tracked follow-up).
+  // (outside the CSV metadata pipeline). Since #463 they ARE appended to the
+  // generated all-metadata this page renders, so these entries are live (not
+  // merely pre-registered): they supply the licence/frequency the static
+  // sidecars omit, matching the slugs the generator emits.
   "wage-stagnation": { licence: "Open Government Licence v3.0", frequency: "Annual" },
   "inheritance-tax": { licence: "Open Government Licence v3.0", frequency: "Annual" },
 }
