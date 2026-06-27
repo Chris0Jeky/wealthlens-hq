@@ -74,19 +74,13 @@ Every concrete action item extracted from research. Triage into active-sprint, b
 
 ## Reliability follow-ups
 
-- [ ] **Surface inheritance-tax + wage-stagnation on the Data Sources page (reach 12)**
-  (seeded 2026-06-27, sweep #7 #462). MethodologyView now cites all 12 charts' sources,
-  but DataSourcesView renders from the generated `all-metadata.json`, which `scripts/
-  generate_static_api.py` builds from the **10 CSV-pipeline datasets only**. The other 2
-  charts are served from static/hand-curated JSON outside that pipeline: `inheritance-tax`
-  has a committed `inheritance-tax-metadata.json` sidecar (easy to append to all-metadata
-  via a STATIC list), but **`wage-stagnation.json` is a hand-curated rich format the chart
-  reads directly** — it must NOT be regenerated from `wage_stagnation.csv` (different
-  shape; would break WageStagChart), and its committed metadata sidecar lacks a `name`
-  field. To do: append both sidecars to all-metadata (give wage-stagnation's sidecar a
-  `name`), update the DataSourcesView test fixture 10→12. `EXTRA_SOURCE_INFO` already
-  pre-registers both. (Homepage curation — whether to add them to HomeView's grid — is a
-  separate product decision, intentionally left out.)
+- [x] **Surface inheritance-tax + wage-stagnation on the Data Sources page (reach 12)**
+  — DONE 2026-06-27 (PR #463). `generate_static_api.py` now normalises the 2 static-JSON
+  charts' committed sidecars (slug→name, last_updated→access_date, deriving wage-stagnation's
+  row_count/columns from its data file) and appends them to **all-metadata only** (NOT
+  datasets.json, since their hand-curated JSON isn't API-shaped — so the data-contract
+  validation still covers just the 10 pipeline datasets). DataSourcesView now shows all 12.
+  HomeView's curated grid stays at 10 (product decision). gemini ×2 + codex addressed.
 - [ ] **Reconcile productivity-pay + tax-composition update frequency vs the registry**
   (seeded 2026-06-27, sweep #7 review). The provenance pages show productivity-pay
   "Quarterly" + tax-composition "Monthly" (the source's native publishing cadence), but

@@ -2,7 +2,9 @@
 
 Last updated: 2026-06-27
 
-> **SESSION 13 (2026-06-27) — 8 PRs MERGED (#456-#462).** Build chain still
+> **SESSION 13 (2026-06-27) — 9 PRs MERGED (#456-#463).** (#463 closed sweep #7's
+> last gap: Data Sources page now lists all 12 charts via the static-JSON metadata
+> normaliser.) Build chain still
 > `OPENAI_API_KEY`-blocked (ACTION-REQUIRED #9), so ran a full **data-honesty audit of
 > the public dashboard** (charts #460, calculators #461, content + scale viz #462) +
 > hygiene (sweep #4 #456, dependabot #457/#458, prettier #459).
