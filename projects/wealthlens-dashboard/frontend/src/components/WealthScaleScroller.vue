@@ -46,8 +46,8 @@ const MARKERS: WealthMarker[] = [
     id: "marker-p10",
   },
   {
-    position: DECILE_DATA[2].median / SCALE_FACTOR,
-    value: DECILE_DATA[2].median,
+    position: COMPARISON_STATS.medianBottom50 / SCALE_FACTOR,
+    value: COMPARISON_STATS.medianBottom50,
     label: "25th percentile",
     annotation: "£82,400 — a quarter of households below this",
     color: "var(--wl-teal)",

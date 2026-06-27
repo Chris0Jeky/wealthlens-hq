@@ -32,6 +32,12 @@ const EXTRA_SOURCE_INFO: Record<string, { licence: string; frequency: string }> 
   "boe-rates": { licence: "Open Government Licence v3.0", frequency: "Monthly" },
   "child-poverty": { licence: "Open Government Licence v3.0", frequency: "Annual" },
   "generational-wealth": { licence: "Creative Commons", frequency: "Annual" },
+  // inheritance-tax + wage-stagnation are served from static/hand-curated JSON
+  // (outside the CSV metadata pipeline), so they are not yet in the generated
+  // all-metadata this page renders. Pre-registered here so they show the correct
+  // licence/frequency once wired into all-metadata (tracked follow-up).
+  "wage-stagnation": { licence: "Open Government Licence v3.0", frequency: "Annual" },
+  "inheritance-tax": { licence: "Open Government Licence v3.0", frequency: "Annual" },
 }
 
 const filteredDatasets = computed(() => {
