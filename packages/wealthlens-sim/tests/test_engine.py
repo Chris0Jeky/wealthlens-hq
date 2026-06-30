@@ -706,6 +706,22 @@ class TestIntervals:
         with pytest.raises(TypeError, match="must be a range"):
             simulate(_population(), _scenario(_wealth_tax()), registries=registries)
 
+    def test_descending_alpha_range_is_normalised_not_crashed(self):
+        # Regression: RangeValue schema-permits a DESCENDING range (low >= central
+        # >= high, for negative-elasticity assumptions) and the sibling reader
+        # ParameterSpec.from_range_value normalises it. alpha_interval_from_registry
+        # must likewise normalise — a direct Interval(low=1.8, central=1.5, high=1.3)
+        # violates low <= central <= high and would crash simulate(). A descending
+        # alpha must NOT crash and must yield the SAME band as the equivalent
+        # ascending range (the bounds are an unordered {min, max} pair).
+        pop, scenario = _population(), _scenario(_wealth_tax())
+        ascending = _registry_with_alpha(RangeValue(type="range", low=1.3, central=1.5, high=1.8))
+        descending = _registry_with_alpha(RangeValue(type="range", low=1.8, central=1.5, high=1.3))
+        asc = simulate(pop, scenario, registries=Registries(assumptions=ascending)).total_revenue_gbp_bn
+        desc = simulate(pop, scenario, registries=Registries(assumptions=descending)).total_revenue_gbp_bn
+        assert desc.low < desc.central < desc.high  # valid ordering, non-degenerate
+        assert (desc.low, desc.central, desc.high) == pytest.approx((asc.low, asc.central, asc.high))
+
     def test_negative_net_fiscal_interval_ordering_with_registry(self):
         # With a non-degenerate revenue scale AND a negative net fiscal impact,
         # the derived net-impact interval must still satisfy low <= central <= high.

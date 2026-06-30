@@ -84,6 +84,13 @@ def alpha_interval_from_registry(registry: AssumptionRegistry) -> Interval | Non
     type assumption (e.g. someone changed the canonical alpha to a ``PointValue``)
     is a registry *defect*, so it is raised rather than silently downgraded — the
     caller asked for sourced intervals by naming the registry.
+
+    A :class:`RangeValue` is schema-permitted to be *descending*
+    (``low >= central >= high``, for negative-elasticity assumptions), so the bounds
+    are normalised to ``low = min, high = max`` before building the ``Interval``
+    (which requires ``low <= central <= high``) — ``central`` is guaranteed in-band by
+    ``RangeValue``'s monotonic invariant. Mirrors
+    :meth:`ParameterSpec.from_range_value` so the two registry readers agree.
     """
     assumption = registry.get(PARETO_ALPHA_ASSUMPTION_ID)
     if assumption is None:
@@ -95,4 +102,5 @@ def alpha_interval_from_registry(registry: AssumptionRegistry) -> Interval | Non
             f"got {type(distribution).__name__}"
         )
         raise TypeError(msg)
-    return Interval(low=distribution.low, central=distribution.central, high=distribution.high)
+    low, high = sorted((float(distribution.low), float(distribution.high)))
+    return Interval(low=low, central=float(distribution.central), high=high)
