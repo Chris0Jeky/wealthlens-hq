@@ -19,10 +19,10 @@ dependencies = [
     "pgvector>=0.4.2",
     "psycopg[binary]>=3.3.4",
     "httpx>=0.28.1",
-    "anthropic>=0.109.1",
     # OpenAI: embeddings (text-embedding-3-small, ADR 0003 D2) and, from 2026-06-30,
     # generation (gpt-5.4-mini — Chris's provider call). Used only inside
-    # llm/client.py (the SDK seam, ADR 0002).
+    # llm/client.py (the SDK seam, ADR 0002). (The `anthropic` package was dropped
+    # when generation moved to OpenAI; re-add it if the seam ever serves Anthropic.)
     "openai>=1.40.0",
 ]
 

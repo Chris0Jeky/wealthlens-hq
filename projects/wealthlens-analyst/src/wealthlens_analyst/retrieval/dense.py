@@ -77,13 +77,15 @@ def search_dense(query: str, *, limit: int = 50, engine: Engine | None = None) -
         raise ValueError(f"search_dense limit must be non-negative, got {limit}")
     if limit == 0:
         return []
-    query_vec = get_client().embed([query]).vectors[0]
     # Only dispose an engine WE created — a caller-supplied (shared) engine is the
-    # caller's to manage (mirrors retrieval/fts.py::search_fts).
+    # caller's to manage (mirrors retrieval/fts.py::search_fts). Build it BEFORE the
+    # paid embedding call so a missing DATABASE_URL fails fast (and free) rather than
+    # after a wasted embed.
     created = engine is None
     if engine is None:
         engine = engine_from_settings(load_settings())
     try:
+        query_vec = get_client().embed([query]).vectors[0]
         with engine.connect() as conn:
             rows = conn.execute(_DENSE_SQL, {"query_vec": query_vec, "limit": limit}).all()
     finally:
@@ -114,44 +116,52 @@ def embed_corpus(*, batch_size: int = 64, engine: Engine | None = None) -> int:
     if engine is None:
         engine = engine_from_settings(settings)
     try:
-        with engine.begin() as conn:
+        with engine.connect() as conn:
             pending = conn.execute(_UNEMBEDDED_SQL).all()
-            if not pending:
-                logger.info("embed_corpus: every chunk already has an embedding (0 to do)")
-                return 0
-            logger.info("embed_corpus: %d chunk(s) to embed in batches of %d", len(pending), batch_size)
-            embedded = 0
-            total_cost_gbp = 0.0
-            model = ""
-            for start in range(0, len(pending), batch_size):
-                batch = pending[start : start + batch_size]
-                result = client.embed([row.text for row in batch])
-                model = result.model
-                if len(result.vectors) != len(batch):
+        if not pending:
+            logger.info("embed_corpus: every chunk already has an embedding (0 to do)")
+            return 0
+        logger.info("embed_corpus: %d chunk(s) to embed in batches of %d", len(pending), batch_size)
+        embedded = 0
+        total_cost_gbp = 0.0
+        model = ""
+        for start in range(0, len(pending), batch_size):
+            batch = pending[start : start + batch_size]
+            # Embed OUTSIDE any transaction so no DB transaction is held open across the
+            # network call; then write that batch in its OWN short transaction. A failure
+            # part-way leaves earlier batches COMMITTED, and the anti-join above means a
+            # re-run resumes from exactly the chunks still unembedded.
+            result = client.embed([row.text for row in batch])
+            model = result.model
+            if len(result.vectors) != len(batch):
+                raise RuntimeError(
+                    f"embedding provider returned {len(result.vectors)} vectors for {len(batch)} input texts"
+                )
+            params: list[dict[str, object]] = []
+            for row, vector in zip(batch, result.vectors, strict=True):
+                if len(vector) != EMBEDDING_DIM:
                     raise RuntimeError(
-                        f"embedding provider returned {len(result.vectors)} vectors for {len(batch)} input texts"
+                        f"embedding for chunk {row.chunk_id} has {len(vector)} dims, expected "
+                        f"{EMBEDDING_DIM} (model {result.model!r} does not match migration 0002)"
                     )
-                params: list[dict[str, object]] = []
-                for row, vector in zip(batch, result.vectors, strict=True):
-                    if len(vector) != EMBEDDING_DIM:
-                        raise RuntimeError(
-                            f"embedding for chunk {row.chunk_id} has {len(vector)} dims, expected "
-                            f"{EMBEDDING_DIM} (model {result.model!r} does not match migration 0002)"
-                        )
-                    params.append({"chunk_id": int(row.chunk_id), "model": result.model, "embedding": vector})
-                conn.execute(
+                params.append({"chunk_id": int(row.chunk_id), "model": result.model, "embedding": vector})
+            with engine.begin() as conn:
+                inserted = conn.execute(
                     pg_insert(embeddings_table).on_conflict_do_nothing(index_elements=["chunk_id"]),
                     params,
-                )
-                embedded += len(params)
-                total_cost_gbp += result.cost_gbp
-            logger.info(
-                "embed_corpus: embedded %d chunk(s) with %s; est. cost GBP %.5f",
-                embedded,
-                model,
-                total_cost_gbp,
-            )
-            return embedded
+                ).rowcount
+            # rowcount is the rows actually inserted — ON CONFLICT DO NOTHING skips a
+            # chunk a concurrent run already embedded, so this never overstates. Fall
+            # back to the batch size only if the driver reports rowcount unknown (-1).
+            embedded += inserted if inserted >= 0 else len(params)
+            total_cost_gbp += result.cost_gbp
+        logger.info(
+            "embed_corpus: embedded %d chunk(s) with %s; est. cost GBP %.5f",
+            embedded,
+            model,
+            total_cost_gbp,
+        )
+        return embedded
     finally:
         if created:
             engine.dispose()
