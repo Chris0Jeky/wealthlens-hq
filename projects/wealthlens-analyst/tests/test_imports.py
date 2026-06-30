@@ -47,13 +47,15 @@ def test_app_factory_and_healthz() -> None:
 def test_pending_stubs_raise_not_implemented() -> None:
     """Pending seams fail loudly, not silently (repo rule: no silent failures).
 
-    fuse_rrf (H1-12) is now implemented, so it is no longer asserted here — its
-    behaviour is pinned by tests/test_fuse_rrf.py.
+    fuse_rrf (H1-12) and embeddings + get_client (H1-11) are now implemented and
+    pinned by their own tests (test_fuse_rrf.py, test_llm_client.py, test_dense.py).
+    The remaining pending seam is generation, which lands in H1-18.
     """
-    from wealthlens_analyst.llm.client import get_client
+    from wealthlens_analyst.llm.client import OpenAIClient
 
-    with pytest.raises(NotImplementedError):
-        get_client()
+    client = OpenAIClient(api_key="test", embedding_model="text-embedding-3-small", analyst_model="gpt-5.4-mini")
+    with pytest.raises(NotImplementedError, match="H1-18"):
+        client.complete(system="s", prompt="p", max_tokens=10)
 
 
 def test_budget_config_fail_closed_default(monkeypatch: pytest.MonkeyPatch) -> None:

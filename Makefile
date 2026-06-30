@@ -115,7 +115,7 @@ analyst-test: ## Run the analyst pytest suite
 dev: ## Start the analyst dev server (uvicorn, 127.0.0.1:8100)
 	cd $(ANALYST_DIR) && $(PYTHON) -m uvicorn --factory wealthlens_analyst.api.app:create_app --reload --host 127.0.0.1 --port 8100
 
-ingest-slice: ## Ingest the frozen corpus slice (chunk -> provenance gate -> write; FTS auto, embed pending H1-11)
+ingest-slice: ## Ingest the frozen corpus slice (chunk -> provenance gate -> write; FTS auto; embed if OPENAI_API_KEY set)
 	cd $(ANALYST_DIR) && $(PYTHON) -m wealthlens_analyst.ingest.slice_corpus
 
 eval-golden-validate: ## Validate the golden set against its JSON schema (static, CI-safe)
