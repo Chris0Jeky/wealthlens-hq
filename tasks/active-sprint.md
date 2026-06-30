@@ -1,6 +1,28 @@
 # Active Sprint
 
-Last updated: 2026-06-27
+Last updated: 2026-06-30
+
+> **SESSION 14 (2026-06-30) — 7 PRs MERGED; main green.**
+> Drained 6 Dependabot PRs (#465-470: fastapi + vue prod patches; @vue/test-utils,
+> vue-tsc, @tailwindcss/vite dev patches, @playwright/test dev minor) after a 6-agent
+> changelog/usage/CI review (all SAFE_MERGE); main green across all 6 workflows +
+> deployed. Then a **deep correctness sweep of the simulator's numerical core**
+> (engine/intervals/attribution/enforcement, reforms A-E, uncertainty
+> sampling/propagation/Sobol, top-tail Pareto) found **1 real latent bug** →
+> **#471**: `alpha_interval_from_registry` crashed `simulate()` on a schema-valid
+> *descending* top-tail-alpha `RangeValue` (the `Interval` low<=central<=high
+> invariant), because the registry schema permits descending ranges for
+> negative-elasticity assumptions. Fixed by normalising the bounds with `sorted()`
+> (mirroring the sibling registry reader `ParameterSpec.from_range_value`); it's the
+> only such site in the package (grep-verified). Regression test proven to fail
+> without the fix; 853 sim tests pass; 2 independent adversarial reviews (zero
+> findings) + gemini + green CI on both Python versions. A **second sweep completing
+> the audit** (synth generator, run_scenario, the public `to_dashboard_json` contract,
+> provenance, behavioural response) found **0 issues** — the sim numerical +
+> dashboard-contract surface is now exhaustively audited (one real bug found+fixed,
+> everything else sound). Build chain still `OPENAI_API_KEY`-blocked
+> (ACTION-REQUIRED #9). Full state:
+> `../hq-private/projects/wealthlens/memories/session_notes/ORCHESTRATION.md`.
 
 > **SESSION 13 (2026-06-27) — 10 PRs MERGED (#456-#464).**
 > **#464** data-provenance accuracy — reconciled the public Data Sources
