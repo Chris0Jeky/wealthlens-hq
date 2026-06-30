@@ -5,6 +5,12 @@
 # Optional Hero #1 fields: analyst_corpus (bool; true = part of the FROZEN v1 analyst corpus slice),
 #   pdf_url (direct PDF URL when the main url is a landing page)
 #
+# update_pattern: the SOURCE's native release/refresh cadence (how often new data
+#   becomes available upstream). Kept consistent with the public Data Sources and
+#   Methodology pages (frontend `constants/datasetProvenance.ts`). It is NOT the
+#   cadence of the (often annual) series WealthLens ingests or plots — that is
+#   described in each entry's `notes`.
+#
 # Every dataset cited in a WealthLens output must have a corresponding entry.
 # Populated from existing data pipelines in automation/data-pipelines/.
 
@@ -134,12 +140,13 @@ sources:
     access_date: "2026-05-16"
     format: json
     licence: OGL-3.0
-    update_pattern: annual
+    update_pattern: quarterly
     pipeline: fetch_productivity_pay.py
     notes: >
       Productivity (LZVD output per hour) vs real pay (KAB9 AWE deflated
       by L55O CPIH). Both indices normalised to 100 in base year 1997.
-      Three ONS time-series endpoints.
+      Three ONS time-series endpoints. ONS releases labour-productivity
+      quarterly (source cadence); WealthLens plots an annual index.
 
   - id: hmrc-tax-receipts
     name: HMRC Tax and NIC Receipts
@@ -147,13 +154,14 @@ sources:
     access_date: "2026-05-16"
     format: xlsx
     licence: OGL-3.0
-    update_pattern: annual
+    update_pattern: monthly
     pipeline: fetch_tax_composition.py
     analyst_corpus: true
     notes: >
-      Annual tax receipts by type. Used to compare work taxes (Income Tax +
-      NICs) vs wealth taxes (CGT + IHT + SDLT). April 2025 edition.
-      Multi-year data from 2018-19 to 2023-24.
+      HMRC releases the Tax and NIC Receipts bulletin monthly (source cadence;
+      the file is "Monthly_and_Annual"). WealthLens uses the ANNUAL receipts by
+      type to compare work taxes (Income Tax + NICs) vs wealth taxes (CGT + IHT +
+      SDLT). April 2025 edition. Multi-year data from 2018-19 to 2023-24.
 
   - id: ons-ashe-wages
     name: ONS Annual Survey of Hours and Earnings (ASHE)
