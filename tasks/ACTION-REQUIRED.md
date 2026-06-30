@@ -1,6 +1,6 @@
 # ⚑ ACTION REQUIRED — Chris's outstanding tasks
 
-Last updated: 2026-06-27 (session 13; added item 10 — Generational Wealth Gap chart output-licence decision, RF source is CC BY-NC-ND 4.0)
+Last updated: 2026-06-30 (session 14; item 9 OPENAI_API_KEY provided → H1-11 shipped [PR #473] → moved to Done, replaced by a key-rotation security follow-up)
 
 > **This file is the single curated list of things that need _Chris_ (a human),
 > not the autonomous agent.** It exists so high-leverage actions never get lost in
@@ -93,13 +93,13 @@ Last updated: 2026-06-27 (session 13; added item 10 — Generational Wealth Gap 
    - **Agent-doable once you decide:** I can apply (b) with WID-cited values, or wire (a) citations, in a small reviewed PR. I did NOT change your public headline numbers unilaterally.
    - **Done when:** the stat cards + lede either cite their source or match the WID series, with no within-page contradiction.
 
-9. - [ ] **Provide an `OPENAI_API_KEY` (+ a small spend cap) to unblock the Analyst's dense retrieval** — **P1 (blocks the M2→M3 chain)**
-   - **Why:** As of 2026-06-27 the ingestion write path (H1-09, #450) and FTS retrieval (H1-10, #451) are MERGED, so the corpus is searchable lexically. The next steps — **H1-11** (embed the corpus via OpenAI `text-embedding-3-small`, ADR 0003 D2), then **H1-13** hybrid retrieval, **H1-18** answer composition — all make **real, paid model calls**. The agent will not incur spend without your authorisation, so the whole dense/hybrid/answer chain is blocked on this one credential. (FTS-only retrieval works today; embeddings add the semantic leg.)
+9. - [ ] **Rotate the OpenAI key (it was pasted in chat) + confirm the project spend cap** — **P1, security**
+   - **Why:** On 2026-06-30 you provided `OPENAI_API_KEY` in the chat, which unblocked and **shipped H1-11** (the Analyst now embeds its corpus and does semantic search — PR #473). But pasting a key into chat puts the raw value in the conversation transcript, so treat it as exposed.
    - **How:**
-     1. Create an OpenAI API key (platform.openai.com) and set a **low usage limit** on the project (e.g. $5) so a bug can't run up a bill. Embedding the ~23-chunk frozen slice with `text-embedding-3-small` costs well under 1 cent; this is for safety, not capacity.
-     2. Give me the key via the environment (do **not** commit it): `export OPENAI_API_KEY=sk-...` before `make ingest-slice` / `make dev`, or set it in the deploy env. It is already in `.env.example` as a placeholder; `config.py` reads it.
-     3. Tell me the monthly cap you want for `BUDGET_MONTHLY_CAP_GBP` (the in-app hard cap, ADR 0002) — default in `.env.example` is £10.
-   - **Done when:** a key is available in the agent's environment (then I build H1-11: embed the corpus, verify cosine neighbours, and wire H1-13 hybrid retrieval).
+     1. In the OpenAI dashboard, set a **low usage limit** on the project (e.g. $5) if you haven't — embedding the frozen 23-chunk slice costs sub-penny, so this is pure safety.
+     2. **Rotate** the key (create a fresh one, revoke the pasted one) once convenient, and give me the new value via the gitignored `.env` (never chat or commit). H1-11/H1-13 work on whatever key is in `.env`.
+     3. Optionally confirm `BUDGET_MONTHLY_CAP_GBP` (I set £5 locally; the in-app hard cap is the per-`/ask` path, H1-15/H1-27, not yet built).
+   - **Done when:** the chat-exposed key is revoked and a fresh, capped key is in the agent's `.env`.
 
 10. - [ ] **Decide the Generational Wealth Gap chart's output licence (RF source is CC BY-NC-ND 4.0)** — **P3, data-integrity/legal nuance**
     - **Why:** Surfaced by offline-defect sweep #4 (2026-06-27). The generational-wealth chart derives from Resolution Foundation data licensed **CC BY-NC-ND 4.0** (NonCommercial, NoDerivatives) — the licence is now correctly recorded in `registries/sources.yml`, both `data-licences.md` files, `chartArticles.ts`, and the pipeline. But WealthLens's blanket output licence re-publishes all chart images as **CC-BY 4.0** (commercial + derivatives OK). Re-publishing a chart built from a NC/ND source under CC-BY may exceed what the source licence permits.
@@ -116,3 +116,4 @@ _(Cleared items move here with `[completed: YYYY-MM-DD]` once Chris confirms.)_
 - [x] **Hero #1 ADR 0003 D3 — hosting decision**: chosen **Hetzner CAX21** (8GB Arm, ~£7/mo, Docker Compose, all on-box incl. self-hosted Langfuse) per the memo; ADR flipped to Accepted. Provisioning (H1-30) now waits only on the account (see open item 6). [completed: 2026-06-13]
 - [x] **Private-repo split (decision C)**: sensitive material moved to the private `Chris0Jeky/hq-private` repo, removed from the public tip, every doc/hook/skill reference repointed to `../hq-private/...`, and `.gitignore` guards added; pre-split history exposure accepted (no rewrite). Chris confirmed complete. [completed: 2026-06-13]
 - [x] **Prepare for mySociety interview (if shortlisted)** — **not shortlisted: application rejected** (Chris confirmed 2026-06-11). Recorded per the item's done-when. Interview-prep habits (daily no-AI Python practice, Exercism) remain useful for future applications — see `../hq-private/career/applications/interview-prep-general.md` (private repo). [completed: 2026-06-11]
+- [x] **Provide an `OPENAI_API_KEY` to unblock the Analyst's dense retrieval (H1-11)** — Chris provided the key 2026-06-30; **H1-11 shipped (PR #473)**: the corpus is embedded (`text-embedding-3-small`) and cosine search returns sane neighbours (live-verified on all 23 chunks). Generation set to `gpt-5.4-mini` for H1-18. Follow-up (now open item 9): rotate the chat-exposed key + set the project cap. [completed: 2026-06-30]

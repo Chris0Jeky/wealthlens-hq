@@ -2,7 +2,18 @@
 
 Last updated: 2026-06-30
 
-> **SESSION 14 (2026-06-30) — 7 PRs MERGED; main green.**
+> **SESSION 14 (2026-06-30) — 9 PRs MERGED; main green; Analyst dense retrieval SHIPPED.**
+> **#473 (H1-11):** Chris provided an `OPENAI_API_KEY`, unblocking the Analyst's dense
+> leg — `OpenAIClient.embed` (text-embedding-3-small) through the SDK seam +
+> idempotent `embed_corpus` (per-batch tx, dim-validated, cost-logged) + `search_dense`
+> (cosine over the HNSW index). **Live-verified on analyst-db:** all 23 corpus chunks
+> embedded, idempotent re-run = 0, full `make ingest-slice` leaves 0 unembedded, and 3
+> cosine spot-checks return correct neighbours (e.g. "largest capital gains" → the
+> £5m/£2m/£500k CGT bands). Generation set to **gpt-5.4-mini** for H1-18. 2-lens
+> adversarial review (4 nits, all fixed + re-verified). **This unblocks H1-13 (hybrid
+> `/ask`).** **#472:** aligned the registry's `update_pattern` to source-release cadence
+> (productivity→quarterly, tax→monthly) to match the factually-correct public pages.
+> Earlier this session:
 > Drained 6 Dependabot PRs (#465-470: fastapi + vue prod patches; @vue/test-utils,
 > vue-tsc, @tailwindcss/vite dev patches, @playwright/test dev minor) after a 6-agent
 > changelog/usage/CI review (all SAFE_MERGE); main green across all 6 workflows +
