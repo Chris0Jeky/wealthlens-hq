@@ -18,9 +18,16 @@ never supply them:
 from __future__ import annotations
 
 import sqlalchemy as sa
+from pgvector.sqlalchemy import Vector
 from sqlalchemy import Engine
 
 from wealthlens_analyst.config import Settings
+
+#: Embedding dimensionality — mirrors migration 0002_embeddings (OpenAI
+#: text-embedding-3-small, ADR 0003 D2). The vector column rejects any other
+#: length, so this is the single in-code source of truth the embed path checks
+#: against before insert.
+EMBEDDING_DIM = 1536
 
 # Mirrors the INSERTABLE columns of migration 0001_chunks. A standalone
 # MetaData (never reflected, never create_all'd) so this can be imported with no
@@ -37,6 +44,17 @@ chunks_table = sa.Table(
     sa.Column("text", sa.Text, nullable=False),
     sa.Column("token_count", sa.Integer, nullable=False),
     sa.Column("access_date", sa.Date, nullable=False),
+)
+
+# Mirrors the INSERTABLE columns of migration 0002_embeddings (chunk_id + model +
+# vector). `created_at` is a now() server default and is deliberately omitted (the
+# write path must never supply it), matching the chunks_table convention above.
+embeddings_table = sa.Table(
+    "embeddings",
+    chunks_metadata,
+    sa.Column("chunk_id", sa.BigInteger, primary_key=True),
+    sa.Column("model", sa.Text, nullable=False),
+    sa.Column("embedding", Vector(EMBEDDING_DIM), nullable=False),
 )
 
 

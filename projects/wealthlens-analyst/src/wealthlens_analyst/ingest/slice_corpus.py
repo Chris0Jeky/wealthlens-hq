@@ -67,6 +67,7 @@ from sqlalchemy import Engine
 
 from wealthlens_analyst.config import load_settings
 from wealthlens_analyst.db import chunks_table, engine_from_settings
+from wealthlens_analyst.retrieval.dense import embed_corpus
 
 logger = logging.getLogger(__name__)
 
@@ -752,6 +753,17 @@ def main() -> None:
         )
     else:
         logger.info("ingest-slice complete: %d chunk(s) in the corpus", written)
+
+    # Dense embeddings (H1-11) are GATED on OPENAI_API_KEY: without a key the corpus
+    # is still fully searchable via FTS (the lexical leg), embeddings just aren't
+    # generated, so this fails open to a usable degraded mode rather than erroring.
+    # embed_corpus is idempotent (anti-join + ON CONFLICT DO NOTHING), so it embeds
+    # exactly the chunks this or a prior run left without a vector.
+    if load_settings().openai_api_key:
+        embedded = embed_corpus()
+        logger.info("ingest-slice: %d new embedding(s) written", embedded)
+    else:
+        logger.info("ingest-slice: OPENAI_API_KEY not set - skipping embeddings (FTS-only corpus)")
 
 
 if __name__ == "__main__":
