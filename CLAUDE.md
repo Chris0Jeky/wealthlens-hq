@@ -167,6 +167,7 @@ Use these Claude skills when relevant:
 - `strategy/branding-playbook.md` — tone, platform, and public voice guidance
 - `strategy/state-of-the-project-2026-07.md` — July 2026 whole-project review: strengths + build path
 - `strategy/course-correction-2026-07.md` — July 2026 course correction: what must change (priority rule: launch bundle before new sweeps)
+- `docs/product/PRODUCT_FRONTIER_2026-07.md` — July 2026 product frontier: surface verdicts, scored 8-RFC extension portfolio (`docs/product/rfc/`), anti-portfolio (do not re-litigate), hard-problems annex
 - `vision/north-stars.md` — success metrics and milestones
 - `../hq-private/identity/principles.md` — values-based decision guidance (private repo)
 - `projects/wealthlens-dashboard/` — main product (backend, frontend, data, docs)

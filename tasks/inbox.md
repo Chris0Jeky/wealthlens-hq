@@ -25,6 +25,29 @@ Last updated: 2026-07-02
 
 Every concrete action item extracted from research. Triage into active-sprint, backlog, or done.
 
+## 2026-07-02 product frontier seeds (deep review + extension portfolio)
+
+> Source: `docs/product/PRODUCT_FRONTIER_2026-07.md` (index: philosophy,
+> surface verdicts, scored portfolio, anti-portfolio) + 8 RFC briefs in
+> `docs/product/rfc/` + hard-problems annex. Each RFC carries its own
+> half-day task seeds — NOT duplicated here. Priority rule unchanged:
+> launch bundle first; these are post-launch-bundle options.
+
+- [ ] Pick the first post-launch-bundle RFC slice (recommended: RFC-001a-d,
+  the reuse layer — downloads/cite/de-orphan/kill-dead-controls; it also
+  makes the launch post land on a site whose buttons work) (@agent, after
+  launch bundle)
+- [ ] RFC-004 is FROZEN until the simulator freeze lifts (course-correction
+  S3); revisit at the next strategy checkpoint (@agent)
+- [ ] RFC-005 is post-Analyst-URL by definition; do not start before H1-32
+  (@agent)
+- [ ] Decide: "Off By How Much?" daily perception game (held one step short
+  of the portfolio — the only repeat-visit candidate; needs analytics first;
+  see frontier §5) (@Chris, when analytics exist)
+- [ ] Optional: re-run the cut-short judge panel over
+  `docs/product/frontier-candidates-2026-07.md` (resume wf_c635fd05-1c3) —
+  nice-to-have, the portfolio stands without it (@agent)
+
 ## 2026-07-02 strategy review seeds (state-of-the-project + course-correction)
 
 > Source docs: `strategy/state-of-the-project-2026-07.md` (what is working +

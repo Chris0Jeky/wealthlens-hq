@@ -2,6 +2,13 @@
 
 Last updated: 2026-07-02
 
+> **⚑ PRODUCT FRONTIER (2026-07-02):** deep product review + extension
+> portfolio written up in `docs/product/PRODUCT_FRONTIER_2026-07.md` —
+> surface verdicts, 8 RFC briefs (`docs/product/rfc/RFC-001..008`),
+> hard-problems annex, anti-portfolio, 40-candidate idea pool. Docs only;
+> changes NO priority: launch bundle + Analyst URL still first. Seeds:
+> `tasks/inbox.md` § "2026-07-02 product frontier seeds".
+
 > **⚑ STRATEGY REVIEW (2026-07-02):** whole-project assessment written up in
 > `strategy/state-of-the-project-2026-07.md` (what is working + the build
 > path) and `strategy/course-correction-2026-07.md` (what must change:
