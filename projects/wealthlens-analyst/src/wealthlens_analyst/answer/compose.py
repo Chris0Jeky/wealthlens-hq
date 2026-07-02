@@ -30,6 +30,10 @@ _CITATION_RE = re.compile(r"\[chunk:(\d+)\]")
 #: uncited — the asymmetric twin of the fabricated-id warning below.
 _CITATION_NEAR_RE = re.compile(r"\[\s*chunk\s*[:=]?\s*\d+\s*\]", re.IGNORECASE)
 
+#: chunk_id is BIGINT in the database (migration 0001); a hallucinated id
+#: beyond this cannot exist and would crash a downstream parameter bind.
+_MAX_CHUNK_ID = 2**63 - 1
+
 #: Output budget per answer. Caps completion tokens INCLUDING the model's
 #: reasoning tokens (see client.complete), so it is deliberately generous for
 #: what is a short cited paragraph; at gpt-5.4-mini's verified $4.50/1M output
@@ -112,6 +116,12 @@ def _parse_citations(text: str, evidence_ids: set[int]) -> tuple[list[int], list
     cited: list[int] = []
     for match in _CITATION_RE.finditer(text):
         chunk_id = int(match.group(1))
+        if chunk_id > _MAX_CHUNK_ID:
+            # A hallucinated id beyond BIGINT can never be a real chunk, and
+            # binding it downstream (H1-19's DB resolution) would crash the
+            # driver — drop it here, loudly.
+            logger.warning("compose: dropping impossible cited chunk id %d (exceeds BIGINT)", chunk_id)
+            continue
         if chunk_id not in cited:
             cited.append(chunk_id)
     near_misses = len(_CITATION_NEAR_RE.findall(text)) - len(_CITATION_RE.findall(text))
@@ -121,6 +131,12 @@ def _parse_citations(text: str, evidence_ids: set[int]) -> tuple[list[int], list
             "and were not parsed (model format drift)",
             near_misses,
         )
+    if not cited:
+        # Legitimate for the mandated in-prompt refusal sentence (which cites
+        # nothing by design), but for any factual answer this is the pipeline's
+        # core failure — surface it; H1-20/H1-21 decide the serving policy on
+        # the machine-readable signal (cited_chunk_ids == []).
+        logger.warning("compose: answer parsed ZERO citations (refusal sentence, or an uncited answer)")
     fabricated = [cid for cid in cited if cid not in evidence_ids]
     if fabricated:
         logger.warning("compose: answer cites chunk ids not in the supplied evidence: %s", fabricated)

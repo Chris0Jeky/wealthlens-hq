@@ -130,7 +130,13 @@ def test_generation_cost_unknown_model_fails_loud() -> None:
 
 
 def _install_fake_openai_chat(
-    monkeypatch: pytest.MonkeyPatch, *, text: str | None, prompt_tokens: int, completion_tokens: int, usage: bool = True
+    monkeypatch: pytest.MonkeyPatch,
+    *,
+    text: str | None,
+    prompt_tokens: int,
+    completion_tokens: int,
+    usage: bool = True,
+    empty_choices: bool = False,
 ) -> dict[str, object]:
     """Install a fake `openai` module for chat completions; capture call args."""
     captured: dict[str, object] = {}
@@ -151,7 +157,7 @@ def _install_fake_openai_chat(
 
     class _Response:
         def __init__(self) -> None:
-            self.choices = [_Choice()]
+            self.choices = [] if empty_choices else [_Choice()]
             self.usage = _Usage() if usage else None
 
     class _Completions:
@@ -250,3 +256,18 @@ def test_get_client_rejects_a_configured_but_unpriced_analyst_model(monkeypatch:
     # Empty stays allowed: embedding-only flows (ingest) need no ANALYST_MODEL.
     monkeypatch.setenv("ANALYST_MODEL", "")
     assert get_client() is not None
+
+
+def test_complete_empty_choices_returns_accountable_empty_result(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Provider-side filtering can return zero choices AFTER spending; the
+    # seam must return an accountable empty result, not crash on choices[0]
+    # and lose the cost.
+    from wealthlens_analyst.llm.client import generation_cost_gbp
+
+    _install_fake_openai_chat(monkeypatch, text="x", prompt_tokens=50, completion_tokens=0, empty_choices=True)
+    client = OpenAIClient(api_key="sk-x", embedding_model="text-embedding-3-small", analyst_model="gpt-5.4-mini")
+    result = client.complete(system="s", prompt="p", max_tokens=10)
+    assert result.text == ""
+    assert result.finish_reason == "no_choices"
+    assert result.tokens_in == 50
+    assert result.cost_gbp == pytest.approx(generation_cost_gbp("gpt-5.4-mini", 50, 0))

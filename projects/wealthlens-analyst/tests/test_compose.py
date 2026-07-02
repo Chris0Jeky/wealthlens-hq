@@ -169,3 +169,25 @@ def test_citation_format_drift_is_logged_not_silently_dropped(
         answer, _ = _compose_with(monkeypatch, "strict [chunk:9118] but drifted [chunk: 9140] and [CHUNK=9118]")
     assert answer.cited_chunk_ids == [9118]
     assert any("format drift" in record.getMessage() for record in caplog.records)
+
+
+def test_impossible_chunk_id_is_dropped_loudly(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    # An id beyond BIGINT can never exist and would crash a downstream DB
+    # bind (H1-19) — dropped at parse, visibly.
+    with caplog.at_level(logging.WARNING, logger="wealthlens_analyst.answer.compose"):
+        answer, _ = _compose_with(monkeypatch, "real [chunk:9118] fake [chunk:99999999999999999999]")
+    assert answer.cited_chunk_ids == [9118]
+    assert any("BIGINT" in record.getMessage() for record in caplog.records)
+
+
+def test_zero_citation_answer_is_flagged_not_silent(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    # Legit for the mandated refusal sentence; the empty cited_chunk_ids list
+    # is the machine-readable signal H1-20/21 act on — but it must be VISIBLE.
+    with caplog.at_level(logging.WARNING, logger="wealthlens_analyst.answer.compose"):
+        answer, _ = _compose_with(monkeypatch, "The evidence does not support an answer to this question.")
+    assert answer.cited_chunk_ids == []
+    assert any("ZERO citations" in record.getMessage() for record in caplog.records)

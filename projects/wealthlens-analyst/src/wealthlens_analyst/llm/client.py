@@ -159,13 +159,27 @@ class OpenAIClient:
             # Without usage there is no honest cost figure; under-reporting
             # (e.g. assuming 0) would defeat the spend cap, so fail loud.
             raise RuntimeError("OpenAI response carried no usage block; cannot account the call (ADR 0002)")
+        cost = generation_cost_gbp(self._analyst_model, usage.prompt_tokens, usage.completion_tokens)
+        if not response.choices:
+            # Possible under provider-side filtering. The spend is real, so
+            # return an accountable empty result (callers treat empty text as
+            # a loud failure that still carries the accounting) rather than
+            # crash on choices[0] and lose the cost.
+            return CompletionResult(
+                text="",
+                model=self._analyst_model,
+                tokens_in=usage.prompt_tokens,
+                tokens_out=usage.completion_tokens,
+                cost_gbp=cost,
+                finish_reason="no_choices",
+            )
         choice = response.choices[0]
         return CompletionResult(
             text=choice.message.content or "",
             model=self._analyst_model,
             tokens_in=usage.prompt_tokens,
             tokens_out=usage.completion_tokens,
-            cost_gbp=generation_cost_gbp(self._analyst_model, usage.prompt_tokens, usage.completion_tokens),
+            cost_gbp=cost,
             finish_reason=choice.finish_reason or "",
         )
 
