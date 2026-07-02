@@ -1,6 +1,6 @@
 # Hero #1 backlog — WealthLens v2 analyst
 
-Last updated: 2026-07-02 (session 15: H1-13 hybrid /ask?debug=retrieval shipped)
+Last updated: 2026-07-02 (session 15: H1-13 hybrid /ask + H1-15 query_log accounting shipped)
 
 > Seeded by the kickoff session. Ordered; each task ≤ half a day. Work top-down:
 > a task is startable when its `deps` are done. Plan: `docs/plan/HERO1_PLAN.md`.
@@ -46,7 +46,7 @@ Local env: `docker compose up -d analyst-db` (port **15432**); use
 - [x] H1-12 (M2) Implement `retrieval/fuse_rrf.py` (k=60) over FTS + dense rank lists, deterministic, pure-Python — done when unit tests pin RRF math incl. tie + disjoint-list cases (no DB, no model). [deps: none — pure function; integration needs H1-10, H1-11] [completed: 2026-06-13, PR #407 — pure RRF fusion + 15 tests]
 - [x] H1-13 (M2) Implement `/ask?debug=retrieval`: fused top-N with per-chunk provenance + both component ranks, Pydantic response model — done when the route returns schema-valid JSON against the live local DB. [deps: H1-10, H1-11, H1-12] [completed: 2026-07-02, PR #474 — shared lifespan engine (fail-loud startup validates DB URL + provider config; pool_pre_ping) + healthz DB check (503); live-verified fusion reorders + 501/422/503 contracts; per-request embed cost logged until H1-15 persists it]
 - [ ] H1-14 (M2) Retrieval sanity-recall run on the Chris-reviewed golden subset; record results in `evals/reports/` — done when the report states top-10 recall per question with misses listed, not tuned away. [deps: H1-02, H1-13]
-- [ ] H1-15 (M2) `query_log` write path: every /ask logs tokens, latency_ms, decision — generation tokens are 0 in debug mode, but the query-embedding tokens + cost_gbp ARE recorded (debug retrieval spends one embed call; ADR 0002 meters every model call) — done when rows appear for debug queries with non-zero embed accounting and a test asserts the row shape. [deps: H1-13]
+- [x] H1-15 (M2) `query_log` write path: every /ask logs tokens, latency_ms, decision — generation tokens are 0 in debug mode, but the query-embedding tokens + cost_gbp ARE recorded (debug retrieval spends one embed call; ADR 0002 meters every model call) — done when rows appear for debug queries with non-zero embed accounting and a test asserts the row shape. [deps: H1-13] [completed: 2026-07-02, PR #475 — sha256(question) not raw text; success-path accounting failure fails the request (no unmetered spend), failure paths write an `error` row best-effort; live rows verified incl. sub-micro-pound cost at scale 8]
 
 ## M3 — reranker + citations
 
