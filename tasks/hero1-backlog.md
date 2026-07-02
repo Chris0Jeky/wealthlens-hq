@@ -1,6 +1,6 @@
 # Hero #1 backlog — WealthLens v2 analyst
 
-Last updated: 2026-07-02 (session 15: H1-13 hybrid /ask + H1-15 query_log accounting shipped)
+Last updated: 2026-07-02 (session 15: H1-13 + H1-15 + H1-18 shipped; H1-16 deferred pending COHERE_API_KEY)
 
 > Seeded by the kickoff session. Ordered; each task ≤ half a day. Work top-down:
 > a task is startable when its `deps` are done. Plan: `docs/plan/HERO1_PLAN.md`.
@@ -50,9 +50,9 @@ Local env: `docker compose up -d analyst-db` (port **15432**); use
 
 ## M3 — reranker + citations
 
-- [ ] H1-16 (M3) Implement `retrieval/rerank.py` (ADR 0003 D1: Cohere Rerank 4 Fast) behind `RERANK_ENABLED` (default OFF) — done when flag-off is byte-identical to M2 behaviour and flag-on reorders a fixture case. [deps: H1-13]
+- [ ] H1-16 (M3) Implement `retrieval/rerank.py` (ADR 0003 D1: Cohere Rerank 4 Fast) behind `RERANK_ENABLED` (default OFF) — done when flag-off is byte-identical to M2 behaviour and flag-on reorders a fixture case. [deps: H1-13] [DEFERRED 2026-07-02: COHERE_API_KEY is empty and `cohere` is not a dependency, so the flag-on leg cannot be honestly verified against the real API — shipping never-executed provider code was declined for H1-11's query half too (session 12). Needs Chris: a Cohere account/key, or accept flag-off until M3 hardening.]
 - [ ] H1-17 (M3) A/B recall: re-run H1-14 with rerank on; record both columns in the same report — done when the report shows flag-on vs flag-off side by side. [deps: H1-14, H1-16]
-- [ ] H1-18 (M3) Implement `answer/compose.py`: generation through the client seam, prompt forces claims to cite retrieved chunk ids — done when a live local query returns an answer whose citations are all in the retrieved set. [deps: H1-13]
+- [x] H1-18 (M3) Implement `answer/compose.py`: generation through the client seam, prompt forces claims to cite retrieved chunk ids — done when a live local query returns an answer whose citations are all in the retrieved set. [deps: H1-13] [completed: 2026-07-02, PR #476 — OpenAIClient.complete (gpt-5.4-mini, verified pricing, fail-loud accounting) + compose_answer (hard-constraint cited prompt, fabricated-citation loud logging); live: cited [9140,9139] ⊆ retrieved, figures verbatim vs DB]
 - [ ] H1-19 (M3) Implement `answer/citations.py`: resolve cited chunk_ids to {source, document, section/page} from the DB; strip/flag unresolvable citations — done when a fabricated chunk_id in a fixture answer is caught and the response carries resolved citations only. [deps: H1-18]
 - [ ] H1-20 (M3) Publish the /ask response JSON schema (answer | refusal | over-budget variants) + schema-validity deterministic check — done when `evals/checks/deterministic.py` validates live responses against it. [deps: H1-18, H1-19]
 
