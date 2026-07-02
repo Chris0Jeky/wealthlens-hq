@@ -98,3 +98,18 @@ def test_negative_accounting_fails_loud(field: str, value: float) -> None:
     kwargs[field] = value
     with pytest.raises(ValueError, match="non-negative"):
         query_log_row(**kwargs)  # type: ignore[arg-type]
+
+
+@pytest.mark.parametrize("bad_cost", [float("nan"), float("inf"), float("-inf")])
+def test_non_finite_cost_fails_loud(bad_cost: float) -> None:
+    # nan compares False to everything, so a bare `< 0` guard would pass it
+    # through to an opaque InvalidOperation in quantize; inf cannot be stored.
+    with pytest.raises(ValueError, match="finite"):
+        query_log_row(
+            question="q",
+            decision=QueryDecision.ANSWERED,
+            tokens_in=0,
+            tokens_out=0,
+            cost_gbp=bad_cost,
+            latency_ms=0,
+        )

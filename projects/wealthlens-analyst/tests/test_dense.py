@@ -49,3 +49,11 @@ def test_search_dense_by_vector_zero_limit_short_circuits_without_engine(monkeyp
 
     monkeypatch.setattr(dense, "engine_from_settings", _boom)
     assert search_dense_by_vector([0.1], limit=0) == []
+
+
+def test_search_dense_by_vector_wrong_dimension_fails_loud_before_the_db() -> None:
+    # A misconfigured embedding model must be a clear ValueError, not a
+    # database-level pgvector error (query-path counterpart of embed_corpus's
+    # dim validation).
+    with pytest.raises(ValueError, match="dims"):
+        search_dense_by_vector([0.1, 0.2, 0.3], limit=5)

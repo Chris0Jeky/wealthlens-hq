@@ -19,6 +19,7 @@ The H1-15 write path lives here: `query_log_row` (pure — the row shape) and
 from __future__ import annotations
 
 import hashlib
+import math
 from decimal import ROUND_HALF_EVEN, Decimal
 from enum import StrEnum
 
@@ -69,8 +70,12 @@ def query_log_row(
     """
     if tokens_in < 0 or tokens_out < 0:
         raise ValueError(f"token counts must be non-negative, got in={tokens_in} out={tokens_out}")
-    if cost_gbp < 0:
-        raise ValueError(f"cost_gbp must be non-negative, got {cost_gbp}")
+    # isfinite, not just `< 0`: nan compares False to everything (so it would
+    # slip past a sign check and blow up later as an opaque InvalidOperation
+    # in quantize), and inf can't be stored. Mirrors config._parse_budget_cap,
+    # the other seam guarding the same cap arithmetic (ADR 0002).
+    if not math.isfinite(cost_gbp) or cost_gbp < 0:
+        raise ValueError(f"cost_gbp must be a non-negative, finite number, got {cost_gbp}")
     if latency_ms < 0:
         raise ValueError(f"latency_ms must be non-negative, got {latency_ms}")
     return {

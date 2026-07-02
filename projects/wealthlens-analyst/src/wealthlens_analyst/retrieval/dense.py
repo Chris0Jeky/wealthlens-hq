@@ -78,6 +78,13 @@ def search_dense_by_vector(query_vec: list[float], *, limit: int = 50, engine: E
         raise ValueError(f"search_dense_by_vector limit must be non-negative, got {limit}")
     if limit == 0:
         return []
+    # Fail fast on a wrong-dimension vector (a misconfigured embedding model),
+    # with a clear error instead of a database-level pgvector failure — the
+    # query-path counterpart of embed_corpus's per-vector dim validation.
+    if len(query_vec) != EMBEDDING_DIM:
+        raise ValueError(
+            f"query_vec has {len(query_vec)} dims, expected {EMBEDDING_DIM} (embedding model does not match migration 0002)"
+        )
     created = engine is None
     if engine is None:
         engine = engine_from_settings(load_settings())
