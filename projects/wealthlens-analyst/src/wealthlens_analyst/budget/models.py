@@ -43,9 +43,11 @@ class QueryDecision(StrEnum):
     ERROR = "error"
 
 
-#: query_log.cost_gbp is Numeric(12, 8); quantising here (banker's rounding,
-#: matching Postgres' own numeric rounding) makes the stored value explicit
-#: instead of relying on driver-side float coercion.
+#: query_log.cost_gbp is Numeric(12, 8). Quantising app-side makes the stored
+#: value exact and deterministic instead of relying on implicit driver-side
+#: float coercion. The mode is ROUND_HALF_EVEN (Decimal's default); note that
+#: Postgres itself rounds numeric halves AWAY FROM ZERO, which is one more
+#: reason not to leave the rounding to the database.
 _COST_QUANTUM = Decimal("0.00000001")
 
 

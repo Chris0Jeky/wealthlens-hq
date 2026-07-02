@@ -29,7 +29,7 @@ import sqlalchemy as sa
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import Engine
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import OperationalError, SQLAlchemyError
 
 from wealthlens_analyst.budget.models import QueryDecision, record_query
 from wealthlens_analyst.llm.client import EmbeddingResult, get_client
@@ -188,8 +188,12 @@ def ask(
     latency — written for served requests AND failures; a success whose row
     cannot be written is failed (500) rather than served unmetered. Requests
     rejected by validation (422) never reach the handler and log nothing.
-    Plain mode is 501 until composition (H1-18) lands — an explicit contract,
-    not a stub crash.
+    latency_ms measures handler entry to the point of outcome (just before
+    the accounting write on success; at the failure otherwise). Plain mode is
+    501 until composition (H1-18) lands — an explicit contract, not a stub
+    crash. NOTE for H1-16/H1-18: new pipeline stages (rerank, compose) must
+    run INSIDE the accounted try-block below, so their failures and spend
+    are recorded like the existing legs'.
     """
     if debug != "retrieval":
         # No query_log row: nothing ran and nothing was spent. Plain-mode
@@ -215,7 +219,16 @@ def ask(
         dense = search_dense_by_vector(embedded.vectors[0], limit=_PER_RETRIEVER_LIMIT, engine=engine)
     except SQLAlchemyError as exc:
         logger.warning("ask: retrieval backend unavailable: %s", exc)
-        _record_outcome_best_effort(engine, request.question, QueryDecision.ERROR, embedded, started)
+        # A connection-level failure (OperationalError) dooms the accounting
+        # write too — same database — so attempting it would only add a second
+        # full connect-timeout cycle to the caller's wait for the 503.
+        # Statement-level failures keep the connection alive and still record.
+        # Accepted trade: on a rare flaky-connection blip, at most one embed
+        # call's spend goes unrecorded (and is logged below instead).
+        if isinstance(exc, OperationalError):
+            logger.warning("ask: skipping doomed error-row write on a connection-level failure")
+        else:
+            _record_outcome_best_effort(engine, request.question, QueryDecision.ERROR, embedded, started)
         raise HTTPException(status_code=503, detail="retrieval backend unavailable") from exc
     except Exception:
         _record_outcome_best_effort(engine, request.question, QueryDecision.ERROR, embedded, started)

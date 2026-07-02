@@ -6,8 +6,8 @@ instrumentation is attached here when H1-28 lands.
 
 The application owns ONE shared SQLAlchemy engine (created at startup,
 disposed at shutdown) so the request path never builds a connection pool
-per query — search_fts/search_dense receive it via the get_engine
-dependency in routes.py (H1-13).
+per query — the retrieval legs and the query_log write receive it via the
+get_engine dependency in routes.py (H1-13/H1-15).
 
 Run locally with `make dev` (uvicorn, 127.0.0.1:8100).
 """
@@ -39,8 +39,8 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
     lazily, so /healthz is the first thing that actually touches the database.
     """
     # Uvicorn configures only its own loggers, so without this the package's
-    # INFO logs (notably search_dense's per-request embedding cost — visible
-    # cost is a product goal) are silently dropped under `make dev`.
+    # INFO logs (embedding-cost lines from retrieval/ingest — visible cost is
+    # a product goal) are silently dropped under `make dev`.
     # basicConfig is a no-op when the deployment already configured the root
     # logger, so this never overrides real logging config.
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")

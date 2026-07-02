@@ -113,3 +113,24 @@ def test_non_finite_cost_fails_loud(bad_cost: float) -> None:
             cost_gbp=bad_cost,
             latency_ms=0,
         )
+
+
+def test_cost_is_quantised_to_scale_8_with_bankers_rounding() -> None:
+    # Inputs that REQUIRE quantisation (exact halves at the 9th decimal), so
+    # deleting the quantize call, changing the rounding mode, or mis-scaling
+    # the quantum each break at least one assertion. ROUND_HALF_EVEN:
+    # 1.5e-8 rounds UP to the even digit 2; 2.5e-8 rounds DOWN to the same
+    # even digit 2 (half-up would give 3).
+    def cost_of(value: float) -> Decimal:
+        return query_log_row(
+            question="q",
+            decision=QueryDecision.ANSWERED,
+            tokens_in=0,
+            tokens_out=0,
+            cost_gbp=value,
+            latency_ms=0,
+        )["cost_gbp"]  # type: ignore[return-value]
+
+    assert cost_of(1.5e-8) == Decimal("0.00000002")
+    assert cost_of(2.5e-8) == Decimal("0.00000002")
+    assert cost_of(1.5e-8).as_tuple().exponent == -8

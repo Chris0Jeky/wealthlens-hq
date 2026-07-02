@@ -17,7 +17,7 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from sqlalchemy import Engine
-from sqlalchemy.exc import OperationalError
+from sqlalchemy.exc import DatabaseError, OperationalError
 
 import wealthlens_analyst.api.routes as routes
 from wealthlens_analyst.api.app import create_app
@@ -319,9 +319,12 @@ def test_ask_question_with_nul_byte_is_422_not_a_db_error(harness: _Harness) -> 
     assert harness.calls == {}
 
 
-def test_ask_maps_database_failure_to_503_and_records_an_error_row(
+def test_ask_connection_failure_is_503_and_skips_the_doomed_error_row(
     harness: _Harness, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    # OperationalError = connection-level: the accounting write would hit the
+    # same dead database, so the route must not stack a second connect-timeout
+    # onto the caller's wait for the 503.
     def broken_fts(query: str, *, limit: int, engine: Any) -> list[ChunkHit]:
         raise OperationalError("SELECT ...", {}, Exception("connection refused"))
 
@@ -331,7 +334,44 @@ def test_ask_maps_database_failure_to_503_and_records_an_error_row(
     assert response.json()["detail"] == "retrieval backend unavailable"
     # The free leg failed first, so the paid embedding call never happened...
     assert "embed" not in harness.calls
-    # ...and the failure was still accounted: an `error` row with zero spend.
+    # ...and the doomed write was skipped (nothing was spent to lose).
+    assert harness.recorded == []
+
+
+def test_ask_statement_failure_after_embed_records_error_row_with_real_spend(
+    harness: _Harness, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # The dense leg dies AFTER the paid embed, with the connection still
+    # alive (statement-level DatabaseError, not OperationalError): the error
+    # row must carry the REAL spend — the invariant the `embedded` threading
+    # in the route exists for.
+    def broken_dense(query_vec: list[float], *, limit: int, engine: Any) -> list[ChunkHit]:
+        raise DatabaseError("SELECT ...", {}, Exception("statement failed"))
+
+    monkeypatch.setattr(routes, "search_dense_by_vector", broken_dense)
+    response = harness.client.post("/ask?debug=retrieval", json={"question": "anything"})
+    assert response.status_code == 503
+    assert len(harness.recorded) == 1
+    row = harness.recorded[0]
+    assert row["decision"] == QueryDecision.ERROR
+    assert row["tokens_in"] == _EMBED_TOKENS
+    assert row["cost_gbp"] == _EMBED_COST_GBP
+
+
+def test_ask_provider_failure_records_a_zero_spend_error_row_before_the_500(
+    harness: _Harness, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # The embed itself explodes (provider outage): nothing was spent, an
+    # `error` row is still recorded, and the exception propagates (500 —
+    # provider error schemas land in H1-20).
+    class _BrokenClient:
+        def embed(self, texts: list[str]) -> EmbeddingResult:
+            raise RuntimeError("provider exploded")
+
+    monkeypatch.setattr(routes, "get_client", lambda: _BrokenClient())
+    client = TestClient(harness.app, raise_server_exceptions=False)
+    response = client.post("/ask?debug=retrieval", json={"question": "anything"})
+    assert response.status_code == 500
     assert len(harness.recorded) == 1
     row = harness.recorded[0]
     assert row["decision"] == QueryDecision.ERROR
@@ -340,15 +380,16 @@ def test_ask_maps_database_failure_to_503_and_records_an_error_row(
 
 
 def test_ask_error_row_write_failure_does_not_mask_the_503(harness: _Harness, monkeypatch: pytest.MonkeyPatch) -> None:
-    # Realistic double failure: the same outage that broke retrieval also
-    # breaks the accounting insert. The caller must still see the 503.
-    def broken_fts(query: str, *, limit: int, engine: Any) -> list[ChunkHit]:
-        raise OperationalError("SELECT ...", {}, Exception("connection refused"))
+    # Double failure with the connection still alive: the dense statement
+    # fails AND the accounting insert fails. The caller must still see the
+    # 503, not the accounting exception.
+    def broken_dense(query_vec: list[float], *, limit: int, engine: Any) -> list[ChunkHit]:
+        raise DatabaseError("SELECT ...", {}, Exception("statement failed"))
 
     def broken_record(engine: Any, **kwargs: Any) -> None:
-        raise OperationalError("INSERT ...", {}, Exception("still down"))
+        raise OperationalError("INSERT ...", {}, Exception("write failed"))
 
-    monkeypatch.setattr(routes, "search_fts", broken_fts)
+    monkeypatch.setattr(routes, "search_dense_by_vector", broken_dense)
     monkeypatch.setattr(routes, "record_query", broken_record)
     response = harness.client.post("/ask?debug=retrieval", json={"question": "anything"})
     assert response.status_code == 503
