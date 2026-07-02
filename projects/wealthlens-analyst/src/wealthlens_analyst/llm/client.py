@@ -31,6 +31,10 @@ class CompletionResult:
     tokens_in: int
     tokens_out: int
     cost_gbp: float
+    #: Provider stop reason ("stop", "length", ...). Callers must treat
+    #: "length" as a truncated answer, not a complete one — a cut-off figure
+    #: is worse than no answer for a statistics product.
+    finish_reason: str = ""
 
 
 @dataclass(frozen=True)
@@ -54,6 +58,13 @@ _EMBEDDING_USD_PER_1M_TOKENS = {
     "text-embedding-3-small": 0.02,
     "text-embedding-3-large": 0.13,
 }
+# Generation list prices, (input, output) USD per 1M tokens. Verified 2026-07-02
+# at developers.openai.com/api/docs/pricing (gpt-5.4-mini: $0.75 in / $4.50 out).
+# Output tokens INCLUDE any reasoning tokens the model spends — OpenAI bills
+# them as completion tokens, so usage.completion_tokens is the billable count.
+_GENERATION_USD_PER_1M_TOKENS = {
+    "gpt-5.4-mini": (0.75, 4.50),
+}
 _USD_TO_GBP = 0.79  # approximate, for internal cost estimation only (not a published stat)
 
 
@@ -69,6 +80,23 @@ def embedding_cost_gbp(model: str, tokens_in: int) -> float:
             "_EMBEDDING_USD_PER_1M_TOKENS so cost is never silently under-reported"
         )
     usd = tokens_in / 1_000_000 * _EMBEDDING_USD_PER_1M_TOKENS[model]
+    return usd * _USD_TO_GBP
+
+
+def generation_cost_gbp(model: str, tokens_in: int, tokens_out: int) -> float:
+    """GBP cost of one generation call. Fails loud on an unknown model.
+
+    Same rationale as embedding_cost_gbp: the hard cap (ADR 0002) sums these
+    costs, so a silently-zero cost for an unpriced model would let spend run
+    unbounded.
+    """
+    if model not in _GENERATION_USD_PER_1M_TOKENS:
+        raise ValueError(
+            f"no price configured for generation model {model!r}; add it to "
+            "_GENERATION_USD_PER_1M_TOKENS so cost is never silently under-reported"
+        )
+    price_in, price_out = _GENERATION_USD_PER_1M_TOKENS[model]
+    usd = tokens_in / 1_000_000 * price_in + tokens_out / 1_000_000 * price_out
     return usd * _USD_TO_GBP
 
 
@@ -101,8 +129,59 @@ class OpenAIClient:
         self._analyst_model = analyst_model
 
     def complete(self, *, system: str, prompt: str, max_tokens: int) -> CompletionResult:
-        """Implemented in H1-18 (lazy `import openai` for chat completions lives here)."""
-        raise NotImplementedError("H1-18: OpenAI generation (gpt-5.4-mini) not yet implemented")
+        """Run one chat completion with the configured analyst model.
+
+        ``max_tokens`` maps to the API's ``max_completion_tokens`` (the
+        parameter current OpenAI models require), which caps output INCLUDING
+        any reasoning tokens the model spends — callers should budget for
+        that. Cost is computed from the returned usage via generation_cost_gbp
+        (fail-loud on an unpriced model), never estimated locally.
+        """
+        if not self._analyst_model:
+            raise RuntimeError("ANALYST_MODEL is not configured (see .env.example); cannot run generation")
+        # Pre-flight the price table BEFORE the network call: an unpriced
+        # model must be a zero-spend loud failure, not money burned and then
+        # found to be unaccountable (ADR 0002).
+        generation_cost_gbp(self._analyst_model, 0, 0)
+        import openai
+
+        client = openai.OpenAI(api_key=self._api_key)
+        response = client.chat.completions.create(
+            model=self._analyst_model,
+            messages=[
+                {"role": "system", "content": system},
+                {"role": "user", "content": prompt},
+            ],
+            max_completion_tokens=max_tokens,
+        )
+        usage = response.usage
+        if usage is None:
+            # Without usage there is no honest cost figure; under-reporting
+            # (e.g. assuming 0) would defeat the spend cap, so fail loud.
+            raise RuntimeError("OpenAI response carried no usage block; cannot account the call (ADR 0002)")
+        cost = generation_cost_gbp(self._analyst_model, usage.prompt_tokens, usage.completion_tokens)
+        if not response.choices:
+            # Possible under provider-side filtering. The spend is real, so
+            # return an accountable empty result (callers treat empty text as
+            # a loud failure that still carries the accounting) rather than
+            # crash on choices[0] and lose the cost.
+            return CompletionResult(
+                text="",
+                model=self._analyst_model,
+                tokens_in=usage.prompt_tokens,
+                tokens_out=usage.completion_tokens,
+                cost_gbp=cost,
+                finish_reason="no_choices",
+            )
+        choice = response.choices[0]
+        return CompletionResult(
+            text=choice.message.content or "",
+            model=self._analyst_model,
+            tokens_in=usage.prompt_tokens,
+            tokens_out=usage.completion_tokens,
+            cost_gbp=cost,
+            finish_reason=choice.finish_reason or "",
+        )
 
     def embed(self, texts: list[str]) -> EmbeddingResult:
         """Embed ``texts`` with the configured embedding model (one batched call).
@@ -136,6 +215,12 @@ def get_client() -> LLMClient:
         raise RuntimeError("OPENAI_API_KEY is not configured (see .env.example); cannot reach the model provider")
     if not settings.embedding_model:
         raise RuntimeError("EMBEDDING_MODEL is not configured (see .env.example)")
+    if settings.analyst_model:
+        # A CONFIGURED-but-unpriced generation model should kill the app at
+        # startup (the api lifespan calls get_client), not burn unaccountable
+        # spend on the first /ask. Empty stays allowed: embedding-only flows
+        # (ingest) do not need ANALYST_MODEL, and complete() fail-louds on it.
+        generation_cost_gbp(settings.analyst_model, 0, 0)
     return OpenAIClient(
         api_key=settings.openai_api_key,
         embedding_model=settings.embedding_model,

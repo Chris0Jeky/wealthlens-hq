@@ -23,7 +23,7 @@ dependencies = [
     # generation (gpt-5.4-mini — Chris's provider call). Used only inside
     # llm/client.py (the SDK seam, ADR 0002). (The `anthropic` package was dropped
     # when generation moved to OpenAI; re-add it if the seam ever serves Anthropic.)
-    "openai>=1.40.0",
+    "openai>=1.45.0",  # max_completion_tokens needs >=1.45 (chat.completions); verified against 2.44
 ]
 
 [project.optional-dependencies]

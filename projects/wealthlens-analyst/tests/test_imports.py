@@ -50,15 +50,27 @@ def test_app_factory_builds() -> None:
 def test_pending_stubs_raise_not_implemented() -> None:
     """Pending seams fail loudly, not silently (repo rule: no silent failures).
 
-    fuse_rrf (H1-12) and embeddings + get_client (H1-11) are now implemented and
-    pinned by their own tests (test_fuse_rrf.py, test_llm_client.py, test_dense.py).
-    The remaining pending seam is generation, which lands in H1-18.
+    Retrieval (H1-10/11/12), ingestion (H1-09), the debug route + accounting
+    (H1-13/15) and generation (H1-18) are implemented and pinned by their own
+    test files. EVERY remaining pending seam is pinned here, so silently
+    gutting a stub (e.g. an accidental `return []`) cannot survive the suite:
+    the reranker (H1-16, deferred until a COHERE_API_KEY exists), citation
+    resolution (H1-19), abstention (H1-21) and budget accounting (H1-27).
     """
-    from wealthlens_analyst.llm.client import OpenAIClient
+    from wealthlens_analyst.answer.abstain import evaluate_evidence
+    from wealthlens_analyst.answer.citations import resolve_citations
+    from wealthlens_analyst.answer.compose import ComposedAnswer
+    from wealthlens_analyst.budget.models import current_spend_gbp
+    from wealthlens_analyst.retrieval.rerank import rerank
 
-    client = OpenAIClient(api_key="test", embedding_model="text-embedding-3-small", analyst_model="gpt-5.4-mini")
-    with pytest.raises(NotImplementedError, match="H1-18"):
-        client.complete(system="s", prompt="p", max_tokens=10)
+    with pytest.raises(NotImplementedError, match="H1-16"):
+        rerank("q", [], top_k=1)
+    with pytest.raises(NotImplementedError, match="H1-19"):
+        resolve_citations(ComposedAnswer(text="x"))
+    with pytest.raises(NotImplementedError, match="H1-21"):
+        evaluate_evidence("q", [])
+    with pytest.raises(NotImplementedError, match="H1-27"):
+        current_spend_gbp()
 
 
 def test_budget_config_fail_closed_default(monkeypatch: pytest.MonkeyPatch) -> None:

@@ -7,7 +7,10 @@
                         generation. Every debug request writes a query_log
                         accounting row (H1-15): hashed question, decision,
                         embed tokens + cost, latency. Plain mode (cited
-                        answer | refusal) lands in H1-18/H1-21 and until then
+                        answer | refusal): composition exists (H1-18,
+                        answer/compose.py) but is not wired here until
+                        citation resolution + response schemas + abstention
+                        land (H1-19/H1-20/H1-21) — until then plain mode
                         returns 501 (and writes no row — nothing runs).
 - GET  /healthz       — liveness: app up, DB reachable.
 - GET  /metrics/data  — JSON for the public metrics page: p50/p95 latency and
@@ -200,7 +203,10 @@ def ask(
         # logging is defined with composition (H1-18/H1-20).
         raise HTTPException(
             status_code=501,
-            detail="answer composition is not implemented yet (H1-18); use POST /ask?debug=retrieval",
+            detail=(
+                "plain mode is not wired yet (H1-19/H1-20 citations + schemas, H1-21 abstention); "
+                "use POST /ask?debug=retrieval"
+            ),
         )
     started = time.perf_counter()
     embedded: EmbeddingResult | None = None

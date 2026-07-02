@@ -195,10 +195,10 @@ def test_ask_fails_the_request_when_success_accounting_cannot_be_written(
     assert response.json()["detail"] == "query accounting failed"
 
 
-def test_ask_without_debug_is_501_until_composition_lands(harness: _Harness) -> None:
+def test_ask_without_debug_is_501_until_plain_mode_is_wired(harness: _Harness) -> None:
     response = harness.client.post("/ask", json={"question": "anything"})
     assert response.status_code == 501
-    assert "H1-18" in response.json()["detail"]
+    assert "debug=retrieval" in response.json()["detail"]
     # Neither retriever ran: plain mode must not spend before it can answer.
     assert harness.calls == {}
     # And nothing ran -> nothing to account: no query_log row.
