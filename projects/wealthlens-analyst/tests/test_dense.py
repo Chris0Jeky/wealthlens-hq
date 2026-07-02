@@ -11,7 +11,7 @@ from __future__ import annotations
 import pytest
 
 import wealthlens_analyst.retrieval.dense as dense
-from wealthlens_analyst.retrieval.dense import embed_corpus, search_dense
+from wealthlens_analyst.retrieval.dense import embed_corpus, search_dense, search_dense_by_vector
 
 
 def test_search_dense_negative_limit_fails_loud() -> None:
@@ -35,3 +35,17 @@ def test_embed_corpus_non_positive_batch_size_fails_loud() -> None:
         embed_corpus(batch_size=0)
     with pytest.raises(ValueError, match="batch_size"):
         embed_corpus(batch_size=-5)
+
+
+def test_search_dense_by_vector_negative_limit_fails_loud() -> None:
+    with pytest.raises(ValueError, match="non-negative"):
+        search_dense_by_vector([0.1], limit=-1)
+
+
+def test_search_dense_by_vector_zero_limit_short_circuits_without_engine(monkeypatch: pytest.MonkeyPatch) -> None:
+    # limit=0 must return [] BEFORE building an engine (no DB in CI).
+    def _boom(settings: object) -> object:
+        raise AssertionError("engine_from_settings must not be called when limit == 0")
+
+    monkeypatch.setattr(dense, "engine_from_settings", _boom)
+    assert search_dense_by_vector([0.1], limit=0) == []

@@ -62,16 +62,45 @@ _DENSE_SQL = sa.text(
 ).bindparams(sa.bindparam("query_vec", type_=Vector(EMBEDDING_DIM)))
 
 
+def search_dense_by_vector(query_vec: list[float], *, limit: int = 50, engine: Engine | None = None) -> list[ChunkHit]:
+    """Cosine-search the embeddings table with an ALREADY-EMBEDDED query vector.
+
+    The pure-DB half of dense retrieval: no model call, no spend. Callers who
+    need per-request accounting (the /ask path, H1-15) embed through the client
+    seam themselves and pass the vector here; `search_dense` below remains the
+    one-call convenience for CLI/spot-check use. score = 1 - cosine_distance
+    (higher is better); equal scores break on chunk_id for determinism (a stable
+    input to RRF fusion, H1-12). A negative `limit` is rejected (fail-loud,
+    matching search_fts); `limit=0` returns []. `engine` defaults to one built
+    from the environment and disposed after use (it owns its pool).
+    """
+    if limit < 0:
+        raise ValueError(f"search_dense_by_vector limit must be non-negative, got {limit}")
+    if limit == 0:
+        return []
+    created = engine is None
+    if engine is None:
+        engine = engine_from_settings(load_settings())
+    try:
+        with engine.connect() as conn:
+            rows = conn.execute(_DENSE_SQL, {"query_vec": query_vec, "limit": limit}).all()
+    finally:
+        if created:
+            engine.dispose()
+    return _hits_from_rows(rows)
+
+
 def search_dense(query: str, *, limit: int = 50, engine: Engine | None = None) -> list[ChunkHit]:
     """Return the top `limit` chunks by cosine similarity to `query`, best first.
 
-    Embeds the query through the client seam, then cosine-searches the embeddings
-    table (HNSW). score = 1 - cosine_distance (higher is better); equal scores break
-    on chunk_id for determinism (a stable input to RRF fusion, H1-12). A negative
-    `limit` is rejected (fail-loud, matching search_fts); `limit=0` returns [] without
-    making an embedding call. `engine` defaults to one built from the environment and
-    disposed after use (it owns its pool); request-path callers pass a shared engine
-    (wired in H1-13) rather than building one per query.
+    Embeds the query through the client seam, then delegates the cosine search
+    to `search_dense_by_vector`. A negative `limit` is rejected (fail-loud,
+    matching search_fts); `limit=0` returns [] without making an embedding call.
+    `engine` defaults to one built from the environment and disposed after use
+    (it owns its pool); callers pass a shared engine rather than building one
+    per query. The embedding's accounting (model, tokens, cost) is logged here
+    (visible cost is a product goal); the /ask request path instead embeds
+    directly and persists the accounting to query_log (H1-15).
     """
     if limit < 0:
         raise ValueError(f"search_dense limit must be non-negative, got {limit}")
@@ -86,23 +115,16 @@ def search_dense(query: str, *, limit: int = 50, engine: Engine | None = None) -
         engine = engine_from_settings(load_settings())
     try:
         embedded = get_client().embed([query])
-        # Visible cost is a product goal (and ADR 0002: every model call is
-        # metered): this is the request path's ONE paid call, so its accounting
-        # is logged here — mirroring embed_corpus — until H1-15 persists it to
-        # query_log and H1-27 enforces the cap.
         logger.info(
             "search_dense: query embedding %s tokens_in=%d est. cost GBP %.8f",
             embedded.model,
             embedded.tokens_in,
             embedded.cost_gbp,
         )
-        query_vec = embedded.vectors[0]
-        with engine.connect() as conn:
-            rows = conn.execute(_DENSE_SQL, {"query_vec": query_vec, "limit": limit}).all()
+        return search_dense_by_vector(embedded.vectors[0], limit=limit, engine=engine)
     finally:
         if created:
             engine.dispose()
-    return _hits_from_rows(rows)
 
 
 def embed_corpus(*, batch_size: int = 64, engine: Engine | None = None) -> int:
