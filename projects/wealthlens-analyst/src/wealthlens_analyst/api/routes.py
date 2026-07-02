@@ -4,8 +4,11 @@
                         ?debug=retrieval (H1-13, the M2 milestone surface) it
                         returns the RRF-fused candidate list with per-chunk
                         provenance and both component ranks, WITHOUT
-                        generation. Plain mode (cited answer | refusal) lands
-                        in H1-18/H1-21 and until then returns 501.
+                        generation. Every debug request writes a query_log
+                        accounting row (H1-15): hashed question, decision,
+                        embed tokens + cost, latency. Plain mode (cited
+                        answer | refusal) lands in H1-18/H1-21 and until then
+                        returns 501 (and writes no row — nothing runs).
 - GET  /healthz       — liveness: app up, DB reachable.
 - GET  /metrics/data  — JSON for the public metrics page: p50/p95 latency and
                         cost per query, computed from query_log (ADR 0002).
@@ -19,15 +22,18 @@ separate (a diagnostic surface, not a product answer).
 from __future__ import annotations
 
 import logging
+import time
 from typing import Annotated, Literal
 
 import sqlalchemy as sa
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import Engine
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import OperationalError, SQLAlchemyError
 
-from wealthlens_analyst.retrieval.dense import search_dense
+from wealthlens_analyst.budget.models import QueryDecision, record_query
+from wealthlens_analyst.llm.client import EmbeddingResult, get_client
+from wealthlens_analyst.retrieval.dense import search_dense_by_vector
 from wealthlens_analyst.retrieval.fts import search_fts
 from wealthlens_analyst.retrieval.fuse_rrf import fuse_rrf
 
@@ -43,6 +49,39 @@ _PER_RETRIEVER_LIMIT = 50
 #: How many fused candidates the debug surface returns. Matches the fuse_rrf
 #: default (ADR 0001); H1-14's recall report is measured against this top-N.
 _FUSED_LIMIT = 20
+
+
+def _elapsed_ms(started: float) -> int:
+    """Milliseconds since a time.perf_counter() start, rounded to int."""
+    return round((time.perf_counter() - started) * 1000)
+
+
+def _record_outcome_best_effort(
+    engine: Engine,
+    question: str,
+    decision: QueryDecision,
+    embedded: EmbeddingResult | None,
+    started: float,
+) -> None:
+    """Record a query_log row on a FAILURE path without masking the failure.
+
+    The original error is what the caller must see; if the accounting write
+    also fails (e.g. the same DB outage that broke retrieval), that is logged
+    loudly and swallowed — the opposite policy from the success path, where
+    an accounting failure fails the request (see ask()).
+    """
+    try:
+        record_query(
+            engine,
+            question=question,
+            decision=decision,
+            tokens_in=embedded.tokens_in if embedded is not None else 0,
+            tokens_out=0,
+            cost_gbp=embedded.cost_gbp if embedded is not None else 0.0,
+            latency_ms=_elapsed_ms(started),
+        )
+    except Exception:  # deliberately broad: never mask the original error
+        logger.exception("ask: could not record %s query_log row", decision.value)
 
 
 def get_engine(request: Request) -> Engine:
@@ -137,34 +176,81 @@ def ask(
 ) -> RetrievalDebugResponse:
     """Answer a question with chunk-level citations, refuse honestly, or 429.
 
-    Pipeline (pending tasks H1-15..H1-22): budget guard -> hybrid retrieval
+    Pipeline (pending tasks H1-16..H1-22): budget guard -> hybrid retrieval
     (FTS + dense, RRF-fused) -> optional rerank (flag) -> abstention gate ->
     cited composition -> citation resolution -> query_log row.
 
     H1-13 ships the retrieval half behind ?debug=retrieval: both retriever
     legs run against the shared engine, RRF fuses them (k=60, ADR 0001), and
     the response carries full provenance plus each chunk's component ranks.
-    Plain mode is 501 until composition (H1-18) lands — an explicit contract,
-    not a stub crash.
+    H1-15 adds the query_log row: hashed question, decision, the query
+    embedding's real tokens/cost (generation tokens are 0 until H1-18), and
+    latency — written for served requests AND failures; a success whose row
+    cannot be written is failed (500) rather than served unmetered. Requests
+    rejected by validation (422) never reach the handler and log nothing.
+    latency_ms measures handler entry to the point of outcome (just before
+    the accounting write on success; at the failure otherwise). Plain mode is
+    501 until composition (H1-18) lands — an explicit contract, not a stub
+    crash. NOTE for H1-16/H1-18: new pipeline stages (rerank, compose) must
+    run INSIDE the accounted try-block below, so their failures and spend
+    are recorded like the existing legs'.
     """
     if debug != "retrieval":
+        # No query_log row: nothing ran and nothing was spent. Plain-mode
+        # logging is defined with composition (H1-18/H1-20).
         raise HTTPException(
             status_code=501,
             detail="answer composition is not implemented yet (H1-18); use POST /ask?debug=retrieval",
         )
+    started = time.perf_counter()
+    embedded: EmbeddingResult | None = None
     # The legs run sequentially, FREE leg first, on purpose: if the database is
-    # down, search_fts fails before search_dense can spend on an embedding.
-    # (Concurrent legs are a latency optimisation to revisit once the budget
-    # guard, H1-27, makes an always-spend race acceptable.) A database failure
-    # is the backend's fault, not the caller's -> 503, matching /healthz;
-    # provider (embedding) failures stay 500 until H1-20 fixes error schemas.
+    # down, search_fts fails before the query embedding can spend. (Concurrent
+    # legs are a latency optimisation to revisit once the budget guard, H1-27,
+    # makes an always-spend race acceptable.) The embed happens HERE, through
+    # the client seam, rather than inside search_dense, so its accounting can
+    # be persisted to query_log (H1-15). A database failure is the backend's
+    # fault, not the caller's -> 503, matching /healthz; provider (embedding)
+    # failures stay 500 until H1-20 fixes the error schemas — both record an
+    # `error` row first (with whatever WAS spent), best-effort.
     try:
         lexical = search_fts(request.question, limit=_PER_RETRIEVER_LIMIT, engine=engine)
-        dense = search_dense(request.question, limit=_PER_RETRIEVER_LIMIT, engine=engine)
+        embedded = get_client().embed([request.question])
+        dense = search_dense_by_vector(embedded.vectors[0], limit=_PER_RETRIEVER_LIMIT, engine=engine)
     except SQLAlchemyError as exc:
         logger.warning("ask: retrieval backend unavailable: %s", exc)
+        # A connection-level failure (OperationalError) dooms the accounting
+        # write too — same database — so attempting it would only add a second
+        # full connect-timeout cycle to the caller's wait for the 503.
+        # Statement-level failures keep the connection alive and still record.
+        # Accepted trade: on a rare flaky-connection blip, at most one embed
+        # call's spend goes unrecorded (and is logged below instead).
+        if isinstance(exc, OperationalError):
+            logger.warning("ask: skipping doomed error-row write on a connection-level failure")
+        else:
+            _record_outcome_best_effort(engine, request.question, QueryDecision.ERROR, embedded, started)
         raise HTTPException(status_code=503, detail="retrieval backend unavailable") from exc
+    except Exception:
+        _record_outcome_best_effort(engine, request.question, QueryDecision.ERROR, embedded, started)
+        raise
     fused = fuse_rrf(lexical, dense, limit=_FUSED_LIMIT)
+    # Accounting is part of serving the request (ADR 0002): if the row cannot
+    # be written, fail the request rather than serve unmetered spend — a
+    # silently dropped row would systematically understate the summed cap
+    # input the budget guard (H1-27) will enforce against.
+    try:
+        record_query(
+            engine,
+            question=request.question,
+            decision=QueryDecision.ANSWERED,
+            tokens_in=embedded.tokens_in,
+            tokens_out=0,  # no generation in debug mode (H1-18)
+            cost_gbp=embedded.cost_gbp,
+            latency_ms=_elapsed_ms(started),
+        )
+    except SQLAlchemyError as exc:
+        logger.error("ask: query_log write failed after successful retrieval: %s", exc)
+        raise HTTPException(status_code=500, detail="query accounting failed") from exc
     # ChunkHit.rank is the 1-based position each retriever assigned (fts.py's
     # _hits_from_rows); fuse_rrf overwrites rank/score on ITS copies but the
     # raw input lists still hold the component ranks the response surfaces.

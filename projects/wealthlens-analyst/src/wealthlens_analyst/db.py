@@ -57,6 +57,26 @@ embeddings_table = sa.Table(
     sa.Column("embedding", Vector(EMBEDDING_DIM), nullable=False),
 )
 
+# Mirrors the INSERTABLE columns of migration 0004_query_log (per-request
+# accounting, ADR 0002). Server-managed `query_id` (Identity) and `asked_at`
+# (now() default) are deliberately omitted, matching the convention above.
+# `question_sha` is a hash, never the raw question text (the migration's
+# privacy rationale: the metrics endpoint is public and a query log is user
+# data). `decision` values come from budget.models.QueryDecision; the DDL's
+# CHECK constraint keeps the DB honest if code and schema ever drift.
+query_log_table = sa.Table(
+    "query_log",
+    chunks_metadata,
+    sa.Column("question_sha", sa.Text, nullable=False),
+    sa.Column("decision", sa.Text, nullable=False),
+    sa.Column("gate_signal", sa.Double),
+    sa.Column("tokens_in", sa.Integer, nullable=False),
+    sa.Column("tokens_out", sa.Integer, nullable=False),
+    sa.Column("cost_gbp", sa.Numeric(12, 8), nullable=False),
+    sa.Column("latency_ms", sa.Integer, nullable=False),
+    sa.Column("rerank_used", sa.Boolean, nullable=False),
+)
+
 
 def engine_from_settings(settings: Settings) -> Engine:
     """Build a SQLAlchemy engine from the configured ``DATABASE_URL``.
