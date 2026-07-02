@@ -142,6 +142,7 @@ def _install_fake_openai_chat(
     class _Choice:
         def __init__(self) -> None:
             self.message = _Message()
+            self.finish_reason = "stop"
 
     class _Usage:
         def __init__(self) -> None:
@@ -219,3 +220,33 @@ def test_complete_without_analyst_model_fails_loud() -> None:
     client = OpenAIClient(api_key="sk-x", embedding_model="text-embedding-3-small", analyst_model="")
     with pytest.raises(RuntimeError, match="ANALYST_MODEL"):
         client.complete(system="s", prompt="p", max_tokens=10)
+
+
+def test_complete_unpriced_model_fails_loud_before_any_spend(monkeypatch: pytest.MonkeyPatch) -> None:
+    # The pre-flight must fire BEFORE the network call: a misconfigured model
+    # is a zero-spend loud failure, never money burned then unaccountable.
+    captured = _install_fake_openai_chat(monkeypatch, text="x", prompt_tokens=1, completion_tokens=1)
+    client = OpenAIClient(api_key="sk-x", embedding_model="text-embedding-3-small", analyst_model="gpt-99-imaginary")
+    with pytest.raises(ValueError, match="no price configured"):
+        client.complete(system="s", prompt="p", max_tokens=10)
+    # The fake SDK captures every create() call; none happened.
+    assert "model" not in captured
+
+
+def test_complete_surfaces_finish_reason(monkeypatch: pytest.MonkeyPatch) -> None:
+    _install_fake_openai_chat(monkeypatch, text="short", prompt_tokens=10, completion_tokens=5)
+    client = OpenAIClient(api_key="sk-x", embedding_model="text-embedding-3-small", analyst_model="gpt-5.4-mini")
+    assert client.complete(system="s", prompt="p", max_tokens=10).finish_reason == "stop"
+
+
+def test_get_client_rejects_a_configured_but_unpriced_analyst_model(monkeypatch: pytest.MonkeyPatch) -> None:
+    # A deployment with a typo'd ANALYST_MODEL must die at startup (the api
+    # lifespan calls get_client), not on the first paid /ask.
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+    monkeypatch.setenv("EMBEDDING_MODEL", "text-embedding-3-small")
+    monkeypatch.setenv("ANALYST_MODEL", "gpt-99-imaginary")
+    with pytest.raises(ValueError, match="no price configured"):
+        get_client()
+    # Empty stays allowed: embedding-only flows (ingest) need no ANALYST_MODEL.
+    monkeypatch.setenv("ANALYST_MODEL", "")
+    assert get_client() is not None

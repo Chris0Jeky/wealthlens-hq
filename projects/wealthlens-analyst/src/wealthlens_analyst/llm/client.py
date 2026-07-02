@@ -31,6 +31,10 @@ class CompletionResult:
     tokens_in: int
     tokens_out: int
     cost_gbp: float
+    #: Provider stop reason ("stop", "length", ...). Callers must treat
+    #: "length" as a truncated answer, not a complete one — a cut-off figure
+    #: is worse than no answer for a statistics product.
+    finish_reason: str = ""
 
 
 @dataclass(frozen=True)
@@ -135,6 +139,10 @@ class OpenAIClient:
         """
         if not self._analyst_model:
             raise RuntimeError("ANALYST_MODEL is not configured (see .env.example); cannot run generation")
+        # Pre-flight the price table BEFORE the network call: an unpriced
+        # model must be a zero-spend loud failure, not money burned and then
+        # found to be unaccountable (ADR 0002).
+        generation_cost_gbp(self._analyst_model, 0, 0)
         import openai
 
         client = openai.OpenAI(api_key=self._api_key)
@@ -151,13 +159,14 @@ class OpenAIClient:
             # Without usage there is no honest cost figure; under-reporting
             # (e.g. assuming 0) would defeat the spend cap, so fail loud.
             raise RuntimeError("OpenAI response carried no usage block; cannot account the call (ADR 0002)")
-        text = response.choices[0].message.content or ""
+        choice = response.choices[0]
         return CompletionResult(
-            text=text,
+            text=choice.message.content or "",
             model=self._analyst_model,
             tokens_in=usage.prompt_tokens,
             tokens_out=usage.completion_tokens,
             cost_gbp=generation_cost_gbp(self._analyst_model, usage.prompt_tokens, usage.completion_tokens),
+            finish_reason=choice.finish_reason or "",
         )
 
     def embed(self, texts: list[str]) -> EmbeddingResult:
@@ -192,6 +201,12 @@ def get_client() -> LLMClient:
         raise RuntimeError("OPENAI_API_KEY is not configured (see .env.example); cannot reach the model provider")
     if not settings.embedding_model:
         raise RuntimeError("EMBEDDING_MODEL is not configured (see .env.example)")
+    if settings.analyst_model:
+        # A CONFIGURED-but-unpriced generation model should kill the app at
+        # startup (the api lifespan calls get_client), not burn unaccountable
+        # spend on the first /ask. Empty stays allowed: embedding-only flows
+        # (ingest) do not need ANALYST_MODEL, and complete() fail-louds on it.
+        generation_cost_gbp(settings.analyst_model, 0, 0)
     return OpenAIClient(
         api_key=settings.openai_api_key,
         embedding_model=settings.embedding_model,

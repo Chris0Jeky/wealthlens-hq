@@ -121,3 +121,51 @@ def test_empty_generation_fails_loud(monkeypatch: pytest.MonkeyPatch) -> None:
     # "answer" must be an error, not a silently served blank.
     with pytest.raises(RuntimeError, match="empty text"):
         _compose_with(monkeypatch, "   ")
+
+
+def test_length_truncated_generation_fails_loud_with_recoverable_spend(monkeypatch: pytest.MonkeyPatch) -> None:
+    # finish_reason="length" means the answer was CUT OFF at the output cap —
+    # a truncated figure must never be served as complete, and the raised
+    # error must still carry the accounting for H1-20's error row.
+    class _TruncatingClient:
+        def complete(self, *, system: str, prompt: str, max_tokens: int) -> CompletionResult:
+            return CompletionResult(
+                text="The top band holds 36.1% of gains and the threshold is £2,0",
+                model="fake-model",
+                tokens_in=1500,
+                tokens_out=900,
+                cost_gbp=3.2e-3,
+                finish_reason="length",
+            )
+
+    monkeypatch.setattr(compose, "get_client", lambda: _TruncatingClient())
+    with pytest.raises(compose.EmptyGenerationError, match="truncated") as excinfo:
+        compose_answer("a question", _EVIDENCE)
+    assert excinfo.value.result.cost_gbp == pytest.approx(3.2e-3)
+    assert excinfo.value.result.tokens_out == 900
+
+
+def test_empty_generation_error_carries_the_spend(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(compose, "get_client", lambda: _FakeClient("   ", {}))
+    with pytest.raises(compose.EmptyGenerationError, match="empty text") as excinfo:
+        compose_answer("a question", _EVIDENCE)
+    # The exception is the record: the caller can still account the burn.
+    assert excinfo.value.result.tokens_in == 1500
+    assert excinfo.value.result.cost_gbp == pytest.approx(1.6e-3)
+
+
+def test_fabricated_ids_are_machine_readable_on_the_answer(monkeypatch: pytest.MonkeyPatch) -> None:
+    answer, _ = _compose_with(monkeypatch, "made up [chunk:777] but also real [chunk:9118]")
+    assert answer.fabricated_chunk_ids == [777]
+    assert answer.cited_chunk_ids == [777, 9118]
+
+
+def test_citation_format_drift_is_logged_not_silently_dropped(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    # "[chunk: 9140]" (space) fails the strict parser; that must be VISIBLE,
+    # not a silently uncited claim.
+    with caplog.at_level(logging.WARNING, logger="wealthlens_analyst.answer.compose"):
+        answer, _ = _compose_with(monkeypatch, "strict [chunk:9118] but drifted [chunk: 9140] and [CHUNK=9118]")
+    assert answer.cited_chunk_ids == [9118]
+    assert any("format drift" in record.getMessage() for record in caplog.records)

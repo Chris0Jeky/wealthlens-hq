@@ -5,11 +5,14 @@ Evidence-backed research analyst over official UK wealth statistics
 IFS/Resolution Foundation reports). Citation-first hybrid RAG with honest
 abstention, a committed eval harness, and a hard spend cap.
 
-**Status:** M2 — hybrid retrieval is live behind `POST /ask?debug=retrieval`
-(Postgres FTS + pgvector dense, RRF-fused, full chunk provenance + component
-ranks). M1 ingest (tabular slice → chunks → FTS → embeddings) is done; PDF
-sources (H1-08) and generation/abstention (M3-M4) are pending and raise
-`NotImplementedError` or return 501. Plan: `docs/plan/HERO1_PLAN.md`
+**Status:** M3 in progress — hybrid retrieval is live behind
+`POST /ask?debug=retrieval` (Postgres FTS + pgvector dense, RRF-fused, full
+chunk provenance + component ranks, per-request query_log accounting), and
+cited generation exists (`answer/compose.py`, gpt-5.4-mini through the client
+seam) though it is not yet wired into plain `/ask` (returns 501 until
+citation resolution + response schemas + abstention land — H1-19/20/21).
+Reranking (H1-16, needs a Cohere key) and PDF sources (H1-08) are pending and
+raise `NotImplementedError`. Plan: `docs/plan/HERO1_PLAN.md`
 (repo root) · backlog: `tasks/hero1-backlog.md` · decisions: `docs/adr/0001-0003`.
 
 ## Layout
