@@ -183,10 +183,19 @@ def test_healthz_maps_database_failure_to_503(harness: _Harness) -> None:
     assert response.json()["detail"] == "database unreachable"
 
 
-def test_lifespan_creates_and_disposes_the_shared_engine(monkeypatch: pytest.MonkeyPatch) -> None:
-    # A syntactically valid URL nobody listens on: create_engine pools lazily,
-    # so the lifespan opens no connection and this stays DB-free.
+def _configure_startup_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A complete request-path config: DB URL nobody listens on + dummy provider.
+
+    create_engine pools lazily and get_client makes no network call, so the
+    lifespan opens no connection and spends nothing — these stay DB-free.
+    """
     monkeypatch.setenv("DATABASE_URL", "postgresql+psycopg://x:x@127.0.0.1:9/analyst")
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key-never-used")
+    monkeypatch.setenv("EMBEDDING_MODEL", "text-embedding-3-small")
+
+
+def test_lifespan_creates_and_disposes_the_shared_engine(monkeypatch: pytest.MonkeyPatch) -> None:
+    _configure_startup_env(monkeypatch)
     disposed: list[Engine] = []
     original_dispose = Engine.dispose
 
@@ -206,3 +215,59 @@ def test_lifespan_fails_loud_without_database_url(monkeypatch: pytest.MonkeyPatc
     monkeypatch.delenv("DATABASE_URL", raising=False)
     with pytest.raises(RuntimeError, match="DATABASE_URL"), TestClient(create_app()):
         pass  # pragma: no cover — startup must raise before we get here
+
+
+def test_lifespan_fails_loud_without_provider_config(monkeypatch: pytest.MonkeyPatch) -> None:
+    # A keyless API would pass /healthz but 500 on every /ask?debug=retrieval
+    # (the dense leg embeds per request) — so startup must refuse instead.
+    _configure_startup_env(monkeypatch)
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    with pytest.raises(RuntimeError, match="OPENAI_API_KEY"), TestClient(create_app()):
+        pass  # pragma: no cover — startup must raise before we get here
+
+
+def test_retrieval_limits_are_the_h1_14_measurement_basis() -> None:
+    # H1-14's recall report is defined against these depths; changing either
+    # must be a deliberate, review-visible decision, not a drive-by edit.
+    assert routes._PER_RETRIEVER_LIMIT == 50
+    assert routes._FUSED_LIMIT == 20
+
+
+def test_ask_debug_retrieval_truncates_to_the_fused_limit(monkeypatch: pytest.MonkeyPatch) -> None:
+    # 30 disjoint hits per leg -> 60 fused candidates available; the response
+    # must carry exactly _FUSED_LIMIT, so the top-N contract is behavioural,
+    # not just a constant.
+    lexical = [_hit(i, rank=i, score=1.0 / i) for i in range(1, 31)]
+    dense = [_hit(100 + i, rank=i, score=1.0 / i) for i in range(1, 31)]
+    monkeypatch.setattr(routes, "search_fts", lambda q, *, limit, engine: lexical)
+    monkeypatch.setattr(routes, "search_dense", lambda q, *, limit, engine: dense)
+    app = create_app()
+    app.dependency_overrides[get_engine] = lambda: _ENGINE_SENTINEL
+    response = TestClient(app).post("/ask?debug=retrieval", json={"question": "deep corpus"})
+    assert response.status_code == 200
+    assert len(response.json()["candidates"]) == routes._FUSED_LIMIT
+
+
+def test_ask_question_with_nul_byte_is_422_not_a_db_error(harness: _Harness) -> None:
+    response = harness.client.post("/ask?debug=retrieval", json={"question": "wealth\x00share"})
+    assert response.status_code == 422
+    assert harness.calls == {}
+
+
+def test_ask_maps_database_failure_to_503(harness: _Harness, monkeypatch: pytest.MonkeyPatch) -> None:
+    def broken_fts(query: str, *, limit: int, engine: Any) -> list[ChunkHit]:
+        raise OperationalError("SELECT ...", {}, Exception("connection refused"))
+
+    spent = []
+
+    def paid_dense(query: str, *, limit: int, engine: Any) -> list[ChunkHit]:
+        spent.append(query)  # pragma: no cover — must not be reached
+        return list(_DENSE)
+
+    monkeypatch.setattr(routes, "search_fts", broken_fts)
+    monkeypatch.setattr(routes, "search_dense", paid_dense)
+    response = harness.client.post("/ask?debug=retrieval", json={"question": "anything"})
+    assert response.status_code == 503
+    assert response.json()["detail"] == "retrieval backend unavailable"
+    # The free leg failed first, so the paid embedding leg never ran.
+    assert spent == []

@@ -63,13 +63,17 @@ class AskRequest(BaseModel):
     @field_validator("question")
     @classmethod
     def _reject_blank(cls, value: str) -> str:
-        """Reject whitespace-only questions before they reach retrieval.
+        """Reject blank and NUL-bearing questions before they reach retrieval.
 
         min_length=1 alone would admit " ", which FTS-matches nothing but
-        would still trigger a paid embedding call in the dense leg.
+        would still trigger a paid embedding call in the dense leg. A NUL
+        byte is valid JSON/Python but not valid Postgres text — it would
+        surface as a DB error (500) instead of the honest 422.
         """
         if not value.strip():
             raise ValueError("question must not be blank")
+        if "\x00" in value:
+            raise ValueError("question must not contain NUL characters")
         return value
 
 
@@ -145,8 +149,18 @@ def ask(
             status_code=501,
             detail="answer composition is not implemented yet (H1-18); use POST /ask?debug=retrieval",
         )
-    lexical = search_fts(request.question, limit=_PER_RETRIEVER_LIMIT, engine=engine)
-    dense = search_dense(request.question, limit=_PER_RETRIEVER_LIMIT, engine=engine)
+    # The legs run sequentially, FREE leg first, on purpose: if the database is
+    # down, search_fts fails before search_dense can spend on an embedding.
+    # (Concurrent legs are a latency optimisation to revisit once the budget
+    # guard, H1-27, makes an always-spend race acceptable.) A database failure
+    # is the backend's fault, not the caller's -> 503, matching /healthz;
+    # provider (embedding) failures stay 500 until H1-20 fixes error schemas.
+    try:
+        lexical = search_fts(request.question, limit=_PER_RETRIEVER_LIMIT, engine=engine)
+        dense = search_dense(request.question, limit=_PER_RETRIEVER_LIMIT, engine=engine)
+    except SQLAlchemyError as exc:
+        logger.warning("ask: retrieval backend unavailable: %s", exc)
+        raise HTTPException(status_code=503, detail="retrieval backend unavailable") from exc
     fused = fuse_rrf(lexical, dense, limit=_FUSED_LIMIT)
     # ChunkHit.rank is the 1-based position each retriever assigned (fts.py's
     # _hits_from_rows); fuse_rrf overwrites rank/score on ITS copies but the
