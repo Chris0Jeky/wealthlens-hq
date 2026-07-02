@@ -42,7 +42,9 @@ def test_app_factory_builds() -> None:
     from wealthlens_analyst.api.app import create_app
 
     app = create_app()
-    assert {"/ask", "/healthz", "/metrics/data"} <= {getattr(r, "path", None) for r in app.routes}
+    # The OpenAPI schema is the stable cross-version way to see registered
+    # routes (app.routes introspection differs across fastapi/starlette).
+    assert {"/ask", "/healthz", "/metrics/data"} <= set(app.openapi()["paths"])
 
 
 def test_pending_stubs_raise_not_implemented() -> None:
