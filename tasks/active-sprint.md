@@ -1,6 +1,34 @@
 # Active Sprint
 
-Last updated: 2026-06-30
+Last updated: 2026-07-02
+
+> **SESSION 15 (2026-07-02) — 3 PRs MERGED; the Analyst now ANSWERS, with citations.**
+> **#474 (H1-13):** hybrid `/ask?debug=retrieval` — FTS + dense over ONE shared
+> app-lifespan engine (fail-loud startup config validation, pool_pre_ping),
+> RRF-fused top-20 with full provenance + both component ranks; /healthz now
+> checks DB reachability (503). Live-verified: fusion genuinely reorders, all
+> error contracts (501/422/503) exercised against the real DB incl. a docker-stop.
+> **#475 (H1-15):** query_log accounting — one row per served/failed debug /ask:
+> sha256(question) never raw text, decision, the embed's REAL tokens+cost
+> (Decimal at scale 8 so sub-micro-pound spend never rounds to 0), latency.
+> Fail-closed policy: a success whose row can't be written is failed (500)
+> rather than served unmetered; failure paths write an `error` row best-effort.
+> **#476 (H1-18):** cited generation — `OpenAIClient.complete` (gpt-5.4-mini,
+> pricing source-verified $0.75/$4.50 per 1M, zero-spend pre-flight for unpriced
+> models, truncation + empty-choices guards) + `compose_answer` (hard-constraint
+> cited prompt, fabricated-id/format-drift/zero-citation signals all loud +
+> machine-readable). **First live cited answer:** "the £5m+ band takes 36.1% of
+> gains from 0.6% of taxpayers" — every figure verbatim vs the DB, citations
+> provably ⊆ retrieved set, ~£0.002/answer; re-runnable check committed
+> (`evals/checks/check_compose_live.py`). Each PR: 2-lens adversarial workflow
+> (which mutation-tested the suites and caught real coverage gaps) + all bot
+> threads resolved + green CI. **M2 done** except H1-14 (needs Chris's golden
+> answers); M3 underway. **H1-16 rerank DEFERRED** (no COHERE_API_KEY — decision
+> for Chris). **Ops:** GitHub Pages deploys are stalling service-side
+> (deployment stuck `queued`; site up + unchanged, zero user impact — retry on
+> next merge push). Next unblocked: **H1-19** (citation resolution) → **H1-20**
+> (/ask plain wiring + schemas) → **H1-21** (abstention). Full state:
+> `../hq-private/projects/wealthlens/memories/session_notes/ORCHESTRATION.md`.
 
 > **SESSION 14 (2026-06-30) — 9 PRs MERGED; main green; Analyst dense retrieval SHIPPED.**
 > **#473 (H1-11):** Chris provided an `OPENAI_API_KEY`, unblocking the Analyst's dense
