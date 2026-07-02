@@ -165,6 +165,8 @@ Use these Claude skills when relevant:
 - `research/synthesised/key-insights.md` — distilled research conclusions
 - `research/data-sources/data-source-registry.md` — data source catalogue
 - `strategy/branding-playbook.md` — tone, platform, and public voice guidance
+- `strategy/state-of-the-project-2026-07.md` — July 2026 whole-project review: strengths + build path
+- `strategy/course-correction-2026-07.md` — July 2026 course correction: what must change (priority rule: launch bundle before new sweeps)
 - `vision/north-stars.md` — success metrics and milestones
 - `../hq-private/identity/principles.md` — values-based decision guidance (private repo)
 - `projects/wealthlens-dashboard/` — main product (backend, frontend, data, docs)

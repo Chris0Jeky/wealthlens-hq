@@ -26,7 +26,7 @@ Local env: `docker compose up -d analyst-db` (port **15432**); use
 
 ## M0 — kickoff residue (startable immediately)
 
-- [ ] H1-01 (M0) Tag the corpus slice in `registries/sources.yml`: add `analyst_corpus: true` to `ons-was-wealth`, `hmrc-cgt-statistics`, `hmrc-tax-receipts`; add 3-5 new entries for the chosen IFS/RF reports (id, name, url, access_date, format: report, licence, update_pattern, pipeline: null, notes) — done when `sources.yml` validates as YAML and lists 6-8 slice sources. [deps: none]
+- [x] H1-01 (M0) Tag the corpus slice in `registries/sources.yml`: add `analyst_corpus: true` to `ons-was-wealth`, `hmrc-cgt-statistics`, `hmrc-tax-receipts`; add 3-5 new entries for the chosen IFS/RF reports (id, name, url, access_date, format: report, licence, update_pattern, pipeline: null, notes) — done when `sources.yml` validates as YAML and lists 6-8 slice sources. [deps: none] [completed: 2026-06-13, PR #406 — 8 sources carry `analyst_corpus: true` in registries/sources.yml; checkbox reconciled 2026-07-02 during the strategy review]
 - [ ] H1-02 (M0) Chris reviews the 20 DRAFT golden questions in `evals/golden/golden_set.jsonl`, rewrites freely, writes `expected_answer` + `required_citations` for the in-corpus 15 (@Chris) — done when no `status: DRAFT` remains in the first 20. [deps: none]
 - [ ] H1-03 (M0) Chris rules on ADR 0003 — REMAINING: **D3 hosting only** (needs his account/payment); D1/D2/D4 adopted by delegation 2026-06-11 per the memo's recommendations (@Chris) — done when D3 is recorded and ADR 0003 flips to Accepted. [deps: none]
 

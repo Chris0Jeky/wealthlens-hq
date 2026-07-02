@@ -1,6 +1,6 @@
 # Inbox
 
-Last updated: 2026-06-27
+Last updated: 2026-07-02
 
 > Latest (2026-06-27, session 13): 10 PRs merged (#456-#464). **#464** reconciled
 > the public data-source licence/frequency claims + added a shared
@@ -24,6 +24,61 @@ Last updated: 2026-06-27
 > page (#349, merged, PR #351). See ORCHESTRATION.md.
 
 Every concrete action item extracted from research. Triage into active-sprint, backlog, or done.
+
+## 2026-07-02 strategy review seeds (state-of-the-project + course-correction)
+
+> Source docs: `strategy/state-of-the-project-2026-07.md` (what is working +
+> the build path) and `strategy/course-correction-2026-07.md` (what must
+> change and why). Human-gated items already live in `tasks/ACTION-REQUIRED.md`
+> (items 2-6, 9, 10) and are not duplicated here. Priority rule reinstated by
+> the review: launch-bundle items outrank new sweeps.
+
+### Launch bundle (course-correction S3/E3/E4)
+
+- [ ] Draft the LinkedIn launch post + one chart carousel into
+  `tasks/social-media/posts-drafted.md` (every figure cited; 2-lens factual
+  review before Chris publishes) (@agent)
+- [ ] Draft the four unblocked outreach emails for Chris to review and send
+  (value-offering, per `strategy/outreach-strategy.md`) (@agent)
+- [ ] Prepare the H1-14 golden-answers working pack: per-question corpus
+  excerpts + candidate citation ids, NO drafted answers (@agent)
+- [ ] Refresh `README.md` to current reality: 12 chart pages, current test
+  counts, Analyst + simulator sections (@agent)
+- [ ] Set the GitHub repo description, homepage URL, and topics via
+  `gh repo edit` (@agent, on Chris's nod — currently all empty)
+- [ ] Verify OG/social-share previews render on the live site's key pages (@agent)
+- [ ] Add an embed path for one flagship chart (iframe snippet + short docs
+  page), per theory-of-change step 3 (@agent)
+
+### Visibility instrumentation (course-correction E5/S4)
+
+- [ ] Wire Plausible once `wealthlens.uk` exists: set `VITE_PLAUSIBLE_DOMAIN`,
+  decide hosted vs self-hosted alongside the Analyst box (@agent, after
+  ACTION-REQUIRED #4)
+- [ ] Propose numeric 90-day north-star targets for `vision/north-stars.md`;
+  Chris sets the final numbers (@agent draft, @Chris decide)
+
+### Process changes (need Chris's explicit confirmation)
+
+- [ ] Weekly Chris hour: confirm a recurring 60-90 min slot; agent prepares
+  the agenda pack (drafts + step-by-step items) before each (@Chris)
+- [ ] Sweep moratorium until the Analyst URL is live, with fallback order
+  launch-assets > discoverability > seeded follow-ups > sweeps (@Chris confirm)
+
+### Community, cadence, and risk (course-correction S5/E6/E7)
+
+- [ ] Reopen 3-5 scoped good-first-issues and add the "agent leaves these
+  open" reserve policy note to `CONTRIBUTING.md` (@agent)
+- [ ] Document the post-gemini review gate (2-lens internal + codex) (@agent)
+  [due: 2026-07-16]
+- [ ] Same-day HMRC CGT release plan: confirm the exact date on the gov.uk
+  release calendar, prep the pipeline dry-run + content angle (@agent)
+- [ ] Prune `tasks/deadlines.md` of passed items, restore the weekly check,
+  add the JRRT outline go/no-go decision point (@agent) [due: 2026-08-10]
+- [ ] Strategy-doc freshness pass: stamp, refresh, or retire each of the 7
+  `strategy/` docs (@agent draft, @Chris approve)
+- [ ] Draft writeup #1 skeleton from `docs/plan/WRITEUPS.md` once H1-30
+  deploys (@agent)
 
 ## Simulator dashboard follow-ups (from #348/#349 reviews — data integrity)
 

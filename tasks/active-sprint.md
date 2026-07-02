@@ -2,6 +2,16 @@
 
 Last updated: 2026-07-02
 
+> **⚑ STRATEGY REVIEW (2026-07-02):** whole-project assessment written up in
+> `strategy/state-of-the-project-2026-07.md` (what is working + the build
+> path) and `strategy/course-correction-2026-07.md` (what must change:
+> visibility ≈ zero since launch; priority rule reinstated — launch bundle
+> before new sweeps). Seeded tasks: `tasks/inbox.md` § "2026-07-02 strategy
+> review seeds". Proposed sprint for the next two weeks: (1) H1-19 + H1-20,
+> (2) golden-answers pack + Chris hour 1 (ACTION-REQUIRED #2/#3/#4/#9),
+> (3) launch-bundle drafts (post + 4 emails), (4) README + repo-metadata
+> refresh, (5) post-gemini review-gate doc [due 2026-07-16], (6) H1-21/22/23.
+
 > **SESSION 15 (2026-07-02) — 3 PRs MERGED; the Analyst now ANSWERS, with citations.**
 > **#474 (H1-13):** hybrid `/ask?debug=retrieval` — FTS + dense over ONE shared
 > app-lifespan engine (fail-loud startup config validation, pool_pre_ping),
