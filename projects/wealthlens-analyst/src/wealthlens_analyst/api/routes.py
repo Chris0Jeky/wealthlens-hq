@@ -113,9 +113,12 @@ class RetrievalDebugResponse(BaseModel):
 def healthz(engine: Annotated[Engine, Depends(get_engine)]) -> dict[str, str]:
     """Liveness probe: app up AND the database is reachable.
 
-    Any database failure maps to 503 (the probe's honest signal), never a 500:
-    a health endpoint that crashes on the condition it exists to detect would
-    be reporting its own bug, not the service's state.
+    Database failures surface as SQLAlchemyError (SQLAlchemy wraps every
+    DBAPI/psycopg error, including pool timeouts) and map to 503 — the
+    probe's honest signal, not a 500: a health endpoint that crashes on the
+    condition it exists to detect would be reporting its own bug, not the
+    service's state. Anything outside that hierarchy would be a genuine app
+    bug, and a 500 is then the correct signal.
     """
     try:
         with engine.connect() as conn:
