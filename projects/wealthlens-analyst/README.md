@@ -5,8 +5,11 @@ Evidence-backed research analyst over official UK wealth statistics
 IFS/Resolution Foundation reports). Citation-first hybrid RAG with honest
 abstention, a committed eval harness, and a hard spend cap.
 
-**Status:** scaffolding (M0). Stubs import cleanly and raise
-`NotImplementedError` where logic is pending. Plan: `docs/plan/HERO1_PLAN.md`
+**Status:** M2 — hybrid retrieval is live behind `POST /ask?debug=retrieval`
+(Postgres FTS + pgvector dense, RRF-fused, full chunk provenance + component
+ranks). M1 ingest (tabular slice → chunks → FTS → embeddings) is done; PDF
+sources (H1-08) and generation/abstention (M3-M4) are pending and raise
+`NotImplementedError` or return 501. Plan: `docs/plan/HERO1_PLAN.md`
 (repo root) · backlog: `tasks/hero1-backlog.md` · decisions: `docs/adr/0001-0003`.
 
 ## Layout
@@ -19,12 +22,15 @@ abstention, a committed eval harness, and a hard spend cap.
   deterministic checks, RAGAS runner, committed reports.
 - `tests/` — pytest (mypy strict, monorepo ruff rules).
 
-## Quick start (once M1 lands)
+## Quick start
 
 ```bash
 pip install -e "projects/wealthlens-analyst[dev,evals]"
+docker compose up -d analyst-db   # Postgres+pgvector on :15432 (repo root)
+make ingest-slice     # chunk + write + embed the frozen corpus slice
 make dev              # uvicorn on 127.0.0.1:8100
-make ingest-slice     # fetch + chunk + embed the frozen corpus slice
+curl -X POST "http://127.0.0.1:8100/ask?debug=retrieval" \
+  -H "Content-Type: application/json" -d '{"question": "who holds the most wealth?"}'
 make eval-golden-validate
 ```
 
