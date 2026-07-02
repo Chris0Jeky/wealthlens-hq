@@ -64,7 +64,24 @@ def engine_from_settings(settings: Settings) -> Engine:
     Fails loudly when the URL is unset: an ingest or retrieval call with no
     database configured is a setup error, not something to paper over with a
     silent default (which would surface later as a confusing connection error).
+
+    ``pool_pre_ping``: the API holds one engine for the whole app lifetime
+    (api/app.py's lifespan), so without it the first request after a database
+    restart fails on a stale pooled connection even though the DB is healthy
+    (verified live: /healthz false-503s and /ask 500s for exactly one request
+    per blip). Costs one lightweight ping per checkout — harmless for the
+    short-lived CLI/ingest callers that share this factory.
+
+    ``connect_timeout`` bounds connection ESTABLISHMENT (libpq), so a probe
+    against an unreachable host fails promptly instead of hanging for the OS
+    TCP timeout. It does not bound an already-established connection that
+    goes silent mid-query — acceptable for a liveness probe; pre_ping covers
+    the common stale-connection case.
     """
     if not settings.database_url:
         raise RuntimeError("DATABASE_URL is not configured (see .env.example); cannot reach the analyst database")
-    return sa.create_engine(settings.database_url)
+    return sa.create_engine(
+        settings.database_url,
+        pool_pre_ping=True,
+        connect_args={"connect_timeout": 10},
+    )

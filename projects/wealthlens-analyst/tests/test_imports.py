@@ -32,16 +32,19 @@ def test_package_imports() -> None:
     assert wealthlens_analyst.__version__
 
 
-def test_app_factory_and_healthz() -> None:
-    """The FastAPI app builds and the liveness route answers."""
-    from fastapi.testclient import TestClient
+def test_app_factory_builds() -> None:
+    """The FastAPI app builds with its routes registered.
 
+    /healthz now checks database reachability (H1-13), so its behaviour is
+    covered in test_api.py with the engine dependency overridden — this smoke
+    test only guarantees the factory itself needs no environment.
+    """
     from wealthlens_analyst.api.app import create_app
 
-    client = TestClient(create_app())
-    response = client.get("/healthz")
-    assert response.status_code == 200
-    assert response.json() == {"status": "ok"}
+    app = create_app()
+    # The OpenAPI schema is the stable cross-version way to see registered
+    # routes (app.routes introspection differs across fastapi/starlette).
+    assert {"/ask", "/healthz", "/metrics/data"} <= set(app.openapi()["paths"])
 
 
 def test_pending_stubs_raise_not_implemented() -> None:

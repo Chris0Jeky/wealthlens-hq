@@ -85,7 +85,18 @@ def search_dense(query: str, *, limit: int = 50, engine: Engine | None = None) -
     if engine is None:
         engine = engine_from_settings(load_settings())
     try:
-        query_vec = get_client().embed([query]).vectors[0]
+        embedded = get_client().embed([query])
+        # Visible cost is a product goal (and ADR 0002: every model call is
+        # metered): this is the request path's ONE paid call, so its accounting
+        # is logged here — mirroring embed_corpus — until H1-15 persists it to
+        # query_log and H1-27 enforces the cap.
+        logger.info(
+            "search_dense: query embedding %s tokens_in=%d est. cost GBP %.8f",
+            embedded.model,
+            embedded.tokens_in,
+            embedded.cost_gbp,
+        )
+        query_vec = embedded.vectors[0]
         with engine.connect() as conn:
             rows = conn.execute(_DENSE_SQL, {"query_vec": query_vec, "limit": limit}).all()
     finally:
