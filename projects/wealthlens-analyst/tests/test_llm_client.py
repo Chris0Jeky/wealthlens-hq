@@ -90,12 +90,6 @@ def test_embed_maps_and_aligns_by_index(monkeypatch: pytest.MonkeyPatch) -> None
     assert captured["input"] == ["alpha", "beta"]
 
 
-def test_complete_pending_h1_18() -> None:
-    client = OpenAIClient(api_key="sk-x", embedding_model="text-embedding-3-small", analyst_model="gpt-5.4-mini")
-    with pytest.raises(NotImplementedError, match="H1-18"):
-        client.complete(system="s", prompt="p", max_tokens=10)
-
-
 def test_get_client_builds_openai_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
     monkeypatch.setenv("EMBEDDING_MODEL", "text-embedding-3-small")
@@ -116,3 +110,112 @@ def test_get_client_without_embedding_model_fails_loud(monkeypatch: pytest.Monke
     monkeypatch.delenv("EMBEDDING_MODEL", raising=False)
     with pytest.raises(RuntimeError, match="EMBEDDING_MODEL"):
         get_client()
+
+
+def test_generation_cost_known_model() -> None:
+    from wealthlens_analyst.llm.client import generation_cost_gbp
+
+    # gpt-5.4-mini = $0.75/1M in + $4.50/1M out (verified 2026-07-02,
+    # developers.openai.com/api/docs/pricing), converted at the documented FX.
+    assert generation_cost_gbp("gpt-5.4-mini", 1_000_000, 0) == pytest.approx(0.75 * 0.79)
+    assert generation_cost_gbp("gpt-5.4-mini", 0, 1_000_000) == pytest.approx(4.50 * 0.79)
+    assert generation_cost_gbp("gpt-5.4-mini", 0, 0) == 0.0
+
+
+def test_generation_cost_unknown_model_fails_loud() -> None:
+    from wealthlens_analyst.llm.client import generation_cost_gbp
+
+    with pytest.raises(ValueError, match="no price configured"):
+        generation_cost_gbp("gpt-99-imaginary", 100, 100)
+
+
+def _install_fake_openai_chat(
+    monkeypatch: pytest.MonkeyPatch, *, text: str | None, prompt_tokens: int, completion_tokens: int, usage: bool = True
+) -> dict[str, object]:
+    """Install a fake `openai` module for chat completions; capture call args."""
+    captured: dict[str, object] = {}
+
+    class _Message:
+        def __init__(self) -> None:
+            self.content = text
+
+    class _Choice:
+        def __init__(self) -> None:
+            self.message = _Message()
+
+    class _Usage:
+        def __init__(self) -> None:
+            self.prompt_tokens = prompt_tokens
+            self.completion_tokens = completion_tokens
+
+    class _Response:
+        def __init__(self) -> None:
+            self.choices = [_Choice()]
+            self.usage = _Usage() if usage else None
+
+    class _Completions:
+        def create(self, **kwargs: object) -> _Response:
+            captured.update(kwargs)
+            return _Response()
+
+    class _Chat:
+        def __init__(self) -> None:
+            self.completions = _Completions()
+
+    class _OpenAI:
+        def __init__(self, *, api_key: str) -> None:
+            captured["api_key"] = api_key
+            self.chat = _Chat()
+
+    fake = types.ModuleType("openai")
+    fake.OpenAI = _OpenAI  # type: ignore[attr-defined]
+    monkeypatch.setitem(sys.modules, "openai", fake)
+    return captured
+
+
+def test_complete_maps_usage_and_cost(monkeypatch: pytest.MonkeyPatch) -> None:
+    from wealthlens_analyst.llm.client import CompletionResult, generation_cost_gbp
+
+    captured = _install_fake_openai_chat(
+        monkeypatch, text="answer [chunk:1]", prompt_tokens=1200, completion_tokens=340
+    )
+    client = OpenAIClient(api_key="sk-x", embedding_model="text-embedding-3-small", analyst_model="gpt-5.4-mini")
+
+    result = client.complete(system="sys rules", prompt="user question", max_tokens=900)
+
+    assert isinstance(result, CompletionResult)
+    assert result.text == "answer [chunk:1]"
+    assert result.model == "gpt-5.4-mini"
+    assert result.tokens_in == 1200
+    assert result.tokens_out == 340
+    assert result.cost_gbp == pytest.approx(generation_cost_gbp("gpt-5.4-mini", 1200, 340))
+    # The seam passes the configured model, both messages, and maps max_tokens
+    # to max_completion_tokens (what current OpenAI models require).
+    assert captured["model"] == "gpt-5.4-mini"
+    assert captured["max_completion_tokens"] == 900
+    messages = captured["messages"]
+    assert messages == [
+        {"role": "system", "content": "sys rules"},
+        {"role": "user", "content": "user question"},
+    ]
+
+
+def test_complete_none_content_becomes_empty_string(monkeypatch: pytest.MonkeyPatch) -> None:
+    # The SDK types content as optional; the seam must not propagate None.
+    _install_fake_openai_chat(monkeypatch, text=None, prompt_tokens=10, completion_tokens=900)
+    client = OpenAIClient(api_key="sk-x", embedding_model="text-embedding-3-small", analyst_model="gpt-5.4-mini")
+    assert client.complete(system="s", prompt="p", max_tokens=900).text == ""
+
+
+def test_complete_without_usage_fails_loud(monkeypatch: pytest.MonkeyPatch) -> None:
+    # No usage block -> no honest cost figure -> never silently assume 0 (ADR 0002).
+    _install_fake_openai_chat(monkeypatch, text="x", prompt_tokens=0, completion_tokens=0, usage=False)
+    client = OpenAIClient(api_key="sk-x", embedding_model="text-embedding-3-small", analyst_model="gpt-5.4-mini")
+    with pytest.raises(RuntimeError, match="usage"):
+        client.complete(system="s", prompt="p", max_tokens=10)
+
+
+def test_complete_without_analyst_model_fails_loud() -> None:
+    client = OpenAIClient(api_key="sk-x", embedding_model="text-embedding-3-small", analyst_model="")
+    with pytest.raises(RuntimeError, match="ANALYST_MODEL"):
+        client.complete(system="s", prompt="p", max_tokens=10)
