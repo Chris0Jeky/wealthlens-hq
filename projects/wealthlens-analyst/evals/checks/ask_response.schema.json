@@ -1,0 +1,189 @@
+{
+  "$defs": {
+    "AnswerResponse": {
+      "description": "A cited answer to an in-corpus question.\n\n``answer`` is the served text with only *resolved* citation markers left\ninline: markers for pruned ids (fabricated, or absent from the corpus /\nregistry) are stripped before serving so a fabricated ``[chunk:<id>]`` never\nreaches the user. The pruned ids are surfaced in ``unresolved_chunk_ids`` for\ntransparency \u2014 the response flags that citations were pruned rather than\nsilently serving fewer than the model claimed.",
+      "properties": {
+        "answer": {
+          "title": "Answer",
+          "type": "string"
+        },
+        "citations": {
+          "items": {
+            "$ref": "#/$defs/CitationModel"
+          },
+          "title": "Citations",
+          "type": "array"
+        },
+        "mode": {
+          "const": "answer",
+          "default": "answer",
+          "title": "Mode",
+          "type": "string"
+        },
+        "question": {
+          "title": "Question",
+          "type": "string"
+        },
+        "unresolved_chunk_ids": {
+          "items": {
+            "type": "integer"
+          },
+          "title": "Unresolved Chunk Ids",
+          "type": "array"
+        }
+      },
+      "required": [
+        "question",
+        "answer",
+        "citations"
+      ],
+      "title": "AnswerResponse",
+      "type": "object"
+    },
+    "CitationModel": {
+      "description": "A resolved, render-ready citation (the wire form of answer.citations.Citation).\n\nCarries the full ADR 0001 \u00a74 provenance tuple (section/page/span) plus the\nregistry source name + URL and the ingestion access date, so every served\ncitation carries both a URL and an access date (the data-integrity rule).",
+      "properties": {
+        "access_date": {
+          "format": "date",
+          "title": "Access Date",
+          "type": "string"
+        },
+        "chunk_id": {
+          "title": "Chunk Id",
+          "type": "integer"
+        },
+        "document_id": {
+          "title": "Document Id",
+          "type": "string"
+        },
+        "page": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Page"
+        },
+        "section": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Section"
+        },
+        "source_id": {
+          "title": "Source Id",
+          "type": "string"
+        },
+        "source_name": {
+          "title": "Source Name",
+          "type": "string"
+        },
+        "span": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Span"
+        },
+        "url": {
+          "title": "Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "chunk_id",
+        "source_id",
+        "source_name",
+        "document_id",
+        "section",
+        "page",
+        "span",
+        "url",
+        "access_date"
+      ],
+      "title": "CitationModel",
+      "type": "object"
+    },
+    "OverBudgetResponse": {
+      "description": "The monthly spend cap was exceeded (HTTP 429). Produced by the guard (H1-27).",
+      "properties": {
+        "mode": {
+          "const": "over_budget",
+          "default": "over_budget",
+          "title": "Mode",
+          "type": "string"
+        },
+        "question": {
+          "title": "Question",
+          "type": "string"
+        },
+        "reason": {
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "question",
+        "reason"
+      ],
+      "title": "OverBudgetResponse",
+      "type": "object"
+    },
+    "RefusalResponse": {
+      "description": "Honest abstention: the corpus does not support a cited answer (ADR 0003 D4).",
+      "properties": {
+        "mode": {
+          "const": "refusal",
+          "default": "refusal",
+          "title": "Mode",
+          "type": "string"
+        },
+        "question": {
+          "title": "Question",
+          "type": "string"
+        },
+        "reason": {
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "question",
+        "reason"
+      ],
+      "title": "RefusalResponse",
+      "type": "object"
+    }
+  },
+  "discriminator": {
+    "mapping": {
+      "answer": "#/$defs/AnswerResponse",
+      "over_budget": "#/$defs/OverBudgetResponse",
+      "refusal": "#/$defs/RefusalResponse"
+    },
+    "propertyName": "mode"
+  },
+  "oneOf": [
+    {
+      "$ref": "#/$defs/AnswerResponse"
+    },
+    {
+      "$ref": "#/$defs/RefusalResponse"
+    },
+    {
+      "$ref": "#/$defs/OverBudgetResponse"
+    }
+  ]
+}

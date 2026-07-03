@@ -24,6 +24,11 @@ logger = logging.getLogger(__name__)
 #: format, defined once — citations.py (H1-19) resolves the same ids.
 _CITATION_RE = re.compile(r"\[chunk:(\d+)\]")
 
+#: Strip form of the marker: also consumes one immediately-preceding whitespace
+#: run so removing " [chunk:99]" does not leave a dangling space. Used by the
+#: serving policy (H1-20) to drop markers for pruned/unresolvable ids.
+_CITATION_STRIP_RE = re.compile(r"\s*\[chunk:(\d+)\]")
+
 #: Lenient near-miss detector, for LOGGING only: catches citation-shaped
 #: output the strict parser would silently drop ("[chunk: 9140]", "[CHUNK=9140]").
 #: A model drifting from the mandated format must be visible, not silently
@@ -141,6 +146,30 @@ def _parse_citations(text: str, evidence_ids: set[int]) -> tuple[list[int], list
     if fabricated:
         logger.warning("compose: answer cites chunk ids not in the supplied evidence: %s", fabricated)
     return cited, fabricated
+
+
+def strip_unresolved_citation_markers(text: str, resolved_ids: set[int]) -> str:
+    """Keep only ``[chunk:<id>]`` markers whose id is a served citation; strip the rest.
+
+    The serving policy (H1-20): only a marker that maps to a resolved, served
+    citation may remain in the answer body. EVERY other marker is removed — a
+    fabricated id, an id pruned as missing/unknown-source, and an out-of-range
+    id that compose dropped from ``cited_chunk_ids`` before resolution but left
+    inline. A leaked ``[chunk:<id>]`` for an unresolvable citation is exactly the
+    failure mode this product exists to prevent. Pure and DB-free.
+
+    An immediately-preceding whitespace run is consumed with a stripped marker so
+    dropping " [chunk:99]" mid-sentence does not leave a double space; a kept
+    marker is returned byte-identical (its leading space preserved).
+    """
+
+    def _replace(match: re.Match[str]) -> str:
+        # match.group(0) includes the leading whitespace; group(1) is the id.
+        # int() handles arbitrary-width ids (a > BIGINT hallucination) safely;
+        # such an id can never be in resolved_ids, so it is stripped.
+        return match.group(0) if int(match.group(1)) in resolved_ids else ""
+
+    return _CITATION_STRIP_RE.sub(_replace, text)
 
 
 def compose_answer(question: str, evidence: list[ChunkHit]) -> ComposedAnswer:
