@@ -47,9 +47,11 @@ _LIVE_PROBES: tuple[tuple[str, str], ...] = (
     ("What is the capital city of France?", "refusal"),
 )
 
-#: Inline citation marker, mirrored from answer.compose so an answer body can be
-#: checked for a leaked marker without importing the generation module.
-_MARKER_RE = re.compile(r"\[chunk:(\d+)\]")
+#: Citation-shaped marker, LENIENT (mirrors answer.compose._CITATION_STRIP_RE):
+#: catches strict "[chunk:9140]" AND format-drift near-misses ("[chunk: 99]",
+#: "[CHUNK=99]") so the live check flags a leaked drift marker, not just a strict
+#: one. Any matched id not among the served citations is an orphan (policy leak).
+_MARKER_RE = re.compile(r"\[\s*chunk\s*[:=]?\s*(\d+)\s*\]", re.IGNORECASE)
 
 
 def load_golden_records() -> list[dict[str, Any]]:

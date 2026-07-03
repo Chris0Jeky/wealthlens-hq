@@ -122,6 +122,14 @@ def test_check_ask_response_flags_a_leaked_orphan_marker() -> None:
     assert any("leaks unresolved citation markers" in f and "99" in f for f in failures)
 
 
+def test_check_ask_response_flags_a_leaked_near_miss_marker() -> None:
+    # The live check's marker regex is lenient, so a format-drift leak
+    # ("[chunk: 99]") is caught too — not just the strict form.
+    body = {**_sample_answer(), "answer": "Real [chunk:9140] and drift [chunk: 99]."}
+    failures = det._check_ask_response(body, _validator())
+    assert any("leaks unresolved citation markers" in f and "99" in f for f in failures)
+
+
 def test_check_ask_response_reports_schema_violation_for_a_malformed_body() -> None:
     failures = det._check_ask_response({"mode": "answer", "question": "q"}, _validator())
     assert failures and all("schema violation" in f for f in failures)

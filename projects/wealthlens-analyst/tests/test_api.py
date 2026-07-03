@@ -330,6 +330,29 @@ def test_ask_plain_refuses_when_no_citation_resolves(harness: _Harness, monkeypa
     assert row["cost_gbp"] == pytest.approx(_EMBED_COST_GBP + _GEN_COST_GBP)
 
 
+def test_ask_plain_refuses_when_every_cited_id_is_pruned(harness: _Harness, monkeypatch: pytest.MonkeyPatch) -> None:
+    # The model DID cite (non-empty cited_chunk_ids) but resolution prunes every
+    # id (fabricated / missing / unknown-source), so resolved.citations is empty.
+    # This is the case the refusal predicate exists for: it distinguishes the
+    # correct `not resolved.citations` from the wrong `not composed.cited_chunk_ids`
+    # (the latter would SERVE an uncited factual answer — the leak invariant 2
+    # forbids). The pruned marker must be stripped even though we refuse.
+    monkeypatch.setattr(
+        routes, "compose_answer", lambda q, ev: _composed("Gold surged [chunk:99].", [99], fabricated=[99])
+    )
+    monkeypatch.setattr(
+        routes, "resolve_citations", lambda answer, **kw: ResolvedCitations(citations=[], unresolved_chunk_ids=[99])
+    )
+    response = harness.client.post("/ask", json={"question": "off-corpus but the model answered anyway"})
+    assert response.status_code == 200
+    body = response.json()
+    assert body["mode"] == "refusal"
+    assert body["reason"] == routes._UNSUPPORTED_REASON
+    row = harness.recorded[0]
+    assert row["decision"] == QueryDecision.REFUSED
+    assert row["tokens_out"] == _GEN_TOKENS_OUT  # generation happened before the prune
+
+
 def test_ask_plain_refuses_without_generating_when_no_evidence(
     harness: _Harness, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -425,16 +448,26 @@ def test_ask_plain_empty_generation_is_500_and_records_the_spend(
     assert row["cost_gbp"] == pytest.approx(_EMBED_COST_GBP + _GEN_COST_GBP)
 
 
+@pytest.mark.parametrize(
+    "exc",
+    [
+        DatabaseError("SELECT ...", {}, Exception("statement failed")),
+        OperationalError("SELECT ...", {}, Exception("connection refused")),
+    ],
+    ids=["statement-level", "connection-level"],
+)
 def test_ask_plain_resolution_db_failure_records_generation_spend_then_503(
-    harness: _Harness, monkeypatch: pytest.MonkeyPatch
+    harness: _Harness, monkeypatch: pytest.MonkeyPatch, exc: DatabaseError
 ) -> None:
-    # resolve_citations' provenance read fails AFTER generation was paid for
-    # (statement-level DatabaseError, connection alive): the ERROR row must
-    # carry the generation spend, and the caller sees 503.
+    # resolve_citations' provenance read fails AFTER generation was paid for.
+    # A generation is ALWAYS already paid here (unlike the retrieval leg's
+    # embed-only skip), so BOTH a statement-level (connection alive) AND a
+    # connection-level (OperationalError) failure must record the generation
+    # spend in the ERROR row; the caller sees 503.
     monkeypatch.setattr(routes, "compose_answer", lambda q, ev: _composed("A [chunk:2].", [2]))
 
     def broken_resolve(answer: ComposedAnswer, **kwargs: Any) -> ResolvedCitations:
-        raise DatabaseError("SELECT ...", {}, Exception("statement failed"))
+        raise exc
 
     monkeypatch.setattr(routes, "resolve_citations", broken_resolve)
     response = harness.client.post("/ask", json={"question": "q"})
@@ -551,6 +584,35 @@ def test_lifespan_fails_loud_without_provider_config(monkeypatch: pytest.MonkeyP
     _configure_startup_env(monkeypatch)
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     with pytest.raises(RuntimeError, match="OPENAI_API_KEY"), TestClient(create_app()):
+        pass  # pragma: no cover — startup must raise before we get here
+
+
+def test_lifespan_loads_the_source_registry(monkeypatch: pytest.MonkeyPatch) -> None:
+    # H1-20 loads the citation registry ONCE at startup (get_registry then injects
+    # app.state.registry). Lock the wiring: a refactor that moved the load into a
+    # per-request get_registry (reintroducing a first-/ask disk read) must fail here.
+    from wealthlens_analyst.answer.citations import SourceMeta
+
+    _configure_startup_env(monkeypatch)
+    app = create_app()
+    with TestClient(app):
+        registry = app.state.registry
+    assert registry and all(isinstance(source, SourceMeta) for source in registry.values())
+
+
+def test_lifespan_fails_loud_on_malformed_registry(monkeypatch: pytest.MonkeyPatch) -> None:
+    # A malformed/duplicated corpus source must KILL startup (fail-loud), not
+    # 500 the first /ask — invariant 5. load_source_registry itself fail-louds
+    # (test_citations.py); here we lock that the lifespan surfaces it at startup.
+    import wealthlens_analyst.api.app as app_module
+
+    _configure_startup_env(monkeypatch)
+
+    def broken_registry(*args: Any, **kwargs: Any) -> dict[str, Any]:
+        raise ValueError("duplicate analyst_corpus source id 'ons-was-wealth'")
+
+    monkeypatch.setattr(app_module, "load_source_registry", broken_registry)
+    with pytest.raises(ValueError, match="duplicate analyst_corpus"), TestClient(create_app()):
         pass  # pragma: no cover — startup must raise before we get here
 
 

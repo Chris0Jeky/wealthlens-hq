@@ -402,14 +402,16 @@ def _ask_plain(
         raise HTTPException(status_code=500, detail="answer generation failed") from exc
     except SQLAlchemyError as exc:
         # Only the resolution read can raise this here (retrieval already
-        # returned): generation was already paid for, so its spend must be
-        # recorded. A connection-level failure dooms the write too (skip it,
-        # as in _run_retrieval); a statement-level one still records.
+        # returned). Unlike _run_retrieval — which skips the write on a
+        # connection-level (OperationalError) failure because at most one
+        # embedding's spend is at stake — a full generation is ALWAYS already
+        # paid by this point (the dominant cost). So its spend is recorded even
+        # on a connection-level failure, accepting one extra connect-timeout on
+        # the 503: the realistic trigger is a transient blip during the
+        # multi-second generation window, where the DB is often reachable again
+        # by the time record_query runs, so the best-effort write usually lands.
         logger.warning("ask: citation resolution backend unavailable: %s", exc)
-        if isinstance(exc, OperationalError):
-            logger.warning("ask: skipping doomed error-row write on a connection-level failure")
-        else:
-            _record_error_best_effort(engine, question, embedded, started, generation=composed)
+        _record_error_best_effort(engine, question, embedded, started, generation=composed)
         raise HTTPException(status_code=503, detail="retrieval backend unavailable") from exc
     except Exception:
         _record_error_best_effort(engine, question, embedded, started, generation=composed)

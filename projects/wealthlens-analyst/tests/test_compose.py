@@ -222,3 +222,15 @@ def test_strip_handles_adjacent_markers() -> None:
 
 def test_strip_leaves_text_without_markers_untouched() -> None:
     assert strip_unresolved_citation_markers("no markers here", {2}) == "no markers here"
+
+
+def test_strip_removes_format_drift_near_miss_markers() -> None:
+    # A near-miss ([chunk: 99] with a space, [CHUNK=99], [chunk = 7]) is never
+    # counted as a citation by the STRICT parser, so its id is never in
+    # resolved_ids -> the serving policy must strip it, not leak it as a dangling
+    # unbacked reference (the security-lens finding this closes).
+    assert (
+        strip_unresolved_citation_markers("Real [chunk:2] and drift [chunk: 99].", {2}) == "Real [chunk:2] and drift."
+    )
+    assert strip_unresolved_citation_markers("A [CHUNK=99] b", set()) == "A b"
+    assert strip_unresolved_citation_markers("A [chunk = 7] b", set()) == "A b"
