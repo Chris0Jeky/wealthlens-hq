@@ -4,14 +4,14 @@
                         * Plain mode (H1-20): hybrid retrieval -> cited
                           composition -> citation resolution, returning the
                           published response schema (api/schemas.py): an
-                          ``answer`` with resolved citations, or a ``refusal``
-                          when the corpus does not support a cited answer. The
-                          full confidence gate (weak-but-nonempty evidence) is
-                          H1-21/H1-22; H1-20 refuses only the non-confidence
-                          cases (no evidence at all; not fully cited — i.e. no
-                          citation resolves, or ANY cited id was pruned).
-                          The budget guard (H1-27) adds the ``over_budget`` (429)
-                          variant. Every request writes a query_log row.
+                          ``answer`` with resolved citations, or a ``refusal``.
+                          Refusal triggers: the abstention gate (H1-21/H1-22)
+                          rejects weak/thin fused evidence BEFORE generation (zero
+                          generation spend; gate signal logged); or, post-generation,
+                          the answer is not fully cited (no citation resolves, or
+                          ANY cited id was pruned). The budget guard (H1-27) adds
+                          the ``over_budget`` (429) variant. Every request that runs
+                          writes a query_log row.
                         * ?debug=retrieval (H1-13) returns the RRF-fused
                           candidate list with per-chunk provenance and both
                           component ranks, WITHOUT generation — a diagnostic
@@ -42,6 +42,7 @@ from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import Engine
 from sqlalchemy.exc import OperationalError, SQLAlchemyError
 
+from wealthlens_analyst.answer.abstain import evaluate_evidence
 from wealthlens_analyst.answer.citations import SourceMeta, resolve_citations
 from wealthlens_analyst.answer.compose import (
     ComposedAnswer,
@@ -134,6 +135,7 @@ def _record_or_500(
     embedded: EmbeddingResult | None,
     generation: _GenerationSpend | None,
     started: float,
+    gate_signal: float | None = None,
 ) -> None:
     """Record a SERVED outcome's row; a write failure fails the request (500).
 
@@ -141,6 +143,7 @@ def _record_or_500(
     written, fail rather than serve unmetered spend — a silently dropped row
     would systematically understate the summed cap input the budget guard
     (H1-27) enforces against. Used for answered and (served) refused outcomes.
+    ``gate_signal`` is the abstention gate's signal (H1-22) when the gate ran.
     """
     tokens_in, tokens_out, cost_gbp = _combined_spend(embedded, generation)
     try:
@@ -152,6 +155,7 @@ def _record_or_500(
             tokens_out=tokens_out,
             cost_gbp=cost_gbp,
             latency_ms=_elapsed_ms(started),
+            gate_signal=gate_signal,
         )
     except SQLAlchemyError as exc:
         logger.error("ask: query_log write failed after a served %s outcome: %s", decision.value, exc)
@@ -165,6 +169,7 @@ def _record_error_best_effort(
     started: float,
     *,
     generation: _GenerationSpend | None = None,
+    gate_signal: float | None = None,
 ) -> None:
     """Record an `error` query_log row on a FAILURE path without masking the failure.
 
@@ -173,7 +178,8 @@ def _record_error_best_effort(
     and swallowed — the opposite policy from the served path (see _record_or_500).
     Records whatever WAS spent: the embedding, plus a generation result when the
     failure happened after generation (e.g. a resolution read that failed once
-    the answer was already generated and paid for).
+    the answer was already generated and paid for). ``gate_signal`` is recorded
+    when the failure happened after the gate ran (H1-22).
     """
     tokens_in, tokens_out, cost_gbp = _combined_spend(embedded, generation)
     try:
@@ -185,6 +191,7 @@ def _record_error_best_effort(
             tokens_out=tokens_out,
             cost_gbp=cost_gbp,
             latency_ms=_elapsed_ms(started),
+            gate_signal=gate_signal,
         )
     except Exception:  # deliberately broad: never mask the original error
         logger.exception("ask: could not record error query_log row")
@@ -379,17 +386,21 @@ def _ask_plain(
     """
     lexical, dense, embedded = _run_retrieval(question, engine, started)
     fused = fuse_rrf(lexical, dense, limit=_FUSED_LIMIT)
-    if not fused:
-        # No evidence at all: refuse without generating (embedding already
-        # spent; tokens_out=0). compose_answer forbids empty evidence, and the
-        # confidence gate over weak-but-nonempty evidence is H1-21/H1-22.
+    # Abstention gate (H1-21) BEFORE generation (H1-22): weak or thin fused
+    # evidence refuses here, so the refusal costs ZERO generation spend (ADR 0003
+    # D4). This subsumes the empty-fusion case (no evidence -> signal 0.0 -> not
+    # answerable). The gate signal is logged to query_log.gate_signal on every
+    # row from here on, so refusal behaviour is auditable / calibratable.
+    gate = evaluate_evidence(question, fused)
+    if not gate.answerable:
         _record_or_500(
             engine,
             question=question,
             decision=QueryDecision.REFUSED,
             embedded=embedded,
-            generation=None,
+            generation=None,  # no generation ran -> tokens_out/gen cost 0
             started=started,
+            gate_signal=gate.signal,
         )
         return RefusalResponse(mode="refusal", question=question, reason=_NO_EVIDENCE_REASON)
 
@@ -401,7 +412,7 @@ def _ask_plain(
         # Empty or truncated generation: real spend, unusable text. Record the
         # embed + generation spend (the exception carries the CompletionResult)
         # then fail — a possibly cut-off figure must never be served.
-        _record_error_best_effort(engine, question, embedded, started, generation=exc.result)
+        _record_error_best_effort(engine, question, embedded, started, generation=exc.result, gate_signal=gate.signal)
         raise HTTPException(status_code=500, detail="answer generation failed") from exc
     except SQLAlchemyError as exc:
         # Only the resolution read can raise this here (retrieval already
@@ -414,10 +425,10 @@ def _ask_plain(
         # multi-second generation window, where the DB is often reachable again
         # by the time record_query runs, so the best-effort write usually lands.
         logger.warning("ask: citation resolution backend unavailable: %s", exc)
-        _record_error_best_effort(engine, question, embedded, started, generation=composed)
+        _record_error_best_effort(engine, question, embedded, started, generation=composed, gate_signal=gate.signal)
         raise HTTPException(status_code=503, detail="retrieval backend unavailable") from exc
     except Exception:
-        _record_error_best_effort(engine, question, embedded, started, generation=composed)
+        _record_error_best_effort(engine, question, embedded, started, generation=composed, gate_signal=gate.signal)
         raise
 
     if not resolved.citations or resolved.unresolved_chunk_ids:
@@ -434,6 +445,7 @@ def _ask_plain(
             embedded=embedded,
             generation=composed,
             started=started,
+            gate_signal=gate.signal,
         )
         return RefusalResponse(mode="refusal", question=question, reason=_UNSUPPORTED_REASON)
 
@@ -449,6 +461,7 @@ def _ask_plain(
         embedded=embedded,
         generation=composed,
         started=started,
+        gate_signal=gate.signal,
     )
     return AnswerResponse(
         mode="answer",
@@ -475,9 +488,9 @@ def ask(
     exactly one query_log row (see the module docstring's accounting note).
 
     An unknown debug value is a 422 (the Literal), not a silent plain-mode
-    fallthrough. The budget guard (H1-27) will add the over_budget (429) variant
-    ahead of retrieval; the abstention gate (H1-21/H1-22) will add a confidence
-    refusal ahead of generation.
+    fallthrough. The abstention gate (H1-21/H1-22) refuses weak evidence ahead of
+    generation; the budget guard (H1-27) will add the over_budget (429) variant
+    ahead of retrieval.
     """
     started = time.perf_counter()
     if debug == "retrieval":

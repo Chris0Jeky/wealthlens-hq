@@ -23,6 +23,7 @@ from sqlalchemy import Engine
 from sqlalchemy.exc import DatabaseError, OperationalError
 
 import wealthlens_analyst.api.routes as routes
+from wealthlens_analyst.answer.abstain import GateDecision, evaluate_evidence
 from wealthlens_analyst.answer.citations import Citation, ResolvedCitations
 from wealthlens_analyst.answer.compose import ComposedAnswer, EmptyGenerationError
 from wealthlens_analyst.api.app import create_app
@@ -69,6 +70,13 @@ _EMBED_COST_GBP = 2.5e-7
 _GEN_TOKENS_IN = 120
 _GEN_TOKENS_OUT = 30
 _GEN_COST_GBP = 1.5e-3
+
+# The harness makes the abstention gate (H1-22) ANSWERABLE by default with this
+# signal, so compose-focused tests exercise the compose/resolve/serve seam in
+# isolation (not coupled to the gate's uncalibrated thresholds) AND every
+# post-gate query_log row carries a known gate_signal to assert. Gate-focused
+# tests override routes.evaluate_evidence themselves.
+_DEFAULT_GATE_SIGNAL = 0.5
 
 
 def _composed(text: str, cited: list[int], *, fabricated: list[int] | None = None) -> ComposedAnswer:
@@ -152,6 +160,13 @@ def harness(monkeypatch: pytest.MonkeyPatch) -> _Harness:
     monkeypatch.setattr(routes, "search_dense_by_vector", fake_dense_by_vector)
     monkeypatch.setattr(routes, "get_client", lambda: _FakeClient(calls))
     monkeypatch.setattr(routes, "record_query", fake_record_query)
+    # Default: gate answerable (compose-focused tests are decoupled from the
+    # gate's uncalibrated thresholds). Gate-focused tests override this.
+    monkeypatch.setattr(
+        routes,
+        "evaluate_evidence",
+        lambda q, ev: GateDecision(answerable=True, signal=_DEFAULT_GATE_SIGNAL, reason=None),
+    )
     app = create_app()
     app.dependency_overrides[get_engine] = lambda: _ENGINE_SENTINEL
     # get_registry reads app.state.registry (set at startup); the lifespan never
@@ -282,6 +297,37 @@ def test_ask_plain_answer_row_sums_embed_and_generation_spend(
     assert row["tokens_in"] == _EMBED_TOKENS + _GEN_TOKENS_IN
     assert row["tokens_out"] == _GEN_TOKENS_OUT
     assert row["cost_gbp"] == pytest.approx(_EMBED_COST_GBP + _GEN_COST_GBP)
+    # The gate's signal is logged on the answered row (H1-22).
+    assert row["gate_signal"] == _DEFAULT_GATE_SIGNAL
+
+
+def test_ask_plain_gate_refuses_weak_evidence_before_generation(
+    harness: _Harness, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # The abstention gate (H1-22) refuses BEFORE generation: compose must not
+    # run, the refusal costs zero generation spend (embed only), and the gate
+    # signal is logged to query_log for auditability/calibration.
+    monkeypatch.setattr(
+        routes,
+        "evaluate_evidence",
+        lambda q, ev: GateDecision(answerable=False, signal=0.123, reason="cannot_answer_from_corpus"),
+    )
+
+    def _must_not_compose(question: str, evidence: list[ChunkHit]) -> ComposedAnswer:
+        raise AssertionError("compose_answer must not run when the gate refuses")
+
+    monkeypatch.setattr(routes, "compose_answer", _must_not_compose)
+    response = harness.client.post("/ask", json={"question": "weak evidence"})
+    assert response.status_code == 200
+    body = response.json()
+    assert body["mode"] == "refusal"
+    assert body["reason"] == routes._NO_EVIDENCE_REASON
+    row = harness.recorded[0]
+    assert row["decision"] == QueryDecision.REFUSED
+    assert row["gate_signal"] == 0.123
+    assert row["tokens_out"] == 0  # no generation ran
+    assert row["tokens_in"] == _EMBED_TOKENS
+    assert row["cost_gbp"] == _EMBED_COST_GBP
 
 
 def test_ask_plain_refuses_on_a_partial_prune_rather_than_serve_an_uncited_claim(
@@ -308,6 +354,7 @@ def test_ask_plain_refuses_on_a_partial_prune_rather_than_serve_an_uncited_claim
     assert body["reason"] == routes._UNSUPPORTED_REASON
     assert harness.recorded[0]["decision"] == QueryDecision.REFUSED
     assert harness.recorded[0]["tokens_out"] == _GEN_TOKENS_OUT  # generation happened
+    assert harness.recorded[0]["gate_signal"] == _DEFAULT_GATE_SIGNAL
 
 
 def test_ask_plain_strips_drift_and_out_of_range_markers_from_a_served_answer(
@@ -349,6 +396,7 @@ def test_ask_plain_refuses_when_no_citation_resolves(harness: _Harness, monkeypa
     # Generation happened, so the refused row carries embed + generation spend.
     assert row["tokens_out"] == _GEN_TOKENS_OUT
     assert row["cost_gbp"] == pytest.approx(_EMBED_COST_GBP + _GEN_COST_GBP)
+    assert row["gate_signal"] == _DEFAULT_GATE_SIGNAL
 
 
 def test_ask_plain_refuses_when_every_cited_id_is_pruned(harness: _Harness, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -372,13 +420,17 @@ def test_ask_plain_refuses_when_every_cited_id_is_pruned(harness: _Harness, monk
     row = harness.recorded[0]
     assert row["decision"] == QueryDecision.REFUSED
     assert row["tokens_out"] == _GEN_TOKENS_OUT  # generation happened before the prune
+    assert row["gate_signal"] == _DEFAULT_GATE_SIGNAL
 
 
 def test_ask_plain_refuses_without_generating_when_no_evidence(
     harness: _Harness, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    # Zero fused candidates: refuse BEFORE generation (compose_answer forbids
-    # empty evidence). The refused row carries embed-only spend (tokens_out=0).
+    # Zero fused candidates: the REAL gate subsumes this (empty -> signal 0.0 ->
+    # not answerable) and refuses BEFORE generation. Integration check, so it
+    # restores the real gate over the harness's answerable default. The refused
+    # row carries embed-only spend (tokens_out=0) and gate_signal 0.0.
+    monkeypatch.setattr(routes, "evaluate_evidence", evaluate_evidence)
     monkeypatch.setattr(routes, "search_fts", lambda q, *, limit, engine: [])
     monkeypatch.setattr(routes, "search_dense_by_vector", lambda v, *, limit, engine: [])
 
@@ -396,6 +448,7 @@ def test_ask_plain_refuses_without_generating_when_no_evidence(
     assert row["tokens_in"] == _EMBED_TOKENS
     assert row["tokens_out"] == 0
     assert row["cost_gbp"] == _EMBED_COST_GBP
+    assert row["gate_signal"] == 0.0
 
 
 def test_ask_plain_wires_shared_engine_and_registry_into_resolution(
@@ -467,6 +520,7 @@ def test_ask_plain_empty_generation_is_500_and_records_the_spend(
     assert row["tokens_in"] == _EMBED_TOKENS + _GEN_TOKENS_IN
     assert row["tokens_out"] == 900
     assert row["cost_gbp"] == pytest.approx(_EMBED_COST_GBP + _GEN_COST_GBP)
+    assert row["gate_signal"] == _DEFAULT_GATE_SIGNAL  # the gate ran before the failed generation
 
 
 @pytest.mark.parametrize(
@@ -498,6 +552,7 @@ def test_ask_plain_resolution_db_failure_records_generation_spend_then_503(
     assert row["decision"] == QueryDecision.ERROR
     assert row["tokens_in"] == _EMBED_TOKENS + _GEN_TOKENS_IN
     assert row["tokens_out"] == _GEN_TOKENS_OUT
+    assert row["gate_signal"] == _DEFAULT_GATE_SIGNAL  # threaded onto the post-gate error row
 
 
 def test_ask_plain_fails_the_request_when_answer_accounting_cannot_be_written(
