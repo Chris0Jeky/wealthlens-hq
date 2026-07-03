@@ -206,13 +206,22 @@ def _default_registry_path() -> Path:
 
 
 def load_source_registry(path: Path | None = None) -> dict[str, SourceMeta]:
-    """Load ``{source_id: SourceMeta}`` from registries/sources.yml.
+    """Load ``{source_id: SourceMeta}`` for the citable (analyst-corpus) sources.
 
-    Fails loudly on a malformed registry or an entry missing id/name/url: a
-    citation needs a source name and URL, and silently skipping a broken entry
-    would later strip otherwise-valid citations for an opaque reason. The
-    request path (H1-20) loads this once at startup and injects it; the
-    standalone/CLI path lets it default.
+    Only entries tagged ``analyst_corpus: true`` are loaded. A citation's
+    ``source_id`` is always a frozen-corpus source (the corpus is frozen until
+    v1 ships), so the many unrelated dashboard/pipeline sources in this shared
+    repo-root registry are irrelevant here — and skipping them keeps the
+    analyst's citation resolution decoupled from edits to sources it never
+    cites (a malformed dashboard-only entry must not break the analyst).
+
+    Fails loudly on a structural fault or a malformed/duplicated CORPUS entry:
+    a missing id/name/url, or a repeated id (which would otherwise silently
+    last-wins and attach the WRONG source name/URL to every citation for that
+    source). A citation needs correct provenance, so a broken corpus entry is a
+    hard error, not something to paper over — consistent with every other
+    integrity guard here. The request path (H1-20) loads this once at startup
+    and injects it; the standalone/CLI path lets it default.
     """
     registry_path = path or _default_registry_path()
     with registry_path.open(encoding="utf-8") as handle:
@@ -224,14 +233,20 @@ def load_source_registry(path: Path | None = None) -> dict[str, SourceMeta]:
         raise ValueError(f"{registry_path} has no top-level 'sources' list")
     registry: dict[str, SourceMeta] = {}
     for entry in entries:
-        if not isinstance(entry, dict):
-            raise ValueError(f"{registry_path}: source entry is not a mapping: {entry!r}")
+        # Ignore anything that is not a citable corpus source — the analyst
+        # neither cites nor validates unrelated (e.g. dashboard-only) sources,
+        # so their shape is not its concern.
+        if not isinstance(entry, dict) or not entry.get("analyst_corpus"):
+            continue
         source_id = entry.get("id")
         name = entry.get("name")
         url = entry.get("url")
         if not source_id or not name or not url:
-            raise ValueError(f"{registry_path}: source entry missing id/name/url: {entry!r}")
-        registry[str(source_id)] = SourceMeta(name=str(name), url=str(url))
+            raise ValueError(f"{registry_path}: analyst_corpus source entry missing id/name/url: {entry!r}")
+        key = str(source_id)
+        if key in registry:
+            raise ValueError(f"{registry_path}: duplicate analyst_corpus source id {source_id!r}")
+        registry[key] = SourceMeta(name=str(name), url=str(url))
     return registry
 
 

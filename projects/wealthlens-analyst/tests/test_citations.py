@@ -18,6 +18,7 @@ from types import SimpleNamespace
 
 import pytest
 
+import wealthlens_analyst.answer.citations as citations
 from wealthlens_analyst.answer.citations import (
     ChunkProvenance,
     Citation,
@@ -41,6 +42,42 @@ class _ExplodingEngine:
 
     def connect(self) -> object:
         raise AssertionError("database connection opened despite no lookup being needed")
+
+
+class _FakeResult:
+    def __init__(self, rows: list[SimpleNamespace]) -> None:
+        self._rows = rows
+
+    def all(self) -> list[SimpleNamespace]:
+        return self._rows
+
+
+class _FakeConn:
+    def __init__(self, rows: list[SimpleNamespace]) -> None:
+        self._rows = rows
+
+    def __enter__(self) -> _FakeConn:
+        return self
+
+    def __exit__(self, *exc: object) -> bool:
+        return False
+
+    def execute(self, statement: object, params: object) -> _FakeResult:
+        return _FakeResult(self._rows)
+
+
+class _FakeEngine:
+    """Returns canned rows and records whether it was disposed."""
+
+    def __init__(self, rows: list[SimpleNamespace]) -> None:
+        self._rows = rows
+        self.disposed = False
+
+    def connect(self) -> _FakeConn:
+        return _FakeConn(self._rows)
+
+    def dispose(self) -> None:
+        self.disposed = True
 
 
 def _prov(chunk_id: int, source_id: str = "ons-was-wealth", section: str | None = "sec") -> ChunkProvenance:
@@ -83,6 +120,21 @@ def test_fabricated_id_is_stripped_and_flagged() -> None:
     """
     answer = _answer(cited=[9118, 777], fabricated=[777])
     provenance = {9118: _prov(9118)}
+    result = _resolve_citations(answer, provenance, _REGISTRY)
+
+    assert [c.chunk_id for c in result.citations] == [9118]
+    assert result.unresolved_chunk_ids == [777]
+
+
+def test_fabricated_id_is_stripped_even_when_it_names_a_real_chunk() -> None:
+    """The core guarantee: fabricated wins over a real lookup.
+
+    An id compose flagged as fabricated (not in the evidence the model saw) is
+    stripped even if it happens to name a real chunk with a valid registry
+    source — provenance the model never saw cannot vouch for a claim.
+    """
+    answer = _answer(cited=[9118, 777], fabricated=[777])
+    provenance = {9118: _prov(9118), 777: _prov(777)}  # 777 IS a real chunk here
     result = _resolve_citations(answer, provenance, _REGISTRY)
 
     assert [c.chunk_id for c in result.citations] == [9118]
@@ -157,10 +209,12 @@ def test_provenance_from_rows_empty() -> None:
 # ── registry loader (load_source_registry) ────────────────────────────────────
 
 
-def test_load_source_registry_maps_id_to_name_and_url(tmp_path: Path) -> None:
+def test_load_source_registry_maps_corpus_id_to_name_and_url(tmp_path: Path) -> None:
     registry_file = tmp_path / "sources.yml"
     registry_file.write_text(
-        "sources:\n  - id: a\n    name: A source\n    url: https://a\n  - id: b\n    name: B source\n    url: https://b\n",
+        "sources:\n"
+        "  - id: a\n    name: A source\n    url: https://a\n    analyst_corpus: true\n"
+        "  - id: b\n    name: B source\n    url: https://b\n    analyst_corpus: true\n",
         encoding="utf-8",
     )
     assert load_source_registry(registry_file) == {
@@ -169,10 +223,40 @@ def test_load_source_registry_maps_id_to_name_and_url(tmp_path: Path) -> None:
     }
 
 
-def test_load_source_registry_fails_on_entry_missing_url(tmp_path: Path) -> None:
+def test_load_source_registry_ignores_non_corpus_sources(tmp_path: Path) -> None:
+    """Only analyst_corpus sources are loaded; a malformed NON-corpus entry does not break the load.
+
+    Decouples the analyst from edits to the many unrelated (dashboard) sources in
+    the shared registry — including a dashboard-only entry left mid-edit with no url.
+    """
     registry_file = tmp_path / "sources.yml"
-    registry_file.write_text("sources:\n  - id: a\n    name: A source\n", encoding="utf-8")
+    registry_file.write_text(
+        "sources:\n"
+        "  - id: corpus\n    name: Corpus source\n    url: https://c\n    analyst_corpus: true\n"
+        "  - id: dashboard-only\n    name: Dashboard source\n"  # no url, no analyst_corpus
+        "  - id: other-dashboard\n    name: Other\n    url: https://o\n",  # well-formed, non-corpus
+        encoding="utf-8",
+    )
+    assert load_source_registry(registry_file) == {"corpus": SourceMeta("Corpus source", "https://c")}
+
+
+def test_load_source_registry_fails_on_corpus_entry_missing_url(tmp_path: Path) -> None:
+    registry_file = tmp_path / "sources.yml"
+    registry_file.write_text("sources:\n  - id: a\n    name: A source\n    analyst_corpus: true\n", encoding="utf-8")
     with pytest.raises(ValueError, match="missing id/name/url"):
+        load_source_registry(registry_file)
+
+
+def test_load_source_registry_fails_on_duplicate_corpus_id(tmp_path: Path) -> None:
+    """A repeated corpus id would silently clobber provenance — fail loud instead."""
+    registry_file = tmp_path / "sources.yml"
+    registry_file.write_text(
+        "sources:\n"
+        "  - id: dup\n    name: First\n    url: https://first\n    analyst_corpus: true\n"
+        "  - id: dup\n    name: Second\n    url: https://second\n    analyst_corpus: true\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="duplicate analyst_corpus source id"):
         load_source_registry(registry_file)
 
 
@@ -183,15 +267,33 @@ def test_load_source_registry_fails_without_sources_list(tmp_path: Path) -> None
         load_source_registry(registry_file)
 
 
-def test_default_registry_resolves_the_corpus_sources() -> None:
-    """The real registries/sources.yml still carries the two frozen-corpus sources.
+#: The frozen v1 analyst corpus — every source id tagged analyst_corpus: true in
+#: registries/sources.yml. A rename/removal/duplicate of any breaks live citation
+#: resolution (resolve_citations strips an uncatalogued source_id as unknown-source).
+#: The corpus is FROZEN until v1 ships, so pin the EXACT set: changing it is a
+#: deliberate act that must update this test.
+_FROZEN_CORPUS_SOURCE_IDS = {
+    "ons-was-wealth",
+    "hmrc-cgt-statistics",
+    "hmrc-tax-receipts",
+    "rf-intergenerational-audit-2024",
+    "ifs-r188-inheritances-lifecycle",
+    "rf-before-the-fall-2025",
+    "ifs-green-budget-2023-iht",
+    "ifs-deaton-trends-wealth",
+}
 
-    Reads the committed file (DB-free): a future rename of these ids would break
-    live citation resolution, so couple H1-19 to the registry that ships.
+
+def test_default_registry_resolves_every_frozen_corpus_source() -> None:
+    """The real registries/sources.yml carries exactly the frozen-corpus sources, each citable.
+
+    Reads the committed file (DB-free). Exact-set: catches a corpus source lost to
+    a rename/removal AND an unexpected corpus addition; each must resolve to a name
+    and an http URL so live citations render.
     """
     registry = load_source_registry()
-    for source_id in ("ons-was-wealth", "hmrc-cgt-statistics"):
-        assert source_id in registry
+    assert set(registry) == _FROZEN_CORPUS_SOURCE_IDS
+    for source_id in _FROZEN_CORPUS_SOURCE_IDS:
         assert registry[source_id].name
         assert registry[source_id].url.startswith("http")
 
@@ -216,3 +318,37 @@ def test_resolve_citations_defaults_registry_from_disk_without_db() -> None:
     answer = _answer(cited=[777], fabricated=[777])
     result = resolve_citations(answer, engine=_ExplodingEngine())  # type: ignore[arg-type]
     assert result.unresolved_chunk_ids == [777]
+
+
+def test_resolve_citations_fetches_rows_and_does_not_dispose_a_supplied_engine() -> None:
+    """The DB-fetch path resolves rows to citations and leaves a caller-supplied engine alone.
+
+    A caller-supplied (shared app) engine is the caller's to manage — disposing it
+    would tear down a pool still in use in the H1-20 request path.
+    """
+    answer = _answer(cited=[9118])
+    rows = [
+        SimpleNamespace(
+            chunk_id=9118, source_id="ons-was-wealth", document_id="was-decile", section="Decile 10", page=None
+        )
+    ]
+    engine = _FakeEngine(rows)
+    result = resolve_citations(answer, engine=engine, registry=_REGISTRY)  # type: ignore[arg-type]
+
+    assert [c.chunk_id for c in result.citations] == [9118]
+    assert result.citations[0].source_name == "ONS Wealth and Assets Survey (WAS)"
+    assert result.citations[0].url == "https://ons.example/was"
+    assert engine.disposed is False
+
+
+def test_resolve_citations_disposes_a_self_built_engine(monkeypatch: pytest.MonkeyPatch) -> None:
+    """When it builds its own engine (no engine injected), resolve_citations disposes it."""
+    answer = _answer(cited=[9118])
+    rows = [SimpleNamespace(chunk_id=9118, source_id="ons-was-wealth", document_id="d", section="s", page=None)]
+    engine = _FakeEngine(rows)
+    monkeypatch.setattr(citations, "load_settings", lambda: object())
+    monkeypatch.setattr(citations, "engine_from_settings", lambda settings: engine)
+    result = resolve_citations(answer, registry=_REGISTRY)
+
+    assert [c.chunk_id for c in result.citations] == [9118]
+    assert engine.disposed is True

@@ -13,11 +13,17 @@ on:
     paths:
       - "projects/wealthlens-analyst/**"
       - ".github/workflows/ci-analyst.yml"
+      # The analyst resolves citations against this shared registry (H1-19), so a
+      # rename/removal/duplicate of a frozen-corpus source here must run the analyst
+      # gate (test_default_registry_resolves_every_frozen_corpus_source), even though
+      # the file lives outside the analyst subtree.
+      - "registries/sources.yml"
   pull_request:
     branches: [main]
     paths:
       - "projects/wealthlens-analyst/**"
       - ".github/workflows/ci-analyst.yml"
+      - "registries/sources.yml"
   # Weekly catch-all: the path-filtered triggers above don't fire while the analyst
   # subtree is idle, so a dependency/stub drift (e.g. a new mypy/numpy release that
   # breaks strict typing — the exact class that reddened ci-sim in session 10) would
