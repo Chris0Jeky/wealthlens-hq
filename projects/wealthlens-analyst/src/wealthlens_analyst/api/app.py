@@ -20,6 +20,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
+from wealthlens_analyst.answer.citations import load_source_registry
 from wealthlens_analyst.api.routes import router
 from wealthlens_analyst.config import load_settings
 from wealthlens_analyst.db import engine_from_settings
@@ -32,11 +33,15 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
 
     Startup validates the WHOLE configuration the request path needs, so a
     misconfigured deployment dies at startup instead of 500-ing on the first
-    query: engine_from_settings fails loudly when DATABASE_URL is unset, and
+    query: engine_from_settings fails loudly when DATABASE_URL is unset,
     get_client() fails loudly when OPENAI_API_KEY / EMBEDDING_MODEL are unset
-    (the dense leg would need them on every /ask). Neither opens a connection
-    or spends anything — get_client's result is discarded; SQLAlchemy pools
-    lazily, so /healthz is the first thing that actually touches the database.
+    (the dense leg would need them on every /ask), and load_source_registry
+    fails loudly on a malformed/duplicated corpus source (plain mode resolves
+    every citation's source name/URL through it). The registry is loaded ONCE
+    here and injected via get_registry, so no /ask re-reads sources.yml from
+    disk. None of these open a connection or spend anything — get_client's
+    result is discarded; SQLAlchemy pools lazily, so /healthz is the first
+    thing that actually touches the database.
     """
     # Uvicorn configures only its own loggers, so without this the package's
     # INFO logs (embedding-cost lines from retrieval/ingest — visible cost is
@@ -47,6 +52,7 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
     engine = engine_from_settings(load_settings())
     try:
         get_client()  # result discarded — this is the config validation only
+        app.state.registry = load_source_registry()
         app.state.engine = engine
         yield
     finally:
