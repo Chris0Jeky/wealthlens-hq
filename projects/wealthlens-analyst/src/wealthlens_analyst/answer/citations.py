@@ -34,8 +34,10 @@ Task H1-19 in tasks/hero1-backlog.md.
 from __future__ import annotations
 
 import logging
+import os
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field
+from datetime import date
 from pathlib import Path
 from typing import Any
 
@@ -60,7 +62,15 @@ class SourceMeta:
 
 @dataclass(frozen=True)
 class Citation:
-    """A resolved, render-ready citation."""
+    """A resolved, render-ready citation.
+
+    Carries the full ADR 0001 §4 provenance tuple (section, page, span) plus the
+    source's registry name + URL and the ingestion ``access_date`` — the
+    data-integrity rule requires every citation to carry both a URL and an
+    access date, and ``span`` disambiguates repeated section labels / coarse
+    pages, so nothing that the DB stores about a citation's origin is dropped
+    here.
+    """
 
     chunk_id: int
     source_id: str
@@ -68,16 +78,18 @@ class Citation:
     document_id: str
     section: str | None
     page: int | None
+    span: str | None
     url: str  # the registry source URL (registries/sources.yml)
+    access_date: date  # when the source was fetched (chunks.access_date, NOT NULL)
 
 
 @dataclass(frozen=True)
 class ChunkProvenance:
     """Ingestion-time provenance for one chunk, as stored in the chunks table.
 
-    The citation-relevant subset of the chunks row (ADR 0001 §4): identity plus
-    where in the source it came from. Deliberately no text/span — resolution is
-    about provenance, not re-fetching the evidence body.
+    The citation-relevant subset of the chunks row (ADR 0001 §4): identity, where
+    in the source it came from (section/page/span), and the access date. No
+    text — resolution is about provenance, not re-fetching the evidence body.
     """
 
     chunk_id: int
@@ -85,6 +97,8 @@ class ChunkProvenance:
     document_id: str
     section: str | None
     page: int | None
+    span: str | None
+    access_date: date
 
 
 @dataclass(frozen=True)
@@ -105,11 +119,11 @@ class ResolvedCitations:
 
 # Fetch provenance for a set of cited ids. The IN-list binds via an EXPANDING
 # bindparam (SQLAlchemy renders one placeholder per id, safely); the caller
-# short-circuits an empty id list so `IN ()` is never generated. Only the
-# columns a Citation needs are selected (no text/span/ts).
+# short-circuits an empty id list so `IN ()` is never generated. Selects the
+# ADR 0001 provenance columns a Citation needs (not the chunk text or ts).
 _RESOLVE_SQL = sa.text(
     """
-    SELECT chunk_id, source_id, document_id, section, page
+    SELECT chunk_id, source_id, document_id, section, page, span, access_date
     FROM chunks
     WHERE chunk_id IN :chunk_ids
     """
@@ -133,6 +147,8 @@ def _provenance_from_rows(rows: Iterable[Any]) -> dict[int, ChunkProvenance]:
             document_id=row.document_id,
             section=row.section,
             page=row.page,
+            span=row.span,
+            access_date=row.access_date,
         )
     return provenance
 
@@ -185,7 +201,9 @@ def _resolve_citations(
                 document_id=provenance.document_id,
                 section=provenance.section,
                 page=provenance.page,
+                span=provenance.span,
                 url=source.url,
+                access_date=provenance.access_date,
             )
         )
     return ResolvedCitations(citations=citations, unresolved_chunk_ids=unresolved)
@@ -194,15 +212,23 @@ def _resolve_citations(
 def _default_registry_path() -> Path:
     """Locate ``registries/sources.yml`` at the repo root.
 
-    Walks up from this file to the ancestor holding both ``registries/`` and
-    ``projects/`` (mirroring ingest.slice_corpus's repo-root discovery), so it
-    resolves whether the package is run from source or an editable install,
-    rather than depending on a fixed directory depth.
+    ``WEALTHLENS_REPO_ROOT`` overrides the search, for a non-editable install or
+    deployed service where the package no longer sits inside the checked-out
+    tree (the H1-30 shape). Otherwise walk up from this file to the ancestor
+    holding both ``registries/`` and ``projects/``. Mirrors
+    ingest.slice_corpus._find_repo_root exactly, so both the ingest and the
+    citation paths resolve the shared registry the same way.
     """
+    override = os.environ.get("WEALTHLENS_REPO_ROOT")
+    if override:
+        return Path(override) / "registries" / "sources.yml"
     for parent in Path(__file__).resolve().parents:
         if (parent / "registries").is_dir() and (parent / "projects").is_dir():
             return parent / "registries" / "sources.yml"
-    raise RuntimeError("could not locate registries/sources.yml (no ancestor has both registries/ and projects/)")
+    raise RuntimeError(
+        "could not locate registries/sources.yml (no ancestor has both registries/ and projects/); "
+        "set WEALTHLENS_REPO_ROOT to override"
+    )
 
 
 def load_source_registry(path: Path | None = None) -> dict[str, SourceMeta]:

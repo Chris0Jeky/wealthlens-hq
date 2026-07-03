@@ -66,7 +66,8 @@ def main() -> int:
     for citation in resolved.citations:
         loc = f"page {citation.page}" if citation.page is not None else (citation.section or "-")
         print(
-            f"  [chunk:{citation.chunk_id}] {citation.source_name} ({citation.source_id}) — {loc}\n      {citation.url}"
+            f"  [chunk:{citation.chunk_id}] {citation.source_name} ({citation.source_id}) — {loc}"
+            f"\n      {citation.url} (accessed {citation.access_date})"
         )
     if resolved.unresolved_chunk_ids:
         print(f"unresolved (unexpected for the clean answer): {resolved.unresolved_chunk_ids}")

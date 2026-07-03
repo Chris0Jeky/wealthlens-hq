@@ -13,6 +13,7 @@ here.
 from __future__ import annotations
 
 import logging
+from datetime import date
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -35,6 +36,7 @@ _REGISTRY = {
     "ons-was-wealth": SourceMeta(name="ONS Wealth and Assets Survey (WAS)", url="https://ons.example/was"),
     "hmrc-cgt-statistics": SourceMeta(name="HMRC Capital Gains Tax Statistics", url="https://hmrc.example/cgt"),
 }
+_ACCESS_DATE = date(2026, 5, 16)
 
 
 class _ExplodingEngine:
@@ -82,7 +84,13 @@ class _FakeEngine:
 
 def _prov(chunk_id: int, source_id: str = "ons-was-wealth", section: str | None = "sec") -> ChunkProvenance:
     return ChunkProvenance(
-        chunk_id=chunk_id, source_id=source_id, document_id=f"doc-{chunk_id}", section=section, page=None
+        chunk_id=chunk_id,
+        source_id=source_id,
+        document_id=f"doc-{chunk_id}",
+        section=section,
+        page=None,
+        span=f"span-{chunk_id}",
+        access_date=_ACCESS_DATE,
     )
 
 
@@ -96,7 +104,9 @@ def _answer(cited: list[int], fabricated: list[int] | None = None) -> ComposedAn
 def test_resolves_cited_id_to_full_citation() -> None:
     """A cited, evidence-grounded id becomes a Citation with DB provenance + registry name/URL."""
     answer = _answer([9118])
-    provenance = {9118: ChunkProvenance(9118, "ons-was-wealth", "was-decile", "Decile 10", None)}
+    provenance = {
+        9118: ChunkProvenance(9118, "ons-was-wealth", "was-decile", "Decile 10", None, "decile=10", _ACCESS_DATE)
+    }
     result = _resolve_citations(answer, provenance, _REGISTRY)
 
     assert result.unresolved_chunk_ids == []
@@ -108,7 +118,9 @@ def test_resolves_cited_id_to_full_citation() -> None:
         document_id="was-decile",
         section="Decile 10",
         page=None,
+        span="decile=10",
         url="https://ons.example/was",
+        access_date=_ACCESS_DATE,
     )
 
 
@@ -191,15 +203,32 @@ def test_fabricated_id_is_logged_loudly(caplog: pytest.LogCaptureFixture) -> Non
 
 def test_provenance_from_rows_maps_and_coerces_chunk_id() -> None:
     rows = [
-        SimpleNamespace(chunk_id=7, source_id="ons-was-wealth", document_id="d", section="s", page=3),
-        SimpleNamespace(chunk_id=True, source_id="hmrc-cgt-statistics", document_id="d2", section=None, page=None),
+        SimpleNamespace(
+            chunk_id=7,
+            source_id="ons-was-wealth",
+            document_id="d",
+            section="s",
+            page=3,
+            span="sp",
+            access_date=_ACCESS_DATE,
+        ),
+        SimpleNamespace(
+            chunk_id=True,
+            source_id="hmrc-cgt-statistics",
+            document_id="d2",
+            section=None,
+            page=None,
+            span=None,
+            access_date=_ACCESS_DATE,
+        ),
     ]
     provenance = _provenance_from_rows(rows)
 
     assert set(provenance) == {7, 1}  # True coerces to int 1
     assert isinstance(provenance[1].chunk_id, int)
-    assert provenance[7] == ChunkProvenance(7, "ons-was-wealth", "d", "s", 3)
+    assert provenance[7] == ChunkProvenance(7, "ons-was-wealth", "d", "s", 3, "sp", _ACCESS_DATE)
     assert provenance[1].section is None
+    assert provenance[1].span is None
 
 
 def test_provenance_from_rows_empty() -> None:
@@ -329,7 +358,13 @@ def test_resolve_citations_fetches_rows_and_does_not_dispose_a_supplied_engine()
     answer = _answer(cited=[9118])
     rows = [
         SimpleNamespace(
-            chunk_id=9118, source_id="ons-was-wealth", document_id="was-decile", section="Decile 10", page=None
+            chunk_id=9118,
+            source_id="ons-was-wealth",
+            document_id="was-decile",
+            section="Decile 10",
+            page=None,
+            span="decile=10",
+            access_date=_ACCESS_DATE,
         )
     ]
     engine = _FakeEngine(rows)
@@ -338,13 +373,25 @@ def test_resolve_citations_fetches_rows_and_does_not_dispose_a_supplied_engine()
     assert [c.chunk_id for c in result.citations] == [9118]
     assert result.citations[0].source_name == "ONS Wealth and Assets Survey (WAS)"
     assert result.citations[0].url == "https://ons.example/was"
+    assert result.citations[0].span == "decile=10"
+    assert result.citations[0].access_date == _ACCESS_DATE
     assert engine.disposed is False
 
 
 def test_resolve_citations_disposes_a_self_built_engine(monkeypatch: pytest.MonkeyPatch) -> None:
     """When it builds its own engine (no engine injected), resolve_citations disposes it."""
     answer = _answer(cited=[9118])
-    rows = [SimpleNamespace(chunk_id=9118, source_id="ons-was-wealth", document_id="d", section="s", page=None)]
+    rows = [
+        SimpleNamespace(
+            chunk_id=9118,
+            source_id="ons-was-wealth",
+            document_id="d",
+            section="s",
+            page=None,
+            span="sp",
+            access_date=_ACCESS_DATE,
+        )
+    ]
     engine = _FakeEngine(rows)
     monkeypatch.setattr(citations, "load_settings", lambda: object())
     monkeypatch.setattr(citations, "engine_from_settings", lambda settings: engine)
@@ -352,3 +399,11 @@ def test_resolve_citations_disposes_a_self_built_engine(monkeypatch: pytest.Monk
 
     assert [c.chunk_id for c in result.citations] == [9118]
     assert engine.disposed is True
+
+
+def test_default_registry_path_honors_repo_root_override(monkeypatch: pytest.MonkeyPatch) -> None:
+    """WEALTHLENS_REPO_ROOT overrides discovery for non-editable/deployed installs (mirrors ingest)."""
+    from wealthlens_analyst.answer.citations import _default_registry_path
+
+    monkeypatch.setenv("WEALTHLENS_REPO_ROOT", "/opt/wealthlens")
+    assert _default_registry_path() == Path("/opt/wealthlens") / "registries" / "sources.yml"
