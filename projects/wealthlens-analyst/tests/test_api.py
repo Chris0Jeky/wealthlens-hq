@@ -23,6 +23,7 @@ from sqlalchemy import Engine
 from sqlalchemy.exc import DatabaseError, OperationalError
 
 import wealthlens_analyst.api.routes as routes
+from wealthlens_analyst.answer.abstain import GateDecision
 from wealthlens_analyst.answer.citations import Citation, ResolvedCitations
 from wealthlens_analyst.answer.compose import ComposedAnswer, EmptyGenerationError
 from wealthlens_analyst.api.app import create_app
@@ -282,6 +283,37 @@ def test_ask_plain_answer_row_sums_embed_and_generation_spend(
     assert row["tokens_in"] == _EMBED_TOKENS + _GEN_TOKENS_IN
     assert row["tokens_out"] == _GEN_TOKENS_OUT
     assert row["cost_gbp"] == pytest.approx(_EMBED_COST_GBP + _GEN_COST_GBP)
+    # The real gate ran on the fused fixture and passed; its signal is logged.
+    assert row["gate_signal"] is not None and row["gate_signal"] > 0
+
+
+def test_ask_plain_gate_refuses_weak_evidence_before_generation(
+    harness: _Harness, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # The abstention gate (H1-22) refuses BEFORE generation: compose must not
+    # run, the refusal costs zero generation spend (embed only), and the gate
+    # signal is logged to query_log for auditability/calibration.
+    monkeypatch.setattr(
+        routes,
+        "evaluate_evidence",
+        lambda q, ev: GateDecision(answerable=False, signal=0.123, reason="cannot_answer_from_corpus"),
+    )
+
+    def _must_not_compose(question: str, evidence: list[ChunkHit]) -> ComposedAnswer:
+        raise AssertionError("compose_answer must not run when the gate refuses")
+
+    monkeypatch.setattr(routes, "compose_answer", _must_not_compose)
+    response = harness.client.post("/ask", json={"question": "weak evidence"})
+    assert response.status_code == 200
+    body = response.json()
+    assert body["mode"] == "refusal"
+    assert body["reason"] == routes._NO_EVIDENCE_REASON
+    row = harness.recorded[0]
+    assert row["decision"] == QueryDecision.REFUSED
+    assert row["gate_signal"] == 0.123
+    assert row["tokens_out"] == 0  # no generation ran
+    assert row["tokens_in"] == _EMBED_TOKENS
+    assert row["cost_gbp"] == _EMBED_COST_GBP
 
 
 def test_ask_plain_refuses_on_a_partial_prune_rather_than_serve_an_uncited_claim(
@@ -377,8 +409,9 @@ def test_ask_plain_refuses_when_every_cited_id_is_pruned(harness: _Harness, monk
 def test_ask_plain_refuses_without_generating_when_no_evidence(
     harness: _Harness, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    # Zero fused candidates: refuse BEFORE generation (compose_answer forbids
-    # empty evidence). The refused row carries embed-only spend (tokens_out=0).
+    # Zero fused candidates: the gate subsumes this (empty -> signal 0.0 -> not
+    # answerable) and refuses BEFORE generation. The refused row carries
+    # embed-only spend (tokens_out=0) and gate_signal 0.0.
     monkeypatch.setattr(routes, "search_fts", lambda q, *, limit, engine: [])
     monkeypatch.setattr(routes, "search_dense_by_vector", lambda v, *, limit, engine: [])
 
@@ -396,6 +429,7 @@ def test_ask_plain_refuses_without_generating_when_no_evidence(
     assert row["tokens_in"] == _EMBED_TOKENS
     assert row["tokens_out"] == 0
     assert row["cost_gbp"] == _EMBED_COST_GBP
+    assert row["gate_signal"] == 0.0
 
 
 def test_ask_plain_wires_shared_engine_and_registry_into_resolution(
