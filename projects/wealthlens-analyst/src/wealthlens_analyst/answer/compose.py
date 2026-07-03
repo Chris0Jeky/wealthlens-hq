@@ -163,16 +163,22 @@ def strip_unresolved_citation_markers(text: str, resolved_ids: set[int]) -> str:
     always stripped). A leaked citation-shaped token for an unresolvable citation
     is exactly the failure mode this product exists to prevent. Pure and DB-free.
 
-    An immediately-preceding whitespace run is consumed with a stripped marker so
-    dropping " [chunk:99]" mid-sentence does not leave a double space; a kept
-    marker is returned byte-identical (its leading space preserved).
+    A marker is kept ONLY when it is the exact canonical ``[chunk:<id>]`` form AND
+    its id is a served citation. A drift form ("[chunk: 2]") is stripped even when
+    id 2 resolved, because the strict parser never counted that token as a
+    citation — keeping it would leak unparsed citation-shaped text. An
+    immediately-preceding whitespace run is consumed with a stripped marker so
+    dropping " [chunk:99]" mid-sentence does not leave a double space.
     """
 
     def _replace(match: re.Match[str]) -> str:
-        # match.group(0) includes the leading whitespace; group(1) is the id.
-        # int() handles arbitrary-width ids (a > BIGINT hallucination) safely;
-        # such an id can never be in resolved_ids, so it is stripped.
-        return match.group(0) if int(match.group(1)) in resolved_ids else ""
+        # group(0) includes the leading whitespace; group(1) is the id. int()
+        # handles arbitrary-width ids (a > BIGINT hallucination) safely. Keep only
+        # the canonical form for a served id; every drift/unbacked marker is dropped.
+        chunk_id = int(match.group(1))
+        if chunk_id in resolved_ids and match.group(0).lstrip() == f"[chunk:{chunk_id}]":
+            return match.group(0)
+        return ""
 
     return _CITATION_STRIP_RE.sub(_replace, text)
 

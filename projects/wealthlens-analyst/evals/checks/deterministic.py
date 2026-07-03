@@ -122,10 +122,12 @@ def check_golden_static() -> list[str]:
 def _check_ask_response(body: dict[str, Any], validator: jsonschema.Draft202012Validator) -> list[str]:
     """Validate one live /ask response body against the schema and its invariants.
 
-    Schema validity is the H1-20 done-when. On top of it, an `answer` response
-    must carry >= 1 citation and must not leak an inline `[chunk:<id>]` marker
+    Schema validity is the H1-20 done-when — and the schema already enforces
+    ``mode`` (the discriminator) and, for an answer, ``citations`` minItems:1.
+    The one invariant the schema cannot express is cross-field: an ``answer``
+    body must not carry an inline ``[chunk:<id>]`` marker (strict OR drift form)
     for an id that is not among its served citations (the serving policy —
-    fabricated / pruned markers are stripped before serving).
+    fabricated / pruned / drift markers are stripped before serving).
     """
     schema_failures = [f"schema violation: {error.message}" for error in validator.iter_errors(body)]
     if schema_failures:
@@ -133,10 +135,7 @@ def _check_ask_response(body: dict[str, Any], validator: jsonschema.Draft202012V
         return schema_failures
     failures: list[str] = []
     if body.get("mode") == "answer":
-        citations = body.get("citations") or []
-        if not citations:
-            failures.append("answer response carries no citations")
-        cited_ids = {citation["chunk_id"] for citation in citations}
+        cited_ids = {citation["chunk_id"] for citation in body.get("citations", [])}
         markers = {int(match) for match in _MARKER_RE.findall(body.get("answer", ""))}
         orphan_markers = sorted(markers - cited_ids)
         if orphan_markers:

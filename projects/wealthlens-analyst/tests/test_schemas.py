@@ -57,7 +57,6 @@ def _sample_answer() -> dict[str, Any]:
                 "access_date": "2026-06-01",
             }
         ],
-        "unresolved_chunk_ids": [],
     }
 
 
@@ -94,6 +93,10 @@ def test_committed_schema_validates_variants_and_rejects_malformed_bodies() -> N
     # An answer missing its required fields, and an unknown mode, must not validate.
     assert list(validator.iter_errors({"mode": "answer", "question": "q"}))
     assert list(validator.iter_errors({"mode": "mystery", "question": "q", "reason": "x"}))
+    # The discriminator is required: a mode-less answer-shaped body is invalid.
+    assert list(validator.iter_errors({k: v for k, v in _sample_answer().items() if k != "mode"}))
+    # An answer means a CITED answer: empty citations is rejected (minItems: 1).
+    assert list(validator.iter_errors({**_sample_answer(), "citations": []}))
 
 
 def _validator() -> jsonschema.Draft202012Validator:
@@ -108,10 +111,11 @@ def test_check_ask_response_passes_a_refusal() -> None:
     assert det._check_ask_response({"mode": "refusal", "question": "q", "reason": "no"}, _validator()) == []
 
 
-def test_check_ask_response_flags_an_answer_with_no_citations() -> None:
+def test_check_ask_response_rejects_an_answer_with_no_citations() -> None:
+    # citations is minItems:1 in the schema, so an empty-citations answer is
+    # rejected at the schema layer (an answer means a fully-cited answer).
     body = {**_sample_answer(), "citations": []}
-    failures = det._check_ask_response(body, _validator())
-    assert any("no citations" in f for f in failures)
+    assert det._check_ask_response(body, _validator())
 
 
 def test_check_ask_response_flags_a_leaked_orphan_marker() -> None:

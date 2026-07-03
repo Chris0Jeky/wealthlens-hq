@@ -66,25 +66,28 @@ class CitationModel(BaseModel):
 class AnswerResponse(BaseModel):
     """A cited answer to an in-corpus question.
 
-    ``answer`` is the served text with only *resolved* citation markers left
-    inline: markers for pruned ids (fabricated, or absent from the corpus /
-    registry) are stripped before serving so a fabricated ``[chunk:<id>]`` never
-    reaches the user. The pruned ids are surfaced in ``unresolved_chunk_ids`` for
-    transparency — the response flags that citations were pruned rather than
-    silently serving fewer than the model claimed.
+    An answer is served ONLY when EVERY cited id resolved — "answer" means a
+    fully-cited answer. The serving path refuses if any citation was pruned
+    (fabricated / missing / unknown-source), so the body never carries a claim
+    whose citation could not be verified, and ``citations`` is always non-empty
+    (``minItems: 1`` in the published schema). ``answer`` keeps only canonical
+    ``[chunk:<id>]`` markers for served citations; any drift / out-of-range
+    citation-shaped text the model emitted is stripped before serving.
+
+    ``mode`` has no default so the published schema marks the discriminator
+    ``required`` — a body without it is not a valid response.
     """
 
-    mode: Literal["answer"] = "answer"
+    mode: Literal["answer"]
     question: str
     answer: str
-    citations: list[CitationModel]
-    unresolved_chunk_ids: list[int] = Field(default_factory=list)
+    citations: list[CitationModel] = Field(min_length=1)
 
 
 class RefusalResponse(BaseModel):
     """Honest abstention: the corpus does not support a cited answer (ADR 0003 D4)."""
 
-    mode: Literal["refusal"] = "refusal"
+    mode: Literal["refusal"]
     question: str
     reason: str
 
@@ -92,7 +95,7 @@ class RefusalResponse(BaseModel):
 class OverBudgetResponse(BaseModel):
     """The monthly spend cap was exceeded (HTTP 429). Produced by the guard (H1-27)."""
 
-    mode: Literal["over_budget"] = "over_budget"
+    mode: Literal["over_budget"]
     question: str
     reason: str
 

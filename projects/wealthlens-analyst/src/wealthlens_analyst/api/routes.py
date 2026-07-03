@@ -7,8 +7,9 @@
                           ``answer`` with resolved citations, or a ``refusal``
                           when the corpus does not support a cited answer. The
                           full confidence gate (weak-but-nonempty evidence) is
-                          H1-21/H1-22; H1-20 refuses only the degenerate cases
-                          (no evidence at all, or no citation that resolves).
+                          H1-21/H1-22; H1-20 refuses only the non-confidence
+                          cases (no evidence at all; not fully cited — i.e. no
+                          citation resolves, or ANY cited id was pruned).
                           The budget guard (H1-27) adds the ``over_budget`` (429)
                           variant. Every request writes a query_log row.
                         * ?debug=retrieval (H1-13) returns the RRF-fused
@@ -77,7 +78,9 @@ _COMPOSE_EVIDENCE_LIMIT = 8
 #: Refusal reasons served in the ``refusal`` variant. Human-readable and honest;
 #: both are the "cannot answer from this corpus" outcome (ADR 0003 D4).
 _NO_EVIDENCE_REASON = "No matching evidence was found in the corpus for this question."
-_UNSUPPORTED_REASON = "The available evidence does not support a citable answer to this question."
+#: Covers both a model refusal (nothing citable) and a partial prune (not FULLY
+#: citable) — in either case a fully cited answer cannot be returned.
+_UNSUPPORTED_REASON = "The available evidence does not support a fully cited answer to this question."
 
 
 class _GenerationSpend(Protocol):
@@ -388,7 +391,7 @@ def _ask_plain(
             generation=None,
             started=started,
         )
-        return RefusalResponse(question=question, reason=_NO_EVIDENCE_REASON)
+        return RefusalResponse(mode="refusal", question=question, reason=_NO_EVIDENCE_REASON)
 
     composed: ComposedAnswer | None = None
     try:
@@ -417,15 +420,13 @@ def _ask_plain(
         _record_error_best_effort(engine, question, embedded, started, generation=composed)
         raise
 
-    resolved_ids = {citation.chunk_id for citation in resolved.citations}
-    # Serving policy: strip every inline marker that is NOT a served citation, so
-    # no fabricated / pruned / out-of-range [chunk:<id>] leaks into the body.
-    served_text = strip_unresolved_citation_markers(composed.text, resolved_ids).strip()
-    if not resolved.citations:
-        # The model cited nothing that resolves (its mandated refusal sentence,
-        # or every cited id was pruned) — a citation-free factual answer is
-        # exactly what a statistics product must not serve. Refuse; the
-        # generation DID spend, so the refused row carries that spend.
+    if not resolved.citations or resolved.unresolved_chunk_ids:
+        # Refuse unless the answer is FULLY cited. Two triggers: the model cited
+        # nothing that resolves (its refusal sentence), OR at least one cited id
+        # was pruned (fabricated / missing / unknown-source). Serving a partially
+        # pruned answer would leave its now-uncited claim in the body — exactly
+        # what a citation-first product must not do. The generation DID spend, so
+        # the refused row carries that spend.
         _record_or_500(
             engine,
             question=question,
@@ -434,8 +435,13 @@ def _ask_plain(
             generation=composed,
             started=started,
         )
-        return RefusalResponse(question=question, reason=_UNSUPPORTED_REASON)
+        return RefusalResponse(mode="refusal", question=question, reason=_UNSUPPORTED_REASON)
 
+    # Every cited id resolved. Strip any drift / out-of-range citation-shaped text
+    # the strict parser never counted, so only canonical served-citation markers
+    # remain in the body, then serve.
+    resolved_ids = {citation.chunk_id for citation in resolved.citations}
+    served_text = strip_unresolved_citation_markers(composed.text, resolved_ids).strip()
     _record_or_500(
         engine,
         question=question,
@@ -445,10 +451,10 @@ def _ask_plain(
         started=started,
     )
     return AnswerResponse(
+        mode="answer",
         question=question,
         answer=served_text,
         citations=[CitationModel.from_citation(citation) for citation in resolved.citations],
-        unresolved_chunk_ids=list(resolved.unresolved_chunk_ids),
     )
 
 

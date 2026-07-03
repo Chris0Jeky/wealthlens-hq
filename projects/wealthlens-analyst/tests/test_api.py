@@ -256,7 +256,6 @@ def test_ask_plain_returns_a_cited_answer(harness: _Harness, monkeypatch: pytest
     assert body["question"] == "top decile wealth"
     # A resolved marker is preserved inline; nothing was pruned.
     assert body["answer"] == "Top decile holds most [chunk:2]."
-    assert body["unresolved_chunk_ids"] == []
     assert len(body["citations"]) == 1
     citation = body["citations"][0]
     assert citation["chunk_id"] == 2
@@ -285,12 +284,13 @@ def test_ask_plain_answer_row_sums_embed_and_generation_spend(
     assert row["cost_gbp"] == pytest.approx(_EMBED_COST_GBP + _GEN_COST_GBP)
 
 
-def test_ask_plain_strips_unresolved_markers_and_surfaces_the_ids(
+def test_ask_plain_refuses_on_a_partial_prune_rather_than_serve_an_uncited_claim(
     harness: _Harness, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    # The model cited a real chunk (2) and fabricated one (99); resolution keeps
-    # 2 and prunes 99. The served text must NOT leak the pruned [chunk:99]
-    # marker, and the pruned id is surfaced for transparency.
+    # The model cited a real chunk (2) AND a fabricated one (99); resolution keeps
+    # 2 and prunes 99. Serving the stripped body would leave the [chunk:99] claim
+    # uncited — so an answer that is not FULLY cited is refused, not served
+    # (the citation-first serving policy). Generation spend is still recorded.
     monkeypatch.setattr(
         routes,
         "compose_answer",
@@ -302,11 +302,32 @@ def test_ask_plain_strips_unresolved_markers_and_surfaces_the_ids(
         lambda answer, **kw: ResolvedCitations(citations=[_citation(2)], unresolved_chunk_ids=[99]),
     )
     response = harness.client.post("/ask", json={"question": "q"})
+    assert response.status_code == 200
+    body = response.json()
+    assert body["mode"] == "refusal"
+    assert body["reason"] == routes._UNSUPPORTED_REASON
+    assert harness.recorded[0]["decision"] == QueryDecision.REFUSED
+    assert harness.recorded[0]["tokens_out"] == _GEN_TOKENS_OUT  # generation happened
+
+
+def test_ask_plain_strips_drift_and_out_of_range_markers_from_a_served_answer(
+    harness: _Harness, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # A FULLY-cited answer (nothing pruned) whose body still carries citation-shaped
+    # text the strict parser never counted — a drift form "[chunk: 5]" and a
+    # >BIGINT id compose dropped from cited_chunk_ids — must be scrubbed so only the
+    # canonical served-citation marker [chunk:2] remains.
+    text = "Real [chunk:2], drift [chunk: 5], huge [chunk:99999999999999999999999]."
+    monkeypatch.setattr(routes, "compose_answer", lambda q, ev: _composed(text, [2]))
+    monkeypatch.setattr(
+        routes,
+        "resolve_citations",
+        lambda answer, **kw: ResolvedCitations(citations=[_citation(2)], unresolved_chunk_ids=[]),
+    )
+    response = harness.client.post("/ask", json={"question": "q"})
     body = response.json()
     assert body["mode"] == "answer"
-    assert body["answer"] == "Real [chunk:2] but also fake."
-    assert "[chunk:99]" not in body["answer"]
-    assert body["unresolved_chunk_ids"] == [99]
+    assert body["answer"] == "Real [chunk:2], drift, huge."
     assert [c["chunk_id"] for c in body["citations"]] == [2]
 
 
@@ -553,6 +574,7 @@ def _configure_startup_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("DATABASE_URL", "postgresql+psycopg://x:x@127.0.0.1:9/analyst")
     monkeypatch.setenv("OPENAI_API_KEY", "test-key-never-used")
     monkeypatch.setenv("EMBEDDING_MODEL", "text-embedding-3-small")
+    monkeypatch.setenv("ANALYST_MODEL", "gpt-5.4-mini")  # priced; plain /ask needs it
 
 
 def test_lifespan_creates_and_disposes_the_shared_engine(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -584,6 +606,16 @@ def test_lifespan_fails_loud_without_provider_config(monkeypatch: pytest.MonkeyP
     _configure_startup_env(monkeypatch)
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     with pytest.raises(RuntimeError, match="OPENAI_API_KEY"), TestClient(create_app()):
+        pass  # pragma: no cover — startup must raise before we get here
+
+
+def test_lifespan_fails_loud_without_analyst_model(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Plain /ask ALWAYS generates now, so a retrieval-only env (no ANALYST_MODEL)
+    # that get_client tolerates for ingest must still be refused at startup —
+    # otherwise the app reports healthy then 500s on the first answerable /ask.
+    _configure_startup_env(monkeypatch)
+    monkeypatch.delenv("ANALYST_MODEL", raising=False)
+    with pytest.raises(RuntimeError, match="ANALYST_MODEL"), TestClient(create_app()):
         pass  # pragma: no cover — startup must raise before we get here
 
 

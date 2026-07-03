@@ -10,9 +10,11 @@ abstention, a committed eval harness, and a hard spend cap.
 through the client seam) → citation resolution, returning the published
 response schema (`api/schemas.py`: `answer` with resolved citations + full
 provenance, or an honest `refusal`; the `over_budget` 429 variant lands with
-the cap, H1-27). The serving policy strips any inline `[chunk:<id>]` marker
-that is not a served citation, so a fabricated/pruned marker never reaches the
-user. `POST /ask?debug=retrieval` still returns the fused candidate list
+the cap, H1-27). Serving policy: an answer is returned only when EVERY citation
+resolves — if any cited id is fabricated/unverifiable the request is refused
+rather than served (a citation-first product never serves an uncited claim),
+and any drift / out-of-range citation-shaped text is stripped from served
+answers. `POST /ask?debug=retrieval` still returns the fused candidate list
 (component ranks, no generation). Every request writes a query_log accounting
 row (embed + generation spend). The confidence gate over weak evidence
 (H1-21/H1-22), reranking (H1-16, needs a Cohere key) and PDF sources (H1-08)

@@ -1,7 +1,7 @@
 {
   "$defs": {
     "AnswerResponse": {
-      "description": "A cited answer to an in-corpus question.\n\n``answer`` is the served text with only *resolved* citation markers left\ninline: markers for pruned ids (fabricated, or absent from the corpus /\nregistry) are stripped before serving so a fabricated ``[chunk:<id>]`` never\nreaches the user. The pruned ids are surfaced in ``unresolved_chunk_ids`` for\ntransparency \u2014 the response flags that citations were pruned rather than\nsilently serving fewer than the model claimed.",
+      "description": "A cited answer to an in-corpus question.\n\nAn answer is served ONLY when EVERY cited id resolved \u2014 \"answer\" means a\nfully-cited answer. The serving path refuses if any citation was pruned\n(fabricated / missing / unknown-source), so the body never carries a claim\nwhose citation could not be verified, and ``citations`` is always non-empty\n(``minItems: 1`` in the published schema). ``answer`` keeps only canonical\n``[chunk:<id>]`` markers for served citations; any drift / out-of-range\ncitation-shaped text the model emitted is stripped before serving.\n\n``mode`` has no default so the published schema marks the discriminator\n``required`` \u2014 a body without it is not a valid response.",
       "properties": {
         "answer": {
           "title": "Answer",
@@ -11,28 +11,22 @@
           "items": {
             "$ref": "#/$defs/CitationModel"
           },
+          "minItems": 1,
           "title": "Citations",
           "type": "array"
         },
         "mode": {
           "const": "answer",
-          "default": "answer",
           "title": "Mode",
           "type": "string"
         },
         "question": {
           "title": "Question",
           "type": "string"
-        },
-        "unresolved_chunk_ids": {
-          "items": {
-            "type": "integer"
-          },
-          "title": "Unresolved Chunk Ids",
-          "type": "array"
         }
       },
       "required": [
+        "mode",
         "question",
         "answer",
         "citations"
@@ -121,7 +115,6 @@
       "properties": {
         "mode": {
           "const": "over_budget",
-          "default": "over_budget",
           "title": "Mode",
           "type": "string"
         },
@@ -135,6 +128,7 @@
         }
       },
       "required": [
+        "mode",
         "question",
         "reason"
       ],
@@ -146,7 +140,6 @@
       "properties": {
         "mode": {
           "const": "refusal",
-          "default": "refusal",
           "title": "Mode",
           "type": "string"
         },
@@ -160,6 +153,7 @@
         }
       },
       "required": [
+        "mode",
         "question",
         "reason"
       ],
