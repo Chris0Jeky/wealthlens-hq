@@ -5,14 +5,18 @@ Evidence-backed research analyst over official UK wealth statistics
 IFS/Resolution Foundation reports). Citation-first hybrid RAG with honest
 abstention, a committed eval harness, and a hard spend cap.
 
-**Status:** M3 in progress — hybrid retrieval is live behind
-`POST /ask?debug=retrieval` (Postgres FTS + pgvector dense, RRF-fused, full
-chunk provenance + component ranks, per-request query_log accounting), and
-cited generation exists (`answer/compose.py`, gpt-5.4-mini through the client
-seam) though it is not yet wired into plain `/ask` (returns 501 until
-citation resolution + response schemas + abstention land — H1-19/20/21).
-Reranking (H1-16, needs a Cohere key) and PDF sources (H1-08) are pending and
-raise `NotImplementedError`. Plan: `docs/plan/HERO1_PLAN.md`
+**Status:** M3 in progress — plain `POST /ask` answers: hybrid retrieval
+(Postgres FTS + pgvector dense, RRF-fused) → cited generation (gpt-5.4-mini
+through the client seam) → citation resolution, returning the published
+response schema (`api/schemas.py`: `answer` with resolved citations + full
+provenance, or an honest `refusal`; the `over_budget` 429 variant lands with
+the cap, H1-27). The serving policy strips any inline `[chunk:<id>]` marker
+that is not a served citation, so a fabricated/pruned marker never reaches the
+user. `POST /ask?debug=retrieval` still returns the fused candidate list
+(component ranks, no generation). Every request writes a query_log accounting
+row (embed + generation spend). The confidence gate over weak evidence
+(H1-21/H1-22), reranking (H1-16, needs a Cohere key) and PDF sources (H1-08)
+are pending. Plan: `docs/plan/HERO1_PLAN.md`
 (repo root) · backlog: `tasks/hero1-backlog.md` · decisions: `docs/adr/0001-0003`.
 
 ## Layout
@@ -32,6 +36,10 @@ pip install -e "projects/wealthlens-analyst[dev,evals]"
 docker compose up -d analyst-db   # Postgres+pgvector on :15432 (repo root)
 make ingest-slice     # chunk + write + embed the frozen corpus slice
 make dev              # uvicorn on 127.0.0.1:8100
+# Plain mode — a cited answer or an honest refusal (spends one generation):
+curl -X POST "http://127.0.0.1:8100/ask" \
+  -H "Content-Type: application/json" -d '{"question": "who holds the most wealth?"}'
+# Retrieval diagnostics only (no generation):
 curl -X POST "http://127.0.0.1:8100/ask?debug=retrieval" \
   -H "Content-Type: application/json" -d '{"question": "who holds the most wealth?"}'
 make eval-golden-validate
