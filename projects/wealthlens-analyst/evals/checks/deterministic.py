@@ -20,16 +20,38 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 from typing import Any
 
 import jsonschema
 
-GOLDEN_DIR = Path(__file__).resolve().parent.parent / "golden"
+CHECKS_DIR = Path(__file__).resolve().parent
+GOLDEN_DIR = CHECKS_DIR.parent / "golden"
 GOLDEN_SET = GOLDEN_DIR / "golden_set.jsonl"
 GOLDEN_SCHEMA = GOLDEN_DIR / "golden_set.schema.json"
 MIN_REFUSAL_PROBES = 5
+
+#: The published /ask product-response schema (api/schemas.py is the source of
+#: truth; this file is generated from it and drift-locked by a test).
+ASK_RESPONSE_SCHEMA = CHECKS_DIR / "ask_response.schema.json"
+
+#: One answerable (in-corpus) and one unanswerable (out-of-corpus) probe for the
+#: live schema check. The corpus is the frozen WAS + HMRC slice: a capital-gains
+#: concentration question is answerable; a geography question is not. `expected`
+#: is advisory (logged) — model-dependent refusal correctness is H1-23's golden
+#: set; H1-20 asserts only that live responses validate against the schema.
+_LIVE_PROBES: tuple[tuple[str, str], ...] = (
+    ("Which size-of-gain band accounts for the largest share of capital gains?", "answer"),
+    ("What is the capital city of France?", "refusal"),
+)
+
+#: Citation-shaped marker, LENIENT (mirrors answer.compose._CITATION_STRIP_RE):
+#: catches strict "[chunk:9140]" AND format-drift near-misses ("[chunk: 99]",
+#: "[CHUNK=99]") so the live check flags a leaked drift marker, not just a strict
+#: one. Any matched id not among the served citations is an orphan (policy leak).
+_MARKER_RE = re.compile(r"\[\s*chunk\s*[:=]?\s*(\d+)\s*\]", re.IGNORECASE)
 
 
 def load_golden_records() -> list[dict[str, Any]]:
@@ -97,10 +119,60 @@ def check_golden_static() -> list[str]:
     return failures
 
 
+def _check_ask_response(body: dict[str, Any], validator: jsonschema.Draft202012Validator) -> list[str]:
+    """Validate one live /ask response body against the schema and its invariants.
+
+    Schema validity is the H1-20 done-when — and the schema already enforces
+    ``mode`` (the discriminator) and, for an answer, ``citations`` minItems:1.
+    The one invariant the schema cannot express is cross-field: an ``answer``
+    body must not carry an inline ``[chunk:<id>]`` marker (strict OR drift form)
+    for an id that is not among its served citations (the serving policy —
+    fabricated / pruned / drift markers are stripped before serving).
+    """
+    schema_failures = [f"schema violation: {error.message}" for error in validator.iter_errors(body)]
+    if schema_failures:
+        # A schema-invalid body: report that; don't assert semantics on top.
+        return schema_failures
+    failures: list[str] = []
+    if body.get("mode") == "answer":
+        cited_ids = {citation["chunk_id"] for citation in body.get("citations", [])}
+        markers = {int(match) for match in _MARKER_RE.findall(body.get("answer", ""))}
+        orphan_markers = sorted(markers - cited_ids)
+        if orphan_markers:
+            failures.append(f"answer body leaks unresolved citation markers: {orphan_markers}")
+    return failures
+
+
 def check_live() -> list[str]:
-    """Live checks against a serving /ask endpoint (citation resolvability,
-    response schema validity, refusal correctness, latency/cost bounds)."""
-    raise NotImplementedError("H1-23: live deterministic checks need a serving /ask")
+    """Validate live /ask responses against the published schema (H1-20 done-when).
+
+    Builds the app in-process (real engine + registry + model), sends an
+    answerable and an unanswerable probe, and checks each response validates
+    against ask_response.schema.json (plus the answer serving-policy invariants).
+    Needs a reachable DATABASE_URL + real provider config in the environment, and
+    it SPENDS (one embedding + up to one gpt-5.4-mini generation per probe).
+
+    H1-23 EXTENDS this with the full golden refusal set (correct refusal on every
+    out-of-corpus golden question) and latency/cost bounds; H1-20 covers schema
+    validity only.
+    """
+    from fastapi.testclient import TestClient
+
+    from wealthlens_analyst.api.app import create_app
+
+    schema = json.loads(ASK_RESPONSE_SCHEMA.read_text(encoding="utf-8"))
+    validator = jsonschema.Draft202012Validator(schema)
+    failures: list[str] = []
+    with TestClient(create_app()) as client:
+        for question, expected in _LIVE_PROBES:
+            response = client.post("/ask", json={"question": question})
+            if response.status_code != 200:
+                failures.append(f"{question!r}: expected 200, got {response.status_code}: {response.text[:200]}")
+                continue
+            body = response.json()
+            print(f"live /ask {question!r}: mode={body.get('mode')} (expected {expected})")
+            failures.extend(f"{question!r}: {failure}" for failure in _check_ask_response(body, validator))
+    return failures
 
 
 def main() -> int:

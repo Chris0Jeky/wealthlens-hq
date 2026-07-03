@@ -24,6 +24,14 @@ logger = logging.getLogger(__name__)
 #: format, defined once — citations.py (H1-19) resolves the same ids.
 _CITATION_RE = re.compile(r"\[chunk:(\d+)\]")
 
+#: Strip form of the marker used by the serving policy (H1-20). Deliberately
+#: LENIENT — it mirrors _CITATION_NEAR_RE above (drift forms like "[chunk: 99]",
+#: "[CHUNK=99]", "[chunk = 99]") plus the strict form, with the id captured — so
+#: a near-miss marker the STRICT parser never counted as a citation cannot leak
+#: into served text as a dangling, unbacked reference. It also consumes one
+#: immediately-preceding whitespace run so removing " [chunk:99]" leaves no gap.
+_CITATION_STRIP_RE = re.compile(r"\s*\[\s*chunk\s*[:=]?\s*(\d+)\s*\]", re.IGNORECASE)
+
 #: Lenient near-miss detector, for LOGGING only: catches citation-shaped
 #: output the strict parser would silently drop ("[chunk: 9140]", "[CHUNK=9140]").
 #: A model drifting from the mandated format must be visible, not silently
@@ -141,6 +149,38 @@ def _parse_citations(text: str, evidence_ids: set[int]) -> tuple[list[int], list
     if fabricated:
         logger.warning("compose: answer cites chunk ids not in the supplied evidence: %s", fabricated)
     return cited, fabricated
+
+
+def strip_unresolved_citation_markers(text: str, resolved_ids: set[int]) -> str:
+    """Keep only ``[chunk:<id>]`` markers whose id is a served citation; strip the rest.
+
+    The serving policy (H1-20): only a marker that maps to a resolved, served
+    citation may remain in the answer body. EVERY other marker is removed — a
+    fabricated id, an id pruned as missing/unknown-source, an out-of-range id
+    that compose dropped from ``cited_chunk_ids`` before resolution, and a
+    format-drift near-miss ("[chunk: 99]", "[CHUNK=99]") the strict parser never
+    counted as a citation (so its id can never be in ``resolved_ids``, and it is
+    always stripped). A leaked citation-shaped token for an unresolvable citation
+    is exactly the failure mode this product exists to prevent. Pure and DB-free.
+
+    A marker is kept ONLY when it is the exact canonical ``[chunk:<id>]`` form AND
+    its id is a served citation. A drift form ("[chunk: 2]") is stripped even when
+    id 2 resolved, because the strict parser never counted that token as a
+    citation — keeping it would leak unparsed citation-shaped text. An
+    immediately-preceding whitespace run is consumed with a stripped marker so
+    dropping " [chunk:99]" mid-sentence does not leave a double space.
+    """
+
+    def _replace(match: re.Match[str]) -> str:
+        # group(0) includes the leading whitespace; group(1) is the id. int()
+        # handles arbitrary-width ids (a > BIGINT hallucination) safely. Keep only
+        # the canonical form for a served id; every drift/unbacked marker is dropped.
+        chunk_id = int(match.group(1))
+        if chunk_id in resolved_ids and match.group(0).lstrip() == f"[chunk:{chunk_id}]":
+            return match.group(0)
+        return ""
+
+    return _CITATION_STRIP_RE.sub(_replace, text)
 
 
 def compose_answer(question: str, evidence: list[ChunkHit]) -> ComposedAnswer:

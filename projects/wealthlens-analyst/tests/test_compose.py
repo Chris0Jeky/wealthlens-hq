@@ -14,7 +14,7 @@ import logging
 import pytest
 
 import wealthlens_analyst.answer.compose as compose
-from wealthlens_analyst.answer.compose import ComposedAnswer, compose_answer
+from wealthlens_analyst.answer.compose import ComposedAnswer, compose_answer, strip_unresolved_citation_markers
 from wealthlens_analyst.llm.client import CompletionResult
 from wealthlens_analyst.retrieval.fts import ChunkHit
 
@@ -191,3 +191,46 @@ def test_zero_citation_answer_is_flagged_not_silent(
         answer, _ = _compose_with(monkeypatch, "The evidence does not support an answer to this question.")
     assert answer.cited_chunk_ids == []
     assert any("ZERO citations" in record.getMessage() for record in caplog.records)
+
+
+def test_strip_keeps_resolved_markers_and_removes_unresolved_ones() -> None:
+    # 2 is a served citation (kept); 99 is pruned (marker + its leading space go).
+    text = "Real [chunk:2] but also fake [chunk:99]."
+    assert strip_unresolved_citation_markers(text, {2}) == "Real [chunk:2] but also fake."
+
+
+def test_strip_removes_all_markers_when_none_resolve() -> None:
+    assert strip_unresolved_citation_markers("A [chunk:1] and B [chunk:2].", set()) == "A and B."
+
+
+def test_strip_is_a_no_op_when_every_marker_resolves() -> None:
+    text = "A [chunk:1] and B [chunk:2]."
+    assert strip_unresolved_citation_markers(text, {1, 2}) == text
+
+
+def test_strip_handles_out_of_range_id_without_crashing() -> None:
+    # A > BIGINT hallucination compose drops from cited_chunk_ids can still sit
+    # inline; int() parses the arbitrary-width id and it is never resolved.
+    text = "X [chunk:99999999999999999999999999]."
+    assert strip_unresolved_citation_markers(text, {2}) == "X."
+
+
+def test_strip_handles_adjacent_markers() -> None:
+    # No whitespace between markers: only the resolved one survives.
+    assert strip_unresolved_citation_markers("[chunk:1][chunk:2]", {2}) == "[chunk:2]"
+
+
+def test_strip_leaves_text_without_markers_untouched() -> None:
+    assert strip_unresolved_citation_markers("no markers here", {2}) == "no markers here"
+
+
+def test_strip_removes_format_drift_near_miss_markers() -> None:
+    # A near-miss ([chunk: 99] with a space, [CHUNK=99], [chunk = 7]) is never
+    # counted as a citation by the STRICT parser, so its id is never in
+    # resolved_ids -> the serving policy must strip it, not leak it as a dangling
+    # unbacked reference (the security-lens finding this closes).
+    assert (
+        strip_unresolved_citation_markers("Real [chunk:2] and drift [chunk: 99].", {2}) == "Real [chunk:2] and drift."
+    )
+    assert strip_unresolved_citation_markers("A [CHUNK=99] b", set()) == "A b"
+    assert strip_unresolved_citation_markers("A [chunk = 7] b", set()) == "A b"

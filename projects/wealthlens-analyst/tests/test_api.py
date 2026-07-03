@@ -1,16 +1,19 @@
-"""Unit tests for the /ask?debug=retrieval surface and /healthz (H1-13).
+"""Unit tests for the /ask surfaces (plain H1-20 + ?debug=retrieval H1-13) and /healthz.
 
-The retrieval SQL needs Postgres + pgvector, so the two retriever legs are
-monkeypatched here with fixture ChunkHits and verified live against analyst-db
-separately (the backlog's done-when). These tests pin what must hold WITHOUT a
-database or a model call: the fusion wiring, the component-rank attribution,
-the provenance passthrough, the response schema, and the failure contracts
-(501 plain mode, 422 bad input, 503 unreachable DB).
+The retrieval SQL and generation both need real backends, so the retriever legs,
+the client seam, compose_answer and resolve_citations are monkeypatched here with
+fixtures and verified live against analyst-db separately (the backlog's
+done-when). These tests pin what must hold WITHOUT a database or a model call:
+the fusion wiring, the component-rank attribution, the provenance passthrough,
+the plain-mode answer/refusal contract + serving policy (pruned markers stripped,
+spend summed across embed + generation), and the failure contracts (422 bad
+input, 500 generation/accounting failure, 503 unreachable DB).
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import date
 from typing import Any
 
 import pytest
@@ -20,10 +23,12 @@ from sqlalchemy import Engine
 from sqlalchemy.exc import DatabaseError, OperationalError
 
 import wealthlens_analyst.api.routes as routes
+from wealthlens_analyst.answer.citations import Citation, ResolvedCitations
+from wealthlens_analyst.answer.compose import ComposedAnswer, EmptyGenerationError
 from wealthlens_analyst.api.app import create_app
-from wealthlens_analyst.api.routes import get_engine
+from wealthlens_analyst.api.routes import get_engine, get_registry
 from wealthlens_analyst.budget.models import QueryDecision
-from wealthlens_analyst.llm.client import EmbeddingResult
+from wealthlens_analyst.llm.client import CompletionResult, EmbeddingResult
 from wealthlens_analyst.retrieval.fts import ChunkHit
 from wealthlens_analyst.retrieval.fuse_rrf import RRF_K
 
@@ -49,11 +54,49 @@ _LEXICAL = [_hit(1, rank=1, score=0.9), _hit(2, rank=2, score=0.5), _hit(3, rank
 _DENSE = [_hit(2, rank=1, score=0.8), _hit(4, rank=2, score=0.7)]
 
 _ENGINE_SENTINEL = object()
+#: The registry the route injects into resolve_citations (H1-20). Its contents
+#: are irrelevant to the DB-free tests (resolve_citations is monkeypatched), so
+#: a sentinel proves only that the wiring passes the shared object through.
+_REGISTRY_SENTINEL: dict[str, Any] = {}
 
 # What the fake client's embed() reports — the accounting the query_log row
 # must carry (H1-15).
 _EMBED_TOKENS = 7
 _EMBED_COST_GBP = 2.5e-7
+
+# What a monkeypatched generation reports (plain mode, H1-20) — the query_log
+# row must carry embed + generation spend summed.
+_GEN_TOKENS_IN = 120
+_GEN_TOKENS_OUT = 30
+_GEN_COST_GBP = 1.5e-3
+
+
+def _composed(text: str, cited: list[int], *, fabricated: list[int] | None = None) -> ComposedAnswer:
+    """A ComposedAnswer with the standard test generation accounting."""
+    return ComposedAnswer(
+        text=text,
+        cited_chunk_ids=cited,
+        tokens_in=_GEN_TOKENS_IN,
+        tokens_out=_GEN_TOKENS_OUT,
+        cost_gbp=_GEN_COST_GBP,
+        model="fake-analyst-model",
+        fabricated_chunk_ids=fabricated or [],
+    )
+
+
+def _citation(chunk_id: int) -> Citation:
+    """A fully-resolved Citation with distinguishable provenance."""
+    return Citation(
+        chunk_id=chunk_id,
+        source_id=f"source-{chunk_id}",
+        source_name=f"Source {chunk_id}",
+        document_id=f"doc-{chunk_id}",
+        section=f"section-{chunk_id}",
+        page=None,
+        span=f"span-{chunk_id}",
+        url=f"https://example.org/{chunk_id}",
+        access_date=date(2026, 6, 1),
+    )
 
 
 class _FakeClient:
@@ -111,6 +154,9 @@ def harness(monkeypatch: pytest.MonkeyPatch) -> _Harness:
     monkeypatch.setattr(routes, "record_query", fake_record_query)
     app = create_app()
     app.dependency_overrides[get_engine] = lambda: _ENGINE_SENTINEL
+    # get_registry reads app.state.registry (set at startup); the lifespan never
+    # runs in these DB-free tests, so inject the sentinel the same way as engine.
+    app.dependency_overrides[get_registry] = lambda: _REGISTRY_SENTINEL
     return _Harness(client=TestClient(app), app=app, calls=calls, recorded=recorded)
 
 
@@ -195,14 +241,283 @@ def test_ask_fails_the_request_when_success_accounting_cannot_be_written(
     assert response.json()["detail"] == "query accounting failed"
 
 
-def test_ask_without_debug_is_501_until_plain_mode_is_wired(harness: _Harness) -> None:
-    response = harness.client.post("/ask", json={"question": "anything"})
-    assert response.status_code == 501
-    assert "debug=retrieval" in response.json()["detail"]
-    # Neither retriever ran: plain mode must not spend before it can answer.
-    assert harness.calls == {}
-    # And nothing ran -> nothing to account: no query_log row.
-    assert harness.recorded == []
+def test_ask_plain_returns_a_cited_answer(harness: _Harness, monkeypatch: pytest.MonkeyPatch) -> None:
+    # Plain mode (H1-20): retrieve -> compose -> resolve -> serve a cited answer.
+    monkeypatch.setattr(routes, "compose_answer", lambda q, ev: _composed("Top decile holds most [chunk:2].", [2]))
+    monkeypatch.setattr(
+        routes,
+        "resolve_citations",
+        lambda answer, **kw: ResolvedCitations(citations=[_citation(2)], unresolved_chunk_ids=[]),
+    )
+    response = harness.client.post("/ask", json={"question": "top decile wealth"})
+    assert response.status_code == 200
+    body = response.json()
+    assert body["mode"] == "answer"
+    assert body["question"] == "top decile wealth"
+    # A resolved marker is preserved inline; nothing was pruned.
+    assert body["answer"] == "Top decile holds most [chunk:2]."
+    assert len(body["citations"]) == 1
+    citation = body["citations"][0]
+    assert citation["chunk_id"] == 2
+    assert citation["source_name"] == "Source 2"
+    assert citation["url"] == "https://example.org/2"
+    assert citation["access_date"] == "2026-06-01"
+
+
+def test_ask_plain_answer_row_sums_embed_and_generation_spend(
+    harness: _Harness, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(routes, "compose_answer", lambda q, ev: _composed("A [chunk:2].", [2]))
+    monkeypatch.setattr(
+        routes,
+        "resolve_citations",
+        lambda answer, **kw: ResolvedCitations(citations=[_citation(2)], unresolved_chunk_ids=[]),
+    )
+    harness.client.post("/ask", json={"question": "q"})
+    assert len(harness.recorded) == 1
+    row = harness.recorded[0]
+    assert row["decision"] == QueryDecision.ANSWERED
+    # Per-request totals across BOTH model calls (H1-20 extends query_log to
+    # generation spend): tokens_in summed, tokens_out is the generation's.
+    assert row["tokens_in"] == _EMBED_TOKENS + _GEN_TOKENS_IN
+    assert row["tokens_out"] == _GEN_TOKENS_OUT
+    assert row["cost_gbp"] == pytest.approx(_EMBED_COST_GBP + _GEN_COST_GBP)
+
+
+def test_ask_plain_refuses_on_a_partial_prune_rather_than_serve_an_uncited_claim(
+    harness: _Harness, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # The model cited a real chunk (2) AND a fabricated one (99); resolution keeps
+    # 2 and prunes 99. Serving the stripped body would leave the [chunk:99] claim
+    # uncited — so an answer that is not FULLY cited is refused, not served
+    # (the citation-first serving policy). Generation spend is still recorded.
+    monkeypatch.setattr(
+        routes,
+        "compose_answer",
+        lambda q, ev: _composed("Real [chunk:2] but also fake [chunk:99].", [2, 99], fabricated=[99]),
+    )
+    monkeypatch.setattr(
+        routes,
+        "resolve_citations",
+        lambda answer, **kw: ResolvedCitations(citations=[_citation(2)], unresolved_chunk_ids=[99]),
+    )
+    response = harness.client.post("/ask", json={"question": "q"})
+    assert response.status_code == 200
+    body = response.json()
+    assert body["mode"] == "refusal"
+    assert body["reason"] == routes._UNSUPPORTED_REASON
+    assert harness.recorded[0]["decision"] == QueryDecision.REFUSED
+    assert harness.recorded[0]["tokens_out"] == _GEN_TOKENS_OUT  # generation happened
+
+
+def test_ask_plain_strips_drift_and_out_of_range_markers_from_a_served_answer(
+    harness: _Harness, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # A FULLY-cited answer (nothing pruned) whose body still carries citation-shaped
+    # text the strict parser never counted — a drift form "[chunk: 5]" and a
+    # >BIGINT id compose dropped from cited_chunk_ids — must be scrubbed so only the
+    # canonical served-citation marker [chunk:2] remains.
+    text = "Real [chunk:2], drift [chunk: 5], huge [chunk:99999999999999999999999]."
+    monkeypatch.setattr(routes, "compose_answer", lambda q, ev: _composed(text, [2]))
+    monkeypatch.setattr(
+        routes,
+        "resolve_citations",
+        lambda answer, **kw: ResolvedCitations(citations=[_citation(2)], unresolved_chunk_ids=[]),
+    )
+    response = harness.client.post("/ask", json={"question": "q"})
+    body = response.json()
+    assert body["mode"] == "answer"
+    assert body["answer"] == "Real [chunk:2], drift, huge."
+    assert [c["chunk_id"] for c in body["citations"]] == [2]
+
+
+def test_ask_plain_refuses_when_no_citation_resolves(harness: _Harness, monkeypatch: pytest.MonkeyPatch) -> None:
+    # The model emitted its mandated refusal sentence (zero citations): a
+    # citation-free factual answer must not be served -> honest refusal, with
+    # the generation spend still recorded.
+    monkeypatch.setattr(
+        routes, "compose_answer", lambda q, ev: _composed("The evidence does not support an answer.", [])
+    )
+    monkeypatch.setattr(routes, "resolve_citations", lambda answer, **kw: ResolvedCitations())
+    response = harness.client.post("/ask", json={"question": "unanswerable in corpus"})
+    assert response.status_code == 200
+    body = response.json()
+    assert body["mode"] == "refusal"
+    assert body["reason"] == routes._UNSUPPORTED_REASON
+    row = harness.recorded[0]
+    assert row["decision"] == QueryDecision.REFUSED
+    # Generation happened, so the refused row carries embed + generation spend.
+    assert row["tokens_out"] == _GEN_TOKENS_OUT
+    assert row["cost_gbp"] == pytest.approx(_EMBED_COST_GBP + _GEN_COST_GBP)
+
+
+def test_ask_plain_refuses_when_every_cited_id_is_pruned(harness: _Harness, monkeypatch: pytest.MonkeyPatch) -> None:
+    # The model DID cite (non-empty cited_chunk_ids) but resolution prunes every
+    # id (fabricated / missing / unknown-source), so resolved.citations is empty.
+    # This is the case the refusal predicate exists for: it distinguishes the
+    # correct `not resolved.citations` from the wrong `not composed.cited_chunk_ids`
+    # (the latter would SERVE an uncited factual answer — the leak invariant 2
+    # forbids). The pruned marker must be stripped even though we refuse.
+    monkeypatch.setattr(
+        routes, "compose_answer", lambda q, ev: _composed("Gold surged [chunk:99].", [99], fabricated=[99])
+    )
+    monkeypatch.setattr(
+        routes, "resolve_citations", lambda answer, **kw: ResolvedCitations(citations=[], unresolved_chunk_ids=[99])
+    )
+    response = harness.client.post("/ask", json={"question": "off-corpus but the model answered anyway"})
+    assert response.status_code == 200
+    body = response.json()
+    assert body["mode"] == "refusal"
+    assert body["reason"] == routes._UNSUPPORTED_REASON
+    row = harness.recorded[0]
+    assert row["decision"] == QueryDecision.REFUSED
+    assert row["tokens_out"] == _GEN_TOKENS_OUT  # generation happened before the prune
+
+
+def test_ask_plain_refuses_without_generating_when_no_evidence(
+    harness: _Harness, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # Zero fused candidates: refuse BEFORE generation (compose_answer forbids
+    # empty evidence). The refused row carries embed-only spend (tokens_out=0).
+    monkeypatch.setattr(routes, "search_fts", lambda q, *, limit, engine: [])
+    monkeypatch.setattr(routes, "search_dense_by_vector", lambda v, *, limit, engine: [])
+
+    def _must_not_compose(question: str, evidence: list[ChunkHit]) -> ComposedAnswer:
+        raise AssertionError("compose_answer must not run when there is no evidence")
+
+    monkeypatch.setattr(routes, "compose_answer", _must_not_compose)
+    response = harness.client.post("/ask", json={"question": "nothing matches"})
+    assert response.status_code == 200
+    body = response.json()
+    assert body["mode"] == "refusal"
+    assert body["reason"] == routes._NO_EVIDENCE_REASON
+    row = harness.recorded[0]
+    assert row["decision"] == QueryDecision.REFUSED
+    assert row["tokens_in"] == _EMBED_TOKENS
+    assert row["tokens_out"] == 0
+    assert row["cost_gbp"] == _EMBED_COST_GBP
+
+
+def test_ask_plain_wires_shared_engine_and_registry_into_resolution(
+    harness: _Harness, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    captured: dict[str, Any] = {}
+
+    def fake_resolve(answer: ComposedAnswer, **kwargs: Any) -> ResolvedCitations:
+        captured.update(kwargs)
+        return ResolvedCitations(citations=[_citation(2)], unresolved_chunk_ids=[])
+
+    monkeypatch.setattr(routes, "compose_answer", lambda q, ev: _composed("A [chunk:2].", [2]))
+    monkeypatch.setattr(routes, "resolve_citations", fake_resolve)
+    harness.client.post("/ask", json={"question": "q"})
+    # The route passes the SHARED engine and the startup-loaded registry through.
+    assert captured["engine"] is _ENGINE_SENTINEL
+    assert captured["registry"] is _REGISTRY_SENTINEL
+
+
+def test_ask_plain_passes_only_the_compose_evidence_limit_to_generation(
+    harness: _Harness, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # 30 disjoint hits per leg -> 20 fused; compose must see only the top
+    # _COMPOSE_EVIDENCE_LIMIT of them (bounds generation input).
+    lexical = [_hit(i, rank=i, score=1.0 / i) for i in range(1, 31)]
+    dense = [_hit(100 + i, rank=i, score=1.0 / i) for i in range(1, 31)]
+    monkeypatch.setattr(routes, "search_fts", lambda q, *, limit, engine: lexical)
+    monkeypatch.setattr(routes, "search_dense_by_vector", lambda v, *, limit, engine: dense)
+    seen: dict[str, int] = {}
+
+    def fake_compose(question: str, evidence: list[ChunkHit]) -> ComposedAnswer:
+        seen["count"] = len(evidence)
+        return _composed("A [chunk:1].", [1])
+
+    monkeypatch.setattr(routes, "compose_answer", fake_compose)
+    monkeypatch.setattr(
+        routes,
+        "resolve_citations",
+        lambda answer, **kw: ResolvedCitations(citations=[_citation(1)], unresolved_chunk_ids=[]),
+    )
+    harness.client.post("/ask", json={"question": "deep corpus"})
+    assert seen["count"] == routes._COMPOSE_EVIDENCE_LIMIT
+
+
+def test_ask_plain_empty_generation_is_500_and_records_the_spend(
+    harness: _Harness, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # A truncated/empty generation spent real tokens but has no usable text:
+    # 500, and the ERROR row must carry embed + generation spend (the exception
+    # carries the CompletionResult so the spend is never lost).
+    truncated = CompletionResult(
+        text="",
+        model="fake-analyst-model",
+        tokens_in=_GEN_TOKENS_IN,
+        tokens_out=900,
+        cost_gbp=_GEN_COST_GBP,
+        finish_reason="length",
+    )
+
+    def boom(question: str, evidence: list[ChunkHit]) -> ComposedAnswer:
+        raise EmptyGenerationError("truncated", truncated)
+
+    monkeypatch.setattr(routes, "compose_answer", boom)
+    response = harness.client.post("/ask", json={"question": "q"})
+    assert response.status_code == 500
+    assert response.json()["detail"] == "answer generation failed"
+    row = harness.recorded[0]
+    assert row["decision"] == QueryDecision.ERROR
+    assert row["tokens_in"] == _EMBED_TOKENS + _GEN_TOKENS_IN
+    assert row["tokens_out"] == 900
+    assert row["cost_gbp"] == pytest.approx(_EMBED_COST_GBP + _GEN_COST_GBP)
+
+
+@pytest.mark.parametrize(
+    "exc",
+    [
+        DatabaseError("SELECT ...", {}, Exception("statement failed")),
+        OperationalError("SELECT ...", {}, Exception("connection refused")),
+    ],
+    ids=["statement-level", "connection-level"],
+)
+def test_ask_plain_resolution_db_failure_records_generation_spend_then_503(
+    harness: _Harness, monkeypatch: pytest.MonkeyPatch, exc: DatabaseError
+) -> None:
+    # resolve_citations' provenance read fails AFTER generation was paid for.
+    # A generation is ALWAYS already paid here (unlike the retrieval leg's
+    # embed-only skip), so BOTH a statement-level (connection alive) AND a
+    # connection-level (OperationalError) failure must record the generation
+    # spend in the ERROR row; the caller sees 503.
+    monkeypatch.setattr(routes, "compose_answer", lambda q, ev: _composed("A [chunk:2].", [2]))
+
+    def broken_resolve(answer: ComposedAnswer, **kwargs: Any) -> ResolvedCitations:
+        raise exc
+
+    monkeypatch.setattr(routes, "resolve_citations", broken_resolve)
+    response = harness.client.post("/ask", json={"question": "q"})
+    assert response.status_code == 503
+    assert response.json()["detail"] == "retrieval backend unavailable"
+    row = harness.recorded[0]
+    assert row["decision"] == QueryDecision.ERROR
+    assert row["tokens_in"] == _EMBED_TOKENS + _GEN_TOKENS_IN
+    assert row["tokens_out"] == _GEN_TOKENS_OUT
+
+
+def test_ask_plain_fails_the_request_when_answer_accounting_cannot_be_written(
+    harness: _Harness, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # Same ADR 0002 fail-closed policy as debug mode, now on the plain path.
+    monkeypatch.setattr(routes, "compose_answer", lambda q, ev: _composed("A [chunk:2].", [2]))
+    monkeypatch.setattr(
+        routes,
+        "resolve_citations",
+        lambda answer, **kw: ResolvedCitations(citations=[_citation(2)], unresolved_chunk_ids=[]),
+    )
+
+    def broken_record(engine: Any, **kwargs: Any) -> None:
+        raise OperationalError("INSERT ...", {}, Exception("db gone"))
+
+    monkeypatch.setattr(routes, "record_query", broken_record)
+    response = harness.client.post("/ask", json={"question": "q"})
+    assert response.status_code == 500
+    assert response.json()["detail"] == "query accounting failed"
 
 
 def test_ask_unknown_debug_value_is_422(harness: _Harness) -> None:
@@ -259,6 +574,7 @@ def _configure_startup_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("DATABASE_URL", "postgresql+psycopg://x:x@127.0.0.1:9/analyst")
     monkeypatch.setenv("OPENAI_API_KEY", "test-key-never-used")
     monkeypatch.setenv("EMBEDDING_MODEL", "text-embedding-3-small")
+    monkeypatch.setenv("ANALYST_MODEL", "gpt-5.4-mini")  # priced; plain /ask needs it
 
 
 def test_lifespan_creates_and_disposes_the_shared_engine(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -290,6 +606,45 @@ def test_lifespan_fails_loud_without_provider_config(monkeypatch: pytest.MonkeyP
     _configure_startup_env(monkeypatch)
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     with pytest.raises(RuntimeError, match="OPENAI_API_KEY"), TestClient(create_app()):
+        pass  # pragma: no cover — startup must raise before we get here
+
+
+def test_lifespan_fails_loud_without_analyst_model(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Plain /ask ALWAYS generates now, so a retrieval-only env (no ANALYST_MODEL)
+    # that get_client tolerates for ingest must still be refused at startup —
+    # otherwise the app reports healthy then 500s on the first answerable /ask.
+    _configure_startup_env(monkeypatch)
+    monkeypatch.delenv("ANALYST_MODEL", raising=False)
+    with pytest.raises(RuntimeError, match="ANALYST_MODEL"), TestClient(create_app()):
+        pass  # pragma: no cover — startup must raise before we get here
+
+
+def test_lifespan_loads_the_source_registry(monkeypatch: pytest.MonkeyPatch) -> None:
+    # H1-20 loads the citation registry ONCE at startup (get_registry then injects
+    # app.state.registry). Lock the wiring: a refactor that moved the load into a
+    # per-request get_registry (reintroducing a first-/ask disk read) must fail here.
+    from wealthlens_analyst.answer.citations import SourceMeta
+
+    _configure_startup_env(monkeypatch)
+    app = create_app()
+    with TestClient(app):
+        registry = app.state.registry
+    assert registry and all(isinstance(source, SourceMeta) for source in registry.values())
+
+
+def test_lifespan_fails_loud_on_malformed_registry(monkeypatch: pytest.MonkeyPatch) -> None:
+    # A malformed/duplicated corpus source must KILL startup (fail-loud), not
+    # 500 the first /ask — invariant 5. load_source_registry itself fail-louds
+    # (test_citations.py); here we lock that the lifespan surfaces it at startup.
+    import wealthlens_analyst.api.app as app_module
+
+    _configure_startup_env(monkeypatch)
+
+    def broken_registry(*args: Any, **kwargs: Any) -> dict[str, Any]:
+        raise ValueError("duplicate analyst_corpus source id 'ons-was-wealth'")
+
+    monkeypatch.setattr(app_module, "load_source_registry", broken_registry)
+    with pytest.raises(ValueError, match="duplicate analyst_corpus"), TestClient(create_app()):
         pass  # pragma: no cover — startup must raise before we get here
 
 
