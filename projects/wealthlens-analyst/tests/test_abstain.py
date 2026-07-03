@@ -83,8 +83,27 @@ def test_blank_question_fails_loud() -> None:
         evaluate_evidence("   ", [_hit(_ABOVE_TOP)])
 
 
+def test_scores_exactly_at_the_thresholds_are_inclusive() -> None:
+    # The thresholds are anchored to REAL fused scores: a single-list rank-1 chunk
+    # fuses to exactly _MIN_TOP_SCORE, and a rank-25 chunk to exactly _MIN_HIT_SCORE
+    # (bit-for-bit — both are 1/(RRF_K+n)). The gate uses inclusive >=, so evidence
+    # sitting exactly on the bars is answerable. This pins the >= semantics against
+    # a >  flip on ANY of the three boundary comparisons (each flip would refuse
+    # this exactly-on-the-bar case).
+    at_top = _hit(abstain._MIN_TOP_SCORE, 1)
+    at_support = [_hit(abstain._MIN_HIT_SCORE, i) for i in range(2, 1 + abstain._MIN_HITS)]
+    assert evaluate_evidence("q", [at_top, *at_support]).answerable is True
+    # A hair below the top bar refuses, even with enough supporting hits.
+    eps = abstain._MIN_TOP_SCORE * 1e-9
+    just_below = _hit(abstain._MIN_TOP_SCORE - eps, 1)
+    assert evaluate_evidence("q", [just_below, *at_support]).answerable is False
+
+
 def test_threshold_invariants_hold() -> None:
     # Structural invariants the mechanism relies on; the H1-22 recalibration must
-    # preserve them (a supporting hit is no stricter than the top bar; >= 1 hit).
+    # preserve them (a supporting hit is no stricter than the top bar; and
+    # corroboration stays ON — at least TWO hits, never one lucky hit, per ADR D4).
+    # The >= 2 (not >= 1) is deliberate: dropping _MIN_HITS to 1 disables the
+    # corroboration guard, which must be a review-visible change, not silent.
     assert 0 < abstain._MIN_HIT_SCORE <= abstain._MIN_TOP_SCORE
-    assert abstain._MIN_HITS >= 1
+    assert abstain._MIN_HITS >= 2
