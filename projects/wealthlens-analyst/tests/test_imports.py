@@ -51,22 +51,18 @@ def test_pending_stubs_raise_not_implemented() -> None:
     """Pending seams fail loudly, not silently (repo rule: no silent failures).
 
     Retrieval (H1-10/11/12), ingestion (H1-09), the debug route + accounting
-    (H1-13/15) and generation (H1-18) are implemented and pinned by their own
-    test files. EVERY remaining pending seam is pinned here, so silently
-    gutting a stub (e.g. an accidental `return []`) cannot survive the suite:
-    the reranker (H1-16, deferred until a COHERE_API_KEY exists), citation
-    resolution (H1-19), abstention (H1-21) and budget accounting (H1-27).
+    (H1-13/15), generation (H1-18) and citation resolution (H1-19) are
+    implemented and pinned by their own test files. EVERY remaining pending seam
+    is pinned here, so silently gutting a stub (e.g. an accidental `return []`)
+    cannot survive the suite: the reranker (H1-16, deferred until a
+    COHERE_API_KEY exists), abstention (H1-21) and budget accounting (H1-27).
     """
     from wealthlens_analyst.answer.abstain import evaluate_evidence
-    from wealthlens_analyst.answer.citations import resolve_citations
-    from wealthlens_analyst.answer.compose import ComposedAnswer
     from wealthlens_analyst.budget.models import current_spend_gbp
     from wealthlens_analyst.retrieval.rerank import rerank
 
     with pytest.raises(NotImplementedError, match="H1-16"):
         rerank("q", [], top_k=1)
-    with pytest.raises(NotImplementedError, match="H1-19"):
-        resolve_citations(ComposedAnswer(text="x"))
     with pytest.raises(NotImplementedError, match="H1-21"):
         evaluate_evidence("q", [])
     with pytest.raises(NotImplementedError, match="H1-27"):
