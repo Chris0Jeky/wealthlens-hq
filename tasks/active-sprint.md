@@ -19,6 +19,28 @@ Last updated: 2026-07-02
 > (3) launch-bundle drafts (post + 4 emails), (4) README + repo-metadata
 > refresh, (5) post-gemini review-gate doc [due 2026-07-16], (6) H1-21/22/23.
 
+> **SESSION 17 (2026-07-03) — 1 PR MERGED (#477 H1-19); all deferred questions resolved.**
+> **#477 (H1-19):** `answer/citations.py::resolve_citations` — resolves an answer's
+> cited chunk_ids to render-ready `Citation`s carrying the full ADR 0001 provenance
+> (source, document, section, page, span) + registry name/URL + access_date, and
+> strips/flags fabricated/missing/unknown-source ids into `unresolved_chunk_ids`.
+> Registry loader scoped to the frozen corpus + `WEALTHLENS_REPO_ROOT`-aware. 3-lens
+> adversarial review (5 findings fixed: duplicate-id fail-loud, corpus-scoped loader
+> + CI path gap, 8-source drift-lock, dispose-ownership, fabricated-wins-over-real-row)
+> + 3 bots addressed (span/access_date completeness, repo-root override; marker-sanitise
+> deferred to H1-20). 159 tests, live-verified, CI green. **Ops:** the session-15 GitHub
+> Pages stall has RESOLVED (deploy green on `e3f3866`). New env gotcha: Docker port 15432
+> now sits in a WinNAT excluded range → analyst-db moved to :16432 via a throwaway compose.
+> **All carried DEFERRED QUESTIONS resolved (Chris delegated the call)** — see
+> `../hq-private/projects/wealthlens/memories/decisions/2026-07-03-deferred-question-resolutions.md`:
+> H1-16/H1-17 rerank OFF the critical path (flag-off until a Cohere key); behavioural
+> engine-apply + sim Sobol stay post-v1 (blocked on cited base-shares, correctly);
+> weekly-data reds accept fail-closed last-good data; product portfolio order adopted;
+> "Off By How Much?" parked; RFC-008 keeps the RF NC-ND chart excluded pending AR #10;
+> the merge review gate survives the 2026-07-17 gemini sunset via `docs/agentic/REVIEW_GATE.md`.
+> **NEXT unblocked: H1-20** (/ask plain-mode wiring + response schema; serving policy on
+> pruned citations seeded). Critical path to live URL: H1-20 → H1-21/22 → H1-23 → H1-27 → H1-30.
+
 > **SESSION 15 (2026-07-02) — 3 PRs MERGED; the Analyst now ANSWERS, with citations.**
 > **#474 (H1-13):** hybrid `/ask?debug=retrieval` — FTS + dense over ONE shared
 > app-lifespan engine (fail-loud startup config validation, pool_pre_ping),

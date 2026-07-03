@@ -154,6 +154,7 @@ Repo-local Codex skills live under `.agents/skills/` and supplement this file. U
 - If a new data source was used, add it to `projects/wealthlens-dashboard/docs/data-licences.md`.
 - Commits are made incrementally as work progresses, not batched at session end.
 - If index.html or any public-facing page references a new file, verify that file exists.
+- Merges follow the review gate in [`docs/agentic/REVIEW_GATE.md`](docs/agentic/REVIEW_GATE.md): ≥2 independent adversarial review lenses (as a workflow) + per-finding verification; third-party PR bots are a bonus, not a dependency (gemini review ceases 2026-07-17).
 
 ## File conventions
 
