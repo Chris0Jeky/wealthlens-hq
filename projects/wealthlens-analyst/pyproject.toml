@@ -24,6 +24,10 @@ dependencies = [
     # llm/client.py (the SDK seam, ADR 0002). (The `anthropic` package was dropped
     # when generation moved to OpenAI; re-add it if the seam ever serves Anthropic.)
     "openai>=1.45.0",  # max_completion_tokens needs >=1.45 (chat.completions); verified against 2.44
+    # Read registries/sources.yml to resolve a chunk's source_id -> citable name + URL
+    # (answer/citations.py, H1-19). The registry is the single source of truth for a
+    # citation's source identity — never hard-coded here — so the analyst needs a YAML parser.
+    "pyyaml>=6.0",
 ]
 
 [project.optional-dependencies]
@@ -35,6 +39,9 @@ dev = [
     # jsonschema sits in dev (not only evals) so CI's single `[dev]` install
     # covers the golden-set deterministic checks without pulling ragas.
     "jsonschema>=4.26.0",
+    # Stubs for the PyYAML runtime dep so strict mypy stays clean without a
+    # per-module ignore (CI installs `[dev]`, so the stubs are present there).
+    "types-PyYAML>=6.0.12",
 ]
 evals = [
     "jsonschema>=4.26.0",
