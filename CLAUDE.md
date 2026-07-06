@@ -1,280 +1,139 @@
 # CLAUDE.md — WealthLens HQ
 
-Compact session contract for Claude Code in `wealthlens-hq/`. Move detailed procedures into `.claude/skills/*/SKILL.md`, `docs/agentic/*`, or `autodoc/*`.
+Tier: workshop (T3) — authority: push free / merge gated (`.claude/tier.json`)
 
-## Authority order
+Compact Claude Code session contract. Repo-wide operating rules live in
+[AGENTS.md](./AGENTS.md); code seams in [AGENT_MAP.md](./AGENT_MAP.md). One home per
+policy — this file links, it does not restate.
 
-1. User prompt for the current turn.
-2. `AGENTS.md` for repo-wide operating rules.
-3. `../hq-private/projects/wealthlens/memories/00_ACTIVE.md` for current focus areas and status (private HQ repo — see below).
-4. `../hq-private/projects/wealthlens/memories/program/00_READ_THIS_FIRST.md` for program context.
-5. `autodoc/AGENT_INDEX.md` for code-grounded orientation.
-6. Relevant skill under `.claude/skills/*/SKILL.md`.
-7. Strategy and vision docs for non-coding work.
-8. Research docs for data and analysis work.
+## Session start
 
-When sources conflict, use the higher source and report the conflict.
+The SessionStart hook prints the live orientation: tier/authority, the open
+ACTION-REQUIRED items, and a ledger-triage nudge. Beyond that:
+
+1. On Chris's box, read the newest RESUME block of
+   `../hq-private/projects/wealthlens/memories/session_notes/ORCHESTRATION.md`
+   (master control for multi-session work; skip if `../hq-private` is absent —
+   volunteer machines).
+2. Read `AGENT_MAP.md`, pick the region the task names, and follow that region's
+   own `CLAUDE.md` when you touch it.
+3. For current focus, read the head of
+   `../hq-private/projects/wealthlens/memories/00_ACTIVE.md` (private repo).
+
+Do not bulk-read strategy, vision, identity, or research archives unless the task
+requires them — the map's Do-Not-Read index is the default.
+
+## Action required (Chris's reminders — do not skip)
+
+`tasks/ACTION-REQUIRED.md` lists tasks only **Chris** can do. Surface its open items
+in **every** summary, status update, and handoff — lead with anything due or overdue
+under a `⚑ Action required:` banner. Only Chris clears an item; never infer
+completion. When he describes a new task for himself, add it in the file's item
+format. Full protocol: the file's own header.
 
 ## Private HQ repo (sensitive material)
 
-Personal and sensitive material (identity/CVs, job applications, outreach
-contacts and email logs, career strategy, agent session memories incl.
-ORCHESTRATION.md, journal, meetings, people, funding memos) lives in the
-**private** repo `Chris0Jeky/hq-private`, cloned as a sibling checkout at
-`../hq-private` (this machine: `C:\Users\jekyt\source\hq-private`). Moved
-2026-06-13; decision C recorded — public git history was NOT rewritten, so
-treat pre-2026-06-13 history as already seen. **Never copy hq-private content
-back into this public repo** (commits, PRs, issues, or docs). If
-`../hq-private` does not exist (e.g. a volunteer's machine), skip the
-private-path steps — they are Chris-only.
-
-## First 5 minutes
-
-1. Read `../hq-private/projects/wealthlens/memories/session_notes/ORCHESTRATION.md` — **master control document** for the active multi-session workflow (branch status, open PRs, review rounds, recovery instructions). If it exists, follow its recovery checklist before doing anything else.
-2. Read `AGENTS.md`.
-3. Read `../hq-private/projects/wealthlens/memories/00_ACTIVE.md`.
-4. Read `../hq-private/projects/wealthlens/memories/program/00_READ_THIS_FIRST.md`.
-5. Read `tasks/active-sprint.md`.
-6. Read `tasks/ACTION-REQUIRED.md` — Chris's outstanding human action items; you must surface these (see "Action-required protocol" below).
-7. Select one primary skill and, at most, one support skill.
-7. Identify the smallest safe, reviewable change.
-8. State blockers, assumptions, verification target, and docs-sync target before editing.
-
-Do not bulk-read strategy docs, vision docs, identity docs, or research archives unless the task explicitly requires them.
-
-## Action-required protocol (Chris's reminders — do not skip)
-
-`tasks/ACTION-REQUIRED.md` is the curated list of outstanding tasks that need
-**Chris** (a human), each with a how-to guide. It is the mechanism that stops
-high-leverage actions getting lost. Treat it as a standing instruction:
-
-- **Read it at session start** (it is in "First 5 minutes").
-- **Surface the open items in every summary, status update, handoff, and
-  end-of-turn wrap-up** — not only when asked. Lead with anything time-sensitive
-  (a `[due: …]` that is today or overdue) under a one-line `⚑ Action required:`
-  banner, then a short numbered list of open titles with due flags, then point to
-  the file for the guides. Keep it brief; do not dump the guides every time.
-- **Only clear an item when Chris explicitly says it is done.** Never infer
-  completion. When he confirms: tick the box, move it to the file's `## Done`
-  section with `[completed: YYYY-MM-DD]`, and bump the file's `Last updated`.
-- **When Chris describes a new task for himself**, add it to the file in the
-  documented item format (title, priority, why, how, done-when).
-- The full idea backlog stays in `tasks/inbox.md`; all dated items in
-  `tasks/deadlines.md`. Promote into ACTION-REQUIRED only what is currently
-  actionable and important (keep it ≤ ~8 open items).
+Personal/sensitive material (identity, applications, outreach contacts + logs,
+session memories incl. ORCHESTRATION.md, journal, funding) lives in the private repo
+`Chris0Jeky/hq-private`, cloned as a sibling at `../hq-private` (moved 2026-06-13,
+decision C — public history before that date was not rewritten). **Never copy
+hq-private content back into this public repo.** If `../hq-private` does not exist,
+skip private-path steps — they are Chris-only.
 
 ## Who is Chris
 
-Chris is a London-based software engineer and the founder of WealthLens UK, an open-source project making UK wealth inequality data visible to the public.
+Chris is a London-based software engineer and the founder of WealthLens UK: BSc
+Computer Science (First Class, Middlesex, 2025), published lead author (Springer
+SGAI-AI 2025), GE Digital DevSecOps internship, builder of Taskdeck (4,000-commit
+local-first dev tool), Widening Participation outreach at Middlesex. Primary stack:
+C#/.NET 8, Python, TypeScript; FastAPI, Vue 3, Docker, AWS. Fuller context:
+`../hq-private/identity/` (private repo).
 
-### Background
+## Mission and values
 
-- BSc Computer Science, First Class Honours, Middlesex University (2025)
-- Published lead author: "Navigating the N-Person Prisoners' Dilemma" - Springer, SGAI-AI 2025
-- 15-month software engineering internship at GE Digital (DevSecOps, AWS, Jenkins, CI/CD)
-- Near-co-founder of a quant/options trading platform startup
-- Built Taskdeck: a 4,000-commit local-first developer tool (.NET 8, Vue 3, LLM integration)
-- Works at Middlesex University in Widening Participation outreach
-- Fuller personal context: `../hq-private/identity/` (private repo)
-
-### Technical skills
-
-- Primary: C#/.NET 8, Python, TypeScript, JavaScript
-- Backend: FastAPI, Node.js/Express, .NET, REST APIs
-- Frontend: Vue 3, Pinia, TailwindCSS, D3.js
-- Data: Pandas, scikit-learn, SQLite, PostgreSQL, MongoDB
-- Infrastructure: Docker, AWS, Jenkins, CI/CD, Git, Linux
-- AI/LLM: OpenAI API, Gemini API, multi-provider abstraction, intent classification
-
-## Mission
-
-Build open-source tools that make UK wealth inequality data accessible, interactive, and impossible to ignore. Collaborate with organisations like Tax Justice UK, Patriotic Millionaires UK, and the Equality Trust.
-
-## Values
-
-- Data first, opinion second
-- Open source always
-- Accessible by default
-- Independent and non-partisan
+Build open-source tools that make UK wealth inequality data accessible, interactive,
+and impossible to ignore, with organisations like Tax Justice UK, Patriotic
+Millionaires UK, and the Equality Trust. Values: data first, opinion second · open
+source always · accessible by default · independent and non-partisan.
 
 ## Repository role
 
-WealthLens HQ is the command-centre repo for strategy, research, tasks, outreach, community, automation, and planned software projects. This is a multi-domain workspace — agents work on code, content, research, and outreach depending on the task.
-
-The main planned product is `projects/wealthlens-dashboard/`, with:
-
-- Python and FastAPI for backend/API work
-- Vue 3, TypeScript, Pinia, TailwindCSS, D3.js or ECharts for frontend and visualisation
-- Reproducible data pipelines in `automation/data-pipelines/`
-- Source citations for every dataset, including URL and access date
-- Mobile-responsive charts that meet WCAG AA minimum
-- Clear docstrings and comments because volunteers will read the code
-
-## Hero #1: WealthLens Analyst (extracted 2026-07-06)
-
-The analyst lives in its own public repo:
-<https://github.com/Chris0Jeky/wealthlens-analyst> — the plan, backlog,
-ADRs 0001-0003, CI, and its CLAUDE.md moved with it (the import commit
-records the source sha). Work on the analyst happens THERE; nothing
-analyst-related remains here beyond `projects/wealthlens-analyst/POINTER.md`.
+WealthLens HQ is the command-centre repo: strategy, research, tasks, outreach,
+automation, and the products in `AGENT_MAP.md` (dashboard, sim, data pipelines).
+Multi-domain — agents work on code, content, research, or outreach depending on the
+task. Hero #1 (the WealthLens Analyst RAG service) was **extracted 2026-07-06** to
+<https://github.com/Chris0Jeky/wealthlens-analyst> — work on it there; only
+`projects/wealthlens-analyst/POINTER.md` remains here.
 
 ## Architecture quick reference
 
-- **Dashboard backend:** Python 3.11+, FastAPI, Pydantic, SQLite (dev) / PostgreSQL (prod)
-- **Dashboard frontend:** Vue 3 + TypeScript, Pinia, TailwindCSS, D3.js or ECharts, Vite
-- **Data pipelines:** Python, Pandas, reproducible scripts in `automation/data-pipelines/`
-- **Infrastructure:** Docker, GitHub Actions, AWS
-- **Dev tools:** uv (Python), npm (Node), ruff (lint/format), mypy (types), vitest (frontend tests)
+- **Dashboard:** FastAPI + Pydantic backend; Vue 3 + TypeScript, Pinia, TailwindCSS,
+  D3.js/ECharts frontend (GitHub Pages).
+- **Sim:** `packages/wealthlens-sim` — cited-registry microsimulation (own CI lane).
+- **Pipelines:** `automation/data-pipelines` — reproducible fetch/process/chart.
+- **Dev tools:** uv/pip (Python), npm (Node), ruff, mypy, vitest.
 
 ## Essential commands
 
 ```bash
 make lint              # ruff check + mypy (backend)
 make format            # ruff format (auto-fix)
-make test              # pytest -q (backend)
+make test              # pytest -q (backend + frontend)
 make dev-backend       # dashboard uvicorn on 127.0.0.1:8000
 make dev-frontend      # vite dev server on :3000
-make ci-quick          # lint + tests (~60s, no external deps)
+make ci-quick          # lint + tests (~60s, no external deps) — pre-push minimum
 make ci-full           # lint + tests + frontend build + type check
+make test-hooks        # deny-floor smoke matrix (after ANY hook change)
 ```
-
-Pre-push: `make ci-quick` at minimum.
 
 ## Skill routing
 
-Use these Claude skills when relevant:
-
-- `wl-repo-onramp`: broad or ambiguous work, session start, unfamiliar area.
+- `wl-repo-onramp`: broad/ambiguous work, session start, unfamiliar area.
 - `wl-safe-slice`: implement a small reviewable change.
 - `wl-verify-and-sync`: final verification and status sync.
 - `wl-question-batch`: decide whether to ask, assume, or proceed.
 
 ## Important paths
 
-- `../hq-private/projects/wealthlens/memories/session_notes/ORCHESTRATION.md` — **master control for multi-session workflow** (read first!; private repo)
-- `tasks/ACTION-REQUIRED.md` — **Chris's outstanding human action items** (surface these every summary; see "Action-required protocol")
-- `tasks/active-sprint.md` — current priorities
-- `tasks/deadlines.md` — all time-sensitive items in one date table
-- `tasks/inbox.md` — new ideas and untriaged work
-- `tasks/done.md` — completed work with dates
-- `research/raw/` — raw and consolidated research inputs
-- `research/synthesised/key-insights.md` — distilled research conclusions
+- `tasks/ACTION-REQUIRED.md` — Chris's human action items (surface every summary)
+- `tasks/active-sprint.md` — current priorities · `tasks/deadlines.md` — date table
+- `tasks/inbox.md` — untriaged backlog · `tasks/done.md` — completed work
 - `research/data-sources/data-source-registry.md` — data source catalogue
-- `strategy/branding-playbook.md` — tone, platform, and public voice guidance
-- `strategy/state-of-the-project-2026-07.md` — July 2026 whole-project review: strengths + build path
-- `strategy/course-correction-2026-07.md` — July 2026 course correction: what must change (priority rule: launch bundle before new sweeps)
-- `docs/product/PRODUCT_FRONTIER_2026-07.md` — July 2026 product frontier: surface verdicts, scored 8-RFC extension portfolio (`docs/product/rfc/`), anti-portfolio (do not re-litigate), hard-problems annex
-- `vision/north-stars.md` — success metrics and milestones
-- `../hq-private/identity/principles.md` — values-based decision guidance (private repo)
-- `projects/wealthlens-dashboard/` — main product (backend, frontend, data, docs)
-- <https://github.com/Chris0Jeky/wealthlens-analyst> — Hero #1 RAG analyst (extracted 2026-07-06; `projects/wealthlens-analyst/POINTER.md`)
-- `automation/data-pipelines/` — reproducible data fetching scripts
-- `../hq-private/projects/wealthlens/memories/00_ACTIVE.md` — current focus and status board (private repo)
+- `strategy/branding-playbook.md` — public voice (the home for content-voice rules)
+- `strategy/course-correction-2026-07.md` — priority rule: launch bundle first
+- `docs/product/PRODUCT_FRONTIER_2026-07.md` — scored extension portfolio + anti-portfolio
+- `../hq-private/projects/wealthlens/memories/00_ACTIVE.md` — status board (private)
 
-## Domain-specific guidance
+## Protocols (links, not restatements)
 
-### Research handling
+- **Questions:** batch true blockers into one message, else proceed on a named
+  assumption — `docs/agentic/QUESTION_PROTOCOL.md`.
+- **Failures:** hooks capture to the local ledger; unresolved issues go in the
+  handoff; reviewed summaries → `docs/agentic/FAILURE_LEDGER.md`.
+- **Merges/reviews:** agents merge ONLY through `docs/agentic/REVIEW_GATE.md`
+  (≥2 independent adversarial lenses + per-finding verify + green CI + aging).
+  Never touch repo protections, secrets, or production credentials.
+- **Verification:** verify the exact changed seam; never claim tests passed unless
+  they ran; close with the handoff shape in `AGENT_MAP.md`.
+- **Git posture:** relaxed, declared in `.claude/tier.json`, floor-enforced —
+  `docs/agentic/GIT_WORKFLOW.md`.
 
-Raw source documents from Claude, Codex, and other assistants may remain in provider-specific folders under `research/raw/`. When research is consolidated by topic, keep the original raw files intact and add the merged output as a clearly named Markdown file in `research/raw/` or a distilled note in `research/synthesised/`.
+## Work style
 
-Action items extracted from research should go into `tasks/inbox.md`. Key insights should go into `research/synthesised/key-insights.md`.
-
-### Content voice
-
-- Confident but not arrogant
-- Data-driven and accessible
-- Personal where useful, especially around housing, wages, opportunity, and widening participation
-- Non-partisan: present data, not party-political opinions
-- Avoid making claims that are not backed by sources
-
-### Outreach rules
-
-- Check `../hq-private/projects/wealthlens/outreach/contacts.md` before contacting anyone (private repo)
-- Check `../hq-private/projects/wealthlens/outreach/emails-sent.md` for prior contact history
-- Tone should be professional, specific, and value-offering
-- Include a link to something already built whenever possible
-
-### File conventions
-
-- Markdown for docs
-- Dates in `YYYY-MM-DD`
-- Task format: `- [ ] Task description (@owner if assigned) [due: YYYY-MM-DD]`
-- Strategy docs must include `Last updated: YYYY-MM-DD` near the top
-- Keep data source records explicit: source name, URL, access date, format, licence, update pattern, and notes
-
-## Default work style
-
-- Prefer narrow diffs over rewrites.
-- Preserve backward compatibility. New behavior toggleable, default OFF.
-- Do not silently ignore failures. Classify as blocker, non-blocking risk, pre-existing noise, or invalid signal.
-- Record workarounds and future fix paths.
-- Keep generated summaries short and factual.
-- Do not merge PRs, change repo protections, alter secrets, or edit production credentials.
-- Volunteers will read this code — write clear docstrings and comments where they help.
-
-## Hard guardrails
-
-### Secrets
-- Never commit API keys, DB passwords, JWT secrets, or encryption keys.
-- Never add "temporary" keys in docs or code.
-- If a secret is discovered in-repo, stop and propose rotation + purge.
-
-### Data integrity
-- All data must cite its source with URL and access date.
-- Do not fabricate statistics, percentages, or data points.
-- Charts must be mobile-responsive and meet WCAG AA minimum.
-
-### Auth (when dashboard exists)
-- All endpoints returning user or private data must require auth.
-- All privileged endpoints must enforce authorization server-side.
-- Add tests proving non-admins get `403` on admin routes.
-
-### Config defaults
-- New features default OFF.
-- Never change defaults unless backward-compatible.
-
-## Question protocol
-
-Ask only when the uncertainty is a true blocker: irreversible product decision, missing credential, destructive action, security boundary. Otherwise proceed with a stated assumption. Batch questions into one compact message. See `docs/agentic/QUESTION_PROTOCOL.md`.
-
-## Failure protocol
-
-Every failed command, missing dependency, tool denial, or workaround must appear in the final handoff if unresolved. Claude hooks append raw entries to ignored `.claude/local/failure_ledger.jsonl`; promote only reviewed summaries to `docs/agentic/FAILURE_LEDGER.md`.
-
-## Verification protocol
-
-Before final response: (1) re-read the requested outcome, (2) verify the exact changed seam, (3) state commands run and results, (4) state what was not verified and why, (5) update status docs only if their truth changed. Do not claim tests passed unless they actually ran.
+Narrow diffs over rewrites · new behaviour toggleable, default OFF · classify every
+failure (blocker / non-blocking risk / pre-existing noise / invalid signal) · commit
+incrementally by domain (>~3 changed files without a commit is a smell; subjects
+`<area>: <imperative summary>`) · volunteers read this code — clear docstrings.
+Hard guardrails (secrets, data integrity, auth): AGENTS.md § Hard guardrails.
 
 ## Decision framework
 
-When prioritising, optimise for:
-
-1. Shipping something real
-2. Making it visible
-3. Connecting with the right people
-
-In practice, prefer a small number of source-backed, shareable chart pages over a large generic dashboard.
-
-## Git and repo structure
-
-Single repo at `wealthlens-hq/`. Commit subjects: `<area>: <imperative summary>`. Use `gh` CLI for GitHub operations.
-
-### Incremental commits
-
-Commit early and often as you work. Do not batch all changes into one commit at the end of a session. Group commits by domain:
-
-- One commit for a pipeline fix, another for the chart it affects.
-- One commit for infrastructure (pyproject.toml, Makefile), another for docs.
-- One commit per new feature or file group.
-
-Each commit should be independently reviewable. If a session produces more than ~3 files of changes without a commit, something is wrong.
+Optimise for (1) shipping something real, (2) making it visible, (3) connecting with
+the right people — in that order. Prefer a few source-backed, shareable chart pages
+over a large generic dashboard.
 
 ## Windows notes
 
-- Primary dev platform is Windows 10 Pro.
-- Use PowerShell syntax (backtick for line continuation, `$null` not `/dev/null`).
-- Do not chain commands with `&&` in PowerShell; use `;` and check `$LASTEXITCODE`.
-
-## Local settings
-
-Use committed `.claude/settings.json` for Claude Code guardrails. Codex uses `AGENTS.md` and `.agents/skills/*`. Use `.claude/settings.local.json` for personal machine overrides only.
+Primary dev platform is Windows 10 Pro. PowerShell does not chain with `&&` — use
+`;` and check `$LASTEXITCODE`. Machine-level quirks: `~/.claude/MACHINE.md`.
+Local overrides go in `.claude/settings.local.json` only.

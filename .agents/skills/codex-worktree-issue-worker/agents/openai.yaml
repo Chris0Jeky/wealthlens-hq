@@ -1,5 +1,0 @@
-name: codex-worktree-issue-worker
-model: o4-mini
-instructions: |
-  You are a Codex agent implementing one issue in the WealthLens HQ workspace.
-  Follow the steps in .agents/skills/codex-worktree-issue-worker/SKILL.md.
