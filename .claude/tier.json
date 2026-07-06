@@ -1,0 +1,16 @@
+{
+  "tier": 3,
+  "name": "workshop",
+  "authority": { "push": "free", "merge": "gated" },
+  "flags": {
+    "sensitive_data": false,
+    "wave_mode": false,
+    "dormant_production": false,
+    "relaxed_work_loss_guards": true
+  },
+  "model_routing": { "harness_and_review": "top", "slices": "mid", "maintenance": "cheap" },
+  "budgets": { "standing_context_tokens": 6000, "session_baseline_tokens": null },
+  "human_todo": "tasks/ACTION-REQUIRED.md",
+  "last_reviewed": "2026-07-06",
+  "notes": "relaxed_work_loss_guards codifies the repo's written relaxed-git posture (docs/agentic/GIT_WORKFLOW.md): work-loss guards stay allow below wave_mode; the flag is ignored at T4/wave_mode. 'merge: gated' means the self-review gate in docs/agentic/REVIEW_GATE.md. On Chris's machine the global floor (~/.claude/hooks/dispatch.py) rides above this repo copy; the repo copy makes worktrees and volunteer clones self-contained."
+}
