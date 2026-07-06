@@ -148,8 +148,9 @@ Repo-local Codex skills live under `.agents/skills/` and supplement this file. U
 - Relevant linters and typechecks pass.
 - `../hq-private/projects/wealthlens/memories/00_ACTIVE.md` (private sibling repo) is updated if the work changes current status.
 - If a meaningful decision was made, capture it in `../hq-private/projects/wealthlens/memories/decisions/`
-  (workspace decisions) or `docs/adr/` (product ADRs that must travel with an
-  extractable product subtree, e.g. wealthlens-analyst).
+  (workspace decisions) or the owning product repo's `docs/adr/` (product
+  ADRs travel with the product — the analyst's ADRs moved to
+  wealthlens-analyst in the 2026-07-06 extraction).
 - If a data pipeline was added or changed, re-run it to verify the output and regenerate charts.
 - If a new data source was used, add it to `projects/wealthlens-dashboard/docs/data-licences.md`.
 - Commits are made incrementally as work progresses, not batched at session end.

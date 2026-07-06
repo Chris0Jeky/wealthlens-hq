@@ -22,7 +22,6 @@ BACKEND_DIR := projects/wealthlens-dashboard/backend
 FRONTEND_DIR := projects/wealthlens-dashboard/frontend
 PIPELINE_DIR := automation/data-pipelines
 ANALYSIS_DIR := automation/analysis
-ANALYST_DIR := projects/wealthlens-analyst
 
 .PHONY: help install lint format test dev-backend dev-frontend \
         ci-quick ci-full \
@@ -100,37 +99,9 @@ validate: ## Validate all processed CSV datasets
 pipelines: ## Run all data pipelines (fetches live data)
 	$(PYTHON) $(PIPELINE_DIR)/run_all.py --fetch-only
 
-# ── Analyst (Hero #1: projects/wealthlens-analyst) ────────────────────────
-# Plan: docs/plan/HERO1_PLAN.md · backlog: tasks/hero1-backlog.md.
-# Same reliability contract as everything above: fail loudly, swallow nothing.
-analyst-install: ## Install the analyst package editable (+dev,evals extras)
-	$(PYTHON) -m pip install -e "$(ANALYST_DIR)[dev,evals]"
-
-analyst-lint: ## Ruff + strict mypy on the analyst package (uses its own pyproject)
-	cd $(ANALYST_DIR) && $(PYTHON) -m ruff check . && $(PYTHON) -m ruff format --check . && $(PYTHON) -m mypy
-
-analyst-test: ## Run the analyst pytest suite
-	cd $(ANALYST_DIR) && $(PYTHON) -m pytest -q
-
-dev: ## Start the analyst dev server (uvicorn, 127.0.0.1:8100)
-	cd $(ANALYST_DIR) && $(PYTHON) -m uvicorn --factory wealthlens_analyst.api.app:create_app --reload --host 127.0.0.1 --port 8100
-
-ingest-slice: ## Ingest the frozen corpus slice (chunk -> provenance gate -> write; FTS auto; embed if OPENAI_API_KEY set)
-	cd $(ANALYST_DIR) && $(PYTHON) -m wealthlens_analyst.ingest.slice_corpus
-
-eval-golden-validate: ## Validate the golden set against its JSON schema (static, CI-safe)
-	$(PYTHON) $(ANALYST_DIR)/evals/checks/deterministic.py
-
-# Static checks today; gains --live (citation resolvability, refusal set,
-# latency/cost bounds against a serving /ask) when backlog task H1-23 lands.
-eval-deterministic: ## Run the deterministic eval checks
-	$(PYTHON) $(ANALYST_DIR)/evals/checks/deterministic.py
-
-eval-ragas: ## Run RAGAS metrics over the reviewed golden subset (pending H1-25)
-	$(PYTHON) $(ANALYST_DIR)/evals/run_ragas.py
-
-eval-report: eval-deterministic eval-ragas ## Generate the combined committed eval report (assembly pending H1-26)
-	@echo "eval-report: deterministic + RAGAS ran; report assembly lands with H1-26"
+# ── Analyst (Hero #1) ────────────────────────────────────────────────────────────────────
+# Extracted 2026-07-06 to https://github.com/Chris0Jeky/wealthlens-analyst
+# (its own Makefile/CI). See projects/wealthlens-analyst/POINTER.md.
 
 # ── Aggregate targets ─────────────────────────────────────────────────────
 dev-tools-install: ## Install root dev tools (mypy, ruff, pandas-stubs, Pillow, ...) used by lint/test
