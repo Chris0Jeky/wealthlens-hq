@@ -22,14 +22,8 @@ surface its open items in every summary/handoff — only Chris clears them.
 ## Operational issues
 
 Never silently ignore a tool, dependency, test, or CI error because a workaround
-exists. Classify it (blocker / non-blocking risk / pre-existing noise / invalid
-signal), state the classification, and capture a follow-up path. The final handoff
-must include every issue not fully fixed.
-
-## Backward compatibility
-
-Never change defaults in `.env.example` or shared config unless backward-compatible;
-new behaviour ships toggleable, default OFF. Local overrides go in `.env`, never in templates.
+exists. Classify it (blocker / non-blocking risk / pre-existing noise / invalid signal),
+capture a follow-up path, and include every not-fully-fixed issue in the handoff.
 
 ## Subagents and worktrees
 
@@ -47,6 +41,9 @@ Workers derive paths from the worktree root — never absolute main-checkout pat
   tests prove non-admins get 403.
 - **Command safety:** the deny floor is `.claude/hooks/dispatch.py` (tier-aware, see
   `tier.json`); git posture in `docs/agentic/GIT_WORKFLOW.md`.
+- **Backward compatibility:** never change shared/config defaults unless
+  backward-compatible; new behaviour ships toggleable, default OFF; local overrides
+  go in `.env`, never in templates.
 
 ## Domain guidance
 
@@ -78,5 +75,5 @@ Workers derive paths from the worktree root — never absolute main-checkout pat
 
 Markdown docs · dates `YYYY-MM-DD` · tasks `- [ ] description (@owner) [due: YYYY-MM-DD]`
 · strategy docs carry `Last updated:` · data source records: name, URL, access date,
-format, licence, update pattern. Commands: CLAUDE.md § Essential commands
-(`make help` lists everything); pre-push minimum `make ci-quick`.
+format, licence, update pattern. Commands: CLAUDE.md § Essential commands; pre-push
+minimum `make ci-quick`.
