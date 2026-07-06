@@ -1,8 +1,11 @@
 name: Weekly Data Update
 
+# Schedule DISABLED 2026-07-06 under the red-lane law (5 consecutive scheduled
+# failures 2026-06-08..07-06; known upstream-fetch breakage accepted per decision
+# D-D — the site serves last-good committed data). Manual refresh stays available
+# via workflow_dispatch. Re-enable the cron when the post-launch data-maintenance
+# task fixes the WAS Table 2.2 / GDHI fetchers. Tracking: #494.
 on:
-  schedule:
-    - cron: "0 6 * * 1"  # Every Monday at 06:00 UTC
   workflow_dispatch:
 
 permissions:
