@@ -19,4 +19,4 @@ Reproducible fetch/process/chart scripts feeding the dashboard. Root seam map:
 
 - `make pipeline-test` (offline unit tests) + `make validate` (CSV validation).
 - Live fetches: `make pipelines` (network; known upstream breakage tracked in #494 —
-  weekly cron disabled, manual `workflow_dispatch` only).
+  the weekly cron is being disabled in PR #495, leaving manual `workflow_dispatch`).
