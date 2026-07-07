@@ -1,12 +1,14 @@
 # Agent failure ledger
 
-This file is the reviewed human-readable view of recurring agent/tool/workflow failures. Claude's failure hook writes raw local entries to ignored `.claude/local/failure_ledger.jsonl`; promote only scrubbed summaries here after review. The SessionStart hook nudges a triage pass when the local ledger exceeds 25 entries.
+This file is the reviewed human-readable view of recurring agent/tool/workflow failures. Claude's failure hook writes raw local entries to ignored `.claude/local/failure_ledger.jsonl`; promote only scrubbed summaries here after review.
 
 ## Triage 2026-07-06 — full backlog classified (1,602 entries, 2026-05-14 → 2026-07-06)
 
 Gardener-style pass over the entire untriaged local ledger (4 parallel classifier
-agents + synthesis; every entry counted). **Blockers: 0.** Class totals:
-pre-existing-noise 640 · non-blocking-risk 633 · invalid-signal 329.
+agents + synthesis; every entry classified into one of the four classes). **Blockers: 0.**
+Exact class totals: pre-existing-noise 640 · non-blocking-risk 633 · invalid-signal 329
+(= 1,602). The table below lists the largest clusters per class; the residual row
+captures the smaller long-tail clusters so the rows reconcile to the class totals.
 The raw JSONL was rotated to `.claude/local/archive/failure_ledger-2026-07-06.jsonl`
 (local, untracked); the live ledger restarts empty.
 
@@ -22,6 +24,7 @@ The raw JSONL was rotated to `.claude/local/archive/failure_ledger-2026-07-06.js
 | Merge conflicts / non-fast-forward during the May 192-PR consolidation | 25 | non-blocking-risk | Historical (one-time consolidation); wave protocol since |
 | `gh` CLI field/flag misuse (`gh pr checks` has `state`/`bucket`, not `conclusion`) | 7 | non-blocking-risk | Folded here as the lesson; no further action |
 | `git add` of gitignored generated `frontend/public/data` | 6 | non-blocking-risk | Generated output: regenerate via the static-API script, never `git add` |
+| Long-tail non-blocking clusters (playwright `file://`/localhost, git one-off usage errors, Python packaging/env quirks, network transients) | 40 | non-blocking-risk | Individually rare; no promotion — reclassify only if any recurs |
 | Expected red-green dev-loop exits, existence probes, transient network, hook self-tests | 329 | invalid-signal | By design; no action |
 
 ## Entries
