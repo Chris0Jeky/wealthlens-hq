@@ -1,0 +1,7 @@
+year,income_tax_bn,nics_bn,cgt_bn,iht_bn,sdlt_bn,work_taxes_bn,wealth_taxes_bn,total_selected_bn,work_pct,wealth_pct,data_source
+2018-19,191.0,137.0,9.2,5.4,12.0,328.0,26.6,354.6,92.5,7.5,illustrative
+2019-20,194.0,143.0,9.9,5.3,11.6,337.0,26.8,363.8,92.6,7.4,illustrative
+2020-21,194.0,141.0,11.1,5.4,10.0,335.0,26.5,361.5,92.7,7.3,illustrative
+2021-22,225.0,157.0,14.3,6.1,14.1,382.0,34.5,416.5,91.7,8.3,illustrative
+2022-23,249.0,172.0,14.5,7.1,12.0,421.0,33.6,454.6,92.6,7.4,illustrative
+2023-24,270.0,180.0,15.0,7.5,12.0,450.0,34.5,484.5,92.9,7.1,illustrative
