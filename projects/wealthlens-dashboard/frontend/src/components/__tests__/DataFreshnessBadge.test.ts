@@ -3,10 +3,14 @@ import { mount, flushPromises } from "@vue/test-utils"
 import DataFreshnessBadge from "@/components/DataFreshnessBadge.vue"
 import { _resetCache } from "@/composables/useDataFreshness"
 
-/** Helper: builds a freshness.json response with a given date for "wealth-shares". */
-function mockFreshnessResponse(dateStr: string, source = "ONS Wealth and Assets Survey") {
+/** Helper: builds a freshness.json response with a given date for one slug. */
+function mockFreshnessResponse(
+  dateStr: string,
+  source = "ONS Wealth and Assets Survey",
+  slug = "wealth-shares",
+) {
   return {
-    "wealth-shares": { last_updated: dateStr, source },
+    [slug]: { last_updated: dateStr, source },
   }
 }
 
@@ -59,7 +63,7 @@ describe("DataFreshnessBadge", () => {
     expect(wrapper.text()).toContain("2 days ago")
   })
 
-  it("shows green dot when data is less than 7 days old", async () => {
+  it("shows green dot while the source's cadence says no newer release is due", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
       ok: true,
       json: async () => mockFreshnessResponse(daysAgoDate(3)),
@@ -74,34 +78,53 @@ describe("DataFreshnessBadge", () => {
     expect(dot.classes()).toContain("freshness-badge__dot--green")
   })
 
-  it("shows amber dot when data is 7–30 days old", async () => {
+  it("stays green for annual data months old (F3 — cadence-aware, no more 30-day red)", async () => {
+    // wealth-shares is an annual series: 100-day-old data is fully current.
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
       ok: true,
-      json: async () => mockFreshnessResponse(daysAgoDate(14)),
+      json: async () => mockFreshnessResponse(daysAgoDate(100)),
     } as Response)
 
     const wrapper = mount(DataFreshnessBadge, {
       props: { dataset: "wealth-shares" },
+    })
+    await flushPromises()
+
+    const dot = wrapper.find(".freshness-badge__dot")
+    expect(dot.classes()).toContain("freshness-badge__dot--green")
+  })
+
+  it("shows amber when our copy may lag a due release — never red", async () => {
+    // boe-rates is a monthly series: 60-day-old data means an update is due.
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockFreshnessResponse(daysAgoDate(60), "Bank of England", "boe-rates"),
+    } as Response)
+
+    const wrapper = mount(DataFreshnessBadge, {
+      props: { dataset: "boe-rates" },
     })
     await flushPromises()
 
     const dot = wrapper.find(".freshness-badge__dot")
     expect(dot.classes()).toContain("freshness-badge__dot--amber")
+    expect(dot.classes()).not.toContain("freshness-badge__dot--red")
   })
 
-  it("shows red dot when data is more than 30 days old", async () => {
+  it("shows grey for a suspended source regardless of age — the WAS case", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
       ok: true,
-      json: async () => mockFreshnessResponse(daysAgoDate(45)),
+      json: async () =>
+        mockFreshnessResponse(daysAgoDate(700), "ONS WAS Round 7", "wealth-by-decile"),
     } as Response)
 
     const wrapper = mount(DataFreshnessBadge, {
-      props: { dataset: "wealth-shares" },
+      props: { dataset: "wealth-by-decile" },
     })
     await flushPromises()
 
     const dot = wrapper.find(".freshness-badge__dot")
-    expect(dot.classes()).toContain("freshness-badge__dot--red")
+    expect(dot.classes()).toContain("freshness-badge__dot--grey")
   })
 
   it("gracefully handles missing dataset (renders nothing)", async () => {

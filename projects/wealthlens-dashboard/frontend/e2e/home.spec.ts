@@ -68,6 +68,20 @@ test.describe("Home page (editorial front page)", () => {
     await expect(cards.first()).toBeVisible({ timeout: 10000 })
   })
 
+  test("the permanent-red Expired wall is gone (F3 — cadence-aware freshness)", async ({
+    page,
+  }) => {
+    await page.goto("/")
+    // Wait for the dataset cards' freshness badges to settle
+    await page.waitForLoadState("networkidle")
+    await expect(page.locator('[data-testid="freshness-label"]').first()).toBeVisible()
+    await expect(page.locator("body")).not.toContainText("Expired")
+    // Annual sources with current data badge green "Current"
+    const labels = await page.locator('[data-testid="freshness-label"]').allTextContents()
+    expect(labels.length).toBeGreaterThan(0)
+    expect(labels).toContain("Current")
+  })
+
   test("masthead carries a data vintage, not a live-updated claim (F4)", async ({ page }) => {
     await page.goto("/")
     await expect(page.locator(".vintage")).toContainText(/^Data as of \d{1,2} \w{3} \d{4}$/)

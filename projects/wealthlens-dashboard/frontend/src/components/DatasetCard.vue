@@ -39,7 +39,7 @@ const csvAvailable = computed(() => hasCsvDownload(props.name))
   >
     <div class="flex items-center justify-between mb-2">
       <h3 class="text-lg font-semibold">{{ name }}</h3>
-      <FreshnessIndicator v-if="freshness" :freshness="freshness" />
+      <FreshnessIndicator v-if="freshness" :dataset="name" :freshness="freshness" />
     </div>
     <p class="text-sm text-[var(--wl-ink-muted)] mb-3">{{ description }}</p>
     <div class="flex items-center gap-4">
