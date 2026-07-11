@@ -10,6 +10,26 @@ import AboutView from "../AboutView.vue"
 import WealthCalculatorView from "../WealthCalculatorView.vue"
 import NotFoundView from "../NotFoundView.vue"
 
+// The front page lazy-loads the featured chart; mock it so tests don't race
+// the echarts dynamic import against environment teardown.
+vi.mock("@/components/WealthSharesChart.vue", async () => {
+  const { defineComponent, h } = await import("vue")
+  return {
+    __esModule: true,
+    default: defineComponent({
+      name: "WealthSharesChart",
+      setup() {
+        return () =>
+          h("div", {
+            class: "wealth-shares-chart-stub",
+            role: "img",
+            "aria-label": "Featured chart stub",
+          })
+      },
+    }),
+  }
+})
+
 const AXE_OPTIONS = {
   rules: {
     "color-contrast": { enabled: false },

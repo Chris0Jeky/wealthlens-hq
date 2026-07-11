@@ -5,6 +5,26 @@ import { createRouter, createMemoryHistory } from "vue-router"
 import HomeView from "../HomeView.vue"
 import { useDataStore } from "@/stores/data"
 
+// The front page lazy-loads the featured chart; mock it so tests don't race
+// the echarts dynamic import against environment teardown.
+vi.mock("@/components/WealthSharesChart.vue", async () => {
+  const { defineComponent, h } = await import("vue")
+  return {
+    __esModule: true,
+    default: defineComponent({
+      name: "WealthSharesChart",
+      setup() {
+        return () =>
+          h("div", {
+            class: "wealth-shares-chart-stub",
+            role: "img",
+            "aria-label": "Featured chart stub",
+          })
+      },
+    }),
+  }
+})
+
 function createMountOptions(storeOverrides = {}) {
   const router = createRouter({
     history: createMemoryHistory(),
@@ -38,39 +58,91 @@ function createMountOptions(storeOverrides = {}) {
 }
 
 describe("HomeView", () => {
-  describe("hero section", () => {
-    it("renders main heading", () => {
+  describe("lead story", () => {
+    it("leads with the sourced 57% headline figure in the h1", () => {
       const wrapper = mount(HomeView, createMountOptions())
-      expect(wrapper.find("h1").text()).toBe("UK Wealth Inequality Dashboard")
+      const h1 = wrapper.find("h1")
+      expect(h1.text()).toContain("wealthiest 10%")
+      expect(h1.text()).toContain("57")
+      expect(h1.text()).toContain("UK personal wealth")
     })
 
-    it("renders mission description", () => {
+    it("cites the WID source with access date next to the figure", () => {
       const wrapper = mount(HomeView, createMountOptions())
-      expect(wrapper.text()).toContain("Open-source, source-backed data")
+      const source = wrapper.find(".lead-source")
+      expect(source.text()).toContain("World Inequality Database")
+      expect(source.text()).toContain("accessed 14 May 2026")
+      expect(source.text()).toContain("CC-BY 4.0")
     })
 
-    it("renders tagline", () => {
+    it("grounds the standfirst in the same verified series (21% / 43%)", () => {
       const wrapper = mount(HomeView, createMountOptions())
-      expect(wrapper.text()).toContain("Making wealth data accessible")
+      expect(wrapper.text()).toContain("top 1% alone hold 21%")
+      expect(wrapper.text()).toContain("share 43%")
+    })
+
+    it("links the lead to the full wealth-shares article", () => {
+      const wrapper = mount(HomeView, createMountOptions())
+      const links = wrapper.findAll('a[href="/charts/wealth-shares"]')
+      expect(links.length).toBeGreaterThan(0)
     })
   })
 
-  describe("key statistics section", () => {
-    it("shows dataset count", () => {
+  describe("honesty regressions (reality-check F10)", () => {
+    it("no longer claims a Weekly update frequency", () => {
       const wrapper = mount(HomeView, createMountOptions())
-      expect(wrapper.text()).toContain("10")
-      expect(wrapper.text()).toContain("Datasets")
+      expect(wrapper.text()).not.toContain("Weekly")
+      expect(wrapper.text()).not.toContain("Update Frequency")
+    })
+  })
+
+  describe("tools row (de-orphaning, F6)", () => {
+    it("links all four tools and the FAQ", () => {
+      const wrapper = mount(HomeView, createMountOptions())
+      for (const href of [
+        "/tools/wealth-scale",
+        "/tools/wealth-calculator",
+        "/tools/tax-calculator",
+        "/tools/wealth-tax-simulator",
+        "/faq",
+      ]) {
+        expect(wrapper.find(`a[href="${href}"]`).exists()).toBe(true)
+      }
+    })
+  })
+
+  describe("chart index by pillar", () => {
+    it("links all 12 charts exactly once each", () => {
+      const wrapper = mount(HomeView, createMountOptions())
+      const hrefs = wrapper
+        .findAll(".pillar-link")
+        .map((a) => a.attributes("href"))
+        .sort()
+      expect(hrefs.length).toBe(12)
+      expect(new Set(hrefs).size).toBe(12)
+      expect(hrefs).toContain("/charts/wage-stagnation")
+      expect(hrefs).toContain("/charts/inheritance-tax")
     })
 
-    it("shows interactive charts count", () => {
+    it("shows the four pillar labels", () => {
       const wrapper = mount(HomeView, createMountOptions())
-      expect(wrapper.text()).toContain("Interactive Charts")
+      const labels = wrapper.findAll(".pillar-label").map((el) => el.text())
+      expect(labels).toEqual(["Wealth", "Housing", "Tax", "Income & work"])
     })
 
-    it("shows update frequency", () => {
+    it("derives chart titles from the article config (no drifting copy)", () => {
       const wrapper = mount(HomeView, createMountOptions())
-      expect(wrapper.text()).toContain("Weekly")
-      expect(wrapper.text()).toContain("Update Frequency")
+      expect(wrapper.text()).toContain("Who owns wealth in the UK? Same lot, mostly.")
+      expect(wrapper.text()).toContain("Real Wage Stagnation")
+    })
+  })
+
+  describe("featured chart", () => {
+    it("renders a figure with a cited caption", () => {
+      const wrapper = mount(HomeView, createMountOptions())
+      const caption = wrapper.find(".featured-caption")
+      expect(caption.text()).toContain("World Inequality Database")
+      expect(caption.text()).toContain("1820–2024")
     })
   })
 
@@ -231,9 +303,9 @@ describe("HomeView", () => {
   })
 
   describe("accessibility", () => {
-    it("has aria-labelledby on hero section", () => {
+    it("has aria-labelledby on the lead section", () => {
       const wrapper = mount(HomeView, createMountOptions())
-      const section = wrapper.find('[aria-labelledby="hero-heading"]')
+      const section = wrapper.find('[aria-labelledby="lead-heading"]')
       expect(section.exists()).toBe(true)
     })
 
@@ -248,10 +320,10 @@ describe("HomeView", () => {
       expect(wrapper.find('[role="list"]').exists()).toBe(true)
     })
 
-    it("has sr-only label for stats section", () => {
+    it("voices the hero figure unit for screen readers", () => {
       const wrapper = mount(HomeView, createMountOptions())
-      const srOnly = wrapper.find(".sr-only")
-      expect(srOnly.text()).toBe("Key Statistics")
+      const srOnly = wrapper.find(".lead-figure .sr-only")
+      expect(srOnly.text()).toContain("per cent")
     })
   })
 })
