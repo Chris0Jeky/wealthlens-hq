@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from "vue"
 import { useRoute } from "vue-router"
 import { useDataStore, type DatasetRow } from "@/stores/data"
 import { usePageMeta } from "@/composables/usePageMeta"
+import { SITE_URL } from "@/constants/site"
 
 const route = useRoute()
 const store = useDataStore()
@@ -38,19 +39,20 @@ usePageMeta({
   description: computed(
     () => `Data source details and preview for the ${pageTitle.value} dataset on WealthLens UK.`,
   ),
-  url: computed(() => `https://chris0jeky.github.io/wealthlens-hq/datasets/${datasetName.value}`),
-  image: computed(() => `https://chris0jeky.github.io/wealthlens-hq/og/${datasetName.value}.png`),
+  url: computed(() => `${SITE_URL}/datasets/${datasetName.value}`),
+  image: computed(() => `${SITE_URL}/og/${datasetName.value}.png`),
   imageAlt: computed(() => `${pageTitle.value} dataset — WealthLens UK`),
 })
 
 onMounted(async () => {
   try {
-    const [metaRes, dataRows] = await Promise.all([
-      fetch(`/api/data/${datasetName.value}/metadata`),
+    // Go through the store so the static deploy (VITE_STATIC_DATA) reads the
+    // published JSON — a direct /api/... fetch has no backend on GitHub Pages.
+    const [meta, dataRows] = await Promise.all([
+      store.fetchMetadata(datasetName.value),
       store.fetchDataset(datasetName.value),
     ])
-    if (!metaRes.ok) throw new Error(`Metadata request failed: ${metaRes.status}`)
-    metadata.value = await metaRes.json()
+    metadata.value = meta
     rows.value = dataRows.data.slice(0, 10)
   } catch (e) {
     error.value = e instanceof Error ? e.message : "Failed to load dataset"

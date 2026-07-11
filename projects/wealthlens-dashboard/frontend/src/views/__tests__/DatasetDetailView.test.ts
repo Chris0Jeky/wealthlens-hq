@@ -33,15 +33,17 @@ vi.mock("vue-router", () => ({
 }))
 
 /**
- * Mock the data store. The view calls store.fetchDataset() which now
- * returns a PaginatedResponse via fetchWithRetry. We mock useDataStore
- * directly so tests don't depend on fetchWithRetry internals.
+ * Mock the data store. The view loads both metadata and rows through the
+ * store (static-deploy aware), so we mock useDataStore directly and never
+ * touch global fetch.
  */
 const mockFetchDataset = vi.fn()
+const mockFetchMetadata = vi.fn()
 
 vi.mock("@/stores/data", () => ({
   useDataStore: () => ({
     fetchDataset: mockFetchDataset,
+    fetchMetadata: mockFetchMetadata,
   }),
 }))
 
@@ -57,17 +59,11 @@ function mountView() {
 }
 
 /**
- * Helper: stub both the direct metadata fetch AND the store's fetchDataset
- * for tests that need successful data loading.
+ * Helper: stub the store's metadata + rows calls for tests that need
+ * successful data loading.
  */
 function stubSuccessfulFetches() {
-  vi.stubGlobal(
-    "fetch",
-    vi.fn().mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve(mockMetadata),
-    }),
-  )
+  mockFetchMetadata.mockResolvedValue(mockMetadata)
   mockFetchDataset.mockResolvedValue({
     data: mockRows,
     page: 1,
@@ -82,26 +78,22 @@ describe("DatasetDetailView", () => {
     setActivePinia(createPinia())
     vi.restoreAllMocks()
     mockFetchDataset.mockReset()
+    mockFetchMetadata.mockReset()
   })
 
   it("shows loading state initially", () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockImplementation(() => new Promise(() => {})),
-    )
+    mockFetchMetadata.mockReturnValue(new Promise(() => {}))
     mockFetchDataset.mockReturnValue(new Promise(() => {}))
     const wrapper = mountView()
     expect(wrapper.text()).toContain("Loading dataset...")
-    vi.unstubAllGlobals()
   })
 
   it("shows error state when fetch fails", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("Network error")))
+    mockFetchMetadata.mockRejectedValue(new Error("Network error"))
     mockFetchDataset.mockRejectedValue(new Error("Network error"))
     const wrapper = mountView()
     await flushPromises()
     expect(wrapper.text()).toContain("Network error")
-    vi.unstubAllGlobals()
   })
 
   it("renders metadata after successful fetch", async () => {
@@ -113,7 +105,6 @@ describe("DatasetDetailView", () => {
     expect(wrapper.text()).toContain("wealth-shares")
     expect(wrapper.text()).toContain("World Inequality Database")
     expect(wrapper.text()).toContain("2026-05-14")
-    vi.unstubAllGlobals()
   })
 
   it("renders a data preview table with column headers", async () => {
@@ -127,7 +118,6 @@ describe("DatasetDetailView", () => {
     expect(headerTexts).toContain("year")
     expect(headerTexts).toContain("percentile")
     expect(headerTexts).toContain("value")
-    vi.unstubAllGlobals()
   })
 
   it("shows a View Chart link for supported datasets", async () => {
@@ -138,20 +128,15 @@ describe("DatasetDetailView", () => {
 
     const chartLink = wrapper.find('a[href="/charts/wealth-shares"]')
     expect(chartLink.exists()).toBe(true)
-    vi.unstubAllGlobals()
   })
 
   it("has a back link to the dashboard", () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockImplementation(() => new Promise(() => {})),
-    )
+    mockFetchMetadata.mockReturnValue(new Promise(() => {}))
     mockFetchDataset.mockReturnValue(new Promise(() => {}))
     const wrapper = mountView()
     const backLink = wrapper.find('a[href="/"]')
     expect(backLink.exists()).toBe(true)
     expect(backLink.text()).toContain("Back to datasets")
-    vi.unstubAllGlobals()
   })
 
   it("uses semantic sections with aria-labelledby", async () => {
@@ -162,6 +147,5 @@ describe("DatasetDetailView", () => {
 
     expect(wrapper.find('[aria-labelledby="source-heading"]').exists()).toBe(true)
     expect(wrapper.find('[aria-labelledby="preview-heading"]').exists()).toBe(true)
-    vi.unstubAllGlobals()
   })
 })
