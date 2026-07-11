@@ -9,56 +9,52 @@ Last updated: 2026-07-11
 > seeds are the wiring/honesty fixes, most ≤ half-day. F1 (home "View Chart"
 > links dead — Vue Boolean-prop cast) is already fixed in **PR #498**.
 
-- [ ] Wire the orphaned pages (F6): nav/footer/home links to
-  `/tools/wealth-scale`, `/tools/wealth-calculator`,
-  `/tools/wealth-tax-simulator`, `/tools/tax-calculator`, `/faq`; add
-  `wage-stagnation` + `inheritance-tax` cards to the home grid; consider a
-  small `/charts` + `/tools` index page (footer "All charts" currently points
-  at one chart; wealth-scale's breadcrumb references a `/tools` route that
-  404s) (@agent)
-- [ ] OG one-liners (F5): make `og:image` an absolute URL (scrapers ignore
-  relative); point `og:url` at the real GitHub Pages URL until
-  `wealthlens.uk` is registered (AR #4) (@agent)
-- [ ] Static-aware `HealthStatus` (F9): stop polling
-  `http://localhost:8000/api/version` from every visitor's browser and remove
-  the public "API offline" footer badge when `VITE_STATIC_DATA` is set (@agent)
-- [ ] Masthead honesty (F4): replace the `new Date()` "UPDATED {today}" claim
-  in `AppHeader.vue` with the build-time data vintage (max dataset
-  `last_updated`) or drop "UPDATED" (@agent)
-- [ ] Cadence-aware freshness (F3): grade dataset age against each source's
-  `update_pattern` (already in `datasetProvenance.ts`/`sources.yml`) instead
-  of a fixed 30-day ladder, or switch the badge to neutral "Data as of
-  {date}" — kills the permanent "Expired" wall now that the weekly cron is
-  disabled (#495); also fix the home stat tile's now-false "Weekly" claim
-  (F10) (@agent)
-- [ ] CSV links (F8): point the 10 home-card CSV links at the static data
-  layer that already deploys (or hide them on static builds); correct
-  `MethodologyView`'s "the API provides CSV download endpoints" claim (@agent)
-- [ ] Wire `ShareBar` (F7): connect Copy link/PNG/SVG/CSV/social buttons to
-  the existing `useChartExport` + `SharePanel` + share-intent machinery, or
-  delete the 8 dead buttons (they currently no-op on every flagship chart
-  page) (@agent)
-- [ ] E2E home smoke (F12): assert the home page shows ≥1 "View Chart" link
-  and it navigates to a chart page (DatasetCard is mocked in view tests, so
-  only e2e can lock F1's class shut) (@agent)
-- [ ] Route prerendering (F5 class fix, larger): prerender the ~20 routes at
-  build (vite-ssg or prerender plugin) so deep links return HTTP 200 real
-  HTML with per-route meta — fixes crawler-404s, empty no-JS shell, and the
-  never-served per-chart OG images in one move (@agent, plan first)
-- [ ] Front-page story pass (the "excitement" gap): lead with the 57%
-  headline stat + one featured chart + a tools row instead of a bare card
-  grid; fold into/next to RFC-001a-d rather than a separate rewrite (@agent,
-  after wiring seeds)
+- [x] ~~Wire the orphaned pages (F6)~~ MOSTLY DONE in PR #515 (unmerged,
+  2026-07-11): home tools row + footer Tools column + 12-chart pillar index
+  incl. the 2 orphan charts; footer "All charts" → the home index anchor.
+  REMAINING: a top-nav Tools link and a real `/tools` index route (the
+  wealth-scale breadcrumb still shows plain-text "Tools") (@agent, small)
+- [x] ~~OG one-liners (F5)~~ DONE in PR #514 (unmerged): absolute og:image
+  everywhere, og:url/canonical on the github.io identity via one constant
+  (`constants/site.ts`), baked per-route by the prerender (@agent)
+- [x] ~~Static-aware `HealthStatus` (F9)~~ DONE in PR #514 (unmerged):
+  renders nothing and never polls on the static deploy (@agent)
+- [x] ~~Masthead honesty (F4)~~ DONE in PR #515 (unmerged): "Data as of
+  {max last_updated}" baked at build time (`scripts/data-vintage.ts`); the
+  pulsing "Live" dot removed (@agent)
+- [x] ~~Cadence-aware freshness (F3)~~ DONE in PR #517 (unmerged): grammar
+  designed first (`docs/product/freshness-grammar.md` — Current / Update due /
+  Source suspended / Unknown, no red state), both badge surfaces graded via
+  one util against `datasetProvenance` cadence; the "Weekly" stat tile died
+  with the old home page in PR #515 (@agent)
+- [x] ~~CSV links (F8)~~ DONE in PR #516 (unmerged): generate_static_api.py
+  emits {slug}.csv mirrors (data_type provenance travels as a column), home
+  cards + ShareBar link them, Methodology claim corrected. No
+  generational-wealth CSV until the NC-ND licence decision (AR #10) (@agent)
+- [x] ~~Wire `ShareBar` (F7)~~ DONE in PR #516 (unmerged): all 8 controls
+  real (clipboard, embed snippet, PNG/SVG via useChartExport, CSV mirror,
+  share intents shared with SharePanel) (@agent)
+- [x] ~~E2E home smoke (F12)~~ DONE in PR #515 (unmerged): home e2e asserts
+  the hero figure, a View Chart link that navigates, tools links, the 12-chart
+  index, and (PR #517) that "Expired" never renders (@agent)
+- [x] ~~Route prerendering (F5 class fix)~~ DONE in PR #514 (unmerged):
+  post-build browser-snapshot prerender (ADR 0001,
+  `docs/adr/0001-dashboard-route-prerendering.md`) — ~45 routes baked as flat
+  .html with usePageMeta as the single meta source, real 404.html, sitemap
+  generated from the same manifest (@agent)
+- [x] ~~Front-page story pass~~ DONE in PR #515 (unmerged): editorial front
+  page — WID-cited 57% hero, inline featured chart, tools row, pillar chart
+  index, dataset/download layer below (@agent)
 - [ ] `Accordion.defaultOpen` is declared but never read (PR #498 review
   finding, F11) — implement or remove the prop (@agent, tiny)
-- [ ] Chart-page freshness chip says "Data: 1 month ago" for a 14 May access
-  date (~2 months at audit) — check the age arithmetic/copy (F10) (@agent, tiny)
+- [x] ~~Chart-page freshness chip age copy (F10)~~ DONE in PR #517
+  (unmerged): months round to nearest; >1 year says "N years ago" (@agent)
 - [ ] Masthead claims "ENGLAND · WALES · SCOTLAND · NI" but core WAS-based
   datasets + simulator population are GB-only (F10) — reword or scope the
   masthead (@agent, tiny, content decision may need Chris)
-- [ ] Merge-train drain: 17 open PRs at 2026-07-11 (#491 extraction + #492-497
-  harness stack + 10 Dependabot) — needs a dedicated session; #491 first
-  (oldest-first rule; several stack on it) (@agent)
+- [x] ~~Merge-train drain~~ DONE (2026-07-11, interim session): all 17 PRs
+  merged, main green. NEW: the session-20 delivery stack #514→#517 now needs
+  its own review+merge session (oldest-first; see active-sprint banner) (@agent)
 
 > Latest (2026-06-27, session 13): 10 PRs merged (#456-#464). **#464** reconciled
 > the public data-source licence/frequency claims + added a shared

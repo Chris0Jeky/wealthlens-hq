@@ -7,6 +7,24 @@ Last updated: 2026-07-11
 > [`docs/archive/active-sprint-2026-H1.md`](../docs/archive/active-sprint-2026-H1.md)
 > on 2026-07-06 — append new detail there, keep this head current.
 
+> **⚑ DELIVERY-LAYER STACK (2026-07-11, session 20): 4 PRs open, UNMERGED —
+> needs a review session, oldest-first.** The hard remainder of the reality
+> check, built as a linear stack (each PR bases on the previous; merge #514
+> first, the rest retarget automatically): **#514** route prerendering — all
+> ~45 routes baked to real HTML with meta (fixes F5: crawler 404s, empty
+> no-JS shell, unseen OG images; + F9 HealthStatus; ADR 0001 in `docs/adr/`);
+> **#515** editorial front page — 57% WID-cited hero, featured chart, tools
+> row, 12-chart pillar index, build-time data vintage in the masthead
+> (F4/F6/F10, the "excitement gap"); **#516** reuse layer — chrome-free
+> /embed/:chart with iframe auto-resize, ShareBar fully wired, static CSV
+> mirrors (F7/F8; RFC-001 a/f/h; generational-wealth CSV held on AR #10);
+> **#517** cadence-aware freshness — the permanent "Expired" wall replaced
+> by the grammar in `docs/product/freshness-grammar.md` (F3, + F10 age
+> copy). Reviews were EXPLICITLY deferred by Chris to a dedicated session
+> (2026-07-11 delegation) — do not merge without the REVIEW_GATE pass.
+> ci-frontend/lighthouse only trigger on main-based PRs, so the stack's
+> upper PRs show e2e (green) until #514 merges and they retarget.
+
 > **⚑ REALITY CHECK (2026-07-11):** live-site + code audit of the public
 > dashboard written up in `docs/product/REALITY_CHECK_2026-07-11.md`.
 > Verdict: content layer strong, delivery layer defeats it. Headlines: the
