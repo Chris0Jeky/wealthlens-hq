@@ -25,7 +25,7 @@ ANALYSIS_DIR := automation/analysis
 
 .PHONY: help install lint format test dev-backend dev-frontend \
         ci-quick ci-full \
-        frontend-install frontend-build frontend-dev frontend-lint frontend-test frontend-typecheck \
+        frontend-install frontend-build frontend-prerender frontend-dev frontend-lint frontend-test frontend-typecheck \
         backend-install backend-test backend-lint backend-format \
         pipeline-test pipelines validate automation-lint tests-typecheck dev-tools-install test-hooks clean \
         dev analyst-install analyst-lint analyst-test ingest-slice \
@@ -64,6 +64,9 @@ frontend-install: ## Install frontend npm dependencies (local dev; CI uses `npm 
 
 frontend-build: ## Build frontend for production
 	cd $(FRONTEND_DIR) && npm run build
+
+frontend-prerender: ## Bake routes to static HTML + sitemap (ADR 0001; needs frontend-build + chromium)
+	cd $(FRONTEND_DIR) && npm run prerender
 
 frontend-dev: ## Start frontend dev server (vite)
 	cd $(FRONTEND_DIR) && npm run dev
