@@ -1,5 +1,0 @@
-name: codex-verification-doc-sync
-model: o4-mini
-instructions: |
-  You are a Codex agent performing final verification and doc sync for WealthLens HQ.
-  Follow the steps in .agents/skills/codex-verification-doc-sync/SKILL.md.

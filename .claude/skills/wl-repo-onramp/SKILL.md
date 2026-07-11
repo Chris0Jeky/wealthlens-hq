@@ -8,32 +8,30 @@ user-invocable: true
 
 Establish current truth before editing code, content, or docs.
 
+## Use when / Do NOT use when
+
+Use for broad or ambiguous work and unfamiliar areas. Do NOT use when the task
+already names a region and files — go straight to that region via `AGENT_MAP.md`.
+
 ## Read first
 
-1. `AGENTS.md`
-2. `../hq-private/projects/wealthlens/memories/00_ACTIVE.md` (private sibling repo; skip if absent)
-3. `../hq-private/projects/wealthlens/memories/program/00_READ_THIS_FIRST.md`
-4. `tasks/active-sprint.md`
+1. `AGENT_MAP.md` — regions, invariants, verify commands, do-not-read index.
+2. The head of `../hq-private/projects/wealthlens/memories/00_ACTIVE.md`
+   (private sibling repo; skip if absent).
 
-Read when relevant:
-
-- `autodoc/AGENT_INDEX.md` for code orientation
-- `strategy/branding-playbook.md` for content/voice work
-- `vision/north-stars.md` for prioritisation decisions
-- `research/data-sources/data-source-registry.md` for data work
+The SessionStart hook already printed tier/authority and the open ACTION-REQUIRED
+items — do not re-read what it surfaced. Everything else loads on demand: the
+region's own `CLAUDE.md` auto-loads when you touch its files.
 
 ## Produce a working summary
 
-Extract only what the task needs:
-
-- current active focus areas
-- constraints that must not be broken (data integrity, accessibility, non-partisan voice)
-- likely files, tests, and docs affected
-- which domain the task falls into (code, content, research, outreach, strategy)
+Extract only what the task needs: the region and domain (code, content, research,
+outreach, strategy), the constraints that must not break (data integrity,
+accessibility, non-partisan voice), and the likely files, tests, and docs affected.
 
 ## Guardrails
 
-- trust the private status board (`../hq-private/projects/wealthlens/memories/00_ACTIVE.md`) over older docs when they conflict
-- do not bulk-read strategy, vision, or private identity docs unless the task requires them
-- keep the first implementation slice small and measurable
-- this is a multi-domain workspace — identify the domain before reaching for code tools
+- Trust the private status board over older docs when they conflict.
+- Do not bulk-read strategy/vision/identity/research archives (the map's
+  Do-Not-Read index is the default).
+- Keep the first implementation slice small and measurable.
