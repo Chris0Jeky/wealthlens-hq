@@ -124,10 +124,8 @@ ci-full: backend-lint automation-lint tests-typecheck backend-test pipeline-test
 	@echo "ci-full passed"
 
 # ── Hooks ─────────────────────────────────────────────────────────────────
-test-hooks: ## Test Claude Code agent hooks
-	@echo '{"tool_name":"Bash","tool_input":{"command":"rm -rf /"}}' | $(PYTHON) scripts/agent_hooks/pre_tool_use.py && echo "Hook test: destructive command denied (expected)"
-	@echo '{"tool_name":"Bash","tool_input":{"command":"git status"}}' | $(PYTHON) scripts/agent_hooks/pre_tool_use.py && echo "Hook test: safe command allowed (expected)"
-	@echo '{"tool_name":"Bash","tool_input":{"command":"git push --force"}}' | $(PYTHON) scripts/agent_hooks/pre_tool_use.py && echo "Hook test: force-push denied (expected)"
+test-hooks: ## Run the deny-floor smoke matrix (.claude/hooks, must be green after ANY hook change)
+	$(PYTHON) .claude/hooks/smoke_test.py
 
 # ── Clean ─────────────────────────────────────────────────────────────────
 # `clean` is the one place `|| true` is correct: removing absent paths is not a

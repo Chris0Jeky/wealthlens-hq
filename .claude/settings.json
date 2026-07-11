@@ -10,7 +10,7 @@
     ]
   },
   "permissions": {
-    "defaultMode": "bypassPermissions",
+    "defaultMode": "acceptEdits",
     "allow": [
       "Read(*)",
       "Grep(*)",
@@ -32,6 +32,11 @@
       "Bash(git checkout:*)",
       "Bash(git merge:*)",
       "Bash(git stash:*)",
+      "Bash(git rebase:*)",
+      "Bash(git reset:*)",
+      "Bash(git restore:*)",
+      "Bash(git rev-parse:*)",
+      "Bash(git worktree:*)",
       "Bash(gh :*)",
       "Bash(python --version:*)",
       "Bash(python -m venv:*)",
@@ -42,6 +47,7 @@
       "Bash(python -m uvicorn:*)",
       "Bash(python automation/*:*)",
       "Bash(python scripts/*:*)",
+      "Bash(python .claude/hooks/smoke_test.py:*)",
       "Bash(pytest:*)",
       "Bash(ruff:*)",
       "Bash(mypy:*)",
@@ -88,7 +94,7 @@
           {
             "type": "command",
             "shell": "powershell",
-            "command": "python scripts/agent_hooks/pre_tool_use.py",
+            "command": "python \"$env:CLAUDE_PROJECT_DIR/.claude/hooks/dispatch.py\" --event pre",
             "timeout": 5
           }
         ]
@@ -101,7 +107,7 @@
           {
             "type": "command",
             "shell": "powershell",
-            "command": "python scripts/agent_hooks/post_tool_failure.py",
+            "command": "python \"$env:CLAUDE_PROJECT_DIR/.claude/hooks/post_tool_failure.py\"",
             "timeout": 10
           }
         ]
@@ -114,7 +120,7 @@
           {
             "type": "command",
             "shell": "powershell",
-            "command": "python scripts/agent_hooks/session_start.py",
+            "command": "python \"$env:CLAUDE_PROJECT_DIR/.claude/hooks/session_start.py\"",
             "timeout": 5
           }
         ]
