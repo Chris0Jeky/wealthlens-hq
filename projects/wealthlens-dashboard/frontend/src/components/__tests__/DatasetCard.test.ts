@@ -69,6 +69,21 @@ describe("DatasetCard", () => {
     expect(wrapper.text()).toContain("coming soon")
   })
 
+  // Regression: Vue casts an absent Boolean prop to `false`, not `undefined`.
+  // Before the `default: undefined` fix, the hasChart override always won and
+  // every home-page card showed "Chart coming soon" instead of "View Chart".
+  it("shows the chart link for a supported dataset when hasChart is NOT passed", () => {
+    const wrapper = factory({ name: "wealth-shares", description: "D" })
+    expect(wrapper.html()).toContain("/charts/wealth-shares")
+    expect(wrapper.text()).toContain("View Chart")
+    expect(wrapper.text()).not.toContain("coming soon")
+  })
+
+  it("respects an explicit hasChart=false override for a supported dataset", () => {
+    const wrapper = factory({ name: "wealth-shares", description: "D", hasChart: false })
+    expect(wrapper.text()).toContain("coming soon")
+  })
+
   it("renders download CSV link", () => {
     const wrapper = factory()
     const downloadLink = wrapper.find("a[download]")
