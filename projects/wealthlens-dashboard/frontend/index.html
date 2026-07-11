@@ -27,9 +27,15 @@
     />
     <script>
       ;(function () {
-        var s = localStorage.getItem("theme")
-        if (s === "dark" || (!s && window.matchMedia("(prefers-color-scheme:dark)").matches))
-          document.documentElement.classList.add("dark")
+        // try/catch: inside a sandboxed iframe (the /embed snippet has no
+        // allow-same-origin) localStorage access throws SecurityError.
+        try {
+          var s = localStorage.getItem("theme")
+          if (s === "dark" || (!s && window.matchMedia("(prefers-color-scheme:dark)").matches))
+            document.documentElement.classList.add("dark")
+        } catch (e) {
+          /* no storage — embed sandbox; default theme applies */
+        }
       })()
     </script>
   </head>

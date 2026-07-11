@@ -83,6 +83,20 @@ const router = createRouter({
       component: () => import("@/views/SimulatorView.vue"),
     },
     {
+      // Chrome-free chart shell for third-party iframes (RFC-001f).
+      // meta.embed suppresses the site header/footer in App.vue; the route is
+      // prerendered (noindex) but excluded from the sitemap.
+      path: "/embed/:name",
+      name: "embed",
+      component: () => import("@/views/EmbedChartView.vue"),
+      meta: { embed: true },
+      beforeEnter(to) {
+        if (!VALID_CHART_NAMES.has(to.params.name as string)) {
+          return { name: "not-found", params: { pathMatch: ["embed", to.params.name as string] } }
+        }
+      },
+    },
+    {
       path: "/:pathMatch(.*)*",
       name: "not-found",
       component: () => import("@/views/NotFoundView.vue"),

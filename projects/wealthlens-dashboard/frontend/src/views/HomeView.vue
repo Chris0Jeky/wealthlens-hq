@@ -20,7 +20,7 @@ import { CHART_METADATA } from "@/utils/chartConstants"
 import { prefetchRouteComponents } from "@/utils/prefetch"
 import { usePageMeta } from "@/composables/usePageMeta"
 import { SITE_URL } from "@/constants/site"
-import { chartConfigs, simpleChartTitles } from "@/config/chartArticles"
+import { chartDisplayTitle } from "@/config/chartArticles"
 import { HOME_PILLARS } from "@/config/homePillars"
 
 /** Featured chart is lazy so the echarts chunk loads after first paint. */
@@ -76,17 +76,6 @@ const TOOLS = [
     blurb: "The questions everyone asks, and the terms the charts use.",
   },
 ] as const
-
-/** Chart title from the article config — no copy here to drift. */
-function chartTitle(slug: string): string {
-  const config = chartConfigs[slug]
-  if (config) {
-    return config.headlineEmphasis
-      ? `${config.headline} ${config.headlineEmphasis}`
-      : config.headline
-  }
-  return simpleChartTitles[slug] ?? slug
-}
 
 /** All 10 datasets in display order (the downloadable data layer). */
 const ALL_DATASETS = [
@@ -244,7 +233,7 @@ onMounted(async () => {
           <ul class="pillar-list" role="list">
             <li v-for="slug in pillar.charts" :key="slug">
               <router-link :to="`/charts/${slug}`" class="pillar-link">
-                {{ chartTitle(slug) }}
+                {{ chartDisplayTitle(slug) }}
               </router-link>
             </li>
           </ul>

@@ -74,6 +74,21 @@ export const simpleChartTitles: Record<string, string> = {
 }
 
 /**
+ * Human-readable display title for a chart slug — the single helper the
+ * front page and embed shell share, so listing copy cannot drift from the
+ * article headlines.
+ */
+export function chartDisplayTitle(slug: string): string {
+  const config = chartConfigs[slug]
+  if (config) {
+    return config.headlineEmphasis
+      ? `${config.headline} ${config.headlineEmphasis}`
+      : config.headline
+  }
+  return simpleChartTitles[slug] ?? slug
+}
+
+/**
  * Full chart configurations. Wealth-shares is the primary example,
  * matching the broadsheet design reference exactly.
  */

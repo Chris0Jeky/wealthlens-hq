@@ -58,8 +58,16 @@ describe("buildPrerenderRoutes", () => {
     expect(new Set(paths).size).toBe(paths.length)
   })
 
-  it("marks every route for the sitemap (the probe is handled separately)", () => {
-    expect(routes.every((r) => r.sitemap)).toBe(true)
+  it("prerenders an embed shell per chart, excluded from the sitemap (RFC-001f)", () => {
+    for (const name of VALID_CHART_NAMES) {
+      const embed = routes.find((r) => r.path === `/embed/${name}`)
+      expect(embed).toBeDefined()
+      expect(embed?.sitemap).toBe(false)
+    }
+  })
+
+  it("marks every non-embed route for the sitemap (the probe is handled separately)", () => {
+    expect(routes.filter((r) => !r.path.startsWith("/embed/")).every((r) => r.sitemap)).toBe(true)
   })
 })
 
