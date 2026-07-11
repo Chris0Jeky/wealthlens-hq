@@ -8,6 +8,7 @@ import NumberStat from "@/components/NumberStat.vue"
 import { CHART_METADATA, SUPPORTED_CHART_NAMES } from "@/utils/chartConstants"
 import { prefetchRouteComponents } from "@/utils/prefetch"
 import { usePageMeta } from "@/composables/usePageMeta"
+import { SITE_URL } from "@/constants/site"
 
 const store = useDataStore()
 const searchFilter = ref<{ active: boolean; names: string[] }>({
@@ -19,8 +20,8 @@ usePageMeta({
   title: "UK Wealth Inequality Dashboard",
   description:
     "Open-source, source-backed data on wealth inequality in the United Kingdom. Every chart cites its data source with URL and access date.",
-  url: "https://chris0jeky.github.io/wealthlens-hq/",
-  image: "https://chris0jeky.github.io/wealthlens-hq/og/og-landing.png",
+  url: `${SITE_URL}/`,
+  image: `${SITE_URL}/og/og-landing.png`,
   imageAlt: "WealthLens UK — UK Wealth Inequality. 57% of wealth held by top 10%.",
   twitterCard: "summary_large_image",
 })

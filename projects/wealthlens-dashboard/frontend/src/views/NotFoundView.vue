@@ -1,4 +1,14 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import { usePageMeta } from "@/composables/usePageMeta"
+
+// No `url`: a 404 page must not declare a canonical. The prerender bakes
+// this view into dist/404.html (ADR 0001), so noindex ships to crawlers.
+usePageMeta({
+  title: "Page not found",
+  description: "The page you're looking for doesn't exist or has been moved.",
+  robots: "noindex",
+})
+</script>
 
 <template>
   <div class="max-w-6xl mx-auto px-6 py-20 text-center">

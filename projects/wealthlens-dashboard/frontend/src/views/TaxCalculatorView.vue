@@ -6,6 +6,15 @@
  * Route: /tools/tax-calculator
  */
 import TaxCalculator from "@/components/TaxCalculator.vue"
+import { usePageMeta } from "@/composables/usePageMeta"
+import { SITE_URL } from "@/constants/site"
+
+usePageMeta({
+  title: "What's your real tax rate?",
+  description:
+    "Estimate how much of your income actually goes in tax — an interactive effective-tax-rate calculator from WealthLens UK.",
+  url: `${SITE_URL}/tools/tax-calculator`,
+})
 </script>
 
 <template>

@@ -16,6 +16,15 @@ import SkeletonLoader from "@/components/SkeletonLoader.vue"
 // MethodologyView cannot drift apart (they previously held separate copies that
 // disagreed on the wealth-shares / wealth-by-decile cadence).
 import { DATASET_PROVENANCE } from "@/constants/datasetProvenance"
+import { usePageMeta } from "@/composables/usePageMeta"
+import { SITE_URL } from "@/constants/site"
+
+usePageMeta({
+  title: "Data Sources",
+  description:
+    "Every dataset behind WealthLens UK with its source, licence, update pattern, and access date — official statistics from the ONS, HMRC, WID, DWP, and the Bank of England.",
+  url: `${SITE_URL}/data-sources`,
+})
 
 const store = useDataStore()
 

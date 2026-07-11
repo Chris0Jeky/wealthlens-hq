@@ -7,6 +7,15 @@
  */
 
 import { DATASET_PROVENANCE } from "@/constants/datasetProvenance"
+import { usePageMeta } from "@/composables/usePageMeta"
+import { SITE_URL } from "@/constants/site"
+
+usePageMeta({
+  title: "Methodology",
+  description:
+    "How WealthLens UK collects, validates, and presents UK wealth inequality data. Every number on this site cites its source with a URL and access date.",
+  url: `${SITE_URL}/methodology`,
+})
 
 /** Dataset source citation used in the template. */
 interface DatasetSource {

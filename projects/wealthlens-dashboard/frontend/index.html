@@ -3,44 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta
-      name="description"
-      content="WealthLens UK — open-source, source-backed data on wealth inequality in the United Kingdom."
-    />
     <meta name="theme-color" content="#C8161D" />
 
-    <!-- Open Graph — og:url and og:image must be absolute in production -->
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://wealthlens.uk/" />
-    <meta property="og:title" content="WealthLens UK — Wealth Inequality Dashboard" />
-    <meta
-      property="og:description"
-      content="Open-source, source-backed data on wealth inequality in the United Kingdom. Every chart cites its data source."
-    />
-    <meta property="og:image" content="/og/og-landing.png" />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
-    <meta
-      property="og:image:alt"
-      content="WealthLens UK — UK Wealth Inequality. 57% of wealth held by top 10%. Data from ONS, WID, HMRC."
-    />
-    <meta property="og:locale" content="en_GB" />
-    <meta property="og:site_name" content="WealthLens UK" />
-
-    <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="WealthLens UK — Wealth Inequality Dashboard" />
-    <meta
-      name="twitter:description"
-      content="Open-source, source-backed data on wealth inequality in the United Kingdom."
-    />
-    <meta name="twitter:image" content="/og/og-landing.png" />
-    <meta
-      name="twitter:image:alt"
-      content="WealthLens UK — UK Wealth Inequality. 57% of wealth held by top 10%."
-    />
-
-    <link rel="canonical" href="https://wealthlens.uk/" />
+    <!-- Per-page meta (description, canonical, og:*, twitter:*) is owned by
+         src/composables/usePageMeta.ts and baked in at build time by the
+         prerender (ADR 0001). Do not add per-page tags here — they would
+         duplicate and drift. Only route-invariant tags belong in this file. -->
     <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="icon" type="image/svg+xml" href="/wealthlens-hq/icons/icon-192.svg" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />

@@ -6,6 +6,15 @@
  * getting started steps, current needs, project values, and contact info.
  * Route: /contribute
  */
+import { usePageMeta } from "@/composables/usePageMeta"
+import { SITE_URL } from "@/constants/site"
+
+usePageMeta({
+  title: "Contribute",
+  description:
+    "WealthLens UK is open source and community-driven. How to contribute code, data analysis, design, or writing to the project.",
+  url: `${SITE_URL}/contribute`,
+})
 </script>
 
 <template>
