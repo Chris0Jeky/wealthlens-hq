@@ -42,7 +42,8 @@ const year = new Date().getFullYear()
         <h4>{{ $t("footer.explore") }}</h4>
         <ul>
           <li>
-            <RouterLink to="/charts/wealth-shares">{{ $t("footer.allCharts") }}</RouterLink>
+            <!-- The front page's pillar index — the real all-charts surface -->
+            <RouterLink to="/#charts">{{ $t("footer.allCharts") }}</RouterLink>
           </li>
           <li>
             <RouterLink to="/charts/wealth-shares">{{ $t("footer.wealth") }}</RouterLink>
@@ -57,6 +58,32 @@ const year = new Date().getFullYear()
             <RouterLink to="/charts/wealth-by-decile">{{
               $t("footer.incomeOpportunity")
             }}</RouterLink>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Tools column (de-orphans the interactive tools — reality-check F6) -->
+      <div class="foot-col">
+        <h4>{{ $t("footer.tools") }}</h4>
+        <ul>
+          <li>
+            <RouterLink to="/tools/wealth-scale">{{ $t("footer.wealthScale") }}</RouterLink>
+          </li>
+          <li>
+            <RouterLink to="/tools/wealth-calculator">{{
+              $t("footer.wealthCalculator")
+            }}</RouterLink>
+          </li>
+          <li>
+            <RouterLink to="/tools/tax-calculator">{{ $t("footer.taxCalculator") }}</RouterLink>
+          </li>
+          <li>
+            <RouterLink to="/tools/wealth-tax-simulator">{{
+              $t("footer.wealthTaxSimulator")
+            }}</RouterLink>
+          </li>
+          <li>
+            <RouterLink to="/faq">{{ $t("footer.faq") }}</RouterLink>
           </li>
         </ul>
       </div>

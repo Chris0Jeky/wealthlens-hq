@@ -40,6 +40,12 @@
     "housing": "Housing",
     "tax": "Tax",
     "incomeOpportunity": "Income & opportunity",
+    "tools": "Tools",
+    "wealthScale": "The wealth scale",
+    "wealthCalculator": "Wealth calculator",
+    "taxCalculator": "Tax calculator",
+    "wealthTaxSimulator": "Wealth tax simulator",
+    "faq": "FAQ & glossary",
     "project": "Project",
     "licence": "Licence (MIT)",
     "follow": "Follow"
