@@ -1,11 +1,26 @@
 # Active Sprint
 
-Last updated: 2026-07-06
+Last updated: 2026-07-11
 
 > Head budget ≤150 lines: only live truth here. The full session-by-session history
 > (sessions 1-17, waves, merge trains) rotated to
 > [`docs/archive/active-sprint-2026-H1.md`](../docs/archive/active-sprint-2026-H1.md)
 > on 2026-07-06 — append new detail there, keep this head current.
+
+> **⚑ REALITY CHECK (2026-07-11):** live-site + code audit of the public
+> dashboard written up in `docs/product/REALITY_CHECK_2026-07-11.md`.
+> Verdict: content layer strong, delivery layer defeats it. Headlines: the
+> home page's "View Chart" links had NEVER rendered (Vue Boolean-prop cast;
+> **fixed + merged, PR #498**); the newsletter form posts to a nonexistent
+> Buttondown list — every subscriber since launch lost (**ACTION-REQUIRED
+> #11**); all 10 cards badge "Expired" (fixed-30-day ladder vs annual
+> sources, permanent now #495 disabled the cron); masthead fabricates
+> "UPDATED {today}" via `new Date()`; chart deep links serve HTTP 404 to
+> crawlers + og:image is relative → invisible to search/social; 4 tools +
+> FAQ have zero inbound links; ShareBar is 8 dead buttons. Seeds (most ≤
+> half-day): `tasks/inbox.md` § "2026-07-11 reality-check seeds".
+> Independently reconfirms course-correction: launch bundle + wiring first.
+> The stalled 2026-07-06 PR backlog was drained by this session's merge train.
 
 > **⚑ PRODUCT FRONTIER (2026-07-02):** deep product review + extension portfolio in
 > `docs/product/PRODUCT_FRONTIER_2026-07.md` (surface verdicts, RFC-001..008,
