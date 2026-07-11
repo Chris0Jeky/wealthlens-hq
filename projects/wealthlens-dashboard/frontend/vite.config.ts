@@ -2,10 +2,16 @@ import { defineConfig } from "vite"
 import vue from "@vitejs/plugin-vue"
 import tailwindcss from "@tailwindcss/vite"
 import { resolve } from "path"
+import { readDataVintage } from "./scripts/data-vintage"
 
 export default defineConfig({
   base: "/wealthlens-hq/",
   plugins: [vue(), tailwindcss()],
+  define: {
+    // Newest dataset last_updated, baked at build time (masthead honesty —
+    // replaces the fabricated new Date() "UPDATED {today}" claim, F4).
+    __WL_DATA_VINTAGE__: JSON.stringify(readDataVintage()),
+  },
   resolve: {
     alias: {
       "@": resolve(__dirname, "src"),

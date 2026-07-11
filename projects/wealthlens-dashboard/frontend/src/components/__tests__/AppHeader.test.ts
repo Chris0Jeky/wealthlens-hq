@@ -28,6 +28,14 @@ describe("AppHeader", () => {
     expect(wrapper.text()).toContain("UK")
   })
 
+  it("shows the build-time data vintage, not the visitor's clock (F4)", () => {
+    const wrapper = mountHeader()
+    // __WL_DATA_VINTAGE__ is defined in vitest.config.ts from the real
+    // freshness.json, so the band carries a data claim, not new Date().
+    expect(wrapper.find(".vintage").text()).toMatch(/^Data as of \d{1,2} [A-Z][a-z]{2} \d{4}$/)
+    expect(wrapper.text()).not.toContain("Live · Updated")
+  })
+
   it("renders desktop navigation links", () => {
     const wrapper = mountHeader()
     const navLinks = wrapper.findAll(".nav-link")

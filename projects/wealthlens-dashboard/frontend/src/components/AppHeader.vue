@@ -31,11 +31,13 @@ function onMenuKeydown(event: KeyboardEvent) {
   }
 }
 
-const today = new Date().toLocaleDateString("en-GB", {
-  day: "numeric",
-  month: "short",
-  year: "numeric",
-})
+/**
+ * Newest dataset last_updated, baked at build time (scripts/data-vintage.ts).
+ * The band previously rendered `new Date()` as "LIVE · UPDATED {today}" — the
+ * visitor's clock presented as a data event (reality-check F4). A data
+ * vintage is a claim about the data; an empty vintage shows nothing.
+ */
+const dataVintage = typeof __WL_DATA_VINTAGE__ !== "undefined" ? __WL_DATA_VINTAGE__ : ""
 </script>
 
 <template>
@@ -43,10 +45,7 @@ const today = new Date().toLocaleDateString("en-GB", {
     <!-- Top band — dark ink strip -->
     <div class="masthead-band">
       <div class="band-left">
-        <span class="live">
-          <span class="dot" aria-hidden="true"></span>
-          <span>Live · Updated {{ today }}</span>
-        </span>
+        <span v-if="dataVintage" class="vintage">Data as of {{ dataVintage }}</span>
         <span class="band-issue">Issue №07 · Vol. MMXXVI</span>
       </div>
       <div class="band-right">
@@ -237,28 +236,9 @@ const today = new Date().toLocaleDateString("en-GB", {
   align-items: center;
 }
 
-.live {
+.vintage {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-}
-
-.dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--wl-red);
-  animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.35;
-  }
 }
 
 .band-right {

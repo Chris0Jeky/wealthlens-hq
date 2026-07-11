@@ -1,9 +1,14 @@
 import { defineConfig } from "vitest/config"
 import vue from "@vitejs/plugin-vue"
 import { resolve } from "path"
+import { readDataVintage } from "./scripts/data-vintage"
 
 export default defineConfig({
   plugins: [vue()],
+  define: {
+    // Mirror vite.config.ts so components using the constant are testable.
+    __WL_DATA_VINTAGE__: JSON.stringify(readDataVintage()),
+  },
   resolve: {
     alias: {
       "@": resolve(__dirname, "src"),
