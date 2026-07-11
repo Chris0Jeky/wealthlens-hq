@@ -1,20 +1,4 @@
-# autodoc/ — Agent-Facing Code Orientation
+# SUPERSEDED (2026-07-06)
 
-Quick orientation layer for agents. Points to interfaces and seams, not implementation details.
-
-## Reading order
-
-1. `AGENT_INDEX.md` — fast agent orientation: do-not-read list, product seams, verification hints.
-
-## Related routing hubs
-
-- [CLAUDE.md](../CLAUDE.md) — Claude Code session contract
-- [AGENTS.md](../AGENTS.md) — repo-wide operating rules
-- [.agents/skills/README.md](../.agents/skills/README.md) — Codex skills (repo-scoped)
-- [docs/agentic/](../docs/agentic/) — shared protocols
-
-## Conventions
-
-- Keep docs code-grounded: reference actual files and paths.
-- Update when routes, boundaries, or feature behavior materially change.
-- This directory becomes more valuable as the codebase grows. For now it is mostly forward-looking.
+The orientation layer moved to the root seam map: [`/AGENT_MAP.md`](../AGENT_MAP.md).
+Region-local rules live in each region's own `CLAUDE.md`.
