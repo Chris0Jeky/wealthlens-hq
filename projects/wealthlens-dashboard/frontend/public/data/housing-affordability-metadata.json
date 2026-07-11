@@ -1,0 +1,1 @@
+{"name": "housing-affordability", "description": "House price to earnings ratio by region", "source": "ONS", "source_url": "https://www.ons.gov.uk/peoplepopulationandcommunity/housing/datasets/ratioofhousepricetoworkplacebasedearningslowerquartileandmedian", "access_date": "2026-05-14", "row_count": 348, "columns": ["region", "year", "ratio"], "data_type": null}
