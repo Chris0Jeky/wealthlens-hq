@@ -1,39 +1,28 @@
-# Git Workflow — Repo Rules
+# Git Workflow — Repo Posture
 
-> Solo-developer repo. Rules are relaxed but still prevent catastrophic data loss.
+Solo-developer repo with a **declared relaxed-git posture**: `.claude/tier.json` sets
+`relaxed_work_loss_guards: true`, and the deny floor (`.claude/hooks/dispatch.py`,
+matrix in `smoke_test.py`) enforces the only hard limits — force-push in all
+spellings, catastrophic deletes, pipe-to-shell, secret-file mutation. Everything
+else (amend, rebase, reset, stash, clean, merge, `--force-with-lease`) is allowed.
 
-## Rules
+## Explain-before-acting
 
-- **Never `git push --force`** (bare force). Use `--force-with-lease` if you must rewrite remote history.
-- **Never run `rm -rf /` or `rm -rf ~`** — catastrophic filesystem deletion.
-- All standard git commands are allowed: commit, amend, rebase, reset, stash, clean, etc.
-- Prefer new commits over amending when sharing context with the user, but amending is fine if asked.
-
-## Explain-before-acting rule
-
-For commands that discard uncommitted work (`git reset --hard`, `git clean -f`, `git checkout -- .`):
-
-1. Briefly state what will be lost.
-2. Proceed unless the user has unsaved work you know about.
+For commands that discard uncommitted work (`git reset --hard`, `git clean -f`,
+`git checkout -- .`): state briefly what will be lost, then proceed — unless you
+know of unsaved work (yours or another agent's), in which case stash first.
+Under `wave_mode` these commands are floor-denied — another agent's work is in
+the blast radius.
 
 ## When you get tangled
 
-If you end up with diverged branches, unresolvable conflicts, or detached HEAD:
+Diverged branches, unresolvable conflicts, detached HEAD:
 
-1. Run `git status` and `git log --oneline -10`.
-2. Tell the user: what happened, what state you are in, and options (safest first).
-3. Let the user choose. Never silently discard significant work.
+1. `git status` + `git log --oneline -10`.
+2. Tell the user what happened, what state you are in, and the options (safest
+   first). Never silently discard significant work.
 
-## Safe vs. caution commands
+## Merging
 
-| Command | Status | Notes |
-| --- | --- | --- |
-| `git commit`, `git commit --amend` | Allowed | Normal workflow |
-| `git rebase`, `git rebase -i` | Allowed | Fine for local branches |
-| `git reset --soft/--mixed/--hard` | Allowed | Mention if uncommitted work at risk |
-| `git stash`, `git stash pop` | Allowed | Reversible |
-| `git clean -f` | Allowed | Mention what will be deleted |
-| `git push` | Allowed | Normal push |
-| `git push --force-with-lease` | Allowed | Safer force-push |
-| `git push --force` | **Blocked** | Use --force-with-lease instead |
-| `git merge`, `git pull` | Allowed | Any strategy is fine |
+Merges go through [`REVIEW_GATE.md`](./REVIEW_GATE.md) — including the stacked-PR
+rule (never `--delete-branch` a stacked base).

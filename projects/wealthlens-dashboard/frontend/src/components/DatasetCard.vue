@@ -1,21 +1,31 @@
 <script setup lang="ts">
+import { computed } from "vue"
 import { SUPPORTED_CHART_NAMES } from "@/utils/chartConstants"
 import FreshnessIndicator from "@/components/FreshnessIndicator.vue"
 import type { DatasetFreshnessEntry } from "@/types/api"
 
-const props = defineProps<{
-  name: string
-  description: string
-  /** Override chart availability. When omitted, checks SUPPORTED_CHART_NAMES. */
-  hasChart?: boolean
-  /** Freshness info for this dataset (optional — hidden if not provided). */
-  freshness?: DatasetFreshnessEntry
-}>()
+const props = withDefaults(
+  defineProps<{
+    name: string
+    description: string
+    /** Override chart availability. When omitted, checks SUPPORTED_CHART_NAMES. */
+    hasChart?: boolean
+    /** Freshness info for this dataset (optional — hidden if not provided). */
+    freshness?: DatasetFreshnessEntry
+  }>(),
+  // Vue casts an absent Boolean prop to `false`, which would make the override
+  // below always win and hide every "View Chart" link. `default: undefined`
+  // disables that casting so omission genuinely means "no override".
+  // (`freshness` is listed only to satisfy vue/require-default-prop; object
+  // props are never Boolean-cast.)
+  { hasChart: undefined, freshness: undefined },
+)
 
-const chartAvailable =
-  props.hasChart !== undefined ? props.hasChart : SUPPORTED_CHART_NAMES.has(props.name)
+const chartAvailable = computed(() =>
+  props.hasChart !== undefined ? props.hasChart : SUPPORTED_CHART_NAMES.has(props.name),
+)
 
-const downloadUrl = `/api/data/${props.name}/download`
+const downloadUrl = computed(() => `/api/data/${props.name}/download`)
 </script>
 
 <template>
