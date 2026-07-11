@@ -1,6 +1,6 @@
 # ⚑ ACTION REQUIRED — Chris's outstanding tasks
 
-Last updated: 2026-06-30 (session 14; item 9 OPENAI_API_KEY provided → H1-11 shipped [PR #473] → moved to Done, replaced by a key-rotation security follow-up)
+Last updated: 2026-07-11 (reality-check session; added item 11 — the live newsletter form posts to a Buttondown list that doesn't exist, so every subscriber since launch has been lost. List now exceeds the ≤8 aim: consider clearing/demoting stale items when you next review.)
 
 > **This file is the single curated list of things that need _Chris_ (a human),
 > not the autonomous agent.** It exists so high-leverage actions never get lost in
@@ -106,6 +106,13 @@ Last updated: 2026-06-30 (session 14; item 9 OPENAI_API_KEY provided → H1-11 s
     - **Decision needed:** EITHER (a) apply a narrower per-chart output-licence carve-out for this chart (attribution-only, non-commercial, no-derivatives), OR (b) confirm (with reasoning) that the chart is a sufficiently transformed/factual re-presentation that CC-BY is defensible, OR (c) drop/replace the RF-derived series. The conflict is flagged in `projects/wealthlens-dashboard/docs/data-licences.md` ("WealthLens output licence" section).
     - **Agent-doable once you decide:** I can wire a per-chart licence field + caveat, or adjust the output-licence docs, in a small reviewed PR.
     - **Done when:** the generational-wealth chart's output licence is decided and the docs reflect it with no internal contradiction.
+
+11. - [ ] **Newsletter: create the Buttondown list (or approve hiding the form)** — **P1, losing real subscribers right now**
+    - **Why:** The live site's "Stay informed" form (every page) posts to `buttondown.com/api/emails/embed-subscribe/wealthlens` — that list **does not exist** (the URL 404s; no `VITE_BUTTONDOWN_NEWSLETTER_ID` is configured in the deploy). Every visitor who has tried to subscribe since launch got "Subscription failed (HTTP 404). Please try again later." and was silently lost. Found by the 2026-07-11 reality check (`docs/product/REALITY_CHECK_2026-07-11.md`, F2).
+    - **How (pick one):**
+      1. **Create the list (recommended, ~5 min):** sign up at buttondown.com (free tier is fine), name the newsletter (username becomes the ID), then tell me the ID — I'll set `VITE_BUTTONDOWN_NEWSLETTER_ID` in `deploy.yml` (it's a public embed ID, not a secret) in a small PR.
+      2. **Or approve hiding the form** until you want a newsletter — I'll gate it off in a small PR the moment you say so.
+    - **Done when:** the form either delivers subscriptions to a list you own, or is hidden.
 
 ---
 

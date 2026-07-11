@@ -1,6 +1,64 @@
 # Inbox
 
-Last updated: 2026-07-02
+Last updated: 2026-07-11
+
+## 2026-07-11 reality-check seeds (live-site audit)
+
+> Source: `docs/product/REALITY_CHECK_2026-07-11.md` (F-numbers below refer to
+> its findings). Verdict: content layer strong, delivery layer broken — these
+> seeds are the wiring/honesty fixes, most ≤ half-day. F1 (home "View Chart"
+> links dead — Vue Boolean-prop cast) is already fixed in **PR #498**.
+
+- [ ] Wire the orphaned pages (F6): nav/footer/home links to
+  `/tools/wealth-scale`, `/tools/wealth-calculator`,
+  `/tools/wealth-tax-simulator`, `/tools/tax-calculator`, `/faq`; add
+  `wage-stagnation` + `inheritance-tax` cards to the home grid; consider a
+  small `/charts` + `/tools` index page (footer "All charts" currently points
+  at one chart; wealth-scale's breadcrumb references a `/tools` route that
+  404s) (@agent)
+- [ ] OG one-liners (F5): make `og:image` an absolute URL (scrapers ignore
+  relative); point `og:url` at the real GitHub Pages URL until
+  `wealthlens.uk` is registered (AR #4) (@agent)
+- [ ] Static-aware `HealthStatus` (F9): stop polling
+  `http://localhost:8000/api/version` from every visitor's browser and remove
+  the public "API offline" footer badge when `VITE_STATIC_DATA` is set (@agent)
+- [ ] Masthead honesty (F4): replace the `new Date()` "UPDATED {today}" claim
+  in `AppHeader.vue` with the build-time data vintage (max dataset
+  `last_updated`) or drop "UPDATED" (@agent)
+- [ ] Cadence-aware freshness (F3): grade dataset age against each source's
+  `update_pattern` (already in `datasetProvenance.ts`/`sources.yml`) instead
+  of a fixed 30-day ladder, or switch the badge to neutral "Data as of
+  {date}" — kills the permanent "Expired" wall now that the weekly cron is
+  disabled (#495); also fix the home stat tile's now-false "Weekly" claim
+  (F10) (@agent)
+- [ ] CSV links (F8): point the 10 home-card CSV links at the static data
+  layer that already deploys (or hide them on static builds); correct
+  `MethodologyView`'s "the API provides CSV download endpoints" claim (@agent)
+- [ ] Wire `ShareBar` (F7): connect Copy link/PNG/SVG/CSV/social buttons to
+  the existing `useChartExport` + `SharePanel` + share-intent machinery, or
+  delete the 8 dead buttons (they currently no-op on every flagship chart
+  page) (@agent)
+- [ ] E2E home smoke (F12): assert the home page shows ≥1 "View Chart" link
+  and it navigates to a chart page (DatasetCard is mocked in view tests, so
+  only e2e can lock F1's class shut) (@agent)
+- [ ] Route prerendering (F5 class fix, larger): prerender the ~20 routes at
+  build (vite-ssg or prerender plugin) so deep links return HTTP 200 real
+  HTML with per-route meta — fixes crawler-404s, empty no-JS shell, and the
+  never-served per-chart OG images in one move (@agent, plan first)
+- [ ] Front-page story pass (the "excitement" gap): lead with the 57%
+  headline stat + one featured chart + a tools row instead of a bare card
+  grid; fold into/next to RFC-001a-d rather than a separate rewrite (@agent,
+  after wiring seeds)
+- [ ] `Accordion.defaultOpen` is declared but never read (PR #498 review
+  finding, F11) — implement or remove the prop (@agent, tiny)
+- [ ] Chart-page freshness chip says "Data: 1 month ago" for a 14 May access
+  date (~2 months at audit) — check the age arithmetic/copy (F10) (@agent, tiny)
+- [ ] Masthead claims "ENGLAND · WALES · SCOTLAND · NI" but core WAS-based
+  datasets + simulator population are GB-only (F10) — reword or scope the
+  masthead (@agent, tiny, content decision may need Chris)
+- [ ] Merge-train drain: 17 open PRs at 2026-07-11 (#491 extraction + #492-497
+  harness stack + 10 Dependabot) — needs a dedicated session; #491 first
+  (oldest-first rule; several stack on it) (@agent)
 
 > Latest (2026-06-27, session 13): 10 PRs merged (#456-#464). **#464** reconciled
 > the public data-source licence/frequency claims + added a shared

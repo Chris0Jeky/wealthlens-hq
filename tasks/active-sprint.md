@@ -1,6 +1,32 @@
 # Active Sprint
 
-Last updated: 2026-07-02
+Last updated: 2026-07-11
+
+> **⚑ REALITY CHECK (2026-07-11):** live-site + code audit of the public
+> dashboard written up in `docs/product/REALITY_CHECK_2026-07-11.md`.
+> Verdict: content layer strong, delivery layer defeats it. Headlines: the
+> home page's "View Chart" links have NEVER rendered (Vue Boolean-prop cast;
+> **fixed in PR #498**, mutation-verified regression test); the newsletter
+> form posts to a nonexistent Buttondown list — every subscriber since launch
+> lost (**new ACTION-REQUIRED #11**); all 10 cards badge "Expired"
+> (fixed-30-day ladder vs annual sources, permanent once #495 disables the
+> cron); masthead fabricates "UPDATED {today}" via `new Date()`; chart deep
+> links serve HTTP 404 to crawlers + og:image is relative → invisible to
+> search/social; 4 tools + FAQ have zero inbound links; ShareBar is 8 dead
+> buttons. 10 wiring/honesty seeds (most ≤ half-day):
+> `tasks/inbox.md` § "2026-07-11 reality-check seeds". Independently
+> reconfirms the course-correction priority: launch bundle + wiring before
+> new builds. Also: 17 open PRs stalled since 07-06 (#491 extraction +
+> harness stack + 10 Dependabot) — merge-train session needed, #491 first.
+
+> **SESSION 18 (2026-07-03) — 3 PRs MERGED (#478/#479/#480); M4 COMPLETE.**
+> Plain `/ask` + published `answer|refusal|over_budget` schema (H1-20), the
+> abstention gate (H1-21), and its pre-generation wiring (H1-22) — weak
+> evidence now REFUSES with zero generation spend; all 5 out-of-corpus golden
+> probes refuse live. Next on the analyst critical path: H1-23 (deterministic
+> --live eval) → H1-27 (budget cap) → H1-30 (deploy, Chris-blocked on AR #6).
+> NOTE (2026-07-06): the analyst now lives in its own repo
+> (<https://github.com/Chris0Jeky/wealthlens-analyst>); hq cleanup is PR #491.
 
 > **⚑ PRODUCT FRONTIER (2026-07-02):** deep product review + extension
 > portfolio written up in `docs/product/PRODUCT_FRONTIER_2026-07.md` —
