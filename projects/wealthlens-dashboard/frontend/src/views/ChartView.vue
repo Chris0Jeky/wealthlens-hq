@@ -368,7 +368,12 @@ usePageMeta({
       </div>
 
       <!-- Share bar with toggle button -->
-      <ShareBar :chart-id="config.source.chartId">
+      <ShareBar
+        :chart-id="config.source.chartId"
+        :chart-name="chartName"
+        :chart-title="chartTitle"
+        @export="onExport"
+      >
         <template #append>
           <button
             type="button"
