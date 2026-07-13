@@ -27,7 +27,7 @@ capture a follow-up path, and include every not-fully-fixed issue in the handoff
 
 ## Subagents and worktrees
 
-Spawn subagents only when the user asks for delegation/parallel work. Split by
+Spawn subagents when the situation warrants it (disjoint work, an independent review lens, or context beyond one window) — you don't need to be asked, but right-size the fan-out (start inline; a few agents, not a reflexive fleet). Split by
 disjoint region ownership; one coordinator owns synthesis and final verification.
 Workers derive paths from the worktree root — never absolute main-checkout paths.
 
