@@ -3,6 +3,26 @@ import { mount, VueWrapper } from "@vue/test-utils"
 import { defineComponent, reactive } from "vue"
 import { useRoute } from "vue-router"
 import HomeView from "@/views/HomeView.vue"
+
+// The front page lazy-loads the featured chart; mock it so tests don't race
+// the echarts dynamic import against environment teardown.
+vi.mock("@/components/WealthSharesChart.vue", async () => {
+  const { defineComponent, h } = await import("vue")
+  return {
+    __esModule: true,
+    default: defineComponent({
+      name: "WealthSharesChart",
+      setup() {
+        return () =>
+          h("div", {
+            class: "wealth-shares-chart-stub",
+            role: "img",
+            "aria-label": "Featured chart stub",
+          })
+      },
+    }),
+  }
+})
 import ChartView from "@/views/ChartView.vue"
 import NotFoundView from "@/views/NotFoundView.vue"
 
@@ -95,9 +115,11 @@ describe("HomeView", () => {
     mockStoreState.error = null
   })
 
-  it("renders heading", () => {
+  it("renders the lead headline claim", () => {
     const wrapper = mount(HomeView)
-    expect(wrapper.find("h1").text()).toBe("UK Wealth Inequality Dashboard")
+    const h1 = wrapper.find("h1")
+    expect(h1.text()).toContain("wealthiest 10%")
+    expect(h1.text()).toContain("57")
   })
 
   it("calls fetchDatasets on mount", () => {
