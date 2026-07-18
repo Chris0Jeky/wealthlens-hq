@@ -59,7 +59,7 @@ deep-links (see F12).
 Either create the Buttondown list (5 min, needs Chris's email) or hide the
 form until then (agent-doable).
 
-### F3 — HIGH. Every dataset badges "Expired" on the landing page
+### F3 — HIGH (fix open: PR #517, unmerged). Every dataset badges "Expired" on the landing page
 
 `stores/data.ts` grades freshness on a fixed wall-clock ladder
 (fresh/stale/expired), but the underlying sources update annually or
@@ -70,7 +70,7 @@ cadence data already exists (`constants/datasetProvenance.ts`,
 `registries/sources.yml` `update_pattern`): grade age against each source's
 own cadence, or replace the badge with a neutral "Data as of {date}".
 
-### F4 — HIGH. Fabricated freshness claim in the masthead
+### F4 — HIGH (fix open: PR #515, unmerged). Fabricated freshness claim in the masthead
 
 `AppHeader.vue:34` renders `new Date()` as "LIVE · UPDATED 11 JUL 2026" —
 the visitor's clock, not any data event — directly above ten "Expired"
@@ -78,7 +78,7 @@ badges. On a project whose first value is data honesty, the masthead
 fabricates recency. Replace with the build-time data vintage (max
 `last_updated` across datasets) or drop "UPDATED".
 
-### F5 — HIGH. The site is invisible to crawlers and social scrapers (one class, several symptoms)
+### F5 — HIGH (fix open: PR #514, unmerged — route prerendering, ADR 0001). The site is invisible to crawlers and social scrapers (one class, several symptoms)
 
 - Deep links (`/charts/*`, `/simulator`, `/tools/*`) are served via the
   GitHub Pages `404.html` SPA fallback → they render for humans but return
@@ -99,7 +99,7 @@ vite-ssg/prerender), which yields real HTML files (HTTP 200), per-route meta
 in the payload, and content in the no-JS shell. Interim one-liners: absolute
 `og:image`, real `og:url`.
 
-### F6 — HIGH. The most engaging features are orphaned
+### F6 — HIGH (home + footer legs fixed in PR #515, unmerged; no nav link or /tools index yet). The most engaging features are orphaned
 
 Zero inbound links anywhere (nav, home, footer) to:
 `/tools/wealth-scale` ("1 pixel = £1,000"), `/tools/wealth-calculator`,
@@ -109,7 +109,7 @@ as a route (404). Additionally `wage-stagnation` and `inheritance-tax` have
 chart pages but no home card, and the footer's "All charts" links to a
 single chart — there is no chart index page at all.
 
-### F7 — MEDIUM. Dead sharing toolbar beside working machinery
+### F7 — MEDIUM (fix open: PR #516, unmerged). Dead sharing toolbar beside working machinery
 
 `ShareBar.vue` renders 8 buttons (Copy link, Embed, PNG, SVG, CSV, Bluesky,
 LinkedIn, X) with **no click handlers** on every flagship chart page, while
@@ -118,7 +118,7 @@ toggle) and `ExportButton`/`useChartExport`. For a mission of "impossible to
 ignore", the share buttons doing nothing is the single most on-mission gap.
 Wire them to the existing machinery or remove them.
 
-### F8 — MEDIUM. 10 broken CSV links on the home page + a false Methodology claim
+### F8 — MEDIUM (fix open: PR #516, unmerged; generational-wealth CSV held on AR #10). 10 broken CSV links on the home page + a false Methodology claim
 
 `DatasetCard` links every card to `/api/data/{name}/download` — a backend
 that doesn't exist on the static deploy (and the URL isn't even under the
@@ -126,7 +126,7 @@ site's base path). `MethodologyView.vue:366` tells readers "the API provides
 CSV download endpoints". The static data layer that already deploys could
 serve real CSVs (RFC-001 territory); until then the links misadvertise.
 
-### F9 — MEDIUM. Every visitor's browser polls localhost
+### F9 — MEDIUM (fix open: PR #514, unmerged). Every visitor's browser polls localhost
 
 `HealthStatus.vue` polls `${VITE_API_BASE_URL ?? "http://localhost:8000"}/api/version`
 on mount and every 60 s. On the live site that means every visitor fires
@@ -134,7 +134,7 @@ connection-refused errors at their own machine forever, and the footer shows
 a red **"API offline"** badge to the public. Should be disabled (or repointed
 at a static build-stamp JSON) when `VITE_STATIC_DATA` is set.
 
-### F10 — LOW. Small false or drifting claims
+### F10 — LOW (Weekly tile + masthead date fixed in PR #515; age copy in PR #517; GB-vs-NI masthead wording still open — Chris content call). Small false or drifting claims
 
 - Home stat tile: "Weekly — automated pipelines refresh data regularly" —
   not true once the weekly cron is disabled (PR #495).
@@ -149,7 +149,7 @@ at a static build-stamp JSON) when `VITE_STATIC_DATA` is set.
 F1; no current consumer passes it, but the first one to do so gets a
 silently-closed panel. `Accordion.vue:6,11`.
 
-### F12 — LOW. The test pyramid has a hole exactly where F1 lived
+### F12 — LOW (e2e home smoke landed in PR #515, unmerged). The test pyramid has a hole exactly where F1 lived
 
 View tests mock `DatasetCard`; the single e2e spec deep-links to a chart and
 never asserts any home-page affordance. Seed: one e2e smoke — "home page
@@ -213,3 +213,13 @@ remains the right first *new* build — nothing in this audit displaces it.)
 
 Task seeds: `tasks/inbox.md` § "2026-07-11 reality-check seeds".
 Chris item: `tasks/ACTION-REQUIRED.md` #11 (Buttondown decision).
+
+## Status (2026-07-11, session 20)
+
+The architecturally hard remainder was built the same day as a linear,
+UNMERGED PR stack — review oldest-first, then the rest retarget: **#514**
+(F5 class fix: prerendering + F9), **#515** (front-page story: F4, F6
+home/footer, F10 partial, F12), **#516** (reuse layer: F7, F8), **#517**
+(cadence-aware freshness: F3, F10 age copy). Still open: F2 (Chris, AR
+#11), F11 (Accordion prop, tiny), F6's nav link + /tools index, F10's
+GB/NI masthead wording (Chris).
