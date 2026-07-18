@@ -1,5 +1,14 @@
 <script setup lang="ts">
 import Accordion from "@/components/Accordion.vue"
+import { usePageMeta } from "@/composables/usePageMeta"
+import { SITE_URL } from "@/constants/site"
+
+usePageMeta({
+  title: "FAQ & Glossary",
+  description:
+    "Common questions about the data behind WealthLens UK, and definitions of the key terms used across the site.",
+  url: `${SITE_URL}/faq`,
+})
 
 interface GlossaryEntry {
   term: string

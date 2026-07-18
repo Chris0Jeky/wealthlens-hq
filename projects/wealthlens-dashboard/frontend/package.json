@@ -18,10 +18,10 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "generate:og": "tsx scripts/generate-og-images.ts",
+    "prerender": "tsx --tsconfig tsconfig.node.json scripts/prerender.ts",
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
-    "lighthouse": "lhci autorun --config=lighthouserc.cjs",
-    "generate:sitemap": "python ../../../scripts/generate_sitemap.py"
+    "lighthouse": "lhci autorun --config=lighthouserc.cjs"
   },
   "dependencies": {
     "echarts": "^6.1.0",

@@ -20,8 +20,12 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "npm run build && npm run preview",
+    // Build in static-data mode and prerender (ADR 0001) so e2e exercises the
+    // exact artifact GitHub Pages deploys: baked HTML + static JSON data.
+    command: "npm run build && npm run prerender && npm run preview",
     port: 4173,
     reuseExistingServer: !isCI,
+    env: { VITE_STATIC_DATA: "true" },
+    timeout: 300_000,
   },
 })

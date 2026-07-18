@@ -6,6 +6,15 @@
  * Route: /tools/wealth-calculator
  */
 import WealthCalculator from "@/components/WealthCalculator.vue"
+import { usePageMeta } from "@/composables/usePageMeta"
+import { SITE_URL } from "@/constants/site"
+
+usePageMeta({
+  title: "Where do you fit in UK wealth?",
+  description:
+    "Enter your household wealth and see where you stand in the distribution — a source-cited calculator from WealthLens UK.",
+  url: `${SITE_URL}/tools/wealth-calculator`,
+})
 </script>
 
 <template>

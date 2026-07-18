@@ -18,8 +18,9 @@ test.describe("Home page", () => {
     await expect(nav.getByRole("link", { name: "The data", exact: true })).toBeVisible()
   })
 
-  // Requires API or static data fallback — mark as fixme until data layer is stable
-  test.fixme("dataset cards render", async ({ page }) => {
+  // The webServer builds with VITE_STATIC_DATA=true, so cards render from
+  // the committed static JSON — deterministic, no live API needed.
+  test("dataset cards render", async ({ page }) => {
     await page.goto("/")
     const cards = page.locator('[role="listitem"]')
     await expect(cards.first()).toBeVisible({ timeout: 10000 })

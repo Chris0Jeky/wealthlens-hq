@@ -13,12 +13,14 @@ import RevenueBreakdown from "@/components/RevenueBreakdown.vue"
 import ProvenancePanel from "@/components/ProvenancePanel.vue"
 import { useSimulatorDashboard, useSimulatorScenarios } from "@/composables/useSimulatorDashboard"
 import { usePageMeta } from "@/composables/usePageMeta"
+import { SITE_URL } from "@/constants/site"
 import { DASHBOARD_SCHEMA_VERSION } from "@/types/simulator"
 
 usePageMeta({
   title: "Policy scenario explorer",
   description:
     "Illustrative revenue estimates for wealth-tax policy scenarios from the open WealthLens microsimulator.",
+  url: `${SITE_URL}/simulator`,
 })
 
 const {

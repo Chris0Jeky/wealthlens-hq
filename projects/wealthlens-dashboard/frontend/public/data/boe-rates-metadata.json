@@ -1,0 +1,1 @@
+{"name": "boe-rates", "description": "Bank Rate and CPI annual inflation", "source": "Bank of England Interactive Analytical Database", "source_url": "https://www.bankofengland.co.uk/boeapps/database/", "access_date": "2026-05-16", "row_count": 33, "columns": ["date", "bank_rate", "cpi_annual"], "data_type": null}

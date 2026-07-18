@@ -42,8 +42,18 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Build + prerender in static-data mode so Lighthouse audits the exact
+      # artifact GitHub Pages deploys (baked HTML, ADR 0001).
       - name: Build
         run: npm run build
+        env:
+          VITE_STATIC_DATA: "true"
+
+      - name: Install chromium for prerender
+        run: npx playwright install chromium --with-deps
+
+      - name: Prerender routes
+        run: npm run prerender
 
       - name: Run Lighthouse CI
         run: npm run lighthouse

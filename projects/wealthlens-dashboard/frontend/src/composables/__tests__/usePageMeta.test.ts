@@ -253,4 +253,81 @@ describe("usePageMeta", () => {
     wrapper = mount(createComponent({ title: "SSR test" }))
     expect(document.title).toBe("SSR test — WealthLens UK")
   })
+
+  // --- Prerender contract (ADR 0001) ---
+
+  it("marks every created element with the prerender marker attribute", () => {
+    wrapper = mount(
+      createComponent({
+        title: "Marked",
+        description: "All tags carry data-wl-meta",
+        url: "https://example.com/marked",
+      }),
+    )
+    const created = document.head.querySelectorAll("[data-wl-meta]")
+    expect(created.length).toBeGreaterThan(0)
+    const unmarkedOg = Array.from(document.head.querySelectorAll('meta[property^="og:"]')).filter(
+      (el) => !el.hasAttribute("data-wl-meta"),
+    )
+    expect(unmarkedOg).toEqual([])
+  })
+
+  it("manages a canonical link from the url option", () => {
+    wrapper = mount(createComponent({ title: "Canonical", url: "https://example.com/page" }))
+    const link = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]')
+    expect(link?.getAttribute("href")).toBe("https://example.com/page")
+    expect(link?.hasAttribute("data-wl-meta")).toBe(true)
+
+    wrapper.unmount()
+    wrapper = null
+    expect(document.head.querySelector('link[rel="canonical"]')).toBeNull()
+  })
+
+  it("emits no canonical link when url is not provided (404 page contract)", () => {
+    wrapper = mount(createComponent({ title: "Page not found", robots: "noindex" }))
+    expect(document.head.querySelector('link[rel="canonical"]')).toBeNull()
+    expect(getMeta("name", "robots")).toBe("noindex")
+  })
+
+  it("updates the canonical link reactively", async () => {
+    const url = ref<string | undefined>("https://example.com/one")
+    wrapper = mount(
+      defineComponent({
+        setup() {
+          usePageMeta({ title: "Canonical", url })
+          return {}
+        },
+        template: "<div />",
+      }),
+    )
+    url.value = "https://example.com/two"
+    await nextTick()
+    expect(document.head.querySelector('link[rel="canonical"]')?.getAttribute("href")).toBe(
+      "https://example.com/two",
+    )
+    expect(document.head.querySelectorAll('link[rel="canonical"]').length).toBe(1)
+  })
+
+  it("falls back to the default OG image with a generic alt when none is given", () => {
+    wrapper = mount(createComponent({ title: "No image" }))
+    expect(getMeta("property", "og:image")).toBe(
+      "https://chris0jeky.github.io/wealthlens-hq/og/og-default.png",
+    )
+    expect(getMeta("property", "og:image:alt")).toContain("WealthLens UK")
+    expect(getMeta("name", "twitter:image")).toBe(
+      "https://chris0jeky.github.io/wealthlens-hq/og/og-default.png",
+    )
+  })
+
+  it("sets og:locale and the 1200x630 image dimensions", () => {
+    wrapper = mount(createComponent({ image: "https://example.com/og/x.png" }))
+    expect(getMeta("property", "og:locale")).toBe("en_GB")
+    expect(getMeta("property", "og:image:width")).toBe("1200")
+    expect(getMeta("property", "og:image:height")).toBe("630")
+  })
+
+  it("omits the robots meta when not requested", () => {
+    wrapper = mount(createComponent({ title: "Indexable" }))
+    expect(getMeta("name", "robots")).toBeNull()
+  })
 })

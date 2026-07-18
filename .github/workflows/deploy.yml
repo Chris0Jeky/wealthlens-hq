@@ -64,13 +64,21 @@ jobs:
         env:
           VITE_STATIC_DATA: "true"
 
-      # --- Post-build: add static charts and SPA fallback ---
+      # --- Post-build: static charts, then prerender (ADR 0001) ---
+      # Copy BEFORE prerender: `cp -r src dst` nests into dst if it already
+      # exists, and the prerender creates dist/charts/.
       - name: Copy static Plotly charts into dist
         run: |
           cp -r ../charts dist/charts
 
-      - name: Create SPA 404 fallback
-        run: cp dist/index.html dist/404.html
+      - name: Install chromium for prerender
+        run: npx playwright install chromium --with-deps
+
+      # Bakes every route to static HTML with its meta, writes the real
+      # 404.html (Page-not-found view, noindex) and sitemap.xml. Replaces the
+      # old `cp dist/index.html dist/404.html` SPA fallback.
+      - name: Prerender routes
+        run: npm run prerender
 
       # --- Deploy ---
       - name: Setup Pages

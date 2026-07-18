@@ -4,13 +4,14 @@
  * Provides transparency about where the data comes from and how it is used.
  */
 import { usePageMeta } from "@/composables/usePageMeta"
+import { SITE_URL } from "@/constants/site"
 
 usePageMeta({
   title: "About",
   description:
     "About WealthLens UK — our mission, data sources, methodology, limitations, and open-source commitment.",
-  url: "https://chris0jeky.github.io/wealthlens-hq/about",
-  image: "https://chris0jeky.github.io/wealthlens-hq/og/og-landing.png",
+  url: `${SITE_URL}/about`,
+  image: `${SITE_URL}/og/og-landing.png`,
   imageAlt: "WealthLens UK — About the project",
 })
 </script>

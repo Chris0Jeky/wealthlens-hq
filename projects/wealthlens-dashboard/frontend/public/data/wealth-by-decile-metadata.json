@@ -1,0 +1,1 @@
+{"name": "wealth-by-decile", "description": "Total net wealth by decile", "source": "ONS Wealth and Assets Survey", "source_url": "https://www.ons.gov.uk/peoplepopulationandcommunity/personalandhouseholdfinances/incomeandwealth/datasets/totalwealthwealthingreatbritain", "access_date": "2026-05-14", "row_count": 10, "columns": ["decile", "total_wealth_bn"], "data_type": null}

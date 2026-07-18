@@ -6,6 +6,15 @@
  * Route: /tools/wealth-tax-simulator
  */
 import WealthTaxSimulator from "@/components/WealthTaxSimulator.vue"
+import { usePageMeta } from "@/composables/usePageMeta"
+import { SITE_URL } from "@/constants/site"
+
+usePageMeta({
+  title: "Wealth Tax Revenue Simulator",
+  description:
+    "Set thresholds and rates for a hypothetical UK wealth tax and see the estimated revenue, with the assumptions and sources spelled out.",
+  url: `${SITE_URL}/tools/wealth-tax-simulator`,
+})
 </script>
 
 <template>

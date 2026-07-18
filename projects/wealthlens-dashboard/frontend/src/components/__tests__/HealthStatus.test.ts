@@ -181,4 +181,30 @@ describe("HealthStatus", () => {
     // tests that the catch handler properly ignores AbortError)
     expect(wrapper.text()).toContain("Checking API")
   })
+
+  describe("static deploy (VITE_STATIC_DATA)", () => {
+    beforeEach(() => {
+      vi.stubEnv("VITE_STATIC_DATA", "true")
+    })
+
+    afterEach(() => {
+      vi.unstubAllEnvs()
+    })
+
+    it("renders nothing and never polls — no localhost traffic, no 'API offline' badge (F9)", async () => {
+      const fetchSpy = vi.spyOn(globalThis, "fetch")
+
+      const wrapper = mount(HealthStatus)
+      await flushPromises()
+
+      expect(wrapper.find('[role="status"]').exists()).toBe(false)
+      expect(wrapper.text()).toBe("")
+      expect(fetchSpy).not.toHaveBeenCalled()
+
+      // No timer either — advancing the clock must not trigger a poll
+      vi.advanceTimersByTime(120_000)
+      await flushPromises()
+      expect(fetchSpy).not.toHaveBeenCalled()
+    })
+  })
 })

@@ -9,6 +9,15 @@
  */
 import WealthScaleScroller from "@/components/WealthScaleScroller.vue"
 import SourceCitation from "@/components/SourceCitation.vue"
+import { usePageMeta } from "@/composables/usePageMeta"
+import { SITE_URL } from "@/constants/site"
+
+usePageMeta({
+  title: "1 pixel = £1,000 — UK wealth, to scale",
+  description:
+    "UK household wealth drawn to scale at one pixel per £1,000. Scroll to feel the distance between typical households and the wealthiest.",
+  url: `${SITE_URL}/tools/wealth-scale`,
+})
 </script>
 
 <template>

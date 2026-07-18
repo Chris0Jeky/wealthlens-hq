@@ -5,6 +5,11 @@
  * Polls /api/version on mount, on visibility change, and every 60 seconds.
  * Shows a green dot when connected (with version + dataset count), or a
  * red dot when the backend is unreachable.
+ *
+ * On the static deploy (VITE_STATIC_DATA) there is no backend to report on:
+ * the widget renders nothing and never polls — previously every visitor's
+ * browser hit http://localhost:8000 each minute and the public footer showed
+ * a permanent red "API offline" badge (reality-check F9).
  */
 import { ref, onMounted, onUnmounted, computed } from "vue"
 
@@ -15,6 +20,7 @@ interface VersionInfo {
 
 type ConnectionState = "connected" | "disconnected" | "checking"
 
+const STATIC_MODE = import.meta.env.VITE_STATIC_DATA === "true"
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000"
 const POLL_INTERVAL_MS = 60_000
 
@@ -71,6 +77,7 @@ function handleVisibilityChange(): void {
 }
 
 onMounted(() => {
+  if (STATIC_MODE) return
   checkHealth()
   pollTimer = setInterval(checkHealth, POLL_INTERVAL_MS)
   document.addEventListener("visibilitychange", handleVisibilityChange)
@@ -88,7 +95,12 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <span class="health-status" role="status" :aria-label="`Backend status: ${state}`">
+  <span
+    v-if="!STATIC_MODE"
+    class="health-status"
+    role="status"
+    :aria-label="`Backend status: ${state}`"
+  >
     <span
       class="health-dot"
       :class="[dotClass, { 'motion-safe:animate-pulse': state === 'checking' }]"

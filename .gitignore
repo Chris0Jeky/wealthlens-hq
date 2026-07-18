@@ -48,15 +48,41 @@ projects/wealthlens-dashboard/frontend/scripts/**/*.js
 # Ignore generated files but whitelist committed static fallbacks.
 projects/wealthlens-dashboard/frontend/public/data/*
 # Committed static fallbacks that MUST ship (they back the static/GitHub-Pages build).
-# freshness.json especially: the deploy serves it to the freshness badges + indicators,
-# so an explicit negation keeps it tracked even if the data dir is cleared/regenerated.
+# Since the route prerender (ADR 0001), CI's e2e/lighthouse lanes bake the same
+# artifact deploy does, so the FULL static layer is committed: datasets.json
+# enumerates the prerendered /datasets/* routes, and every page needs its data
+# to bake real content (deploy still regenerates everything fresh — these are
+# fallbacks, not the shipped truth). Whitelist changes stay deliberate: add a
+# negation per file, produced ONLY by generate_static_api.py, never by hand.
 !projects/wealthlens-dashboard/frontend/public/data/freshness.json
-!projects/wealthlens-dashboard/frontend/public/data/wealth-shares.json
-!projects/wealthlens-dashboard/frontend/public/data/wealth-shares-metadata.json
+!projects/wealthlens-dashboard/frontend/public/data/datasets.json
+!projects/wealthlens-dashboard/frontend/public/data/all-metadata.json
+!projects/wealthlens-dashboard/frontend/public/data/boe-rates.json
+!projects/wealthlens-dashboard/frontend/public/data/boe-rates-metadata.json
+!projects/wealthlens-dashboard/frontend/public/data/cgt-concentration.json
+!projects/wealthlens-dashboard/frontend/public/data/cgt-concentration-metadata.json
+!projects/wealthlens-dashboard/frontend/public/data/child-poverty.json
+!projects/wealthlens-dashboard/frontend/public/data/child-poverty-metadata.json
+!projects/wealthlens-dashboard/frontend/public/data/gdhi-by-region.json
+!projects/wealthlens-dashboard/frontend/public/data/gdhi-by-region-metadata.json
+!projects/wealthlens-dashboard/frontend/public/data/generational-wealth.json
+!projects/wealthlens-dashboard/frontend/public/data/generational-wealth-metadata.json
+!projects/wealthlens-dashboard/frontend/public/data/housing-affordability.json
+!projects/wealthlens-dashboard/frontend/public/data/housing-affordability-metadata.json
 !projects/wealthlens-dashboard/frontend/public/data/inheritance-tax.json
 !projects/wealthlens-dashboard/frontend/public/data/inheritance-tax-metadata.json
+!projects/wealthlens-dashboard/frontend/public/data/productivity-pay.json
+!projects/wealthlens-dashboard/frontend/public/data/productivity-pay-metadata.json
+!projects/wealthlens-dashboard/frontend/public/data/tax-composition.json
+!projects/wealthlens-dashboard/frontend/public/data/tax-composition-metadata.json
 !projects/wealthlens-dashboard/frontend/public/data/wage-stagnation.json
 !projects/wealthlens-dashboard/frontend/public/data/wage-stagnation-metadata.json
+!projects/wealthlens-dashboard/frontend/public/data/wealth-by-decile.json
+!projects/wealthlens-dashboard/frontend/public/data/wealth-by-decile-metadata.json
+!projects/wealthlens-dashboard/frontend/public/data/wealth-shares.json
+!projects/wealthlens-dashboard/frontend/public/data/wealth-shares-metadata.json
+!projects/wealthlens-dashboard/frontend/public/data/simulator
+!projects/wealthlens-dashboard/frontend/public/data/simulator/*.json
 
 # Data and generated artefacts
 *.parquet

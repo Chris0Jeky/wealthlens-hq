@@ -28,6 +28,7 @@ import {
   type ExportFormat,
 } from "@/composables/useChartExport"
 import { usePageMeta } from "@/composables/usePageMeta"
+import { SITE_URL } from "@/constants/site"
 import ChartSkeleton from "@/components/ChartSkeleton.vue"
 import ChartLoadError from "@/components/ChartLoadError.vue"
 import { chartConfigs, simpleChartTitles } from "@/config/chartArticles"
@@ -221,13 +222,9 @@ const chartDescription = computed(() => {
   return `UK wealth inequality data — ${chartTitle.value}`
 })
 
-const chartOgImage = computed(
-  () => `https://chris0jeky.github.io/wealthlens-hq/og/${chartName.value}.png`,
-)
+const chartOgImage = computed(() => `${SITE_URL}/og/${chartName.value}.png`)
 
-const chartUrl = computed(
-  () => `https://chris0jeky.github.io/wealthlens-hq/charts/${chartName.value}`,
-)
+const chartUrl = computed(() => `${SITE_URL}/charts/${chartName.value}`)
 
 usePageMeta({
   title: chartTitle,

@@ -7,8 +7,11 @@
 // '/wealthlens-hq/'. It cannot intercept root '/api/' requests unless the
 // server sends a broader Service-Worker-Allowed header.
 // Bump CACHE_NAME on breaking changes to force cache invalidation.
+// wl-v2: route prerendering (ADR 0001) — purge cached pre-prerender document
+// responses so deep links can't be served from a stale SPA-fallback shell.
+// (HTML stays network-first, so online visitors always get the baked pages.)
 
-const CACHE_NAME = "wl-v1"
+const CACHE_NAME = "wl-v2"
 const OFFLINE_URL = "/wealthlens-hq/offline.html"
 const API_OFFLINE_BODY = JSON.stringify({
   error: "service_unavailable",
