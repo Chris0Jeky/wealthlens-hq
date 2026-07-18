@@ -1,0 +1,13 @@
+region,child_poverty_pct,children_in_poverty,national_avg_pct,above_national_avg,data_type
+North East,38.0,185000,29.8,True,static_published
+London,36.0,700000,29.8,True,static_published
+West Midlands,35.0,340000,29.8,True,static_published
+North West,33.0,380000,29.8,True,static_published
+Yorkshire and The Humber,33.0,290000,29.8,True,static_published
+Wales,31.0,150000,29.8,True,static_published
+East Midlands,28.0,210000,29.8,False,static_published
+Scotland,26.0,230000,29.8,False,static_published
+South West,24.0,190000,29.8,False,static_published
+East of England,24.0,230000,29.8,False,static_published
+Northern Ireland,24.0,90000,29.8,False,static_published
+South East,22.0,310000,29.8,False,static_published

@@ -61,7 +61,17 @@ export function buildPrerenderRoutes(datasetSlugs: readonly string[]): Prerender
     priority: 0.5,
   }))
 
-  return [...STATIC_ROUTES, ...chartRoutes, ...datasetRoutes]
+  // Chrome-free iframe shells (RFC-001f): prerendered so third-party embeds
+  // get instant real HTML, but noindex + excluded from the sitemap — they
+  // are satellites of the chart articles, not pages to rank.
+  const embedRoutes: PrerenderRoute[] = [...VALID_CHART_NAMES].sort().map((name) => ({
+    path: `/embed/${name}`,
+    sitemap: false,
+    changefreq: "monthly" as const,
+    priority: 0.1,
+  }))
+
+  return [...STATIC_ROUTES, ...chartRoutes, ...datasetRoutes, ...embedRoutes]
 }
 
 /**

@@ -9,7 +9,7 @@
  *
  * Accessibility: WCAG AA high-contrast colors, aria-label, keyboard tooltip.
  */
-import { computed, ref } from "vue"
+import { computed, ref, useId } from "vue"
 import { use } from "echarts/core"
 import { CanvasRenderer } from "echarts/renderers"
 import { BarChart } from "echarts/charts"
@@ -115,6 +115,11 @@ const chartData = computed(() => {
 
 /** True when the API returned actual data to display. */
 const hasData = computed(() => chartData.value.generationOrder.length > 0)
+
+// Stable id linking the chart's role="img" to its WAS accreditation caveat via
+// aria-describedby (region CLAUDE.md + research/methodology/was-caveats.md). It
+// also renders visibly, so the chrome-free /embed shell carries the caveat too.
+const caveatId = useId()
 
 /** Wealth range for aria-label. */
 const wealthRange = computed(() => {
@@ -311,6 +316,7 @@ const option = computed(() => {
     <div
       role="img"
       :aria-label="`Grouped bar chart showing median wealth by generation at key age milestones. Compares ${chartData.generationOrder.join(', ')} across ages ${chartData.ages.join(', ')}. Wealth values range from £${wealthRange.min.toLocaleString()} to £${wealthRange.max.toLocaleString()}. Faded bars indicate projected values.`"
+      :aria-describedby="caveatId"
       class="w-full"
     >
       <VChart ref="chart" class="w-full" style="height: 480px" :option="option" autoresize />
@@ -342,6 +348,18 @@ const option = computed(() => {
           (opens in new tab)</span
         ></a
       >, accessed 2026-05-14
+    </p>
+
+    <!-- Provenance caveat mandated by research/methodology/was-caveats.md: any
+         WAS-sourced chart MUST flag that the survey lost accredited official
+         statistics status (June 2025, OSR Report 396, on a response-rate fall).
+         Rendered inline (not article-only prose) so the chrome-free /embed shell,
+         which strips the article, still carries the disclosure. -->
+    <p :id="caveatId" class="text-xs text-[var(--wl-ink-muted)] mt-2 text-center max-w-2xl mx-auto">
+      Note: the Wealth and Assets Survey lost accredited official statistics status in June 2025
+      (declining response rates, OSR Report 396), so these figures are no longer accredited National
+      Statistics; pre-2006 cohort wealth is estimated, and household surveys under-record wealth at
+      the very top.
     </p>
   </div>
 </template>

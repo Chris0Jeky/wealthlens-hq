@@ -118,3 +118,47 @@ def test_generator_write_path_fails_loud_on_a_nonfinite_leak(
     """
     with pytest.raises(ValueError):
         _run_generator_on(tmp_path, monkeypatch, "a,b\n1.0,inf\n")
+
+
+def test_generator_emits_csv_mirror_with_data_type_column(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """RFC-001a: main() writes {slug}.csv next to the JSON, and a known
+    provenance data_type travels IN the artifact as a trailing column."""
+    data_dir = tmp_path / "processed"
+    data_dir.mkdir()
+    (data_dir / "t.csv").write_text("band,count\nA,2.0\nB,\n", encoding="utf-8")
+    (data_dir / "t.meta.json").write_text(
+        json.dumps({"data_type": "illustrative_fallback"}), encoding="utf-8"
+    )
+    out_dir = tmp_path / "out"
+    monkeypatch.setattr(gsa, "DATA_DIR", data_dir)
+    monkeypatch.setattr(gsa, "OUT_DIR", out_dir)
+    monkeypatch.setattr(gsa, "DATASETS", {"t": "t.csv"})
+    monkeypatch.setattr(gsa, "generate_simulator_static", lambda: 0)
+    gsa.main()
+
+    lines = (out_dir / "t.csv").read_text(encoding="utf-8").strip().splitlines()
+    assert lines[0] == "band,count,data_type"
+    assert lines[1] == "A,2.0,illustrative_fallback"
+    # None cells serialise as empty strings, never as "None"/NaN
+    assert lines[2] == "B,,illustrative_fallback"
+
+
+def test_generator_skips_csv_mirror_for_nc_nd_dataset(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """No generational-wealth CSV until the output-licence decision
+    (ACTION-REQUIRED #10) — the source is CC BY-NC-ND 4.0."""
+    data_dir = tmp_path / "processed"
+    data_dir.mkdir()
+    (data_dir / "g.csv").write_text("a,b\n1,2\n", encoding="utf-8")
+    out_dir = tmp_path / "out"
+    monkeypatch.setattr(gsa, "DATA_DIR", data_dir)
+    monkeypatch.setattr(gsa, "OUT_DIR", out_dir)
+    monkeypatch.setattr(gsa, "DATASETS", {"generational-wealth": "g.csv"})
+    monkeypatch.setattr(gsa, "generate_simulator_static", lambda: 0)
+    gsa.main()
+
+    assert (out_dir / "generational-wealth.json").exists()
+    assert not (out_dir / "generational-wealth.csv").exists()

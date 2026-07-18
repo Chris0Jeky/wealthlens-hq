@@ -221,4 +221,18 @@ describe("GenerationalWealthChart accessible data table", () => {
     expect(caption).toContain("Projected estimates are flagged")
     expect(caption).toContain("Resolution Foundation / ONS Wealth and Assets Survey")
   })
+
+  it("carries the WAS accreditation-loss caveat wired via aria-describedby (so the /embed shell shows it)", () => {
+    // WAS-derived charts MUST flag the June-2025 accreditation loss inline, not
+    // only in article prose — the chrome-free /embed shell renders the component
+    // alone (research/methodology/was-caveats.md; region CLAUDE.md).
+    const wrapper = mount(GenerationalWealthChart)
+    expect(wrapper.text()).toContain("lost accredited official statistics status in June 2025")
+
+    const describedById = wrapper.find('[role="img"]').attributes("aria-describedby")
+    expect(describedById).toBeTruthy()
+    const caveat = wrapper.find(`#${describedById}`)
+    expect(caveat.exists()).toBe(true)
+    expect(caveat.text()).toContain("accredited official statistics status")
+  })
 })

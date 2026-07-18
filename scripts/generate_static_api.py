@@ -294,6 +294,40 @@ def generate_simulator_static() -> int:
     return len(index)
 
 
+# No CSV mirror until the output-licence decision lands (ACTION-REQUIRED #10):
+# the upstream Resolution Foundation series is CC BY-NC-ND 4.0, and a download
+# affordance invites exactly the redistribution ND forbids. The frontend hides
+# the CSV link for these slugs (src/constants/downloads.ts mirrors this set).
+CSV_MIRROR_EXCLUDED = frozenset({"generational-wealth"})
+
+
+def _write_csv_mirror(slug: str, records: list[dict], data_type: str | None) -> None:
+    """Write ``{slug}.csv`` next to the JSON — the downloadable data mirror.
+
+    RFC-001a: chart pages and home cards link these directly, so the reuse
+    layer needs no backend. Data-honesty rule (RFC-001 risk section): when the
+    dataset's provenance ``data_type`` is known it travels IN the artifact as
+    a trailing ``data_type`` column — an ``illustrative_fallback`` composite
+    must never circulate as a bare, uncaveated CSV. ``None`` cells serialise
+    as empty strings.
+    """
+    import csv
+
+    if slug in CSV_MIRROR_EXCLUDED or not records:
+        return
+    columns = list(records[0].keys())
+    fieldnames = columns + (["data_type"] if data_type else [])
+    csv_out = OUT_DIR / f"{slug}.csv"
+    with csv_out.open("w", encoding="utf-8", newline="") as fh:
+        writer = csv.DictWriter(fh, fieldnames=fieldnames, extrasaction="ignore")
+        writer.writeheader()
+        for row in records:
+            out_row = {k: ("" if v is None else v) for k, v in row.items()}
+            if data_type:
+                out_row["data_type"] = data_type
+            writer.writerow(out_row)
+
+
 def main() -> None:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -326,6 +360,9 @@ def main() -> None:
         data_path.write_text(
             json.dumps(data_response, allow_nan=False), encoding="utf-8"
         )
+
+        # CSV mirror for the download links (RFC-001a)
+        _write_csv_mirror(slug, records, _read_data_type(csv_path))
 
         # Metadata response
         meta = DATASET_META.get(slug, {})
@@ -368,14 +405,20 @@ def main() -> None:
         # accurate rather than publishing 0 / [] for a real chart (e.g. wage-stagnation).
         row_count = m.get("row_count")
         columns = m.get("columns")
-        if row_count is None or columns is None:
-            data_file = OUT_DIR / f"{slug}.json"
-            if data_file.exists():
-                dj = json.loads(data_file.read_text(encoding="utf-8"))
-                rows = dj.get("data") if isinstance(dj, dict) else dj
-                if isinstance(rows, list) and rows and isinstance(rows[0], dict):
-                    row_count = len(rows) if row_count is None else row_count
-                    columns = list(rows[0].keys()) if columns is None else columns
+        data_file = OUT_DIR / f"{slug}.json"
+        if data_file.exists():
+            dj = json.loads(data_file.read_text(encoding="utf-8"))
+            # Hand-curated JSONs are either {data: rows} shaped, bare rows, or a
+            # keyed document whose primary table is `by_year` (inheritance-tax).
+            rows = dj.get("data", dj.get("by_year")) if isinstance(dj, dict) else dj
+            if isinstance(rows, list) and rows and isinstance(rows[0], dict):
+                if row_count is None:
+                    row_count = len(rows)
+                if columns is None:
+                    columns = list(rows[0].keys())
+                # CSV mirror so the download links cover ALL routed charts,
+                # not just the CSV-pipeline datasets (RFC-001a).
+                _write_csv_mirror(slug, rows, m.get("data_type"))
         STATIC_META[slug] = {
             "name": m.get("name", m.get("slug", slug)),
             "description": m.get("description", ""),

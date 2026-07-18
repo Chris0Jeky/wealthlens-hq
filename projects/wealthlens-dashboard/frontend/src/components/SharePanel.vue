@@ -19,6 +19,7 @@
 import { ref, computed, onBeforeUnmount } from "vue"
 import EmbedCode from "@/components/EmbedCode.vue"
 import { CHARTS_BASE_URL } from "@/constants/urls"
+import { buildShareLinks, openShareIntent as openIntent } from "@/utils/shareIntents"
 
 const props = defineProps<{
   chartName: string
@@ -26,20 +27,12 @@ const props = defineProps<{
 }>()
 
 const chartUrl = computed(() => `${CHARTS_BASE_URL}/${props.chartName}`)
-const encodedUrl = computed(() => encodeURIComponent(chartUrl.value))
-const encodedTitle = computed(() => encodeURIComponent(`${props.chartTitle} — WealthLens UK`))
 
-const shareLinks = computed(() => ({
-  twitter: `https://twitter.com/intent/tweet?url=${encodedUrl.value}&text=${encodedTitle.value}`,
-  linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl.value}`,
-  bluesky: `https://bsky.app/intent/compose?text=${encodedTitle.value}+${encodedUrl.value}`,
-}))
+// Shared with ShareBar (utils/shareIntents.ts) so the two surfaces cannot drift.
+const shareLinks = computed(() => buildShareLinks(chartUrl.value, props.chartTitle))
 
 function openShare(platform: "twitter" | "linkedin" | "bluesky"): void {
-  const win = window.open(shareLinks.value[platform], "_blank", "noopener,noreferrer")
-  if (!win) {
-    window.location.href = shareLinks.value[platform]
-  }
+  openIntent(shareLinks.value[platform])
 }
 
 const linkCopied = ref(false)
@@ -194,7 +187,7 @@ onBeforeUnmount(clearTimer)
     </span>
 
     <!-- Embed code section -->
-    <EmbedCode :chart-name="props.chartName" />
+    <EmbedCode :chart-name="props.chartName" :chart-title="props.chartTitle" />
   </section>
 </template>
 

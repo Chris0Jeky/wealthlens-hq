@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue"
 import { SUPPORTED_CHART_NAMES } from "@/utils/chartConstants"
+import { csvDownloadUrl, hasCsvDownload } from "@/constants/downloads"
 import FreshnessIndicator from "@/components/FreshnessIndicator.vue"
 import type { DatasetFreshnessEntry } from "@/types/api"
 
@@ -25,7 +26,10 @@ const chartAvailable = computed(() =>
   props.hasChart !== undefined ? props.hasChart : SUPPORTED_CHART_NAMES.has(props.name),
 )
 
-const downloadUrl = computed(() => `/api/data/${props.name}/download`)
+// The static CSV mirror (RFC-001a) — previously pointed at /api/data/.../download,
+// a backend that does not exist on the GitHub Pages deploy (reality-check F8).
+const downloadUrl = computed(() => csvDownloadUrl(props.name))
+const csvAvailable = computed(() => hasCsvDownload(props.name))
 </script>
 
 <template>
@@ -55,6 +59,7 @@ const downloadUrl = computed(() => `/api/data/${props.name}/download`)
       </router-link>
       <span v-else class="text-sm text-[var(--wl-ink-faint)] italic">Chart coming soon</span>
       <a
+        v-if="csvAvailable"
         :href="downloadUrl"
         download
         class="inline-flex items-center text-sm text-[var(--wl-ink-muted)] hover:text-[var(--wl-ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--wl-red)] rounded"

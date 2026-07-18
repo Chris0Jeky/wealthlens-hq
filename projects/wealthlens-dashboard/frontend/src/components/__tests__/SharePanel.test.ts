@@ -3,6 +3,7 @@ import { mount, flushPromises } from "@vue/test-utils"
 
 vi.mock("@/constants/urls", () => ({
   CHARTS_BASE_URL: "https://chris0jeky.github.io/wealthlens-hq/charts",
+  SITE_BASE_URL: "https://chris0jeky.github.io/wealthlens-hq",
 }))
 
 import SharePanel from "@/components/SharePanel.vue"

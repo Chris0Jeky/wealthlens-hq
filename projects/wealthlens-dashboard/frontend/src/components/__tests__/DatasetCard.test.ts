@@ -88,7 +88,8 @@ describe("DatasetCard", () => {
     const wrapper = factory()
     const downloadLink = wrapper.find("a[download]")
     expect(downloadLink.exists()).toBe(true)
-    expect(downloadLink.attributes("href")).toBe("/api/data/wealth-shares/download")
+    // The static CSV mirror (RFC-001a) — no /api backend exists on the deploy (F8)
+    expect(downloadLink.attributes("href")).toBe("/data/wealth-shares.csv")
   })
 
   it("download link has accessible label", () => {

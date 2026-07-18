@@ -45,6 +45,12 @@ export default defineConfig({
       },
     },
   },
+  preview: {
+    // GitHub Pages serves everything with Access-Control-Allow-Origin: * —
+    // mirror that so the sandboxed /embed iframe (opaque origin) can fetch
+    // its data in e2e runs exactly as it does in production.
+    cors: true,
+  },
   server: {
     port: 3000,
     proxy: {

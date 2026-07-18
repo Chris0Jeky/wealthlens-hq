@@ -9,10 +9,13 @@
  * <EmbedCode chart-name="wealth-shares" />
  */
 import { ref, computed, onBeforeUnmount } from "vue"
-import { CHARTS_BASE_URL } from "@/constants/urls"
+import { SITE_BASE_URL } from "@/constants/urls"
+import { buildEmbedSnippet } from "@/utils/embedSnippet"
 
 const props = defineProps<{
   chartName: string
+  /** Chart display title for the iframe's accessible name. */
+  chartTitle?: string
 }>()
 
 const widthOptions = [
@@ -24,10 +27,17 @@ const widthOptions = [
 type EmbedWidth = (typeof widthOptions)[number]["value"]
 const selectedWidth = ref<EmbedWidth>("100%")
 
-const embedSnippet = computed(() => {
-  const widthAttr = selectedWidth.value === "100%" ? "100%" : selectedWidth.value
-  return `<iframe src="${CHARTS_BASE_URL}/${props.chartName}" width="${widthAttr}" height="500" frameborder="0" sandbox="allow-scripts" title="WealthLens UK chart"></iframe>`
-})
+// The snippet targets the chrome-free /embed shell (RFC-001f) — embedding
+// the article page iframed the entire site chrome — and includes the
+// auto-resize listener for the shell's height messages.
+const embedSnippet = computed(() =>
+  buildEmbedSnippet(
+    SITE_BASE_URL,
+    props.chartName,
+    props.chartTitle ?? "Chart",
+    selectedWidth.value === "100%" ? "100%" : selectedWidth.value,
+  ),
+)
 
 const copied = ref(false)
 const copyError = ref(false)

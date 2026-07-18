@@ -1,4 +1,5 @@
 import { type Ref } from "vue"
+import { SITE_URL } from "@/constants/site"
 
 export type ExportFormat = "png" | "svg"
 
@@ -21,7 +22,10 @@ export interface ExportOptions {
 
 export function useChartExport(chartRef: Ref<ChartComponentRef>) {
   function buildWatermark(source?: string): string {
-    let text = "WealthLens UK · wealthlens.uk"
+    // Canonical identity from constants/site.ts — the watermark previously
+    // printed the unregistered wealthlens.uk (RFC-001h: one identity until
+    // ACTION-REQUIRED #4 lands).
+    let text = `WealthLens UK · ${SITE_URL.replace(/^https?:\/\//, "")}`
     if (source) {
       text += ` · Source: ${source}`
     }

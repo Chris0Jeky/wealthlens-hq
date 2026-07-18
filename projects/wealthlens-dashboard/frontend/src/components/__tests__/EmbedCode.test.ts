@@ -3,6 +3,7 @@ import { mount, flushPromises } from "@vue/test-utils"
 
 vi.mock("@/constants/urls", () => ({
   CHARTS_BASE_URL: "https://chris0jeky.github.io/wealthlens-hq/charts",
+  SITE_BASE_URL: "https://chris0jeky.github.io/wealthlens-hq",
 }))
 
 import EmbedCode from "@/components/EmbedCode.vue"
@@ -41,9 +42,11 @@ describe("EmbedCode", () => {
       props: { chartName: "wealth-shares" },
     })
     const code = wrapper.find("code")
-    expect(code.text()).toContain("https://chris0jeky.github.io/wealthlens-hq/charts/wealth-shares")
+    // The snippet targets the chrome-free embed shell, NOT the article page
+    expect(code.text()).toContain("https://chris0jeky.github.io/wealthlens-hq/embed/wealth-shares")
     expect(code.text()).toContain("<iframe")
-    expect(code.text()).toContain('frameborder="0"')
+    expect(code.text()).toContain('style="border:0"')
+    expect(code.text()).toContain('sandbox="allow-scripts allow-popups"')
   })
 
   it("defaults to 100% width", () => {
@@ -154,12 +157,13 @@ describe("EmbedCode", () => {
     expect(status.text()).toContain("Embed code copied to clipboard")
   })
 
-  it("includes height=500 in the embed snippet", () => {
+  it("includes an initial height and the auto-resize listener in the snippet", () => {
     const wrapper = mount(EmbedCode, {
       props: { chartName: "test-chart" },
     })
     const code = wrapper.find("code")
-    expect(code.text()).toContain('height="500"')
+    expect(code.text()).toContain('height="560"')
+    expect(code.text()).toContain("wealthlens-embed")
   })
 
   it("includes a title attribute in the iframe for accessibility", () => {
@@ -167,6 +171,6 @@ describe("EmbedCode", () => {
       props: { chartName: "test-chart" },
     })
     const code = wrapper.find("code")
-    expect(code.text()).toContain('title="WealthLens UK chart"')
+    expect(code.text()).toMatch(/title="[^"]+ — WealthLens UK"/)
   })
 })

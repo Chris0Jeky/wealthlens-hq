@@ -372,8 +372,9 @@ const datasets: DatasetSource[] = DATASET_CITATIONS.map((d) => ({
             >.
           </li>
           <li>
-            <strong>Download the processed data</strong> — the API provides CSV download endpoints
-            for every dataset. Compare our processed output against the raw source.
+            <strong>Download the processed data</strong> — every dataset is published as static CSV
+            and JSON files alongside the site (linked from the home-page cards and each chart's
+            toolbar). Compare our processed output against the raw source.
           </li>
           <li>
             <strong>Run it yourself</strong> — clone the repository and run the pipeline locally.
