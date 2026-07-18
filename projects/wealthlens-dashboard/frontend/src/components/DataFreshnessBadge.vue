@@ -2,17 +2,18 @@
 /**
  * DataFreshnessBadge — Small badge indicating when a dataset was last updated.
  *
- * Displays a coloured dot and relative time since last data update.
- * Color coding:
- *   - Green (--wl-teal): updated within 7 days
- *   - Amber (--wl-gold): updated 7–30 days ago
- *   - Red (--wl-red): updated more than 30 days ago
+ * Displays a coloured dot and relative time since last data update. The dot
+ * is cadence-aware (docs/product/freshness-grammar.md): green while the
+ * source is not expected to have published a newer release, amber when our
+ * ingest may lag one, grey for a suspended source or unknown cadence.
+ * There is deliberately no red state (F3).
  *
- * Shows a tooltip on hover with the full date and source name.
- * Gracefully handles missing/unavailable freshness data by rendering nothing.
+ * Shows a tooltip on hover with the full date, source name, and what the
+ * state means for this series. Renders nothing without freshness data.
  */
 import { computed, toRef } from "vue"
-import { useDataFreshness, daysAgo, relativeTime } from "@/composables/useDataFreshness"
+import { useDataFreshness, relativeTime } from "@/composables/useDataFreshness"
+import { assessFreshness } from "@/utils/freshnessCadence"
 
 const props = defineProps<{
   dataset: string
@@ -20,17 +21,22 @@ const props = defineProps<{
 
 const { freshnessInfo, loading } = useDataFreshness(toRef(props, "dataset"))
 
-/** Number of days since last update. */
-const age = computed(() => {
-  if (!freshnessInfo.value) return 0
-  return daysAgo(freshnessInfo.value.lastUpdated)
+/** Cadence-aware grading against this source's own release rhythm. */
+const assessment = computed(() => {
+  if (!freshnessInfo.value) return null
+  return assessFreshness(props.dataset, freshnessInfo.value.lastUpdated.toISOString())
 })
 
-/** CSS class for color coding based on data age. */
+/** CSS class for the state dot — no red (see the grammar note). */
 const colorClass = computed(() => {
-  if (age.value > 30) return "freshness-badge__dot--red"
-  if (age.value >= 7) return "freshness-badge__dot--amber"
-  return "freshness-badge__dot--green"
+  switch (assessment.value?.state) {
+    case "current":
+      return "freshness-badge__dot--green"
+    case "due":
+      return "freshness-badge__dot--amber"
+    default:
+      return "freshness-badge__dot--grey"
+  }
 })
 
 /** Relative time display text. */
@@ -92,8 +98,8 @@ const tooltipText = computed(() => {
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--wl-gold) 70%, black);
 }
 
-.freshness-badge__dot--red {
-  background-color: var(--wl-red);
+.freshness-badge__dot--grey {
+  background-color: var(--wl-ink-faint);
 }
 
 .freshness-badge__text {

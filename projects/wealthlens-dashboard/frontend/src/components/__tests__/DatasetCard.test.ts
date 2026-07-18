@@ -120,7 +120,8 @@ describe("DatasetCard", () => {
       global: { stubs: { "router-link": routerLinkStub } },
     })
     expect(wrapper.findComponent(FreshnessIndicator).exists()).toBe(true)
-    expect(wrapper.text()).toContain("Fresh")
+    // Cadence-aware label (docs/product/freshness-grammar.md), not the old ladder
+    expect(wrapper.text()).toContain("Current")
   })
 
   it("omits the FreshnessIndicator when no freshness entry is provided", () => {

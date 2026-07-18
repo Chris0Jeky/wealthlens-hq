@@ -107,8 +107,14 @@ export function relativeTime(date: Date): string {
   if (days < 7) return `${days} days ago`
   if (days < 14) return "1 week ago"
   if (days < 30) return `${Math.floor(days / 7)} weeks ago`
-  if (days < 60) return "1 month ago"
-  return `${Math.floor(days / 30)} months ago`
+  // Round to the NEAREST month: the old `< 60 → "1 month ago"` bucket made a
+  // ~2-month-old date read as half its age (reality-check F10).
+  if (days < 365) {
+    const months = Math.max(1, Math.round(days / 30.44))
+    return months === 1 ? "1 month ago" : `${months} months ago`
+  }
+  const years = Math.round(days / 365.25)
+  return years === 1 ? "1 year ago" : `${years} years ago`
 }
 
 export function _resetCache(): void {

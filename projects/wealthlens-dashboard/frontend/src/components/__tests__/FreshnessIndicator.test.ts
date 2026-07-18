@@ -1,189 +1,140 @@
-import { describe, it, expect } from "vitest"
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest"
 import { mount } from "@vue/test-utils"
 import FreshnessIndicator from "@/components/FreshnessIndicator.vue"
 import type { DatasetFreshnessEntry } from "@/types/api"
 
-function factory(freshness: DatasetFreshnessEntry) {
-  return mount(FreshnessIndicator, { props: { freshness } })
+/**
+ * The indicator is cadence-aware (docs/product/freshness-grammar.md): it
+ * grades last_updated against the dataset's provenance cadence and ignores
+ * the wall-clock `status` field (kept for API shape parity).
+ */
+const NOW = new Date("2026-07-11T00:00:00Z")
+
+function daysBefore(days: number): string {
+  return new Date(NOW.getTime() - days * 86_400_000).toISOString()
+}
+
+function factory(dataset: string, freshness: DatasetFreshnessEntry) {
+  return mount(FreshnessIndicator, { props: { dataset, freshness } })
 }
 
 describe("FreshnessIndicator", () => {
-  describe("dot colour", () => {
-    it("shows green dot for fresh status", () => {
-      const wrapper = factory({
-        last_updated: "2026-05-15T10:00:00+00:00",
-        age_hours: 24,
-        status: "fresh",
-      })
-      const dot = wrapper.find('[data-testid="freshness-dot"]')
-      expect(dot.classes()).toContain("bg-green-500")
-    })
-
-    it("shows yellow dot for stale status", () => {
-      const wrapper = factory({
-        last_updated: "2026-05-01T10:00:00+00:00",
-        age_hours: 360,
-        status: "stale",
-      })
-      const dot = wrapper.find('[data-testid="freshness-dot"]')
-      expect(dot.classes()).toContain("bg-yellow-500")
-    })
-
-    it("shows red dot for expired status", () => {
-      const wrapper = factory({
-        last_updated: "2026-03-01T10:00:00+00:00",
-        age_hours: 1800,
-        status: "expired",
-      })
-      const dot = wrapper.find('[data-testid="freshness-dot"]')
-      expect(dot.classes()).toContain("bg-red-500")
-    })
-
-    it("shows gray dot for unknown status", () => {
-      const wrapper = factory({
-        last_updated: null,
-        age_hours: null,
-        status: "unknown",
-      })
-      const dot = wrapper.find('[data-testid="freshness-dot"]')
-      expect(dot.classes()).toContain("bg-gray-400")
-    })
+  beforeEach(() => {
+    vi.useFakeTimers()
+    vi.setSystemTime(NOW)
   })
 
-  describe("text label", () => {
-    it('displays "Fresh" for fresh status', () => {
-      const wrapper = factory({
-        last_updated: "2026-05-15T10:00:00+00:00",
-        age_hours: 24,
-        status: "fresh",
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  describe("cadence-aware states (F3)", () => {
+    it("annual data months old is Current with a green dot — never Expired", () => {
+      const wrapper = factory("wealth-shares", {
+        last_updated: daysBefore(100),
+        age_hours: 100 * 24,
+        status: "expired", // the vestigial wall-clock field must be ignored
       })
-      const label = wrapper.find('[data-testid="freshness-label"]')
-      expect(label.text()).toBe("Fresh")
+      expect(wrapper.find('[data-testid="freshness-dot"]').classes()).toContain("bg-green-500")
+      expect(wrapper.find('[data-testid="freshness-label"]').text()).toBe("Current")
+      expect(wrapper.text()).not.toContain("Expired")
     })
 
-    it('displays "Stale" for stale status', () => {
-      const wrapper = factory({
-        last_updated: "2026-05-01T10:00:00+00:00",
-        age_hours: 360,
-        status: "stale",
-      })
-      const label = wrapper.find('[data-testid="freshness-label"]')
-      expect(label.text()).toBe("Stale")
-    })
-
-    it('displays "Expired" for expired status', () => {
-      const wrapper = factory({
-        last_updated: "2026-03-01T10:00:00+00:00",
-        age_hours: 1800,
+    it("data older than its cadence shows Update due with an amber dot", () => {
+      const wrapper = factory("boe-rates", {
+        last_updated: daysBefore(90),
+        age_hours: 90 * 24,
         status: "expired",
       })
-      const label = wrapper.find('[data-testid="freshness-label"]')
-      expect(label.text()).toBe("Expired")
+      expect(wrapper.find('[data-testid="freshness-dot"]').classes()).toContain("bg-yellow-500")
+      expect(wrapper.find('[data-testid="freshness-label"]').text()).toBe("Update due")
     })
 
-    it('displays "Unknown" for unknown status', () => {
-      const wrapper = factory({
+    it("a suspended source shows Source suspended with a grey dot — the WAS case", () => {
+      const wrapper = factory("wealth-by-decile", {
+        last_updated: daysBefore(800),
+        age_hours: 800 * 24,
+        status: "expired",
+      })
+      expect(wrapper.find('[data-testid="freshness-dot"]').classes()).toContain("bg-gray-400")
+      expect(wrapper.find('[data-testid="freshness-label"]').text()).toBe("Source suspended")
+    })
+
+    it("shows Unknown for a missing date", () => {
+      const wrapper = factory("wealth-shares", {
         last_updated: null,
         age_hours: null,
         status: "unknown",
       })
-      const label = wrapper.find('[data-testid="freshness-label"]')
-      expect(label.text()).toBe("Unknown")
+      expect(wrapper.find('[data-testid="freshness-dot"]').classes()).toContain("bg-gray-400")
+      expect(wrapper.find('[data-testid="freshness-label"]').text()).toBe("Unknown")
     })
   })
 
   describe("tooltip text", () => {
-    it("shows hours when age is less than 24h", () => {
-      const wrapper = factory({
-        last_updated: "2026-05-16T06:00:00+00:00",
-        age_hours: 5,
-        status: "fresh",
-      })
-      const tooltip = wrapper.find('[data-testid="freshness-tooltip"]')
-      expect(tooltip.text()).toBe("Last updated: 5 hours ago")
-    })
-
-    it("shows days when age is 24h or more", () => {
-      const wrapper = factory({
-        last_updated: "2026-05-14T10:00:00+00:00",
+    it("combines relative age with the cadence explanation", () => {
+      const wrapper = factory("wealth-shares", {
+        last_updated: daysBefore(2),
         age_hours: 48,
         status: "fresh",
       })
       const tooltip = wrapper.find('[data-testid="freshness-tooltip"]')
-      expect(tooltip.text()).toBe("Last updated: 2 days ago")
+      expect(tooltip.text()).toContain("Last updated: 2 days ago")
+      expect(tooltip.text()).toContain("no newer release is expected")
     })
 
-    it('shows singular "day" for 1 day', () => {
-      const wrapper = factory({
-        last_updated: "2026-05-15T10:00:00+00:00",
-        age_hours: 24,
+    it("shows hours when age is under a day", () => {
+      const wrapper = factory("boe-rates", {
+        last_updated: daysBefore(0.2),
+        age_hours: 5,
         status: "fresh",
       })
-      const tooltip = wrapper.find('[data-testid="freshness-tooltip"]')
-      expect(tooltip.text()).toBe("Last updated: 1 day ago")
+      expect(wrapper.find('[data-testid="freshness-tooltip"]').text()).toContain(
+        "Last updated: 5 hours ago",
+      )
     })
 
-    it('shows "less than an hour ago" for very fresh data', () => {
-      const wrapper = factory({
-        last_updated: "2026-05-16T10:00:00+00:00",
-        age_hours: 0.3,
-        status: "fresh",
-      })
-      const tooltip = wrapper.find('[data-testid="freshness-tooltip"]')
-      expect(tooltip.text()).toBe("Last updated: less than an hour ago")
-    })
-
-    it("shows file not found message for unknown status", () => {
-      const wrapper = factory({
+    it("explains a missing date without fabricating one", () => {
+      const wrapper = factory("wealth-shares", {
         last_updated: null,
         age_hours: null,
         status: "unknown",
       })
-      const tooltip = wrapper.find('[data-testid="freshness-tooltip"]')
-      expect(tooltip.text()).toBe("Data file not found")
+      expect(wrapper.find('[data-testid="freshness-tooltip"]').text()).toContain(
+        "No update date recorded",
+      )
     })
   })
 
   describe("accessibility", () => {
     it("has an aria-label combining label and tooltip", () => {
-      const wrapper = factory({
-        last_updated: "2026-05-14T10:00:00+00:00",
+      const wrapper = factory("wealth-shares", {
+        last_updated: daysBefore(2),
         age_hours: 48,
         status: "fresh",
       })
-      const root = wrapper.find(".freshness-indicator")
-      expect(root.attributes("aria-label")).toBe("Fresh: Last updated: 2 days ago")
+      const aria = wrapper.find(".freshness-indicator").attributes("aria-label")
+      expect(aria).toContain("Current:")
+      expect(aria).toContain("Last updated: 2 days ago")
     })
 
     it("includes sr-only text for screen readers", () => {
-      const wrapper = factory({
-        last_updated: "2026-05-14T10:00:00+00:00",
+      const wrapper = factory("wealth-shares", {
+        last_updated: daysBefore(2),
         age_hours: 48,
         status: "fresh",
       })
-      const srOnly = wrapper.find(".sr-only")
-      expect(srOnly.exists()).toBe(true)
-      expect(srOnly.text()).toBe("Last updated: 2 days ago")
+      expect(wrapper.find(".sr-only").text()).toContain("Last updated: 2 days ago")
     })
 
-    it("is focusable via tabindex", () => {
-      const wrapper = factory({
-        last_updated: "2026-05-15T10:00:00+00:00",
+    it("is focusable via tabindex and hides the dot from AT", () => {
+      const wrapper = factory("wealth-shares", {
+        last_updated: daysBefore(1),
         age_hours: 24,
         status: "fresh",
       })
-      const root = wrapper.find(".freshness-indicator")
-      expect(root.attributes("tabindex")).toBe("0")
-    })
-
-    it("dot is aria-hidden", () => {
-      const wrapper = factory({
-        last_updated: "2026-05-15T10:00:00+00:00",
-        age_hours: 24,
-        status: "fresh",
-      })
-      const dot = wrapper.find('[data-testid="freshness-dot"]')
-      expect(dot.attributes("aria-hidden")).toBe("true")
+      expect(wrapper.find(".freshness-indicator").attributes("tabindex")).toBe("0")
+      expect(wrapper.find('[data-testid="freshness-dot"]').attributes("aria-hidden")).toBe("true")
     })
   })
 })

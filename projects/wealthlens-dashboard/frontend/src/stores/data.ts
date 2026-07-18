@@ -66,8 +66,12 @@ function toStaticUrl(apiPath: string): string {
 /** The flat, hand-curated static freshness.json: {slug: {last_updated, source}}. */
 type StaticFreshnessFile = Record<string, { last_updated?: string; source?: string }>
 
-// Match the backend /api/data/freshness thresholds so the static-mode indicator
-// classifies identically to the live endpoint.
+// Match the backend /api/data/freshness thresholds so the static-mode entry
+// SHAPE stays identical to the live endpoint. NOTE: since the cadence-aware
+// grammar (docs/product/freshness-grammar.md, F3) the UI no longer displays
+// this wall-clock `status` — badges grade last_updated against each source's
+// declared cadence (utils/freshnessCadence.ts). The field remains for API
+// shape parity only.
 const FRESH_MAX_HOURS = 168 // 7 days
 const STALE_MAX_HOURS = 720 // 30 days
 
