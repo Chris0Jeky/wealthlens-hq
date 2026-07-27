@@ -20,11 +20,13 @@ this repo's earned regressions are also pinned directly:
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
 
-HOOKS = Path(__file__).resolve().parents[1] / ".claude" / "hooks"
+REPO = Path(__file__).resolve().parents[1]
+HOOKS = REPO / ".claude" / "hooks"
 DISPATCH = HOOKS / "dispatch.py"
 POST = HOOKS / "post_tool_failure.py"
 SESSION = HOOKS / "session_start.py"
@@ -37,12 +39,18 @@ _RM_RF = "rm -" + "rf /"
 
 
 def _floor_decision(command: str) -> str:
+    # CLAUDE_PROJECT_DIR is load-bearing: since floor v1.6.20 the dispatcher fails
+    # CLOSED (ValueError -> deny) when a Bash payload carries neither a `cwd` nor
+    # the env var, because it cannot resolve which tier.json governs the command.
+    # Claude Code always supplies one; a bare subprocess does not, so every
+    # must-ALLOW expectation here silently inverted until this was passed.
     payload = json.dumps({"tool_name": "Bash", "tool_input": {"command": command}})
     out = subprocess.run(
         [sys.executable, str(DISPATCH), "--event", "pre"],
         input=payload,
         capture_output=True,
         text=True,
+        env={**os.environ, "CLAUDE_PROJECT_DIR": str(REPO)},
     )
     assert out.returncode == 0  # the floor signals via printed JSON, never a crash
     if not out.stdout.strip():
