@@ -1,141 +1,110 @@
 # CLAUDE.md — WealthLens HQ
 
-Tier: workshop (T3) — authority: push free / merge free on the T3 gate (`.claude/tier.json`)
+T3 workshop · authority `.agent-harness/tier.json` (push free / merge free on the T3 gate).
+Merge, review, worktree and question doctrine is the global twelve laws (`~/.claude/CLAUDE.md`,
+auto-injected) — this file never restates them. Repo rules: [AGENTS.md](./AGENTS.md) ·
+seams: [AGENT_MAP.md](./AGENT_MAP.md).
 
-Compact Claude Code session contract. Repo-wide operating rules live in
-[AGENTS.md](./AGENTS.md); code seams in [AGENT_MAP.md](./AGENT_MAP.md). One home per
-policy — this file links, it does not restate.
+## What this repo is
 
-## Session start
+Command-centre monorepo for WealthLens UK: a public source-cited wealth-inequality dashboard
+(Vue 3 + TS frontend on GitHub Pages, FastAPI backend), the `wealthlens-sim` policy
+microsimulation package, reproducible data pipelines, and the non-code workspace (tasks,
+research, strategy, outreach). Multi-domain — decide whether a task is code, content, research
+or outreach *before* reaching for tools. Public repo; sensitive material lives in the private
+sibling `../hq-private` (never copy it here; skip private paths when the sibling is absent —
+volunteer machines). Hero #1 (Analyst RAG) was extracted 2026-07-06 to
+`Chris0Jeky/wealthlens-analyst`; only `projects/wealthlens-analyst/POINTER.md` remains.
 
-The SessionStart hook prints the live orientation: tier/authority, the open
-ACTION-REQUIRED items, and a ledger-triage nudge. Beyond that:
+## First five minutes
 
-1. On Chris's box, read the newest RESUME block of
-   `../hq-private/projects/wealthlens/memories/session_notes/ORCHESTRATION.md`
-   (master control for multi-session work; skip if `../hq-private` is absent —
-   volunteer machines).
-2. Read `AGENT_MAP.md`, pick the region the task names, and follow that region's
-   own `CLAUDE.md` when you touch it.
-3. For current focus, read the head of
-   `../hq-private/projects/wealthlens/memories/00_ACTIVE.md` (private repo).
+1. Read the SessionStart hook output — it prints tier/authority, open ACTION-REQUIRED items and
+   a failure-ledger nudge. No file reads needed for that.
+2. `AGENT_MAP.md` → pick the region the task names; that region's own `CLAUDE.md` binds when you
+   touch its files. Honour the map's Do-Not-Read index (`research/raw`, `strategy/`, `vision/`,
+   `tasks/inbox.md` are large and low-signal by default).
+3. Chris's box only: newest RESUME block of
+   `../hq-private/projects/wealthlens/memories/session_notes/ORCHESTRATION.md`, then
+   `.../memories/00_ACTIVE.md`.
 
-Do not bulk-read strategy, vision, identity, or research archives unless the task
-requires them — the map's Do-Not-Read index is the default.
+`tasks/ACTION-REQUIRED.md` = Chris-only items. Surface the open ones in **every** summary and
+handoff under a `⚑ Action required:` banner; only Chris clears them, never infer completion.
 
-## Action required (Chris's reminders — do not skip)
+## Proving checks by seam
 
-`tasks/ACTION-REQUIRED.md` lists tasks only **Chris** can do. Surface its open items
-in **every** summary, status update, and handoff — lead with anything due or overdue
-under a `⚑ Action required:` banner. Only Chris clears an item; never infer
-completion. When he describes a new task for himself, add it in the file's item
-format. Full protocol: the file's own header.
+Narrowest command that exercises the change. Timings measured 2026-07-27 on Chris's Windows box
+(Git Bash; `PYTHON=python` is required — see pitfalls).
 
-## Private HQ repo (sensitive material)
+| Changed | Run | Measured |
+| --- | --- | --- |
+| backend `projects/wealthlens-dashboard/backend/**` | `make PYTHON=python ci-quick` | 77s green — ruff + mypy (34 files) + 207 passed / 28 skipped |
+| frontend, one component/module | `cd projects/wealthlens-dashboard/frontend && npx vitest run <spec>` | ~3s per spec |
+| frontend, before merge | `npx vitest run --maxWorkers=2` | 64s — 137 files / 1406 tests (default workers can OOM this box) |
+| frontend types | `npm run typecheck` (= `vue-tsc -b --noEmit --force`) | 5s — build mode is load-bearing, see pitfalls |
+| frontend lint | `npx eslint .` | 6s (warnings only, exit 0) |
+| sim `packages/wealthlens-sim/**`, `registries/**` | `cd packages/wealthlens-sim && python -m pytest -q` | 7s — 853 passed |
+| pipelines `automation/**` | `make PYTHON=python pipeline-test` | 4s — 75 passed |
+| processed CSVs | `make PYTHON=python validate` | needs data present — main checkout, or after `make pipelines` (network) |
+| hooks `.claude/hooks/**` | `python .claude/hooks/smoke_test.py` | **5m32s** — 2232/2232; budget for it, it is the floor's contract |
+| docs / tasks / strategy markdown | no test lane — proofread and go | — |
 
-Personal/sensitive material (identity, applications, outreach contacts + logs,
-session memories incl. ORCHESTRATION.md, journal, funding) lives in the private repo
-`Chris0Jeky/hq-private`, cloned as a sibling at `../hq-private` (moved 2026-06-13,
-decision C — public history before that date was not rewritten). **Never copy
-hq-private content back into this public repo.** If `../hq-private` does not exist,
-skip private-path steps — they are Chris-only.
+`make PYTHON=python ci-quick` is the pre-push minimum; `ci-full` adds automation/tests mypy,
+pipeline tests and the frontend lane. CI mirrors these as ci-backend / ci-frontend / ci-sim /
+ci-pipelines + CodeQL, each path-filtered with a weekly catch-all cron; deploy, e2e and
+lighthouse run on frontend pushes.
 
-## Who is Chris
+## Windows pitfalls (all measured 2026-07-27)
 
-Chris is a London-based software engineer and the founder of WealthLens UK: BSc
-Computer Science (First Class, Middlesex, 2025), published lead author (Springer
-SGAI-AI 2025), GE Digital DevSecOps internship, builder of Taskdeck (4,000-commit
-local-first dev tool), Widening Participation outreach at Middlesex. Primary stack:
-C#/.NET 8, Python, TypeScript; FastAPI, Vue 3, Docker, AWS. Fuller context:
-`../hq-private/identity/` (private repo).
+- **`make` alone dies.** `PYTHON := $(shell command -v python3 …)` resolves to the Windows Store
+  stub → `Python was not found`, exit 49. Always `make PYTHON=python <target>`. Make itself needs
+  Git Bash (GNU Make 3.81 + POSIX shell); it does not run from PowerShell.
+- **`vue-tsc --noEmit` without `-b` proves nothing here.** Root `tsconfig.json` is `files: []` +
+  project references, so it exits 0 in ~1s having checked no source (that was the `typecheck`
+  script until 2026-07-27; the Build step's `vue-tsc -b` was the only real gate). Keep the `-b`
+  in any type-check command you write.
+- **`npm run format:check` is red locally, green in CI.** `core.autocrlf=true` + `* text=auto`
+  give a CRLF worktree; prettier defaults to LF, so `--check` flags ~310 files. Never
+  `prettier --write` to "fix" it — the ubuntu CI lane is the gate for formatting.
+- **Lighthouse and Playwright e2e are CI-only.** Both need a built app (+ chromium); do not try
+  to reproduce them locally — read the workflow logs instead.
+- **`git worktree add` fails with `Filename too long`.** `research/raw/**` names blow MAX_PATH
+  under a deep worktree root. Use `git -c core.longpaths=true worktree add …`, then
+  `git -C <wt> config core.longpaths true` so later ops in that tree work.
+- **`npm test` runs `pretest` = `git clean -fX src scripts vite.config.js vitest.config.js`**,
+  deleting ignored shadow files in those paths — prefer `npx vitest run` if you keep scratch
+  files there.
+- **A fresh worktree has no processed data.** `projects/wealthlens-dashboard/data/processed/` is
+  gitignored, so `make validate` and data-dependent scripts only work where pipelines have run.
 
-## Mission and values
+## Repo-specific invariants
 
-Build open-source tools that make UK wealth inequality data accessible, interactive,
-and impossible to ignore, with organisations like Tax Justice UK, Patriotic
-Millionaires UK, and the Equality Trust. Values: data first, opinion second · open
-source always · accessible by default · independent and non-partisan.
+- Every public figure cites source + URL + access date; never change a headline number without a
+  cited source (a Chris decision). No fabricated statistics, ever.
+- Charts: WCAG AA minimum, mobile-responsive; WAS-derived charts carry the June-2025
+  accreditation-loss caveat (`research/methodology/was-caveats.md`).
+- New behaviour ships toggleable, default OFF. Narrow diffs over rewrites.
+- `frontend/public/data/*` is generated by the static-API script and gitignored except a
+  deliberate whitelist — regenerate, never hand-add.
+- Hard guardrails (secrets, data integrity, auth, backward compatibility): AGENTS.md.
 
-## Repository role
+## Key paths
 
-WealthLens HQ is the command-centre repo: strategy, research, tasks, outreach,
-automation, and the products in `AGENT_MAP.md` (dashboard, sim, data pipelines).
-Multi-domain — agents work on code, content, research, or outreach depending on the
-task. Hero #1 (the WealthLens Analyst RAG service) was **extracted 2026-07-06** to
-<https://github.com/Chris0Jeky/wealthlens-analyst> — work on it there; only
-`projects/wealthlens-analyst/POINTER.md` remains here.
+`tasks/ACTION-REQUIRED.md` (Chris-only) · `tasks/active-sprint.md` (priorities) ·
+`tasks/deadlines.md` · `tasks/inbox.md` (untriaged, ~765 lines) ·
+`research/data-sources/data-source-registry.md` · `strategy/branding-playbook.md` (public voice) ·
+`docs/product/PRODUCT_FRONTIER_2026-07.md` (scored portfolio — do not re-litigate) ·
+`docs/agentic/` (question protocol, failure ledger, git posture) ·
+`../hq-private/.../memories/00_ACTIVE.md` (status board, private).
 
-## Architecture quick reference
+Skills: `wl-repo-onramp` (broad/unfamiliar) · `wl-safe-slice` (implement) ·
+`wl-verify-and-sync` (close out) · `wl-question-batch` (ask vs assume).
 
-- **Dashboard:** FastAPI + Pydantic backend; Vue 3 + TypeScript, Pinia, TailwindCSS,
-  D3.js/ECharts frontend (GitHub Pages).
-- **Sim:** `packages/wealthlens-sim` — cited-registry microsimulation (own CI lane).
-- **Pipelines:** `automation/data-pipelines` — reproducible fetch/process/chart.
-- **Dev tools:** uv/pip (Python), npm (Node), ruff, mypy, vitest.
+## Who this is for
 
-## Essential commands
-
-```bash
-make lint              # ruff check + mypy (backend)
-make format            # ruff format (auto-fix)
-make test              # pytest -q (backend + frontend)
-make dev-backend       # dashboard uvicorn on 127.0.0.1:8000
-make dev-frontend      # vite dev server on :3000
-make ci-quick          # lint + tests (~60s, no external deps) — pre-push minimum
-make ci-full           # lint + tests + frontend build + type check
-make test-hooks        # deny-floor smoke matrix (after ANY hook change)
-```
-
-## Skill routing
-
-- `wl-repo-onramp`: broad/ambiguous work, session start, unfamiliar area.
-- `wl-safe-slice`: implement a small reviewable change.
-- `wl-verify-and-sync`: final verification and status sync.
-- `wl-question-batch`: decide whether to ask, assume, or proceed.
-
-## Important paths
-
-- `tasks/ACTION-REQUIRED.md` — Chris's human action items (surface every summary)
-- `tasks/active-sprint.md` — current priorities · `tasks/deadlines.md` — date table
-- `tasks/inbox.md` — untriaged backlog · `tasks/done.md` — completed work
-- `research/data-sources/data-source-registry.md` — data source catalogue
-- `strategy/branding-playbook.md` — public voice (the home for content-voice rules)
-- `strategy/course-correction-2026-07.md` — priority rule: launch bundle first
-- `docs/product/PRODUCT_FRONTIER_2026-07.md` — scored extension portfolio + anti-portfolio
-- `../hq-private/projects/wealthlens/memories/00_ACTIVE.md` — status board (private)
-
-## Protocols (links, not restatements)
-
-- **Questions:** batch true blockers into one message, else proceed on a named
-  assumption — `docs/agentic/QUESTION_PROTOCOL.md`.
-- **Failures:** hooks capture to the local ledger; unresolved issues go in the
-  handoff; reviewed summaries → `docs/agentic/FAILURE_LEDGER.md`.
-- **Merges/reviews:** one home, and it is not this repo — the global twelve laws
-  (`~/.claude/CLAUDE.md`; tier table in agent-harness `BLUEPRINT.md` §1). This repo's
-  row: **T3 workshop — push free, merge free once one bounded independent review at the
-  current head and green CI hold** (`.claude/tier.json`). Never touch repo protections,
-  secrets, or production credentials.
-- **Verification:** verify the exact changed seam; never claim tests passed unless
-  they ran; close with the handoff shape in `AGENT_MAP.md`.
-- **Git posture:** relaxed, declared in `.claude/tier.json`, floor-enforced —
-  `docs/agentic/GIT_WORKFLOW.md`.
-
-## Work style
-
-Narrow diffs over rewrites · new behaviour toggleable, default OFF · classify every
-failure (blocker / non-blocking risk / pre-existing noise / invalid signal) · commit
-incrementally by domain (>~3 changed files without a commit is a smell; subjects
-`<area>: <imperative summary>`) · volunteers read this code — clear docstrings.
-Hard guardrails (secrets, data integrity, auth): AGENTS.md § Hard guardrails.
-
-## Decision framework
-
-Optimise for (1) shipping something real, (2) making it visible, (3) connecting with
-the right people — in that order. Prefer a few source-backed, shareable chart pages
-over a large generic dashboard.
-
-## Windows notes
-
-Primary dev platform is Windows 10 Pro. PowerShell does not chain with `&&` — use
-`;` and check `$LASTEXITCODE`. Machine-level quirks: `~/.claude/MACHINE.md`.
-Local overrides go in `.claude/settings.local.json` only.
+Chris — London software engineer, founder of WealthLens UK (BSc CS First, Middlesex 2025;
+Springer SGAI-AI 2025 lead author; C#/.NET, Python, TypeScript; fuller context in
+`../hq-private/identity/`). Mission: make UK wealth-inequality data accessible, interactive and
+impossible to ignore — data first, opinion second; open source; accessible by default;
+non-partisan. Prioritise: ship something real → make it visible → connect with the right people,
+in that order. Volunteers read this code — clear docstrings; commit subjects
+`<area>: <imperative summary>`.

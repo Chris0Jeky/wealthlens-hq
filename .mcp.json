@@ -7,14 +7,6 @@
     "playwright": {
       "command": "npx",
       "args": ["-y", "@playwright/mcp@latest"]
-    },
-    "docker": {
-      "command": "docker",
-      "args": [
-        "run", "-i", "--rm",
-        "--mount", "type=bind,src=.,dst=/projects/wealthlens-hq",
-        "mcp/docker"
-      ]
     }
   }
 }

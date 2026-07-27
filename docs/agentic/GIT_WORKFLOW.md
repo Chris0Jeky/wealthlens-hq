@@ -1,6 +1,6 @@
 # Git Workflow — Repo Posture
 
-Solo-developer repo with a **declared relaxed-git posture**: `.claude/tier.json` sets
+Solo-developer repo with a **declared relaxed-git posture**: `.agent-harness/tier.json` sets
 `relaxed_work_loss_guards: true`, and the deny floor (`.claude/hooks/dispatch.py`,
 matrix in `smoke_test.py`) enforces the only hard limits — force-push in all
 spellings, catastrophic deletes, pipe-to-shell, secret-file mutation. Everything
@@ -25,6 +25,4 @@ Diverged branches, unresolvable conflicts, detached HEAD:
 ## Merging
 
 Merge doctrine has one home and it is not this repo: the global twelve laws
-(`~/.claude/CLAUDE.md`; tier table in agent-harness `BLUEPRINT.md` §1), which also
-carry the stacked-PR and never-squash rules. This repo is the **T3** row — push free,
-merge free once one bounded independent review at the current head and green CI hold.
+(`~/.claude/CLAUDE.md`). This repo's declared row is `.agent-harness/tier.json`.

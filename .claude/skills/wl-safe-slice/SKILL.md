@@ -18,9 +18,10 @@ Use this when you are implementing or editing inside this repo.
 
 ## Preferred checks by domain
 
-- Backend code change → `make test` or targeted `pytest`
-- Frontend code change → `npm run build` or `npx vue-tsc --noEmit`
-- Data pipeline change → run the specific pipeline script
+Code seams: the proving-check table in `/CLAUDE.md` (measured commands per region — note
+`make` needs `PYTHON=python` on Windows, and a type-check needs `vue-tsc -b`). Otherwise:
+
+- Data pipeline change → run the specific pipeline script, then `make PYTHON=python pipeline-test`
 - Content/strategy change → spell check, date format, source citation check
 - Research change → verify source URLs and access dates
 

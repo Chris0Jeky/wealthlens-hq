@@ -20,11 +20,13 @@ this repo's earned regressions are also pinned directly:
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
 
-HOOKS = Path(__file__).resolve().parents[1] / ".claude" / "hooks"
+REPO = Path(__file__).resolve().parents[1]
+HOOKS = REPO / ".claude" / "hooks"
 DISPATCH = HOOKS / "dispatch.py"
 POST = HOOKS / "post_tool_failure.py"
 SESSION = HOOKS / "session_start.py"
@@ -37,12 +39,18 @@ _RM_RF = "rm -" + "rf /"
 
 
 def _floor_decision(command: str) -> str:
+    # CLAUDE_PROJECT_DIR is load-bearing: since floor v1.6.20 the dispatcher fails
+    # CLOSED (ValueError -> deny) when a Bash payload carries neither a `cwd` nor
+    # the env var, because it cannot resolve which tier.json governs the command.
+    # Claude Code always supplies one; a bare subprocess does not, so every
+    # must-ALLOW expectation here silently inverted until this was passed.
     payload = json.dumps({"tool_name": "Bash", "tool_input": {"command": command}})
     out = subprocess.run(
         [sys.executable, str(DISPATCH), "--event", "pre"],
         input=payload,
         capture_output=True,
         text=True,
+        env={**os.environ, "CLAUDE_PROJECT_DIR": str(REPO)},
     )
     assert out.returncode == 0  # the floor signals via printed JSON, never a crash
     if not out.stdout.strip():
@@ -113,6 +121,27 @@ def test_session_start_fails_open_outside_repo(tmp_path: Path) -> None:
     blob = json.loads(out.stdout)
     assert blob["hookSpecificOutput"]["hookEventName"] == "SessionStart"
     assert blob["hookSpecificOutput"]["additionalContext"]
+
+
+def test_session_start_reads_canonical_authority_path(tmp_path: Path) -> None:
+    """Authority moved to .agent-harness/tier.json (2026-07-27); the legacy .claude/
+    path must still resolve, and the canonical one must win when both exist."""
+    for authority_dir, tier_name in ((".claude", "legacy"), (".agent-harness", "workshop")):
+        (tmp_path / authority_dir).mkdir()
+        (tmp_path / authority_dir / "tier.json").write_text(
+            json.dumps({"tier": 3, "name": tier_name, "authority": {"push": "free", "merge": "free"}}),
+            encoding="utf-8",
+        )
+        out = subprocess.run(
+            [sys.executable, str(SESSION)],
+            capture_output=True,
+            text=True,
+            env={"CLAUDE_PROJECT_DIR": str(tmp_path), "SYSTEMROOT": "C:\\Windows", "PATH": ""},
+        )
+        assert out.returncode == 0, out.stderr
+        context = json.loads(out.stdout)["hookSpecificOutput"]["additionalContext"]
+        assert f"Tier: {tier_name} (T3)" in context
+        assert f"{authority_dir}/tier.json" in context
 
 
 def test_session_start_surfaces_action_required(tmp_path: Path) -> None:
