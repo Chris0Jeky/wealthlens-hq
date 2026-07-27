@@ -25,6 +25,4 @@ Diverged branches, unresolvable conflicts, detached HEAD:
 ## Merging
 
 Merge doctrine has one home and it is not this repo: the global twelve laws
-(`~/.claude/CLAUDE.md`; tier table in agent-harness `BLUEPRINT.md` §1), which also
-carry the stacked-PR and never-squash rules. This repo is the **T3** row — push free,
-merge free once one bounded independent review at the current head and green CI hold.
+(`~/.claude/CLAUDE.md`). This repo's declared row is `.agent-harness/tier.json`.
