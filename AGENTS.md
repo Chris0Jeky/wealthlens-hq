@@ -2,7 +2,7 @@
 
 Repo-wide operating rules for ALL coding agents. Session contract: [CLAUDE.md](./CLAUDE.md);
 seams: [AGENT_MAP.md](./AGENT_MAP.md); authority: `.claude/tier.json` (T3 — push free,
-merge gated). One home per policy.
+merge free on the T3 gate). One home per policy.
 
 ## Scope
 

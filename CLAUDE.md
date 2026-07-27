@@ -1,6 +1,6 @@
 # CLAUDE.md — WealthLens HQ
 
-Tier: workshop (T3) — authority: push free / merge gated (`.claude/tier.json`)
+Tier: workshop (T3) — authority: push free / merge free on the T3 gate (`.claude/tier.json`)
 
 Compact Claude Code session contract. Repo-wide operating rules live in
 [AGENTS.md](./AGENTS.md); code seams in [AGENT_MAP.md](./AGENT_MAP.md). One home per
