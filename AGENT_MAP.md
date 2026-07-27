@@ -13,9 +13,10 @@ moves. Task prompts should name a region; log a one-line reason before reading o
 | **data-pipelines** `automation/data-pipelines/` | `fetch_*.py`, `run_all.py` (`SCRIPTS` is the single pipeline list, guarded by `test_run_all.py`), `validate.py` | Reproducible; outputs land in `projects/wealthlens-dashboard/data/processed/` + `charts/`; every dataset records source, URL, access date, licence | `make pipeline-test` + `make validate` (CI: ci-pipelines; weekly refresh is manual `workflow_dispatch` — see #494) |
 | **ops / command-centre** `tasks/`, `docs/`, `.github/` | `tasks/ACTION-REQUIRED.md` (Chris-only items — surface every summary), `tasks/active-sprint.md`, `docs/agentic/` (protocols), `docs/adr/` | Task/date formats per AGENTS.md; merges per the global twelve laws (T3 row); ACTION-REQUIRED cleared only by Chris | markdown only — no test lane |
 
-Repo-wide harness (installed by the T3 migration, PR #492): `.claude/tier.json`
-(T3, push free / merge free on the T3 gate), floor smoke test `python .claude/hooks/smoke_test.py`,
-pre-push gate `make ci-quick`. Decision refs `[D-B]`/`[D-D]` are recorded in the private
+Repo-wide harness: `.agent-harness/tier.json` (T3, push free / merge free on the T3 gate;
+moved from `.claude/tier.json` 2026-07-27), floor smoke test `python .claude/hooks/smoke_test.py`
+(vendored deny floor v1.6.20), pre-push gate `make PYTHON=python ci-quick`.
+Decision refs `[D-B]`/`[D-D]` are recorded in the private
 `../hq-private/.../memories/decisions/` (Chris-only; skip on volunteer machines).
 
 ## Do NOT read by default

@@ -2,7 +2,7 @@
 """Claude Code SessionStart hook — print live orientation instead of mandating reads.
 
 Prints (derived from files at session start, ~0 standing tokens):
-  * tier + authority line from .claude/tier.json (authority is declared, not negotiated)
+  * tier + authority line from tier.json (authority is declared, not negotiated)
   * open ACTION-REQUIRED items from tasks/ACTION-REQUIRED.md (surfaced every summary;
     only Chris clears them)
   * a failure-ledger triage nudge when the local ledger exceeds 25 entries
@@ -22,17 +22,27 @@ ROOT = Path(os.environ.get("CLAUDE_PROJECT_DIR", ".")).resolve()
 
 FALLBACK = (
     "WealthLens HQ workspace. Read tasks/ACTION-REQUIRED.md and surface its open items "
-    "in every summary; only Chris clears them. Check .claude/tier.json for authority."
+    "in every summary; only Chris clears them. Check .agent-harness/tier.json for authority."
 )
+
+# Same precedence the deny floor uses: the canonical .agent-harness/ path wins, the
+# legacy .claude/ path still resolves for older clones and worktrees.
+AUTHORITY_DIRS = (".agent-harness", ".claude")
 
 
 def tier_line() -> str:
-    cfg = json.loads((ROOT / ".claude" / "tier.json").read_text(encoding="utf-8"))
-    auth = cfg.get("authority", {})
-    return (
-        f"Tier: {cfg.get('name', '?')} (T{cfg.get('tier', '?')}) — authority: "
-        f"push {auth.get('push', '?')} / merge {auth.get('merge', '?')} (.claude/tier.json)."
-    )
+    for authority_dir in AUTHORITY_DIRS:
+        path = ROOT / authority_dir / "tier.json"
+        if not path.exists():
+            continue
+        cfg = json.loads(path.read_text(encoding="utf-8"))
+        auth = cfg.get("authority", {})
+        return (
+            f"Tier: {cfg.get('name', '?')} (T{cfg.get('tier', '?')}) — authority: "
+            f"push {auth.get('push', '?')} / merge {auth.get('merge', '?')} "
+            f"({authority_dir}/tier.json)."
+        )
+    raise FileNotFoundError("no tier.json in .agent-harness/ or .claude/")
 
 
 def action_required_items() -> list[str]:
@@ -74,10 +84,10 @@ def _safe(fn, default):
 def build_context() -> str:
     lines = [
         "WealthLens HQ — multi-domain workspace (code, content, research, strategy, outreach).",
-        _safe(tier_line, "Tier: unknown (.claude/tier.json missing/unreadable)."),
+        _safe(tier_line, "Tier: unknown (tier.json missing/unreadable)."),
         "Rules digest: data cites source + URL + access date; charts WCAG AA; volunteers "
-        "read this code; never merge red CI; merge doctrine is the global twelve laws "
-        "(T3 row: one bounded review at the head + green CI), not a repo-local gate doc.",
+        "read this code; merge doctrine is the global twelve laws, not a repo-local gate doc. "
+        "Proving checks per seam + Windows pitfalls (make needs PYTHON=python): CLAUDE.md.",
     ]
     items = _safe(action_required_items, [])
     if items:

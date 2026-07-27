@@ -1,6 +1,6 @@
 # Git Workflow — Repo Posture
 
-Solo-developer repo with a **declared relaxed-git posture**: `.claude/tier.json` sets
+Solo-developer repo with a **declared relaxed-git posture**: `.agent-harness/tier.json` sets
 `relaxed_work_loss_guards: true`, and the deny floor (`.claude/hooks/dispatch.py`,
 matrix in `smoke_test.py`) enforces the only hard limits — force-push in all
 spellings, catastrophic deletes, pipe-to-shell, secret-file mutation. Everything

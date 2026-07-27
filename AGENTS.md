@@ -1,7 +1,7 @@
 # WealthLens HQ — AGENTS.md
 
 Repo-wide operating rules for ALL coding agents. Session contract: [CLAUDE.md](./CLAUDE.md);
-seams: [AGENT_MAP.md](./AGENT_MAP.md); authority: `.claude/tier.json` (T3 — push free,
+seams: [AGENT_MAP.md](./AGENT_MAP.md); authority: `.agent-harness/tier.json` (T3 — push free,
 merge free on the T3 gate). One home per policy.
 
 ## Scope

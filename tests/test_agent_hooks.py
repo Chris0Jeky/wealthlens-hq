@@ -115,6 +115,27 @@ def test_session_start_fails_open_outside_repo(tmp_path: Path) -> None:
     assert blob["hookSpecificOutput"]["additionalContext"]
 
 
+def test_session_start_reads_canonical_authority_path(tmp_path: Path) -> None:
+    """Authority moved to .agent-harness/tier.json (2026-07-27); the legacy .claude/
+    path must still resolve, and the canonical one must win when both exist."""
+    for authority_dir, tier_name in ((".claude", "legacy"), (".agent-harness", "workshop")):
+        (tmp_path / authority_dir).mkdir()
+        (tmp_path / authority_dir / "tier.json").write_text(
+            json.dumps({"tier": 3, "name": tier_name, "authority": {"push": "free", "merge": "free"}}),
+            encoding="utf-8",
+        )
+        out = subprocess.run(
+            [sys.executable, str(SESSION)],
+            capture_output=True,
+            text=True,
+            env={"CLAUDE_PROJECT_DIR": str(tmp_path), "SYSTEMROOT": "C:\\Windows", "PATH": ""},
+        )
+        assert out.returncode == 0, out.stderr
+        context = json.loads(out.stdout)["hookSpecificOutput"]["additionalContext"]
+        assert f"Tier: {tier_name} (T3)" in context
+        assert f"{authority_dir}/tier.json" in context
+
+
 def test_session_start_surfaces_action_required(tmp_path: Path) -> None:
     """Open ACTION-REQUIRED items are printed into the orientation context."""
     (tmp_path / "tasks").mkdir()
