@@ -78,7 +78,8 @@ Last updated: 2026-07-18
 5. - [ ] First post-launch-bundle product slice: RFC-001a-d reuse layer
 
 Done from the 2026-07-02 proposal: H1-19/20 (#477/#478), H1-21/22 (#479/#480),
-post-gemini review gate (`docs/agentic/REVIEW_GATE.md`, was due 2026-07-16).
+post-gemini review gate (`docs/agentic/REVIEW_GATE.md`, was due 2026-07-16; that doc was
+retired 2026-07-27 — merge doctrine now lives only in the global twelve laws).
 
 > **⚑ See [`ACTION-REQUIRED.md`](ACTION-REQUIRED.md)** for Chris's outstanding
 > human items — surfaced in every summary; only Chris clears them.

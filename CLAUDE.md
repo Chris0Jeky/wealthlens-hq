@@ -1,6 +1,6 @@
 # CLAUDE.md — WealthLens HQ
 
-Tier: workshop (T3) — authority: push free / merge gated (`.claude/tier.json`)
+Tier: workshop (T3) — authority: push free / merge free on the T3 gate (`.claude/tier.json`)
 
 Compact Claude Code session contract. Repo-wide operating rules live in
 [AGENTS.md](./AGENTS.md); code seams in [AGENT_MAP.md](./AGENT_MAP.md). One home per
@@ -110,9 +110,11 @@ make test-hooks        # deny-floor smoke matrix (after ANY hook change)
   assumption — `docs/agentic/QUESTION_PROTOCOL.md`.
 - **Failures:** hooks capture to the local ledger; unresolved issues go in the
   handoff; reviewed summaries → `docs/agentic/FAILURE_LEDGER.md`.
-- **Merges/reviews:** agents merge ONLY through `docs/agentic/REVIEW_GATE.md`
-  (≥2 independent adversarial lenses + per-finding verify + green CI + aging).
-  Never touch repo protections, secrets, or production credentials.
+- **Merges/reviews:** one home, and it is not this repo — the global twelve laws
+  (`~/.claude/CLAUDE.md`; tier table in agent-harness `BLUEPRINT.md` §1). This repo's
+  row: **T3 workshop — push free, merge free once one bounded independent review at the
+  current head and green CI hold** (`.claude/tier.json`). Never touch repo protections,
+  secrets, or production credentials.
 - **Verification:** verify the exact changed seam; never claim tests passed unless
   they ran; close with the handoff shape in `AGENT_MAP.md`.
 - **Git posture:** relaxed, declared in `.claude/tier.json`, floor-enforced —

@@ -2,7 +2,7 @@
 
 Repo-wide operating rules for ALL coding agents. Session contract: [CLAUDE.md](./CLAUDE.md);
 seams: [AGENT_MAP.md](./AGENT_MAP.md); authority: `.claude/tier.json` (T3 — push free,
-merge gated). One home per policy.
+merge free on the T3 gate). One home per policy.
 
 ## Scope
 
@@ -63,8 +63,9 @@ Workers derive paths from the worktree root — never absolute main-checkout pat
 
 - Change is minimal and localized; tests or explicit verification steps included.
 - `make ci-quick` passes locally; relevant linters/typechecks pass.
-- **Merges go through [`docs/agentic/REVIEW_GATE.md`](docs/agentic/REVIEW_GATE.md)**
-  (≥2 independent adversarial lenses + per-finding verification; bots are a bonus).
+- **Merges follow the global twelve laws** (`~/.claude/CLAUDE.md`; tier table in
+  agent-harness `BLUEPRINT.md` §1) — T3 row: one bounded independent review at the
+  current head + green CI, then merge. No repo-local restatement.
 - If a seam moved, update `AGENT_MAP.md` (the map's write path) and the region's
   `CLAUDE.md`; sync `00_ACTIVE.md` (private) if status changed; workspace decisions →
   `../hq-private/.../memories/decisions/`, product ADRs → `docs/adr/`.
