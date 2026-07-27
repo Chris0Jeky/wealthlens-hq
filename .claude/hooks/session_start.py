@@ -76,7 +76,8 @@ def build_context() -> str:
         "WealthLens HQ — multi-domain workspace (code, content, research, strategy, outreach).",
         _safe(tier_line, "Tier: unknown (.claude/tier.json missing/unreadable)."),
         "Rules digest: data cites source + URL + access date; charts WCAG AA; volunteers "
-        "read this code; never merge red CI; merges go through docs/agentic/REVIEW_GATE.md.",
+        "read this code; never merge red CI; merge doctrine is the global twelve laws "
+        "(T3 row: one bounded review at the head + green CI), not a repo-local gate doc.",
     ]
     items = _safe(action_required_items, [])
     if items:

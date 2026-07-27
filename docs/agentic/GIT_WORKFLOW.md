@@ -24,5 +24,7 @@ Diverged branches, unresolvable conflicts, detached HEAD:
 
 ## Merging
 
-Merges go through [`REVIEW_GATE.md`](./REVIEW_GATE.md) — including the stacked-PR
-rule (never `--delete-branch` a stacked base).
+Merge doctrine has one home and it is not this repo: the global twelve laws
+(`~/.claude/CLAUDE.md`; tier table in agent-harness `BLUEPRINT.md` §1), which also
+carry the stacked-PR and never-squash rules. This repo is the **T3** row — push free,
+merge free once one bounded independent review at the current head and green CI hold.
