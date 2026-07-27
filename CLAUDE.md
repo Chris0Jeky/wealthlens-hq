@@ -40,7 +40,7 @@ Narrowest command that exercises the change. Timings measured 2026-07-27 on Chri
 | backend `projects/wealthlens-dashboard/backend/**` | `make PYTHON=python ci-quick` | 77s green — ruff + mypy (34 files) + 207 passed / 28 skipped |
 | frontend, one component/module | `cd projects/wealthlens-dashboard/frontend && npx vitest run <spec>` | ~3s per spec |
 | frontend, before merge | `npx vitest run --maxWorkers=2` | 64s — 137 files / 1406 tests (default workers can OOM this box) |
-| frontend types | `npx vue-tsc -b --noEmit` | 5s — **not** `npm run typecheck` (no-op, see pitfalls) |
+| frontend types | `npm run typecheck` (= `vue-tsc -b --noEmit --force`) | 5s — build mode is load-bearing, see pitfalls |
 | frontend lint | `npx eslint .` | 6s (warnings only, exit 0) |
 | sim `packages/wealthlens-sim/**`, `registries/**` | `cd packages/wealthlens-sim && python -m pytest -q` | 7s — 853 passed |
 | pipelines `automation/**` | `make PYTHON=python pipeline-test` | 4s — 75 passed |
@@ -58,10 +58,10 @@ lighthouse run on frontend pushes.
 - **`make` alone dies.** `PYTHON := $(shell command -v python3 …)` resolves to the Windows Store
   stub → `Python was not found`, exit 49. Always `make PYTHON=python <target>`. Make itself needs
   Git Bash (GNU Make 3.81 + POSIX shell); it does not run from PowerShell.
-- **`npm run typecheck` proves nothing.** Root `tsconfig.json` is `files: []` + project
-  references, so `vue-tsc --noEmit` exits 0 in ~1s having checked no source. The real check is
-  `npx vue-tsc -b --noEmit` (what `npm run build` runs). CI's Type-check step has the same hole;
-  its Build step is the true gate.
+- **`vue-tsc --noEmit` without `-b` proves nothing here.** Root `tsconfig.json` is `files: []` +
+  project references, so it exits 0 in ~1s having checked no source (that was the `typecheck`
+  script until 2026-07-27; the Build step's `vue-tsc -b` was the only real gate). Keep the `-b`
+  in any type-check command you write.
 - **`npm run format:check` is red locally, green in CI.** `core.autocrlf=true` + `* text=auto`
   give a CRLF worktree; prettier defaults to LF, so `--check` flags ~310 files. Never
   `prettier --write` to "fix" it — the ubuntu CI lane is the gate for formatting.
