@@ -50,7 +50,7 @@ describe("Router configuration", () => {
     expect(resolved.name).toBe("wealth-tax-simulator")
   })
 
-  it('resolves /tools to the tools index route', () => {
+  it("resolves /tools to the tools index route", () => {
     const resolved = router.resolve("/tools")
     expect(resolved.name).toBe("tools")
   })
