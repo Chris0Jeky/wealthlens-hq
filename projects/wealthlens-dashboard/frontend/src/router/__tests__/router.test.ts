@@ -26,10 +26,10 @@ describe("Router configuration", () => {
 
   it("has the expected number of route definitions", () => {
     // home, dataset-detail, chart, methodology, data-sources, about,
-    // contribute, wealth-calculator, wealth-scale, faq,
+    // contribute, tools, wealth-calculator, wealth-scale, faq,
     // wealth-tax-simulator, tax-calculator, simulator, embed (chrome-free
     // iframe shell, RFC-001f), not-found catch-all.
-    expect(router.getRoutes()).toHaveLength(15)
+    expect(router.getRoutes()).toHaveLength(16)
   })
 
   it('resolves /embed/wealth-shares to the chrome-free "embed" route', () => {
@@ -48,6 +48,11 @@ describe("Router configuration", () => {
   it('resolves /tools/wealth-tax-simulator to the "wealth-tax-simulator" route', () => {
     const resolved = router.resolve("/tools/wealth-tax-simulator")
     expect(resolved.name).toBe("wealth-tax-simulator")
+  })
+
+  it('resolves /tools to the tools index route', () => {
+    const resolved = router.resolve("/tools")
+    expect(resolved.name).toBe("tools")
   })
 
   it('resolves /data-sources to the "data-sources" route', () => {

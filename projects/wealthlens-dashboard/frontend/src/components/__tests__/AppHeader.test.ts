@@ -43,9 +43,18 @@ describe("AppHeader", () => {
     expect(texts).toContain("Front page")
     expect(texts).toContain("The data")
     expect(texts).toContain("Simulator")
+    expect(texts).toContain("Tools")
     expect(texts).toContain("Methodology")
     expect(texts).toContain("About")
     expect(texts).toContain("Contribute")
+  })
+
+  it("links to the tools index in desktop and mobile navigation", async () => {
+    const wrapper = mountHeader()
+    expect(wrapper.find('.nav-link[href="/tools"]').exists()).toBe(true)
+
+    await wrapper.find('button[aria-label="Toggle navigation menu"]').trigger("click")
+    expect(wrapper.find('.mobile-link[href="/tools"]').exists()).toBe(true)
   })
 
   it("has a hamburger button with correct aria attributes", () => {

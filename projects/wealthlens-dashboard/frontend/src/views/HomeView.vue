@@ -22,6 +22,7 @@ import { usePageMeta } from "@/composables/usePageMeta"
 import { SITE_URL } from "@/constants/site"
 import { chartDisplayTitle } from "@/config/chartArticles"
 import { HOME_PILLARS } from "@/config/homePillars"
+import { TOOLS } from "@/config/tools"
 
 /** Featured chart is lazy so the echarts chunk loads after first paint. */
 const WealthSharesChart = defineAsyncComponent({
@@ -47,35 +48,6 @@ usePageMeta({
   imageAlt: "WealthLens UK — UK Wealth Inequality. 57% of wealth held by top 10%.",
   twitterCard: "summary_large_image",
 })
-
-/** Interactive tools — the row that de-orphans them (reality-check F6). */
-const TOOLS = [
-  {
-    to: "/tools/wealth-scale",
-    name: "The wealth scale",
-    blurb: "1 pixel = £1,000. Scroll UK wealth drawn to scale.",
-  },
-  {
-    to: "/tools/wealth-calculator",
-    name: "Where do you fit?",
-    blurb: "Enter your household wealth, see your place in the distribution.",
-  },
-  {
-    to: "/tools/tax-calculator",
-    name: "Your real tax rate",
-    blurb: "How much of your income actually goes in tax.",
-  },
-  {
-    to: "/tools/wealth-tax-simulator",
-    name: "Wealth tax simulator",
-    blurb: "Set thresholds and rates; see what a wealth tax would raise.",
-  },
-  {
-    to: "/faq",
-    name: "FAQ & glossary",
-    blurb: "The questions everyone asks, and the terms the charts use.",
-  },
-] as const
 
 /** All 10 datasets in display order (the downloadable data layer). */
 const ALL_DATASETS = [

@@ -9,6 +9,7 @@ import HomeView from "../HomeView.vue"
 import AboutView from "../AboutView.vue"
 import WealthCalculatorView from "../WealthCalculatorView.vue"
 import NotFoundView from "../NotFoundView.vue"
+import ToolsView from "../ToolsView.vue"
 
 // The front page lazy-loads the featured chart; mock it so tests don't race
 // the echarts dynamic import against environment teardown.
@@ -44,6 +45,7 @@ function createMountPlugins() {
       { path: "/about", component: { template: "<div />" } },
       { path: "/charts/:name", component: { template: "<div />" } },
       { path: "/tools/wealth-calculator", component: { template: "<div />" } },
+      { path: "/tools", component: { template: "<div />" } },
     ],
   })
 
@@ -112,6 +114,23 @@ describe("Accessibility (axe-core)", () => {
     router.push("/tools/wealth-calculator")
     await router.isReady()
     const wrapper = mount(WealthCalculatorView, {
+      global: { plugins: [router] },
+    })
+    await flushPromises()
+
+    const results = await axe(wrapper.element, AXE_OPTIONS)
+    expect(
+      results.passes.length + results.violations.length + results.incomplete.length,
+    ).toBeGreaterThan(0)
+    const serious = filterSeriousViolations(results)
+    expect(serious).toHaveLength(0)
+  })
+
+  it("ToolsView has no critical accessibility violations", async () => {
+    const { router } = createMountPlugins()
+    router.push("/tools")
+    await router.isReady()
+    const wrapper = mount(ToolsView, {
       global: { plugins: [router] },
     })
     await flushPromises()
