@@ -4,9 +4,9 @@ Open, uncertainty-aware UK wealth-policy microsimulation platform.
 
 ## Status
 
-**Pre-alpha** -- package skeleton only. No functional simulation code yet.
+**Built:** the simulation engine, seven policy families, and uncertainty propagation are implemented.
 
-## What this package will do
+## What this package does
 
 WealthLens-Sim compares wealth-focused reform packages under a common evidence
 standard, with the live UK policy environment as its operational anchor. It is

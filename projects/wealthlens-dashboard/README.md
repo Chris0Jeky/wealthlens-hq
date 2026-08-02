@@ -10,7 +10,7 @@ Source-backed, mobile-first, accessible chart pages that make UK wealth inequali
 - **Data:** Reproducible pipelines in `automation/data-pipelines/`
 - **CI:** GitHub Actions — backend lint/mypy/bandit/pytest, frontend lint/typecheck/vitest/build
 
-## Datasets (10)
+## Chart datasets (12)
 
 | Slug | Source | CSV |
 |------|--------|-----|
@@ -18,6 +18,8 @@ Source-backed, mobile-first, accessible chart pages that make UK wealth inequali
 | housing-affordability | ONS Housing Affordability | `ons_housing_affordability_by_region.csv` |
 | wealth-by-decile | ONS Wealth & Assets Survey | `ons_wealth_by_decile.csv` |
 | cgt-concentration | HMRC CGT Statistics | `hmrc_cgt_concentration.csv` |
+| wage-stagnation | ONS Annual Survey of Hours and Earnings (ASHE) | `wage_stagnation.csv` |
+| inheritance-tax | HMRC Inheritance Tax Statistics | `inheritance-tax.csv` |
 | productivity-pay | ONS Productivity & Pay | `productivity_pay_gap.csv` |
 | gdhi-by-region | ONS GDHI | `ons_gdhi_by_region.csv` |
 | tax-composition | HMRC Tax Receipts | `tax_composition.csv` |
@@ -27,7 +29,7 @@ Source-backed, mobile-first, accessible chart pages that make UK wealth inequali
 
 ## API Endpoints
 
-All endpoints are prefixed with `/api/data/`:
+The API serves its currently listed datasets; its endpoints are prefixed with `/api/data/`:
 
 - `GET /` — list available datasets
 - `GET /metadata` — metadata for all datasets
@@ -38,16 +40,26 @@ All endpoints are prefixed with `/api/data/`:
 - `GET /{dataset}` — paginated rows (query: `page`, `limit`)
 - `GET /health` — health check
 
+The full 12-chart provenance list also includes two static chart data sources; `GET /` is the authoritative list of datasets served by the API.
+
 ## Charts
 
-Four interactive chart pages with broadsheet newspaper styling:
+Twelve interactive chart pages with broadsheet newspaper styling:
 
 - **Top 1% Wealth Share Since 1820** (`WealthSharesChart`)
 - **Housing Affordability by Region** (`HousingAffordabilityChart`)
 - **Wealth Distribution by Decile** (`WealthByDecileChart`)
 - **Capital Gains Concentration** (`CgtConcentrationChart`)
+- **Real Wage Stagnation** (`WageStagChart`)
+- **Who Pays Inheritance Tax?** (`InheritanceTaxChart`)
+- **The Productivity-Pay Gap** (`ProductivityPayChart`)
+- **Regional Disposable Income** (`GdhiByRegionChart`)
+- **What Britain Taxes** (`TaxCompositionChart`)
+- **Bank Rate and Inflation** (`BoeRatesChart`)
+- **Child Poverty by Region** (`ChildPovertyChart`)
+- **The Generational Wealth Gap** (`GenerationalWealthChart`)
 
-Each chart includes source citation, methodology note, and downloadable CSV.
+Each chart includes source citation and methodology note; downloadable CSVs are provided where licensing permits.
 
 ## Development
 
@@ -62,7 +74,7 @@ npm run dev            # Vite dev server on :3000
 
 # Tests
 make test              # pytest (backend + root)
-npm run test           # vitest (frontend, 583 tests)
+npm run test           # vitest (frontend)
 
 # Lint & type check
 make lint              # ruff + mypy
@@ -75,5 +87,5 @@ npm run typecheck      # vue-tsc
 - Headline and short interpretation
 - Source URL and access date
 - Methodology note
-- Downloadable CSV
+- Downloadable CSV where provided
 - Mobile-responsive and WCAG AA accessible implementation

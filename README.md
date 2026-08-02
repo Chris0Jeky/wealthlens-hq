@@ -17,25 +17,33 @@ WealthLens UK publishes source-backed, mobile-responsive, accessible interactive
 
 **[chris0jeky.github.io/wealthlens-hq](https://chris0jeky.github.io/wealthlens-hq/)**
 
-Interactive charts with broadsheet aesthetic, dark mode, keyboard navigation, and WCAG AA compliance:
+Twelve interactive charts with broadsheet aesthetic, dark mode, keyboard navigation, and WCAG AA compliance:
 
 - **UK Wealth Shares (1820–2024)** — Top 1% and top 10% share of net personal wealth (WID.world)
 - **Housing Affordability by Region** — House price to earnings ratios across England (ONS)
 - **Capital Gains Concentration** — How gains are concentrated among top taxpayers (HMRC)
 - **Wealth by Decile** — Distribution of wealth across population deciles (ONS WAS)
+- **Real Wage Stagnation**
+- **Who Pays Inheritance Tax?**
+- **The Productivity-Pay Gap**
+- **Regional Disposable Income**
+- **What Britain Taxes**
+- **Bank Rate and Inflation**
+- **Child Poverty by Region**
+- **The Generational Wealth Gap**
 
-Plus 10 backend datasets covering productivity-pay gap, GDHI by region, tax composition, BoE rates, child poverty, and generational wealth.
+Together these chart pages cover the dashboard's twelve chart-data slugs.
 
 ## Tech stack
 
 | Layer | Technology |
 |---|---|
-| Data pipelines | Python 3.11+, Pandas, Requests (10 pipelines) |
+| Data pipelines | Python 3.11+, Pandas, Requests |
 | Backend API | FastAPI, Pydantic, SQLite (dev) / PostgreSQL (prod) |
 | Frontend | Vue 3, TypeScript, Pinia, TailwindCSS, D3.js, Vite |
 | Infrastructure | GitHub Pages, GitHub Actions (CI + deploy) |
 | Dev tools | ruff, mypy, bandit, pytest, ESLint, vue-tsc, vitest |
-| Tests | 874 passing (156 root + 135 backend + 583 frontend) |
+| Tests | pytest, ESLint, vue-tsc, Vitest |
 
 ## Quick start
 
@@ -68,11 +76,11 @@ python run_all.py                      # Fetches live data, generates CSVs
 wealthlens-hq/
 ├── projects/wealthlens-dashboard/
 │   ├── charts/                      # Static Plotly HTML charts (deployed)
-│   ├── data/processed/              # Pipeline output CSVs (10 datasets)
+│   ├── data/processed/              # Pipeline output CSVs
 │   ├── backend/                     # FastAPI app (health, data, metadata, CSV, stats)
 │   └── frontend/                    # Vue 3 + TypeScript + Pinia + TailwindCSS
 ├── automation/
-│   ├── data-pipelines/              # 10 Python fetch/process scripts
+│   ├── data-pipelines/              # Python fetch/process scripts
 │   └── social-media/               # chart_to_social.py (4 platform sizes)
 ├── research/                        # Raw inputs, synthesised insights, data sources
 ├── strategy/                        # Branding, content, outreach playbooks
