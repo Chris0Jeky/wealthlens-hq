@@ -104,6 +104,9 @@ const dataVintage = typeof __WL_DATA_VINTAGE__ !== "undefined" ? __WL_DATA_VINTA
         <RouterLink to="/simulator" class="nav-link" active-class="active" @click="closeMenu()">
           {{ $t("nav.simulator") }}
         </RouterLink>
+        <RouterLink to="/tools" class="nav-link" active-class="active" @click="closeMenu()">
+          {{ $t("footer.tools") }}
+        </RouterLink>
         <RouterLink to="/data-sources" class="nav-link" active-class="active" @click="closeMenu()">
           {{ $t("nav.sources") }}
         </RouterLink>
@@ -170,6 +173,9 @@ const dataVintage = typeof __WL_DATA_VINTAGE__ !== "undefined" ? __WL_DATA_VINTA
       </RouterLink>
       <RouterLink to="/simulator" class="mobile-link" active-class="active" @click="closeMenu()">
         {{ $t("nav.simulator") }}
+      </RouterLink>
+      <RouterLink to="/tools" class="mobile-link" active-class="active" @click="closeMenu()">
+        {{ $t("footer.tools") }}
       </RouterLink>
       <RouterLink to="/data-sources" class="mobile-link" active-class="active" @click="closeMenu()">
         {{ $t("nav.sources") }}

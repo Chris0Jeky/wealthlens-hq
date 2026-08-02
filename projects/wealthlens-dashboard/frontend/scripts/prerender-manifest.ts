@@ -33,6 +33,7 @@ const STATIC_ROUTES: PrerenderRoute[] = [
   { path: "/contribute", sitemap: true, changefreq: "yearly", priority: 0.5 },
   { path: "/faq", sitemap: true, changefreq: "monthly", priority: 0.6 },
   { path: "/simulator", sitemap: true, changefreq: "monthly", priority: 0.8 },
+  { path: "/tools", sitemap: true, changefreq: "monthly", priority: 0.7 },
   { path: "/tools/wealth-calculator", sitemap: true, changefreq: "monthly", priority: 0.7 },
   { path: "/tools/wealth-scale", sitemap: true, changefreq: "monthly", priority: 0.7 },
   { path: "/tools/wealth-tax-simulator", sitemap: true, changefreq: "monthly", priority: 0.7 },

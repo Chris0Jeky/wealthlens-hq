@@ -29,7 +29,7 @@ describe("buildPrerenderRoutes", () => {
     }
   })
 
-  it("covers the home page, every static page, and all four tools", () => {
+  it("covers the home page, every static page, the tools index, and all four tools", () => {
     for (const p of [
       "/",
       "/about",
@@ -38,6 +38,7 @@ describe("buildPrerenderRoutes", () => {
       "/contribute",
       "/faq",
       "/simulator",
+      "/tools",
       "/tools/wealth-calculator",
       "/tools/wealth-scale",
       "/tools/wealth-tax-simulator",
@@ -80,6 +81,7 @@ describe("routeToOutputFile", () => {
   it("maps routes to flat .html files preserving the URL form (ADR 0001)", () => {
     expect(routeToOutputFile("/charts/wealth-shares")).toBe("charts/wealth-shares.html")
     expect(routeToOutputFile("/tools/wealth-scale")).toBe("tools/wealth-scale.html")
+    expect(routeToOutputFile("/tools")).toBe("tools.html")
     expect(routeToOutputFile("/faq")).toBe("faq.html")
   })
 })
@@ -94,6 +96,7 @@ describe("buildSitemapXml", () => {
     expect(locs).toContain("https://chris0jeky.github.io/wealthlens-hq/")
     expect(locs).toContain("https://chris0jeky.github.io/wealthlens-hq/charts/wealth-shares")
     expect(locs).toContain("https://chris0jeky.github.io/wealthlens-hq/tools/wealth-scale")
+    expect(locs).toContain("https://chris0jeky.github.io/wealthlens-hq/tools")
     // Non-slash URL form everywhere except the root
     for (const loc of locs.slice(1)) {
       expect(loc.endsWith("/")).toBe(false)
