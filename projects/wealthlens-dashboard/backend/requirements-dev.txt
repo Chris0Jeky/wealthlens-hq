@@ -11,7 +11,7 @@ ruff>=0.15.21
 mypy>=2.3.0,<3
 # pandas-stubs: backend modules import pandas and it is NOT in the mypy
 # ignore-missing-imports overrides, so `mypy .` needs the stubs to pass.
-pandas-stubs>=3.0.3.260530
+pandas-stubs>=3.0.5.260730
 # httpx: fastapi.testclient.TestClient requires it; the backend pytest suite
 # imports TestClient, so a clean install needs httpx for the tests to run.
 httpx>=0.28.1
