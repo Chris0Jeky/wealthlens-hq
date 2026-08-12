@@ -18,12 +18,11 @@ from pathlib import Path
 ROOT = Path(os.environ.get("CLAUDE_PROJECT_DIR", ".")).resolve()
 LEDGER = ROOT / ".claude" / "local" / "failure_ledger.jsonl"
 SECRET_ASSIGNMENT_RE = re.compile(
-    r"(?i)\b([A-Za-z0-9_-]{0,64}"
+    r"(?i)(?P<name>[^\s\"'=:,;{}\[\]]*"
     r"(?:token|secret|password|api[_-]?key|auth(?:orization)?|credential"
     r"|(?:encryption|signing|private|ssh|gpg|hmac|jwt|session|csrf|access)[_-]key)"
     r"(?:[_-]key)?)"
-    r"[\"'\s]*[:=][\"'\s]*"
-    r"(?:\"[^\"\r\n]*\"|'[^'\r\n]*'|[^\s,;}\]\r\n]+)"
+    r"[\"' \t]*[:=][ \t]*(?P<quote>[\"'])?"
 )
 AUTHORIZATION_RE = re.compile(
     r"(?i)\bauthorization\b\s*[:=]\s*(?:bearer\s+)?[A-Za-z0-9._~+/=-]+"
@@ -34,14 +33,39 @@ CONN_STRING_RE = re.compile(
 )
 
 
+def _redact_secret_assignments(text: str) -> str:
+    """Redact assignment values without persisting multiline quoted secrets."""
+    parts: list[str] = []
+    cursor = 0
+    for match in SECRET_ASSIGNMENT_RE.finditer(text):
+        parts.append(text[cursor : match.start()])
+        parts.append(f"{match.group('name')}=<redacted>")
+        cursor = match.end()
+        quote = match.group("quote")
+        if quote:
+            closing_quote = text.find(quote, cursor)
+            cursor = len(text) if closing_quote < 0 else closing_quote + 1
+        else:
+            while cursor < len(text) and text[cursor] not in " \t\r\n,;}][":
+                cursor += 1
+    parts.append(text[cursor:])
+    return "".join(parts)
+
+
 def scrub(text: object, limit: int = 240) -> str:
-    s = str(text or "")
+    raw = str(text or "")
+    # Only the first ``limit`` characters can be persisted. Keep a bounded
+    # look-ahead so an assignment beginning at the boundary can be consumed,
+    # while making every regular-expression pass independent of payload size.
+    scan_limit = limit + 1024
+    source_truncated = len(raw) > limit
+    s = raw[:scan_limit]
     s = AUTHORIZATION_RE.sub("authorization=<redacted>", s)
     s = BEARER_RE.sub("Bearer <redacted>", s)
     s = CONN_STRING_RE.sub(lambda m: m.group(0).replace(m.group(1), "<redacted>"), s)
-    s = SECRET_ASSIGNMENT_RE.sub(lambda m: f"{m.group(1)}=<redacted>", s)
+    s = _redact_secret_assignments(s)
     s = s.replace(str(ROOT), ".")
-    if len(s) > limit:
+    if source_truncated or len(s) > limit:
         s = s[:limit] + "... <truncated>"
     return s
 
