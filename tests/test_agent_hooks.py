@@ -108,6 +108,56 @@ def test_post_tool_failure_survives_whitespace_target(tmp_path: Path) -> None:
     assert out.returncode == 0, out.stderr
 
 
+def test_post_tool_failure_redacts_prefixed_secret_assignments(tmp_path: Path) -> None:
+    payload = json.dumps(
+        {
+            "tool_name": "Bash",
+            "tool_input": {"command": "deploy"},
+            "error": (
+                "deploy_signing_key='signing-value' "
+                'service_api_key="api-value" token=token-value'
+            ),
+        }
+    )
+    out = subprocess.run(
+        [sys.executable, str(POST)],
+        input=payload,
+        capture_output=True,
+        text=True,
+        env={"CLAUDE_PROJECT_DIR": str(tmp_path), "SYSTEMROOT": "C:\\Windows", "PATH": ""},
+        timeout=5,
+    )
+
+    assert out.returncode == 0, out.stderr
+    ledger = (tmp_path / ".claude" / "local" / "failure_ledger.jsonl").read_text(
+        encoding="utf-8"
+    )
+    assert ledger.count("<redacted>") == 3
+    assert "signing-value" not in ledger
+    assert "api-value" not in ledger
+    assert "token-value" not in ledger
+
+
+def test_post_tool_failure_secret_scan_is_bounded_for_long_prefix(tmp_path: Path) -> None:
+    payload = json.dumps(
+        {
+            "tool_name": "Bash",
+            "tool_input": {"command": "deploy"},
+            "error": ("prefix_" * 100_000) + "signing_key=secret-value",
+        }
+    )
+    out = subprocess.run(
+        [sys.executable, str(POST)],
+        input=payload,
+        capture_output=True,
+        text=True,
+        env={"CLAUDE_PROJECT_DIR": str(tmp_path), "SYSTEMROOT": "C:\\Windows", "PATH": ""},
+        timeout=5,
+    )
+
+    assert out.returncode == 0, out.stderr
+
+
 def test_session_start_fails_open_outside_repo(tmp_path: Path) -> None:
     """With no tier.json / ACTION-REQUIRED.md present, the hook must still emit
     valid hook JSON (fallback context) and exit 0."""

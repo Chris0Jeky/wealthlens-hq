@@ -18,11 +18,12 @@ from pathlib import Path
 ROOT = Path(os.environ.get("CLAUDE_PROJECT_DIR", ".")).resolve()
 LEDGER = ROOT / ".claude" / "local" / "failure_ledger.jsonl"
 SECRET_ASSIGNMENT_RE = re.compile(
-    r"(?i)\b((?:\w+[_-])?(?:token|secret|password|api[_-]?key|auth(?:orization)?|credential)"
-    r"(?:[_-]key)?"
-    r"|(?:\w+[_-])*(?:encryption|signing|private|ssh|gpg|hmac|jwt|session|csrf|access)[_-]key)"
+    r"(?i)\b([A-Za-z0-9_-]{0,64}"
+    r"(?:token|secret|password|api[_-]?key|auth(?:orization)?|credential"
+    r"|(?:encryption|signing|private|ssh|gpg|hmac|jwt|session|csrf|access)[_-]key)"
+    r"(?:[_-]key)?)"
     r"[\"'\s]*[:=][\"'\s]*"
-    r"(?:\"[^\"]*\"|'[^']*'|[^\s,;}\]]+)"
+    r"(?:\"[^\"\r\n]*\"|'[^'\r\n]*'|[^\s,;}\]\r\n]+)"
 )
 AUTHORIZATION_RE = re.compile(
     r"(?i)\bauthorization\b\s*[:=]\s*(?:bearer\s+)?[A-Za-z0-9._~+/=-]+"
