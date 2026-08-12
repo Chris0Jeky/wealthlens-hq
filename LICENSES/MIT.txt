@@ -2,8 +2,10 @@ MIT License
 
 Copyright (c) 2026 Chris (WealthLens UK)
 
-NOTE: This MIT license applies to the dashboard frontend, API, and data
-pipelines. The simulator core at packages/wealthlens-sim/ is licensed under
+NOTE: This historical MIT license applies only to versions and copies of the
+dashboard frontend, API, and data pipelines released before 12 August 2026.
+Current versions of those components are GPL-3.0-only; see LICENSE and
+RELICENSING.md. The simulator core at packages/wealthlens-sim/ is licensed under
 AGPL-3.0-or-later — see packages/wealthlens-sim/LICENSE for that license text.
 Documentation, methods notes, and registries/ are CC-BY-4.0. Synthetic public
 datasets are CC0.
