@@ -67,7 +67,7 @@ Every dataset used in WealthLens charts is listed here with its licence and attr
 
 ## WealthLens output licence
 
-- Code: MIT
+- Dashboard, API, and pipeline code: GPL-3.0-only (see the repository root `LICENSE` and `LICENSING.md`)
 - Chart images and visualisations: CC-BY 4.0
 - When sharing WealthLens charts, please credit "WealthLens UK" and link to the source data
 - **Known conflict to resolve (flagged 2026-06-27):** the Generational Wealth Gap chart
