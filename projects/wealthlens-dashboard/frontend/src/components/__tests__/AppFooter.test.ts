@@ -28,9 +28,9 @@ describe("AppFooter", () => {
     expect(wrapper.text()).toContain(`© ${year} WealthLens UK`)
   })
 
-  it("renders the MIT licence text", () => {
+  it("renders the GPLv3 licence text", () => {
     const wrapper = mountFooter()
-    expect(wrapper.text()).toContain("MIT licensed")
+    expect(wrapper.text()).toContain("GPLv3 licensed")
   })
 
   it("renders GitHub link with correct href", () => {

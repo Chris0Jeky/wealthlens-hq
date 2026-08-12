@@ -80,10 +80,10 @@ Every assumption is machine-readable and traceable (see planned `registries/assu
 
 ## Licensing
 
-Blueprint v5 §17.5 specifies three tiers (AGPL-3.0, CC-BY-4.0, CC0). The MIT tier for the dashboard and data pipelines reflects the implemented repository layout, where the existing dashboard predates the simulator and uses a permissive license.
+Blueprint v5 §17.5 specifies three tiers (AGPL-3.0, CC-BY-4.0, CC0). The dashboard and data-pipeline tier moved from MIT to GPL-3.0-only by owner decision on 2026-08-12. The simulator keeps its existing AGPL boundary.
 
 - **Simulator core** (`packages/wealthlens-sim/`): AGPL-3.0-or-later
-- **Dashboard frontend, API, and data pipelines**: MIT
+- **Dashboard frontend, API, and data pipelines**: GPL-3.0-only
 - **Documentation, reports, and methods notes**: CC-BY-4.0
 - **Synthetic public datasets**: CC0
 

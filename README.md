@@ -5,7 +5,7 @@
 [![Deploy Charts](https://github.com/Chris0Jeky/wealthlens-hq/actions/workflows/deploy.yml/badge.svg)](https://github.com/Chris0Jeky/wealthlens-hq/actions/workflows/deploy.yml)
 [![CI Backend](https://github.com/Chris0Jeky/wealthlens-hq/actions/workflows/ci-backend.yml/badge.svg)](https://github.com/Chris0Jeky/wealthlens-hq/actions/workflows/ci-backend.yml)
 [![CI Frontend](https://github.com/Chris0Jeky/wealthlens-hq/actions/workflows/ci-frontend.yml/badge.svg)](https://github.com/Chris0Jeky/wealthlens-hq/actions/workflows/ci-frontend.yml)
-[![License: MIT / AGPL-3.0](https://img.shields.io/badge/License-MIT%20%2F%20AGPL--3.0-blue.svg)](LICENSE)
+[![License: GPL-3.0 / AGPL-3.0](https://img.shields.io/badge/License-GPL--3.0%20%2F%20AGPL--3.0-blue.svg)](LICENSING.md)
 [![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-blue.svg)](https://www.python.org/downloads/)
 [![Node 22+](https://img.shields.io/badge/Node-22%2B-green.svg)](https://nodejs.org/)
 
@@ -138,7 +138,7 @@ We welcome contributions. See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## Licence
 
-Dashboard, API, and data pipelines: [MIT](LICENSE) — Simulator core (`packages/wealthlens-sim/`): [AGPL-3.0-or-later](packages/wealthlens-sim/LICENSE) — Documentation and registries: [CC-BY 4.0](https://creativecommons.org/licenses/by/4.0/) — Synthetic datasets: CC0
+Dashboard, API, and data pipelines: [GPL-3.0-only](LICENSE) — Simulator core (`packages/wealthlens-sim/`): [AGPL-3.0-or-later](packages/wealthlens-sim/LICENSE) — Documentation and registries: [CC-BY 4.0](https://creativecommons.org/licenses/by/4.0/) — Synthetic datasets: CC0. See [LICENSING.md](LICENSING.md) for the complete boundary map.
 
 ---
 

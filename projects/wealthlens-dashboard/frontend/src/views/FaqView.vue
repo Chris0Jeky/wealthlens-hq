@@ -39,7 +39,7 @@ const faqs = [
   {
     question: "Can I use these charts in my own work?",
     answer:
-      "Yes. All code is MIT-licensed and all charts are available under CC-BY 4.0. You can embed, screenshot, or adapt any chart as long as you credit WealthLens UK and the original data source.",
+      "Yes. Dashboard, API, and pipeline code is GPL-3.0-only; simulator code is AGPL-3.0-or-later and all charts are available under CC-BY 4.0. You can embed, screenshot, or adapt any chart as long as you credit WealthLens UK and the original data source.",
   },
   {
     question: "How can I contribute?",

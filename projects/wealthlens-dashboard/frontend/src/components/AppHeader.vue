@@ -49,7 +49,7 @@ const dataVintage = typeof __WL_DATA_VINTAGE__ !== "undefined" ? __WL_DATA_VINTA
         <span class="band-issue">Issue №07 · Vol. MMXXVI</span>
       </div>
       <div class="band-right">
-        <span>Open source · MIT</span>
+        <span>Open source · GPLv3</span>
         <span>England · Wales · Scotland · NI</span>
       </div>
     </div>

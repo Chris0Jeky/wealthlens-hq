@@ -132,8 +132,8 @@ app = FastAPI(
         "url": "https://github.com/Chris0Jeky/wealthlens-hq",
     },
     license_info={
-        "name": "MIT",
-        "url": "https://opensource.org/licenses/MIT",
+        "name": "GPL-3.0-only",
+        "url": "https://www.gnu.org/licenses/gpl-3.0.html",
     },
     openapi_tags=tags_metadata,
     lifespan=lifespan,
