@@ -33,4 +33,6 @@ AGPL-3.0-or-later. See [LICENSE](./LICENSE) for the full text.
 
 The AGPL license is chosen for compatibility with PolicyEngine-UK (also
 AGPL-3.0) and to prevent private capture of a public-interest simulator.
-The dashboard frontend and existing data pipelines remain MIT-licensed.
+The dashboard frontend, API, and data pipelines are GPL-3.0-only. The
+repository's complete multi-licence boundary map is in
+[LICENSING.md](../../LICENSING.md).
