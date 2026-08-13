@@ -143,7 +143,7 @@ const year = new Date().getFullYear()
 
     <!-- Bottom bar -->
     <div class="foot-base">
-      <span>{{ $t("footer.copyright", { year }) }} · {{ $t("footer.mitLicensed") }}</span>
+      <span>{{ $t("footer.copyright", { year }) }} · {{ $t("footer.codeLicensed") }}</span>
       <HealthStatus />
       <span>{{ $t("footer.tagline") }}</span>
     </div>

@@ -31,7 +31,7 @@
   },
   "footer": {
     "copyright": "© {year} WealthLens UK",
-    "mitLicensed": "MIT licensed",
+    "codeLicensed": "GPLv3 licensed",
     "tagline": "Made in London · Independent · Non-partisan",
     "description": "Every statistic on this site links to its primary source. Source-backed. Open-source. Impossible to ignore.",
     "explore": "Explore",
@@ -47,7 +47,7 @@
     "wealthTaxSimulator": "Wealth tax simulator",
     "faq": "FAQ & glossary",
     "project": "Project",
-    "licence": "Licence (MIT)",
+    "licence": "Licence (GPLv3)",
     "follow": "Follow"
   }
 }

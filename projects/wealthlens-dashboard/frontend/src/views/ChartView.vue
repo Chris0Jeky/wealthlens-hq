@@ -445,7 +445,7 @@ usePageMeta({
     <footer class="chart-foot" role="contentinfo">
       <div class="chart-foot__inner">
         <span>
-          &copy; 2026 WealthLens UK &middot; MIT licensed &middot; chart-id
+          &copy; 2026 WealthLens UK &middot; GPLv3 licensed &middot; chart-id
           {{ config.source.chartId }}
         </span>
         <span>
