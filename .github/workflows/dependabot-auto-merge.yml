@@ -1,8 +1,7 @@
 name: Dependabot auto-merge
 
-# Auto-approve + enable auto-merge for LOW-RISK Dependabot PRs: patch/minor bumps
-# of development and transitive (indirect) dependencies. GitHub only completes the
-# merge once all required status checks are green, so this never merges a red PR.
+# Enable GitHub's auto-merge for LOW-RISK Dependabot PRs: patch/minor bumps of
+# development and transitive (indirect) dependencies.
 #
 # Deliberately NOT auto-merged (left for manual review):
 #   - major version bumps (breaking changes);
@@ -14,15 +13,25 @@ name: Dependabot auto-merge
 # Dependabot metadata and runs `gh` against the PR. The job is gated on the actor
 # being dependabot[bot].
 #
-# Prerequisites (one-time, in repo settings — a human must enable these):
+# Why there is no `gh pr review --approve` step: GitHub structurally forbids the
+# Actions identity from approving pull requests — `addPullRequestReview` returns
+# "GitHub Actions is not permitted to approve pull requests" regardless of the
+# repository's "Allow GitHub Actions to create and approve pull requests"
+# setting when the reviewer is GITHUB_TOKEN itself. An approval is only needed if
+# the base branch requires one; if `main` ever gains a required-review rule, the
+# approval must come from a real reviewer or a bot identity that is not
+# GITHUB_TOKEN (e.g. a PAT / GitHub App), not from this workflow.
+#
+# Prerequisites (one-time, in repo settings — only a human with admin can enable
+# these). The "Check auto-merge prerequisites" step below verifies both and skips
+# with a named cause when either is off, so a missing setting is reported instead
+# of crashing the job on every Dependabot PR:
 #   1. Settings > General > "Allow auto-merge" must be ON, or `gh pr merge --auto`
-#      errors.
-#   2. Branch protection on `main` should require the CI checks, otherwise
-#      auto-merge completes as soon as the PR is mergeable (no green-gate).
-#   3. Settings > Actions > General > "Allow GitHub Actions to create and approve
-#      pull requests" must be ON, or the `gh pr review --approve` step below fails
-#      (personal repos default this OFF). GITHUB_TOKEN performs the approval;
-#      alternatively, drop the approve step if `main` does not require a review.
+#      errors with "Auto merge is not allowed for this repository".
+#   2. `main` must have branch protection requiring the CI checks. Auto-merge only
+#      waits for checks that protection marks *required*; on an unprotected branch
+#      GitHub would complete the merge immediately, red CI and all. Protection is
+#      therefore what makes this workflow safe, not an optional extra.
 
 on:
   pull_request_target:
@@ -46,19 +55,40 @@ jobs:
         id: meta
         uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
 
-      - name: Approve and enable auto-merge (patch/minor dev + transitive)
+      - name: Check auto-merge prerequisites
+        id: prereq
+        run: |
+          set -euo pipefail
+          allow_auto_merge=$(gh api "repos/${GITHUB_REPOSITORY}" --jq '.allow_auto_merge')
+          protected=$(gh api "repos/${GITHUB_REPOSITORY}/branches/${BASE_REF}" --jq '.protected')
+          echo "allow-auto-merge=${allow_auto_merge}" >> "$GITHUB_OUTPUT"
+          echo "protected=${protected}" >> "$GITHUB_OUTPUT"
+          if [ "${allow_auto_merge}" = "true" ] && [ "${protected}" = "true" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Auto-merge not enabled for this PR: repository allow_auto_merge=${allow_auto_merge}, branch ${BASE_REF} protected=${protected}. Both must be true — see the prerequisites in .github/workflows/dependabot-auto-merge.yml."
+          fi
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Enable auto-merge (patch/minor dev + transitive)
         if: >-
-          ${{ (steps.meta.outputs.update-type == 'version-update:semver-patch' ||
+          ${{ steps.prereq.outputs.ready == 'true' &&
+              (steps.meta.outputs.update-type == 'version-update:semver-patch' ||
                steps.meta.outputs.update-type == 'version-update:semver-minor') &&
               (steps.meta.outputs.dependency-type == 'direct:development' ||
                steps.meta.outputs.dependency-type == 'indirect') }}
         run: |
-          gh pr review --approve "$PR_URL"
           gh pr merge --auto --merge "$PR_URL"
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      # Only fires when the bump itself is out of scope. A low-risk bump blocked
+      # purely by a missing repo setting gets the ::warning:: annotation above
+      # instead, so an unconfigured repo does not comment on every Dependabot PR.
       - name: Leave a note on bumps left for manual review
         if: >-
           ${{ !((steps.meta.outputs.update-type == 'version-update:semver-patch' ||
