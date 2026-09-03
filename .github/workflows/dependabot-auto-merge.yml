@@ -11,27 +11,40 @@ name: Dependabot auto-merge
 # Security: this uses `pull_request_target` (needs write access to enable
 # auto-merge), but it never checks out or executes the PR's code — it only reads
 # Dependabot metadata and runs `gh` against the PR. The job is gated on the actor
-# being dependabot[bot].
+# being dependabot[bot], and every value taken from an action output or the event
+# payload is passed through `env:` rather than pasted into a `run:` string.
 #
 # Why there is no `gh pr review --approve` step: GitHub structurally forbids the
 # Actions identity from approving pull requests — `addPullRequestReview` returns
-# "GitHub Actions is not permitted to approve pull requests" regardless of the
-# repository's "Allow GitHub Actions to create and approve pull requests"
-# setting when the reviewer is GITHUB_TOKEN itself. An approval is only needed if
-# the base branch requires one; if `main` ever gains a required-review rule, the
-# approval must come from a real reviewer or a bot identity that is not
-# GITHUB_TOKEN (e.g. a PAT / GitHub App), not from this workflow.
+# "GitHub Actions is not permitted to approve pull requests" when the reviewer is
+# GITHUB_TOKEN itself, regardless of the repository's "Allow GitHub Actions to
+# create and approve pull requests" setting. An approval is only needed if the
+# base branch requires one; if `main` ever gains a required-review rule, the
+# approval must come from a real reviewer or an identity that is not
+# GITHUB_TOKEN (a PAT or a GitHub App), never from this workflow.
 #
-# Prerequisites (one-time, in repo settings — only a human with admin can enable
-# these). The "Check auto-merge prerequisites" step below verifies both and skips
-# with a named cause when either is off, so a missing setting is reported instead
-# of crashing the job on every Dependabot PR:
+# Prerequisites (one-time, in repo settings — only a human with admin can set
+# these). The "Check auto-merge prerequisites" step verifies what it can and
+# skips with a named cause otherwise, so a missing setting is reported instead of
+# crashing the job on every Dependabot PR:
+#
 #   1. Settings > General > "Allow auto-merge" must be ON, or `gh pr merge --auto`
 #      errors with "Auto merge is not allowed for this repository".
-#   2. `main` must have branch protection requiring the CI checks. Auto-merge only
-#      waits for checks that protection marks *required*; on an unprotected branch
-#      GitHub would complete the merge immediately, red CI and all. Protection is
-#      therefore what makes this workflow safe, not an optional extra.
+#
+#   2. `main` must have branch protection, AND that protection must list the CI
+#      checks as *required*.
+#
+#      Read that second half carefully. Auto-merge only waits for checks that
+#      protection marks required; on a branch with no required checks it
+#      completes as soon as the PR is mergeable — red CI and all.
+#
+#      This workflow can only verify that the branch is protected *at all*. The
+#      `.protected` flag is true for any rule, including ones irrelevant here
+#      (signed commits, linear history), and the endpoint listing the required
+#      contexts needs admin rights GITHUB_TOKEN does not have. So a protected
+#      branch whose required-checks list is empty WILL pass this gate and WILL
+#      auto-merge red PRs. Whoever turns on setting 1 owns making the
+#      required-checks list non-empty; nothing here can confirm it for them.
 
 on:
   pull_request_target:
@@ -58,17 +71,41 @@ jobs:
       - name: Check auto-merge prerequisites
         id: prereq
         run: |
-          set -euo pipefail
-          allow_auto_merge=$(gh api "repos/${GITHUB_REPOSITORY}" --jq '.allow_auto_merge')
-          protected=$(gh api "repos/${GITHUB_REPOSITORY}/branches/${BASE_REF}" --jq '.protected')
-          echo "allow-auto-merge=${allow_auto_merge}" >> "$GITHUB_OUTPUT"
-          echo "protected=${protected}" >> "$GITHUB_OUTPUT"
-          if [ "${allow_auto_merge}" = "true" ] && [ "${protected}" = "true" ]; then
-            echo "ready=true" >> "$GITHUB_OUTPUT"
-          else
+          # Deliberately NOT `set -e`: an unreadable setting must skip with a
+          # named cause, not fail the job. A red `auto-merge` check on every
+          # Dependabot PR is the exact symptom this workflow was fixed to stop.
+          set -uo pipefail
+
+          skip() {
             echo "ready=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::Auto-merge not enabled for this PR: repository allow_auto_merge=${allow_auto_merge}, branch ${BASE_REF} protected=${protected}. Both must be true — see the prerequisites in .github/workflows/dependabot-auto-merge.yml."
+            echo "::warning::Auto-merge not enabled for this PR: $*"
+            exit 0
+          }
+
+          # `--jq '.x'` prints true or false, and an empty line if the key is
+          # absent (e.g. the token cannot see that field) — the `*)` arms below
+          # catch that. Do NOT "tidy" this with a `// "default"` fallback: jq's
+          # `//` treats false as empty, so `.allow_auto_merge // "unknown"`
+          # returns "unknown" for a setting that is genuinely OFF. Measured.
+          if ! allow_auto_merge=$(gh api "repos/${GITHUB_REPOSITORY}" --jq '.allow_auto_merge'); then
+            skip "could not read the repository's allow_auto_merge setting (the API call failed)."
           fi
+          case "${allow_auto_merge}" in
+            true) ;;
+            false) skip "the repository setting Settings > General > 'Allow auto-merge' is OFF." ;;
+            *) skip "could not determine 'Allow auto-merge' (got '${allow_auto_merge}') — GITHUB_TOKEN may not be permitted to read it." ;;
+          esac
+
+          if ! protected=$(gh api "repos/${GITHUB_REPOSITORY}/branches/${BASE_REF}" --jq '.protected'); then
+            skip "could not read branch protection for '${BASE_REF}' (the API call failed)."
+          fi
+          case "${protected}" in
+            true) ;;
+            false) skip "branch '${BASE_REF}' has no protection, so auto-merge would not wait for CI." ;;
+            *) skip "could not determine protection for '${BASE_REF}' (got '${protected}')." ;;
+          esac
+
+          echo "ready=true" >> "$GITHUB_OUTPUT"
         env:
           BASE_REF: ${{ github.event.pull_request.base.ref }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -87,8 +124,10 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # Only fires when the bump itself is out of scope. A low-risk bump blocked
-      # purely by a missing repo setting gets the ::warning:: annotation above
-      # instead, so an unconfigured repo does not comment on every Dependabot PR.
+      # purely by a missing prerequisite gets the ::warning:: from the step above
+      # instead, so an unconfigured repo does not comment on every Dependabot PR
+      # — and this step's wording stays true, because it only ever runs for bumps
+      # that really are major or direct-production.
       - name: Leave a note on bumps left for manual review
         if: >-
           ${{ !((steps.meta.outputs.update-type == 'version-update:semver-patch' ||
@@ -96,7 +135,9 @@ jobs:
                 (steps.meta.outputs.dependency-type == 'direct:development' ||
                  steps.meta.outputs.dependency-type == 'indirect')) }}
         run: |
-          gh pr comment "$PR_URL" --body "Auto-merge skipped: \`${{ steps.meta.outputs.dependency-type }}\` / \`${{ steps.meta.outputs.update-type }}\` is a major or direct-production bump — leaving this one for manual review."
+          gh pr comment "$PR_URL" --body "Auto-merge skipped: \`${DEPENDENCY_TYPE}\` / \`${UPDATE_TYPE}\` is a major or direct-production bump — leaving this one for manual review."
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
+          DEPENDENCY_TYPE: ${{ steps.meta.outputs.dependency-type }}
+          UPDATE_TYPE: ${{ steps.meta.outputs.update-type }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

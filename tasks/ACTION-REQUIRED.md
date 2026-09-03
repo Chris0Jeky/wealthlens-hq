@@ -80,10 +80,10 @@ Last updated: 2026-07-11 (reality-check session; added item 11 — the live news
 
 7. - [ ] **Merge the `make ci-quick` reliability fix (PR #350)** — **P2, authorized + done, pending merge**
    - **Status (2026-06-05):** you authorized this; **fixed in PR #350**. The Makefile no longer swallows failures (`|| echo …` removed), so `make ci-quick` now runs real ruff + mypy + pytest and fails loudly. The dashboard-backend failures it used to hide are already resolved — a real run now shows **201 passed**. PR #350 also installs dev deps in `backend-install`, adds job timeouts, and enables Dependabot auto-merge.
-   - **Repo-setting actions for you (3, one-time)** — for Dependabot auto-merge to work end-to-end:
-     1. **Settings → General → Allow auto-merge** (ON), else `gh pr merge --auto` errors.
-     2. **Branch protection on `main`** requiring the CI checks (so auto-merge only completes on green).
-     3. **Settings → Actions → General → Allow GitHub Actions to create and approve pull requests** (ON) — personal repos default this OFF, and without it the workflow's `gh pr review --approve` step fails. (Surfaced by review on #350; the workflow now documents this prerequisite.)
+   - **Repo-setting actions for you (2, one-time)** — for Dependabot auto-merge to work end-to-end. Both measured OFF on 2026-09-03; do them **together**, and in this order:
+     1. **Branch protection on `main`** — and it must **list the CI checks as required**, not merely exist. Auto-merge waits only for checks that protection marks *required*; a protected branch with an empty required-checks list auto-merges red PRs. Currently `main` has no protection at all (`GET /branches/main/protection` → 404).
+     2. **Settings → General → Allow auto-merge** (ON), else `gh pr merge --auto` errors with "Auto merge is not allowed for this repository". Currently `allow_auto_merge: false`. Turn this on *after* (or with) step 1 — the other order is the unsafe one.
+   - **~~3. Allow GitHub Actions to create and approve pull requests~~ — OBSOLETE, do not enable.** This was listed because the workflow ran `gh pr review --approve`. That call can never succeed: GitHub structurally forbids the Actions identity from approving PRs (`addPullRequestReview`: "GitHub Actions is not permitted to approve pull requests"), and this setting does not lift it for `GITHUB_TOKEN` itself. The approve step has been removed, and `main` requires no review anyway. Enabling the setting would widen repo-wide Actions permissions for no benefit.
    - **Note:** #350 was hardened further during review this session — `requirements-dev.txt` now pins ruff/mypy/httpx/pandas-stubs so a clean `make install && make ci-quick` genuinely passes, and `pipeline-test`/`frontend-install` were fixed. All findings addressed; CI green.
    - **Done when:** PR #350 merges (then move this to Done).
 
