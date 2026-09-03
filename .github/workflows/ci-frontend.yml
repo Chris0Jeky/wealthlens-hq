@@ -8,9 +8,6 @@ on:
       - ".github/workflows/ci-frontend.yml"
   pull_request:
     branches: [main]
-    paths:
-      - "projects/wealthlens-dashboard/frontend/**"
-      - ".github/workflows/ci-frontend.yml"
   # Weekly catch-all: the path-filtered triggers above don't fire while the frontend
   # is idle, so an eslint/vue-tsc/vitest or npm dependency drift that breaks the
   # frontend lint/typecheck/test/build would go unnoticed until the next frontend
