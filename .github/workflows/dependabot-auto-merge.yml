@@ -43,8 +43,9 @@ name: Dependabot auto-merge
 #      (signed commits, linear history), and the endpoint listing the required
 #      contexts needs admin rights GITHUB_TOKEN does not have. So a protected
 #      branch whose required-checks list is empty WILL pass this gate and WILL
-#      auto-merge red PRs. Whoever turns on setting 1 owns making the
-#      required-checks list non-empty; nothing here can confirm it for them.
+#      auto-merge red PRs. Whoever turns on "Allow auto-merge" (prerequisite 1
+#      above) owns making the required-checks list non-empty; nothing in this
+#      workflow can confirm it for them.
 
 on:
   pull_request_target:
@@ -71,10 +72,15 @@ jobs:
       - name: Check auto-merge prerequisites
         id: prereq
         run: |
-          # Deliberately NOT `set -e`: an unreadable setting must skip with a
-          # named cause, not fail the job. A red `auto-merge` check on every
-          # Dependabot PR is the exact symptom this workflow was fixed to stop.
-          set -uo pipefail
+          # `set +e` is load-bearing and must stay. Actions invokes a `run:` step
+          # as `bash -e {0}` (visible in any run log's "shell:" line), so errexit
+          # is ON from the command line and `set -uo pipefail` alone does NOT
+          # clear it. An unreadable setting has to skip with a named cause, not
+          # fail the job — a red `auto-merge` check on every Dependabot PR is the
+          # exact symptom this workflow was fixed to stop. The guards below are
+          # all `if !` conditions, which errexit exempts anyway, but an unguarded
+          # `gh api` added later would abort the step and reintroduce the bug.
+          set +e -uo pipefail
 
           skip() {
             echo "ready=false" >> "$GITHUB_OUTPUT"
@@ -82,11 +88,12 @@ jobs:
             exit 0
           }
 
-          # `--jq '.x'` prints true or false, and an empty line if the key is
-          # absent (e.g. the token cannot see that field) — the `*)` arms below
-          # catch that. Do NOT "tidy" this with a `// "default"` fallback: jq's
-          # `//` treats false as empty, so `.allow_auto_merge // "unknown"`
-          # returns "unknown" for a setting that is genuinely OFF. Measured.
+          # `--jq '.x'` prints true or false; a key the response does not carry
+          # yields no value, and an unreadable resource fails the call outright.
+          # The `*)` arms and the `if !` guards cover both. Do NOT "tidy" this
+          # with a `// "default"` fallback: jq's `//` treats false as empty, so
+          # `.allow_auto_merge // "unknown"` returns "unknown" for a setting that
+          # is genuinely OFF, masking it. Measured against this repo.
           if ! allow_auto_merge=$(gh api "repos/${GITHUB_REPOSITORY}" --jq '.allow_auto_merge'); then
             skip "could not read the repository's allow_auto_merge setting (the API call failed)."
           fi
