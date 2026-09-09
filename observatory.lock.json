@@ -1,0 +1,7 @@
+{
+  "version": "0.1.0",
+  "project": "wealthlens",
+  "target": "projects/wealthlens-dashboard/frontend/public/observatory.js",
+  "sha256": "87993946fa2405cbe465c004431546d5a781a285aa8353e218a0432c8cfd3082",
+  "source": "Chris0Jeky/Pulseboard:observatory"
+}
