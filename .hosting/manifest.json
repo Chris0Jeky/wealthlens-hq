@@ -1,0 +1,15 @@
+{
+  "schema_version":1,"reviewed_on":"2026-09-10","repository":"Chris0Jeky/wealthlens-hq","stable_id":"wealthlens-hq","runtime_class":"static",
+  "public_origin":"https://chris0jeky.github.io/wealthlens-hq/","origin_evidence":"repository-reported",
+  "target":"Retain published static charts; do not host the separate API by default",
+  "source_paths":["README.md","AGENTS.md"],
+  "persistent_state":["Published static chart data; private outreach remains elsewhere"],
+  "invariants":["Source citations and data meaning survive hostname changes","Private HQ/outreach content is never published","Separate FastAPI/Vue runtime is not needed for existing static charts","No paid data/model activation implied"],
+  "gates":["Owned canonical hostname if changing","Stable chart embeds and source links","Published-artifact allowlist"],
+  "tasks":[
+    {"id":"WL1","goal":"Prepare static chart origin compatibility","acceptance":"Existing chart and embed paths remain usable with correct base URLs"},
+    {"id":"WL2","goal":"Audit publication inputs only","acceptance":"Approved public chart artifacts are separated from backend/private data and outreach"},
+    {"id":"WL3","goal":"Keep provider scope minimal","acceptance":"No extra Render service, shared SSO or database is provisioned for static charts"}
+  ],
+  "activation_authorized":false
+}

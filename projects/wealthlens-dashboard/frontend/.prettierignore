@@ -7,3 +7,7 @@ package-lock.json
 
 # Committed source data — never reformat (data integrity)
 public/data
+
+# Generated, vendored SDK: preserve the SHA-256 recorded in observatory.lock.json.
+# Validate ownership and inactive behavior with: node ../../../observatory/check.mjs
+public/observatory.js
