@@ -11,12 +11,6 @@ on:
       - ".github/workflows/ci-backend.yml"
   pull_request:
     branches: [main]
-    paths:
-      - "projects/wealthlens-dashboard/backend/**"
-      - "tests/**"
-      - "automation/**"
-      - "pyproject.toml"
-      - ".github/workflows/ci-backend.yml"
   # Weekly catch-all: the path-filtered triggers above don't fire while the backend
   # is idle, so a dependency/tooling drift (a new ruff/mypy/bandit release, or a
   # fastapi/pydantic bump) that breaks backend lint/type/security/tests would go
