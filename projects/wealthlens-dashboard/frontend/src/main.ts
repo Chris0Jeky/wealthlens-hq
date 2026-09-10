@@ -30,3 +30,11 @@ if (import.meta.env.PROD && "serviceWorker" in navigator) {
       })
   })
 }
+
+// The local adapter is inactive until separately configured and consented to.
+if (import.meta.env.PROD) {
+  const observerScript = document.createElement("script")
+  observerScript.src = `${import.meta.env.BASE_URL}observatory.js`
+  observerScript.defer = true
+  document.head.append(observerScript)
+}
