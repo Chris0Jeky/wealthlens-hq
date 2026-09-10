@@ -50,8 +50,10 @@ Narrowest command that exercises the change. Timings measured 2026-07-27 on Chri
 
 `make PYTHON=python ci-quick` is the pre-push minimum; `ci-full` adds automation/tests mypy,
 pipeline tests and the frontend lane. CI mirrors these as ci-backend / ci-frontend / ci-sim /
-ci-pipelines + CodeQL, each path-filtered with a weekly catch-all cron; deploy, e2e and
-lighthouse run on frontend pushes.
+ci-pipelines + CodeQL. All of them run on **every** pull request (since 2026-09-03, so that branch
+protection can require all seven contexts and Dependabot auto-merge never lands a red PR); on
+pushes to `main` they stay path-filtered with a weekly catch-all cron. Deploy, e2e and lighthouse
+run on frontend pushes.
 
 ## Windows pitfalls (all measured 2026-07-27)
 
