@@ -5,13 +5,15 @@ pytest-cov>=7.1.0
 # Lint + type tools — required by `make backend-lint` / `make ci-quick`, which now
 # fail loudly. Pins match the root pyproject.toml [project.optional-dependencies].dev
 # extra so a clean checkout running `make install && make ci-quick` works offline.
-ruff>=0.16.2
+ruff>=0.16.6
 # Adopt mypy 2.x; still upper-capped (like the stub pins below) so the NEXT major
 # can't newly fail the now-stricter backend gate without a deliberate bump.
-mypy>=2.3.0,<3
+mypy>=2.3.1,<3
 # pandas-stubs: backend modules import pandas and it is NOT in the mypy
 # ignore-missing-imports overrides, so `mypy .` needs the stubs to pass.
-pandas-stubs>=3.0.3.260530
+pandas-stubs>=3.0.5.260730
+# NumPy 2.5's stubs require syntax newer than the supported Python 3.11 mypy target.
+numpy<2.5
 # httpx: fastapi.testclient.TestClient requires it; the backend pytest suite
 # imports TestClient, so a clean install needs httpx for the tests to run.
 httpx>=0.28.1
