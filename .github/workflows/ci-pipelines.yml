@@ -23,12 +23,6 @@ on:
       - ".github/workflows/ci-pipelines.yml"
   pull_request:
     branches: [main]
-    paths:
-      - "tests/**"
-      - "automation/**"
-      - "projects/wealthlens-dashboard/**"
-      - "pyproject.toml"
-      - ".github/workflows/ci-pipelines.yml"
   # Weekly catch-all: runs regardless of the path filters above, so a new test
   # file or a dependency drift can't slip through unrun (mirrors ci-sim).
   schedule:
