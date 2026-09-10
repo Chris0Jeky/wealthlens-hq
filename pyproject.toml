@@ -20,6 +20,8 @@ dev = [
     # too, but then the dependabot bump's OWN CI goes red and auto-merge is blocked,
     # surfacing it — so only the major needs a hard cap.)
     "pandas-stubs>=2.1,<4",
+    # NumPy 2.5 stubs parse only with Python 3.12+, while the project supports 3.11.
+    "numpy<2.5",
     "types-requests>=2.31",
     "httpx>=0.27",
     # Needed to type-check automation/og-images (it imports PIL); Pillow ships
