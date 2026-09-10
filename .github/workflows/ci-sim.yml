@@ -17,13 +17,6 @@ on:
       - "projects/wealthlens-dashboard/data/simulator/**"
   pull_request:
     branches: [main]
-    paths:
-      - "packages/wealthlens-sim/**"
-      - "registries/**"
-      - ".github/workflows/ci-sim.yml"
-      - "automation/data-pipelines/generate_simulator_dashboards.py"
-      - "automation/data-pipelines/tests/test_simulator_dashboards.py"
-      - "projects/wealthlens-dashboard/data/simulator/**"
   # Weekly run catches breakage from unpinned dependency drift (numpy/scipy/etc.)
   # that a path-filtered trigger would miss between sim-package changes.
   schedule:
