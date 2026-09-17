@@ -49,12 +49,10 @@ def test_has_ten_deciles(processed_df: pd.DataFrame) -> None:
 
 
 def test_top_decile_is_largest(processed_df: pd.DataFrame) -> None:
-    max_idx = processed_df["total_wealth_bn"].idxmax()
-    # .loc returns a dynamically-typed pandas Scalar; the decile label is a string,
-    # so str()-coerce it to make the membership test valid (no-op at runtime).
-    assert "10th" in str(processed_df.loc[max_idx, "decile"]), (
-        "Top decile should hold the most wealth"
+    largest_decile = (
+        processed_df.sort_values("total_wealth_bn", ascending=False)["decile"].iloc[0]
     )
+    assert "10th" in str(largest_decile), "Top decile should hold the most wealth"
 
 
 def test_total_wealth_is_plausible(processed_df: pd.DataFrame) -> None:
