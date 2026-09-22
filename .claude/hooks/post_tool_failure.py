@@ -149,6 +149,8 @@ class _Masker:
         # read the text at most once.
         self._at_from = -1
         self._at = -1
+        # First '@' after the password of the last parsed connection string.
+        self.first_at = -1
 
     def _find_at(self, k: int) -> int:
         if self._at_from != -1 and self._at_from <= k and (self._at == -1 or self._at >= k):
@@ -321,6 +323,7 @@ class _Masker:
             return None
         if at < beyond:
             return None
+        self.first_at = at
         k = at + 1
         while k < n and not s[k].isspace() and s[k] not in _HOST_STOP:
             if s[k] == "@":
@@ -344,10 +347,12 @@ class _Masker:
         # The old substitution also masked copies of the password elsewhere in
         # the match; keep that (a copy in the host masks the whole host). The
         # user part is masked by a nested pass that cannot recurse again.
+        # Both the old first-'@' password and the extended one count as copies.
         password = s[h + 1 : at]
-        head = s[i : h + 1].replace(password, REDACTED)
+        old_password = s[h + 1 : self.first_at]
+        head = s[i : h + 1].replace(password, REDACTED).replace(old_password, REDACTED)
         prefix = _Masker(head, False, urls=False).run()
-        if s.find(password, at + 1, k) != -1:
+        if s.find(password, at + 1, k) != -1 or s.find(old_password, self.first_at + 1, k) != -1:
             return prefix + REDACTED + "@" + REDACTED, k
         if _mentions_key(user):
             # "x://api_key:<v>@<rest>": the user part is itself a key, so its

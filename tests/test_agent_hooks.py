@@ -236,6 +236,9 @@ def test_ledger_masks_quoting_edge_cases(tmp_path: Path) -> None:
         "nested-object-value": '{"credentials": {"client_id": "' + _SECRET + '"}}',
         "fat-arrow": "password => '" + _SECRET + "'",
         "camel-case-keyed": "accessKey=" + _SECRET,
+        # The password's text also appears before the ':' and the host run holds
+        # a second '@' (the old substitution masked every copy in the match).
+        "password-copy-in-user-part": "db://" + _SECRET + "://" + _SECRET + "@@\n\nu",
     }
     for name, error in cases.items():
         case_dir = tmp_path / name
