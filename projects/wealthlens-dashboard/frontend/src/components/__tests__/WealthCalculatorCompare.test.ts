@@ -331,7 +331,7 @@ describe("WealthCalculator — single mode still works", () => {
   })
 })
 
-describe("WealthCalculator — WAS accreditation caveat", () => {
+describe("WealthCalculator: WAS accreditation caveat", () => {
   // Every rank the calculator reports comes from WAS decile data, so it MUST
   // flag the June-2025 accreditation loss, visibly and wired via
   // aria-describedby (research/methodology/was-caveats.md; region CLAUDE.md).

@@ -224,7 +224,7 @@ describe("WealthScaleScroller", () => {
   })
 })
 
-describe("WealthScaleScroller — WAS accreditation caveat", () => {
+describe("WealthScaleScroller: WAS accreditation caveat", () => {
   // The decile and median markers are WAS Round 7 figures, so the scale MUST flag
   // the June-2025 accreditation loss, visibly and wired via aria-describedby
   // (research/methodology/was-caveats.md; region CLAUDE.md).

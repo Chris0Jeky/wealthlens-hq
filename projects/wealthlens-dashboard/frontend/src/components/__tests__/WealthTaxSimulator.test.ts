@@ -190,7 +190,7 @@ describe("WealthTaxSimulator", () => {
   })
 })
 
-describe("WealthTaxSimulator — WAS accreditation caveat", () => {
+describe("WealthTaxSimulator: WAS accreditation caveat", () => {
   // The simulator's taxpayer and wealth-above-threshold anchors come from the
   // Wealth Tax Commission modelling built on WAS microdata, so the results MUST
   // flag the June-2025 accreditation loss, visibly and wired via
