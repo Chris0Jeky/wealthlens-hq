@@ -21,7 +21,9 @@ interface Lock {
 
 describe("observatory version", () => {
   it("is the prefix of the digest observatory.lock.json pins for the vendored adapter", () => {
-    const lock = JSON.parse(readFileSync(resolve(REPO_ROOT, "observatory.lock.json"), "utf8")) as Lock
+    const lock = JSON.parse(
+      readFileSync(resolve(REPO_ROOT, "observatory.lock.json"), "utf8"),
+    ) as Lock
     const locked = lock.installs[LOCK_KEY]?.sha256
     expect(locked).toMatch(/^[0-9a-f]{64}$/)
     expect(readObservatoryVersion()).toBe(locked.slice(0, OBSERVATORY_VERSION_LENGTH))

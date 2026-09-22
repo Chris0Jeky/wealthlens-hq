@@ -80,7 +80,9 @@ describe("mountObservatory", () => {
 
 describe("observatoryScriptUrl", () => {
   it("carries the build-time version as a query string", () => {
-    expect(observatoryScriptUrl(BASE, VERSION)).toBe("/wealthlens-hq/observatory.js?v=0123456789abcdef")
+    expect(observatoryScriptUrl(BASE, VERSION)).toBe(
+      "/wealthlens-hq/observatory.js?v=0123456789abcdef",
+    )
   })
 
   it("falls back to the bare path only when no version is known", () => {
