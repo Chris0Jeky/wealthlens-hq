@@ -223,3 +223,22 @@ describe("WealthScaleScroller", () => {
     expect(html).not.toContain("£611k") // old P75 chip
   })
 })
+
+describe("WealthScaleScroller — WAS accreditation caveat", () => {
+  // The decile and median markers are WAS Round 7 figures, so the scale MUST flag
+  // the June-2025 accreditation loss, visibly and wired via aria-describedby
+  // (research/methodology/was-caveats.md; region CLAUDE.md).
+  it("renders the caveat and references it from the scroll region", () => {
+    const wrapper = mount(WealthScaleScroller)
+    expect(wrapper.text()).toContain("lost accredited official statistics status in June 2025")
+
+    const ids = (
+      wrapper.find(".wealth-scroller__container").attributes("aria-describedby") ?? ""
+    ).split(/\s+/)
+    const caveat = ids
+      .map((id) => wrapper.find(`[id="${id}"]`))
+      .find((el) => el.exists() && el.text().includes("accredited official statistics status"))
+    expect(caveat).toBeDefined()
+    expect(caveat!.text()).toContain("Wealth and Assets Survey")
+  })
+})

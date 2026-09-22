@@ -10,13 +10,18 @@
  * URL: https://www.ons.gov.uk/peoplepopulationandcommunity/personalandhouseholdfinances/incomeandwealth/bulletins/totalwealthingreatbritain/april2018tomarch2020
  * Accessed: 2026-05-16
  */
-import { ref, computed, onMounted, onBeforeUnmount } from "vue"
+import { ref, computed, onMounted, onBeforeUnmount, useId } from "vue"
+import { WAS_ACCREDITATION_LOSS } from "@/constants/wasCaveat"
 import { COMPARISON_STATS, DECILE_BOUNDARIES, DECILE_DATA } from "@/utils/wealthPosition"
 
 // --- Data constants (ONS WAS Round 7, 2018-2020) ---
 // Percentile markers are derived from the SAME ONS WAS Round 7 figures the
 // "Where do you fit?" calculator uses (utils/wealthPosition), so the two
 // surfaces cannot contradict each other (locked by WealthScaleScroller.test.ts).
+
+// Stable id linking the scrollable scale to its WAS accreditation caveat via
+// aria-describedby (region CLAUDE.md + research/methodology/was-caveats.md).
+const caveatId = useId()
 
 /** Scale: 1 pixel = £1,000 */
 const SCALE_FACTOR = 1_000
@@ -270,7 +275,7 @@ onBeforeUnmount(() => {
       tabindex="0"
       role="region"
       aria-labelledby="wealth-scale-scroll-heading"
-      aria-describedby="wealth-scale-scroll-instructions wealth-scale-current-position"
+      :aria-describedby="`wealth-scale-scroll-instructions wealth-scale-current-position ${caveatId}`"
       @scroll.passive="onScroll"
       @keydown="onKeydown"
     >
@@ -344,6 +349,15 @@ onBeforeUnmount(() => {
         <span class="wealth-scroller__segment-name">{{ seg.label }}</span>
       </div>
     </div>
+
+    <!-- Provenance caveat mandated by research/methodology/was-caveats.md: the
+         decile and median markers are WAS Round 7 figures, so the scale MUST flag
+         the June-2025 accreditation loss (OSR Report 396) and the top-tail
+         under-count. Referenced by the scroll region via aria-describedby. -->
+    <p :id="caveatId" class="wealth-scroller__caveat">
+      Note: the Wealth and Assets Survey {{ WAS_ACCREDITATION_LOSS }}, and household surveys
+      under-record wealth at the very top, so the true spread at the top is likely wider than shown.
+    </p>
 
     <!-- Screen reader summary -->
     <div id="wealth-scale-current-position" class="sr-only" aria-live="polite" aria-atomic="true">
@@ -558,6 +572,13 @@ onBeforeUnmount(() => {
   gap: 12px;
   margin-top: 12px;
   padding: 8px 0;
+}
+.wealth-scroller__caveat {
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--wl-ink-muted);
+  margin: 4px 0 0;
+  max-width: 42rem;
 }
 .wealth-scroller__segment-key {
   display: flex;
