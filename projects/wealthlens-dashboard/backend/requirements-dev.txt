@@ -12,8 +12,13 @@ mypy>=2.3.1,<3
 # pandas-stubs: backend modules import pandas and it is NOT in the mypy
 # ignore-missing-imports overrides, so `mypy .` needs the stubs to pass.
 pandas-stubs>=3.0.5.260914
-# NumPy 2.5's stubs require syntax newer than the supported Python 3.11 mypy target.
-numpy<2.6
+# NumPy 2.5's stubs use PEP 695 `type` statements, which mypy rejects under the root
+# python_version = "3.11" target (the Dockerfile runtime). On a 3.12+ interpreter an
+# uncapped install resolves 2.5 and aborts `make ci-quick` (#574). This caps only the
+# type-check env; runtime requirements stay uncapped and are exercised on the newest
+# NumPy by ci-backend's runtime-latest job (#602). Dependabot ignores numpy>=2.5 so
+# it cannot re-bump this cap (it did once, in #606).
+numpy<2.5
 # httpx: fastapi.testclient.TestClient requires it; the backend pytest suite
 # imports TestClient, so a clean install needs httpx for the tests to run.
 httpx>=0.28.1
