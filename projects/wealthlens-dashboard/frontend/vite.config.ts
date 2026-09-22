@@ -3,6 +3,7 @@ import vue from "@vitejs/plugin-vue"
 import tailwindcss from "@tailwindcss/vite"
 import { resolve } from "path"
 import { readDataVintage } from "./scripts/data-vintage"
+import { readObservatoryVersion } from "./scripts/observatory-version.mjs"
 
 export default defineConfig({
   base: "/wealthlens-hq/",
@@ -11,6 +12,9 @@ export default defineConfig({
     // Newest dataset last_updated, baked at build time (masthead honesty —
     // replaces the fabricated new Date() "UPDATED {today}" claim, F4).
     __WL_DATA_VINTAGE__: JSON.stringify(readDataVintage()),
+    // Locked-digest prefix of public/observatory.js; versions the adapter URL so
+    // the service worker cannot pin stale bytes after regeneration (#604).
+    __WL_OBSERVATORY_VERSION__: JSON.stringify(readObservatoryVersion()),
   },
   resolve: {
     alias: {
