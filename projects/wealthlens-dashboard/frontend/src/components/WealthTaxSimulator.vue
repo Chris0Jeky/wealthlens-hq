@@ -20,7 +20,8 @@
  *
  * All calculation is client-side. No personal data is stored or transmitted.
  */
-import { ref, computed } from "vue"
+import { ref, computed, useId } from "vue"
+import { WAS_ACCREDITATION_LOSS } from "@/constants/wasCaveat"
 import {
   simulateWealthTax,
   formatRevenue,
@@ -32,6 +33,10 @@ import {
   type WealthTaxBand,
   type PresetScenario,
 } from "@/utils/wealthTaxSimulator"
+
+// Stable id linking the results region to its WAS accreditation caveat via
+// aria-describedby (region CLAUDE.md + research/methodology/was-caveats.md).
+const caveatId = useId()
 
 // ============================================================
 // SLIDER OPTIONS
@@ -244,7 +249,12 @@ function onSliderChange() {
     </section>
 
     <!-- Results -->
-    <section class="sim__results" aria-live="polite" aria-label="Simulation results">
+    <section
+      class="sim__results"
+      aria-live="polite"
+      aria-label="Simulation results"
+      :aria-describedby="caveatId"
+    >
       <hr class="wl-rule-red" />
 
       <!-- Headline revenue -->
@@ -297,6 +307,17 @@ function onSliderChange() {
       <div class="sim__disclaimer">
         <p class="sim__disclaimer-text">
           {{ SIMULATOR_SOURCES.disclaimer }}
+        </p>
+        <!-- Provenance caveat mandated by research/methodology/was-caveats.md: the
+             taxpayer and wealth-above-threshold anchors come from Advani, Hughson
+             and Tarrant's Wealth Tax Commission modelling, which is built on WAS
+             microdata, so the results MUST flag the June-2025 accreditation loss
+             (OSR Report 396). No top-tail under-count clause here: that modelling
+             already corrects the top tail. Referenced by the results region via
+             aria-describedby. -->
+        <p :id="caveatId" class="sim__disclaimer-text sim__caveat">
+          Note: the wealth-distribution estimates behind these figures draw on the Wealth and Assets
+          Survey, which {{ WAS_ACCREDITATION_LOSS }}.
         </p>
       </div>
 
@@ -679,6 +700,10 @@ function onSliderChange() {
   color: var(--wl-ink-muted);
   margin: 0;
   line-height: 1.5;
+}
+
+.sim__caveat {
+  margin-top: 8px;
 }
 
 .sim__source {

@@ -330,3 +330,42 @@ describe("WealthCalculator — single mode still works", () => {
     expect(results.exists()).toBe(true)
   })
 })
+
+describe("WealthCalculator: WAS accreditation caveat", () => {
+  // Every rank the calculator reports comes from WAS decile data, so it MUST
+  // flag the June-2025 accreditation loss, visibly and wired via
+  // aria-describedby (research/methodology/was-caveats.md; region CLAUDE.md).
+  it("renders the caveat before any calculation", () => {
+    const wrapper = mountCalc()
+    expect(wrapper.text()).toContain("lost accredited official statistics status in June 2025")
+  })
+
+  it("references the caveat from the single-mode decile bar", async () => {
+    const wrapper = mountCalc()
+    await wrapper.find("#wealth-input").setValue("302500")
+    await wrapper.find(".calc__btn:not(.calc__btn--compare)").trigger("click")
+
+    const describedById = wrapper.find('[role="img"]').attributes("aria-describedby")
+    expect(describedById).toBeTruthy()
+    const caveat = wrapper.find(`[id="${describedById}"]`)
+    expect(caveat.exists()).toBe(true)
+    expect(caveat.text()).toContain("Wealth and Assets Survey")
+    expect(caveat.text()).toContain("accredited official statistics status")
+  })
+
+  it("references the same caveat from the compare-mode decile bar", async () => {
+    const wrapper = mountCalc()
+    await wrapper.find("#tab-compare").trigger("click")
+    await wrapper.find("#compare-input-a").setValue("302500")
+    await wrapper.find("#compare-input-b").setValue("175000")
+    await wrapper.find(".calc__btn--compare").trigger("click")
+
+    const bar = wrapper.find('[aria-label="Comparison results"] [role="img"]')
+    expect(bar.exists()).toBe(true)
+    const describedById = bar.attributes("aria-describedby")
+    expect(describedById).toBeTruthy()
+    const caveat = wrapper.find(`[id="${describedById}"]`)
+    expect(caveat.exists()).toBe(true)
+    expect(caveat.text()).toContain("accredited official statistics status")
+  })
+})

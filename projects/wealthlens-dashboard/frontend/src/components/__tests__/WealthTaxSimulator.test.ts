@@ -189,3 +189,23 @@ describe("WealthTaxSimulator", () => {
     expect(results.exists()).toBe(true)
   })
 })
+
+describe("WealthTaxSimulator: WAS accreditation caveat", () => {
+  // The simulator's taxpayer and wealth-above-threshold anchors come from the
+  // Wealth Tax Commission modelling built on WAS microdata, so the results MUST
+  // flag the June-2025 accreditation loss, visibly and wired via
+  // aria-describedby (research/methodology/was-caveats.md; region CLAUDE.md).
+  it("renders the caveat and references it from the results region", () => {
+    const wrapper = mount(WealthTaxSimulator, { global: { stubs: globalStubs } })
+    expect(wrapper.text()).toContain("lost accredited official statistics status in June 2025")
+
+    const describedById = wrapper
+      .find('[aria-label="Simulation results"]')
+      .attributes("aria-describedby")
+    expect(describedById).toBeTruthy()
+    const caveat = wrapper.find(`[id="${describedById}"]`)
+    expect(caveat.exists()).toBe(true)
+    expect(caveat.text()).toContain("Wealth and Assets Survey")
+    expect(caveat.text()).toContain("accredited official statistics status")
+  })
+})

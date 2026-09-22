@@ -16,7 +16,8 @@
  * URL: https://www.ons.gov.uk/peoplepopulationandcommunity/personalandhouseholdfinances/incomeandwealth/bulletins/totalwealthingreatbritain/april2018tomarch2020
  * Accessed: 2026-05-16
  */
-import { ref, computed } from "vue"
+import { ref, computed, useId } from "vue"
+import { WAS_ACCREDITATION_LOSS } from "@/constants/wasCaveat"
 import {
   getDecile,
   getPercentile,
@@ -26,6 +27,12 @@ import {
   COMPARISON_STATS,
   MAX_DISPLAYABLE_WEALTH,
 } from "@/utils/wealthPosition"
+
+// Stable id linking each decile bar's role="img" to the WAS accreditation caveat
+// via aria-describedby (region CLAUDE.md + research/methodology/was-caveats.md).
+// The caveat sits in the always-rendered header, so both the single and the
+// compare results can reference the one element whichever panel is showing.
+const caveatId = useId()
 
 /** Calculator mode: single value or compare two values */
 type CalcMode = "single" | "compare"
@@ -257,6 +264,14 @@ function getOrdinal(n: number): string {
         Based on ONS Wealth and Assets Survey Round 7 (April 2018 to March 2020). More recent data
         may show different thresholds.
       </p>
+      <!-- Provenance caveat mandated by research/methodology/was-caveats.md: every
+           rank this tool reports comes from WAS decile data, so it MUST flag the
+           June-2025 accreditation loss (OSR Report 396) and the top-tail
+           under-count. Referenced by both decile bars via aria-describedby. -->
+      <p :id="caveatId" class="calc__caveat">
+        Note: the Wealth and Assets Survey {{ WAS_ACCREDITATION_LOSS }}, and household surveys
+        under-record wealth at the very top, so treat these rankings as approximate.
+      </p>
     </header>
 
     <!-- Mode toggle (tablist) -->
@@ -394,6 +409,7 @@ function getOrdinal(n: number): string {
         <div
           class="calc__bar"
           role="img"
+          :aria-describedby="caveatId"
           :aria-label="`Decile bar chart showing your position in the ${decileOrdinal} decile out of 10`"
         >
           <div class="calc__bar-track">
@@ -589,6 +605,7 @@ function getOrdinal(n: number): string {
         <div
           class="calc__bar"
           role="img"
+          :aria-describedby="caveatId"
           :aria-label="`Decile bar chart showing Amount A in the ${getOrdinal(decileA)} decile and Amount B in the ${getOrdinal(decileB)} decile`"
         >
           <div class="calc__bar-track">
@@ -776,6 +793,15 @@ function getOrdinal(n: number): string {
   color: var(--wl-ink-faint);
   letter-spacing: 0.04em;
   margin: 0;
+}
+
+.calc__caveat {
+  font-family: var(--wl-mono);
+  font-size: 11px;
+  color: var(--wl-ink-muted);
+  letter-spacing: 0.04em;
+  margin: 6px 0 0;
+  line-height: 1.5;
 }
 
 .calc__staleness {
