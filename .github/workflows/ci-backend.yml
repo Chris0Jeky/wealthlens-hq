@@ -77,3 +77,30 @@ jobs:
         run: |
           python -m pytest tests/ -q --cov=app --cov-report=term-missing --cov-report=xml:coverage.xml --cov-fail-under=60
         working-directory: projects/wealthlens-dashboard/backend
+
+  # Runtime coverage on the newest resolvable dependencies (#602). requirements-dev.txt
+  # and the root .[dev] extra cap numpy<2.5 so mypy's python_version = "3.11" target can
+  # parse the stubs (#574); that cap must not hide a runtime break on newer NumPy. This
+  # job installs ONLY the uncapped runtime requirements (plus test tools) on the newest
+  # supported interpreter, where NumPy 2.5+ resolves, and runs the backend tests. No
+  # lint/type step: the typed gate stays in lint-and-test on 3.11.
+  runtime-latest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.13"
+
+      - name: Install uncapped runtime dependencies
+        run: |
+          pip install -r projects/wealthlens-dashboard/backend/requirements.txt
+          pip install -r automation/data-pipelines/requirements.txt
+          pip install "pytest>=9.0.3" "httpx>=0.27"
+          python -c "import numpy, pandas; print('numpy', numpy.__version__, 'pandas', pandas.__version__)"
+
+      - name: Run backend tests
+        run: python -m pytest tests/ -q
+        working-directory: projects/wealthlens-dashboard/backend

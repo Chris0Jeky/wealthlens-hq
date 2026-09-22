@@ -6,6 +6,11 @@ updates:
       interval: "weekly"
       day: "monday"
     open-pull-requests-limit: 5
+    ignore:
+      # numpy<2.5 is a deliberate type-check cap (see backend requirements-dev.txt,
+      # #574); runtime coverage of newer NumPy comes from ci-backend runtime-latest.
+      - dependency-name: "numpy"
+        versions: [">=2.5"]
 
   - package-ecosystem: "pip"
     directory: "/projects/wealthlens-dashboard/backend"
@@ -13,6 +18,11 @@ updates:
       interval: "weekly"
       day: "monday"
     open-pull-requests-limit: 5
+    ignore:
+      # numpy<2.5 is a deliberate type-check cap (see backend requirements-dev.txt,
+      # #574); runtime coverage of newer NumPy comes from ci-backend runtime-latest.
+      - dependency-name: "numpy"
+        versions: [">=2.5"]
 
   - package-ecosystem: "pip"
     directory: "/automation/data-pipelines"
