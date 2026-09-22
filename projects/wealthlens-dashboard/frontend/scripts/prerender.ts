@@ -29,6 +29,7 @@ import {
 import { buildSitemapXml } from "./sitemap-xml"
 import { SITE_URL } from "../src/constants/site"
 import { META_MARKER_ATTR } from "../src/composables/usePageMeta"
+import { PRERENDER_FLAG } from "../src/utils/observatory"
 
 const FRONTEND_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..")
 const DIST_DIR = join(FRONTEND_ROOT, "dist")
@@ -81,6 +82,7 @@ async function snapshotRoute(
       ogTitleCount: document.head.querySelectorAll('meta[property="og:title"]').length,
       htmlIsDark: document.documentElement.classList.contains("dark"),
       title: document.title,
+      observatoryTags: document.querySelectorAll('script[src*="observatory.js"]').length,
     }
   })
   if (checks.mainTextLength < MIN_MAIN_TEXT_CHARS) {
@@ -91,6 +93,11 @@ async function snapshotRoute(
   if (checks.ogTitleCount !== 1) {
     throw new Error(
       `${route.path}: expected exactly 1 og:title after render, found ${checks.ogTitleCount} — meta ownership is broken.`,
+    )
+  }
+  if (checks.observatoryTags !== 0) {
+    throw new Error(
+      `${route.path}: snapshot contains ${checks.observatoryTags} Observatory script tag(s); a baked tag would mount a second adapter beside the live bundle's (#604).`,
     )
   }
   if (checks.htmlIsDark) {
@@ -135,6 +142,11 @@ async function main(): Promise<void> {
       locale: "en-GB",
       timezoneId: "Europe/London",
     })
+    // Tells the app it is being snapshotted, before any page script runs, so the
+    // Observatory bootstrap skips injection and no adapter tag is baked (#604).
+    await context.addInitScript((flag: string) => {
+      ;(window as unknown as Record<string, unknown>)[flag] = true
+    }, PRERENDER_FLAG)
     const page = await context.newPage()
 
     const results: SnapshotResult[] = []

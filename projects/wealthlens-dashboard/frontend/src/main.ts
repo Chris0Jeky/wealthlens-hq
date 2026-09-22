@@ -4,6 +4,7 @@ import App from "./App.vue"
 import router from "@/router"
 import i18n from "@/i18n"
 import { stripPrerenderedMeta } from "@/utils/prerenderedMeta"
+import { mountObservatory } from "@/utils/observatory"
 import "./style.css"
 
 // Prerendered pages (ADR 0001) ship with baked [data-wl-meta] head tags for
@@ -32,9 +33,8 @@ if (import.meta.env.PROD && "serviceWorker" in navigator) {
 }
 
 // The local adapter is inactive until separately configured and consented to.
+// mountObservatory skips the prerender snapshot, never appends a second tag, and
+// versions the URL by the locked digest so the service worker cannot pin stale bytes.
 if (import.meta.env.PROD) {
-  const observerScript = document.createElement("script")
-  observerScript.src = `${import.meta.env.BASE_URL}observatory.js`
-  observerScript.defer = true
-  document.head.append(observerScript)
+  mountObservatory({ base: import.meta.env.BASE_URL, version: __WL_OBSERVATORY_VERSION__ })
 }
