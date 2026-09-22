@@ -2,12 +2,16 @@ import { defineConfig } from "vitest/config"
 import vue from "@vitejs/plugin-vue"
 import { resolve } from "path"
 import { readDataVintage } from "./scripts/data-vintage"
+import { readObservatoryVersion } from "./scripts/observatory-version.mjs"
 
 export default defineConfig({
   plugins: [vue()],
   define: {
     // Mirror vite.config.ts so components using the constant are testable.
     __WL_DATA_VINTAGE__: JSON.stringify(readDataVintage()),
+    // Locked-digest prefix of public/observatory.js; versions the adapter URL so
+    // the service worker cannot pin stale bytes after regeneration (#604).
+    __WL_OBSERVATORY_VERSION__: JSON.stringify(readObservatoryVersion()),
   },
   resolve: {
     alias: {

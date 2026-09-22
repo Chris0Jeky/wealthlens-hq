@@ -16,4 +16,9 @@ describe("service worker", () => {
     expect(serviceWorkerSource).toContain('"Content-Type": "application/json; charset=utf-8"')
     expect(serviceWorkerSource).toContain('"Cache-Control": "no-store"')
   })
+
+  it("keys cached scripts by full URL so a versioned adapter URL misses the old entry (#604)", () => {
+    // observatory.js?v=<digest> relies on caches.match() comparing the query string.
+    expect(serviceWorkerSource).not.toContain("ignoreSearch")
+  })
 })

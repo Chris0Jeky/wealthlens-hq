@@ -7,6 +7,13 @@
  */
 declare const __WL_DATA_VINTAGE__: string
 
+/**
+ * First 16 hex chars of the SHA-256 of public/observatory.js (LF-normalised, the
+ * digest observatory.lock.json pins), injected at build time by vite.config.ts /
+ * vitest.config.ts via scripts/observatory-version.mjs. Versions the adapter URL.
+ */
+declare const __WL_OBSERVATORY_VERSION__: string
+
 interface ImportMetaEnv {
   readonly VITE_API_BASE_URL?: string
   /** Plausible Analytics domain — set to enable tracking (optional). */
