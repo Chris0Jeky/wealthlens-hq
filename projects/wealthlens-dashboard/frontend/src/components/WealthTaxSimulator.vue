@@ -316,8 +316,8 @@ function onSliderChange() {
              already corrects the top tail. Referenced by the results region via
              aria-describedby. -->
         <p :id="caveatId" class="sim__disclaimer-text sim__caveat">
-          Note: the wealth-distribution estimates behind these figures draw on the Wealth and
-          Assets Survey, which {{ WAS_ACCREDITATION_LOSS }}.
+          Note: the wealth-distribution estimates behind these figures draw on the Wealth and Assets
+          Survey, which {{ WAS_ACCREDITATION_LOSS }}.
         </p>
       </div>
 
