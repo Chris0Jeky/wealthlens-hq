@@ -10,7 +10,7 @@ const root = new URL('../', import.meta.url);
 const versioner = new URL('projects/wealthlens-dashboard/frontend/scripts/observatory-version.mjs', root);
 const { observatoryDigest, readObservatoryVersion, OBSERVATORY_VERSION_LENGTH } = await import(versioner.href);
 const lock = JSON.parse(readFileSync(new URL('observatory.lock.json', root), 'utf8'));
-assert.equal(lock.sdk, '3.0.0', 'The lock must pin Pulseboard SDK 3.0.0');
+assert.equal(lock.sdk, '3.1.0', 'The lock must pin Pulseboard SDK 3.1.0');
 const COLLECTOR = 'https://pulseboard-observatory.commit-atlas.workers.dev';
 const ORIGIN = 'https://chris0jeky.github.io';
 const targets = Object.entries(lock.installs ?? {});
@@ -56,7 +56,7 @@ for (const [target, owned] of targets) {
     'The adapter URL version must be the locked digest prefix');
 
   const header = code.split('\n').slice(0, 3).join('\n');
-  assert.match(header, /pulseboard-sdk 3\.0\.0 for wealthlens\b/, 'Header must name pulseboard-sdk 3.0.0 for wealthlens');
+  assert.match(header, /pulseboard-sdk 3\.1\.0 for wealthlens\b/, 'Header must name pulseboard-sdk 3.1.0 for wealthlens');
   const bodyHash = /sha256 of the body below: ([0-9a-f]{64})/.exec(header)?.[1];
   const body = code.slice(code.indexOf('*/\n') + 3);
   assert.equal(createHash('sha256').update(body).digest('hex'), bodyHash, 'The artifact was edited after generation');
@@ -71,7 +71,7 @@ for (const [target, owned] of targets) {
   const live = runtime({ origin: ORIGIN, readyState: 'loading' });
   vm.runInNewContext(code, live.context);
   const api = live.context.Pulseboard;
-  assert.equal(api?.version, '3.0.0');
+  assert.equal(api?.version, '3.1.0');
   assert.deepEqual(Object.keys(api), ['version', 'route', 'count', 'track', 'consent']);
   assert.equal(live.calls.includes('fetch'), false, 'No network call before mount');
   assert.equal(live.listeners.has('DOMContentLoaded'), true, 'Mount waits for the DOM');
@@ -80,10 +80,10 @@ for (const [target, owned] of targets) {
   // On any other origin (local preview, CI, forks) the SDK is inert: no request, no storage, placeholder released.
   const local = runtime({ origin: 'http://127.0.0.1:4173', readyState: 'complete' });
   vm.runInNewContext(code, local.context);
-  assert.equal(local.context.Pulseboard.version, '3.0.0');
+  assert.equal(local.context.Pulseboard.version, '3.1.0');
   assert.equal(local.context.Pulseboard.track('page.view', {}), false);
   assert.deepEqual(local.calls, [], 'An inert SDK makes no network, timer or storage call');
   assert.equal(local.placeholder.hasAttribute('hidden'), true, 'An inert SDK releases the reserved bar space');
   assert.equal(local.placeholder.style.minHeight, '0');
 }
-console.log('Pulseboard SDK 3.0.0: lock hash, header, collector origin, URL version, pre-mount silence and inert fallback passed. Full host CI remains required.');
+console.log('Pulseboard SDK 3.1.0: lock hash, header, collector origin, URL version, pre-mount silence and inert fallback passed. Full host CI remains required.');

@@ -1,7 +1,7 @@
 # Pulseboard integration
 
-The public WealthLens dashboard loads Pulseboard SDK 3.0.0 ([Pulseboard#105](https://github.com/Chris0Jeky/Pulseboard/issues/105)),
-generated from Pulseboard `main` at `0ed1dcb56d4a8268a473886bf32d06da29997e9f` for project id `wealthlens`. The FastAPI
+The public WealthLens dashboard loads Pulseboard SDK 3.1.0 ([Pulseboard#105](https://github.com/Chris0Jeky/Pulseboard/issues/105)),
+generated from Pulseboard `main` at `d57e12a461ecccf7e88c8373f57f5eccb1e0bd61` for project id `wealthlens`. The FastAPI
 backend, the data pipelines and the simulation package are not instrumented and do not change.
 
 ## What is installed
@@ -10,9 +10,9 @@ backend, the data pipelines and the simulation package are not instrumented and 
   (it stays in the frontend `.prettierignore`); regenerate it from a Pulseboard checkout with
   `cd <Pulseboard>/observatory && node adapters/build-sdk.mjs wealthlens <this repo> projects/wealthlens-dashboard/frontend/public/observatory.js`
   after `git rm` of the old file, then update `observatory.lock.json`.
-- `observatory.lock.json` pins its SHA-256 (LF-normalised) and `"sdk": "3.0.0"`.
+- `observatory.lock.json` pins its SHA-256 (LF-normalised) and `"sdk": "3.1.0"`.
 - `observatory/check.mjs` (`node observatory/check.mjs` from the repository root) proves the hash matches the lock,
-  the header names `pulseboard-sdk 3.0.0 for wealthlens` and its body hash is intact, the collector is
+  the header names `pulseboard-sdk 3.1.0 for wealthlens` and its body hash is intact, the collector is
   `https://pulseboard-observatory.commit-atlas.workers.dev`, no server constants ship, the URL version equals the
   lock digest prefix, the script defines `window.Pulseboard` without any network call before the DOM is ready,
   and on any other origin it is inert (no request, timer or storage) and releases the reserved bar space.
@@ -20,12 +20,14 @@ backend, the data pipelines and the simulation package are not instrumented and 
 ## How it loads
 
 `src/utils/observatory.ts` (`startObservatory`, called from `src/main.ts`) appends one tag for
-`observatory.js?v=<first 16 hex of the locked SHA-256>` in production builds (#604: the versioned URL keeps the
+`observatory.js?v=<first 16 hex of the locked SHA-256>` only in production builds with `VITE_PULSEBOARD=on`
+(default off, as the repo requires of new behaviour; `.github/workflows/deploy.yml` sets it for the published site;
+drop that line to turn the SDK off) (#604: the versioned URL keeps the
 service worker's cache-first script branch from serving old bytes). It never loads while the prerender snapshots
 (no tag is baked; the prerender fails if a snapshot has one), on `/embed/*` routes, or in any frame, so a site that
 embeds a chart never shows the Beta bar. `index.html` reserves the bar space with
 `<div data-pulseboard-bar style="min-height: 2.5rem">` as the first element of `<body>`; the SDK renders its bar
-into it and releases it when no bar shows, and `startObservatory` releases it wherever the SDK is not loaded.
+into it and releases it when no bar shows, and `startObservatory` releases it wherever the SDK is not loaded (with the flag off, the prerender bakes it released).
 
 The SDK only runs on `https://chris0jeky.github.io` and never under automation, so local previews, Lighthouse and
 Playwright runs see it inert. There is no Content-Security-Policy on this site today; if one is added,

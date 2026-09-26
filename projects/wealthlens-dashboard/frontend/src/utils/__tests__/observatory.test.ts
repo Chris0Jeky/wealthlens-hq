@@ -133,8 +133,8 @@ describe("Pulseboard SDK v3 host wiring (Pulseboard#105)", () => {
     expect(first.childElementCount).toBe(0)
   })
 
-  it("ships the SDK v3 artifact for wealthlens at the path the loader requests", () => {
-    expect(artifact).toContain("pulseboard-sdk 3.0.0 for wealthlens")
+  it("ships the SDK 3.1 artifact for wealthlens at the path the loader requests", () => {
+    expect(artifact).toContain("pulseboard-sdk 3.1.0 for wealthlens")
     expect(artifact).toContain(
       '"collector":"https://pulseboard-observatory.commit-atlas.workers.dev"',
     )
@@ -144,7 +144,7 @@ describe("Pulseboard SDK v3 host wiring (Pulseboard#105)", () => {
   it("loads the SDK on a production page and keeps the reservation for it", () => {
     const bar = placeholder()
     const script = startObservatory({
-      prod: true,
+      enabled: true,
       base: BASE,
       version: VERSION,
       win: fakeWindow("/wealthlens-hq/charts/wealth-shares"),
@@ -154,13 +154,13 @@ describe("Pulseboard SDK v3 host wiring (Pulseboard#105)", () => {
   })
 
   it.each([
-    ["a dev or test build", false, "/wealthlens-hq/", false],
+    ["a build without the flag", false, "/wealthlens-hq/", false],
     ["an embed route", true, "/wealthlens-hq/embed/wealth-shares", false],
     ["a framed page", true, "/wealthlens-hq/", true],
-  ])("does not load the SDK in %s and releases the reserved space", (_, prod, path, framed) => {
+  ])("does not load the SDK in %s and releases the reserved space", (_, enabled, path, framed) => {
     const bar = placeholder()
     const script = startObservatory({
-      prod,
+      enabled,
       base: BASE,
       version: VERSION,
       win: fakeWindow(path, framed),
@@ -174,15 +174,22 @@ describe("Pulseboard SDK v3 host wiring (Pulseboard#105)", () => {
   it("leaves the reservation in the prerender snapshot for the live page", () => {
     const bar = placeholder()
     ;(window as unknown as Record<string, unknown>)[PRERENDER_FLAG] = true
-    expect(startObservatory({ prod: true, base: BASE, version: VERSION })).toBeNull()
+    expect(startObservatory({ enabled: true, base: BASE, version: VERSION })).toBeNull()
     expect(bar.hasAttribute("hidden")).toBe(false)
+  })
+
+  it("bakes snapshots without the reservation when the flag is off", () => {
+    const bar = placeholder()
+    ;(window as unknown as Record<string, unknown>)[PRERENDER_FLAG] = true
+    expect(startObservatory({ enabled: false, base: BASE, version: VERSION })).toBeNull()
+    expect(bar.hasAttribute("hidden")).toBe(true)
   })
 
   it("bakes embed snapshots without the reservation, since embeds never load the SDK", () => {
     const bar = placeholder()
     const win = fakeWindow("/wealthlens-hq/embed/wealth-shares")
     ;(win as unknown as Record<string, unknown>)[PRERENDER_FLAG] = true
-    expect(startObservatory({ prod: true, base: BASE, version: VERSION, win })).toBeNull()
+    expect(startObservatory({ enabled: true, base: BASE, version: VERSION, win })).toBeNull()
     expect(bar.hasAttribute("hidden")).toBe(true)
   })
 
