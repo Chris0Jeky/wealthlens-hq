@@ -33,11 +33,12 @@ if (import.meta.env.PROD && "serviceWorker" in navigator) {
   })
 }
 
-// Pulseboard SDK v3 (observatory/README.md): production builds only, never in the
-// prerender snapshot, embeds or frames; one tag, versioned by the locked digest so the
-// service worker cannot pin stale bytes. Elsewhere the reserved bar space is released.
+// Pulseboard SDK v3 (observatory/README.md): off unless a production build sets
+// VITE_PULSEBOARD=on (deploy.yml does); never in the prerender snapshot, embeds or
+// frames; one tag, versioned by the locked digest so the service worker cannot pin
+// stale bytes. Wherever it does not load, the reserved bar space is released.
 startObservatory({
-  prod: import.meta.env.PROD,
+  enabled: import.meta.env.PROD && import.meta.env.VITE_PULSEBOARD === "on",
   base: import.meta.env.BASE_URL,
   version: __WL_OBSERVATORY_VERSION__,
 })

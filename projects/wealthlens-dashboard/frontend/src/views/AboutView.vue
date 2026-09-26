@@ -155,7 +155,7 @@ usePageMeta({
       <ul class="list-disc pl-6 space-y-2 text-gray-700 mb-3">
         <li>
           <strong>Usage counts</strong> — daily aggregate counts of page views by device type,
-          referring site, campaign, new or returning visit and colour scheme. On by default.
+          referring platform, campaign, new or returning visit and colour scheme. On by default.
         </li>
         <li>
           <strong>Diagnostics</strong> — page-load timings, JavaScript error summaries, time on page
@@ -171,7 +171,14 @@ usePageMeta({
         until you press OK. If your browser sends Global Privacy Control or Do Not Track, nothing is
         sent and no bar is shown. We never store names, email addresses, IP addresses or any figure
         you enter into a calculator. Detailed data is kept for 90 days; aggregate counts are
-        currently kept for 14 days.
+        currently kept for 14 days (source:
+        <a
+          href="https://github.com/Chris0Jeky/Pulseboard/blob/main/observatory/docs/DESK_ARCHITECTURE.md"
+          target="_blank"
+          rel="noopener"
+          class="text-blue-600 hover:underline"
+          >Pulseboard retention policy</a
+        >, accessed 2026-09-26).
       </p>
       <p class="text-gray-700 leading-relaxed">
         You can change your choice at any time with the Beta button at the bottom left of the page.

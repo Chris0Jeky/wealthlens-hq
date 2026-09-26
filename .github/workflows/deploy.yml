@@ -63,6 +63,8 @@ jobs:
         run: npm run build
         env:
           VITE_STATIC_DATA: "true"
+          # Pulseboard SDK v3 (observatory/README.md); default off in every other build.
+          VITE_PULSEBOARD: "on"
 
       # --- Post-build: static charts, then prerender (ADR 0001) ---
       # Copy BEFORE prerender: `cp -r src dst` nests into dst if it already

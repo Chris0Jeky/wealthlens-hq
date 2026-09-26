@@ -16,8 +16,10 @@
  *   so a third-party page embedding a chart never shows the Beta bar.
  * - Reserved space: index.html carries `[data-pulseboard-bar]` (min-height 2.5rem).
  *   The SDK releases it itself when no bar shows; wherever the SDK is not loaded
- *   (dev, tests, embeds) this module releases it. The prerender snapshot keeps the
- *   reservation for the live page, except on embed routes, which never load the SDK.
+ *   (flag off, dev, tests, embeds) this module releases it. The prerender snapshot
+ *   keeps the reservation for the live page only when the SDK will load there.
+ * - Default off: only a production build with `VITE_PULSEBOARD=on` loads it; the
+ *   deploy workflow sets that flag (owner decision, Pulseboard#105).
  *
  * Every call into `window.Pulseboard` is optional and guarded: the product works
  * unchanged when the SDK is absent, blocked or throwing. No product event carries
@@ -110,28 +112,29 @@ export function isEmbedPath(pathname: string, base: string): boolean {
 }
 
 export interface StartObservatoryOptions extends MountObservatoryOptions {
-  /** `import.meta.env.PROD`: the SDK is only loaded from production builds. */
-  prod: boolean
+  /** Production build AND `VITE_PULSEBOARD=on` (default off; the deploy workflow turns it on). */
+  enabled: boolean
 }
 
 /**
  * Decide whether this page loads the SDK. Returns the adapter tag, or null when it
- * was not loaded (prerender, dev/test, embed or framed page).
+ * was not loaded (prerender, flag off, embed or framed page).
  */
 export function startObservatory({
-  prod,
+  enabled,
   base,
   version,
   doc = document,
   win = window,
 }: StartObservatoryOptions): HTMLScriptElement | null {
-  // Embeds never load the SDK, so their snapshot is baked without the reservation too.
-  if (isEmbedPath(win.location.pathname, base)) {
+  // With the flag off, and on embeds (which never load the SDK), the snapshot is baked
+  // without the reservation too.
+  if (!enabled || isEmbedPath(win.location.pathname, base)) {
     releasePulseboardBar(doc)
     return null
   }
   if (isPrerendering(win)) return null
-  if (!prod || isFramed(win)) {
+  if (isFramed(win)) {
     releasePulseboardBar(doc)
     return null
   }
