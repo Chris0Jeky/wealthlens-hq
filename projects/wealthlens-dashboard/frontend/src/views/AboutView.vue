@@ -145,6 +145,39 @@ usePageMeta({
       </ul>
     </section>
 
+    <!-- Usage data: describes the Pulseboard SDK v3 categories (observatory/README.md) -->
+    <section class="mb-10">
+      <h2 class="text-xl font-semibold mb-3">Usage Data (Beta)</h2>
+      <p class="text-gray-700 leading-relaxed mb-3">
+        While the site is in beta, a bar at the top of the page lets you choose what usage data we
+        collect through Pulseboard, an open-source collector. There are three categories:
+      </p>
+      <ul class="list-disc pl-6 space-y-2 text-gray-700 mb-3">
+        <li>
+          <strong>Usage counts</strong> — daily aggregate counts of page views by device type,
+          referring site, campaign, new or returning visit and colour scheme. On by default.
+        </li>
+        <li>
+          <strong>Diagnostics</strong> — page-load timings, JavaScript error summaries, time on page
+          and scroll depth.
+        </li>
+        <li>
+          <strong>Journeys and product data</strong> — a random session id that lasts for one
+          browser tab, with the pages viewed in order.
+        </li>
+      </ul>
+      <p class="text-gray-700 leading-relaxed mb-3">
+        In the EEA, or when your region cannot be determined, diagnostics and journeys stay off
+        until you press OK. If your browser sends Global Privacy Control or Do Not Track, nothing is
+        sent and no bar is shown. We never store names, email addresses, IP addresses or any figure
+        you enter into a calculator. Detailed data is kept for 90 days; aggregate counts are
+        currently kept for 14 days.
+      </p>
+      <p class="text-gray-700 leading-relaxed">
+        You can change your choice at any time with the Beta button at the bottom left of the page.
+      </p>
+    </section>
+
     <!-- Open Source -->
     <section class="mb-10">
       <h2 class="text-xl font-semibold mb-3">Open Source</h2>
