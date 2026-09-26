@@ -4,7 +4,8 @@ import App from "./App.vue"
 import router from "@/router"
 import i18n from "@/i18n"
 import { stripPrerenderedMeta } from "@/utils/prerenderedMeta"
-import { mountObservatory } from "@/utils/observatory"
+import { START_LOCATION } from "vue-router"
+import { notePulseboardNavigation, startObservatory } from "@/utils/observatory"
 import "./style.css"
 
 // Prerendered pages (ADR 0001) ship with baked [data-wl-meta] head tags for
@@ -32,9 +33,18 @@ if (import.meta.env.PROD && "serviceWorker" in navigator) {
   })
 }
 
-// The local adapter is inactive until separately configured and consented to.
-// mountObservatory skips the prerender snapshot, never appends a second tag, and
-// versions the URL by the locked digest so the service worker cannot pin stale bytes.
-if (import.meta.env.PROD) {
-  mountObservatory({ base: import.meta.env.BASE_URL, version: __WL_OBSERVATORY_VERSION__ })
-}
+// Pulseboard SDK v3 (observatory/README.md): production builds only, never in the
+// prerender snapshot, embeds or frames; one tag, versioned by the locked digest so the
+// service worker cannot pin stale bytes. Elsewhere the reserved bar space is released.
+startObservatory({
+  prod: import.meta.env.PROD,
+  base: import.meta.env.BASE_URL,
+  version: __WL_OBSERVATORY_VERSION__,
+})
+// In-app navigations count as page views on the registered `home` route; the SDK
+// records the landing page itself. Query or hash changes on the same page are not
+// page views. A no-op whenever the SDK is absent.
+router.afterEach((to, from, failure) => {
+  if (failure || to.meta.embed || to.path === from.path) return
+  notePulseboardNavigation(from === START_LOCATION)
+})

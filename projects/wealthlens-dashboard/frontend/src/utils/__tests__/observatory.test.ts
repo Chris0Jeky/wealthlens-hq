@@ -1,11 +1,17 @@
+import { readFileSync } from "node:fs"
+import { resolve } from "node:path"
 import { afterEach, describe, expect, it } from "vitest"
 import {
   OBSERVATORY_SCRIPT_ATTR,
   PRERENDER_FLAG,
   findObservatoryScript,
+  isEmbedPath,
   isPrerendering,
   mountObservatory,
+  notePulseboardNavigation,
   observatoryScriptUrl,
+  releasePulseboardBar,
+  startObservatory,
 } from "../observatory"
 
 const BASE = "/wealthlens-hq/"
@@ -91,5 +97,119 @@ describe("observatoryScriptUrl", () => {
 
   it("is fed a 16-hex build-time version in the test build", () => {
     expect(__WL_OBSERVATORY_VERSION__).toMatch(/^[0-9a-f]{16}$/)
+  })
+})
+
+describe("Pulseboard SDK v3 host wiring (Pulseboard#105)", () => {
+  const html = readFileSync(resolve(__dirname, "../../../index.html"), "utf-8")
+  const artifact = readFileSync(resolve(__dirname, "../../../public/observatory.js"), "utf-8")
+
+  function placeholder(): HTMLElement {
+    const node = document.createElement("div")
+    node.setAttribute("data-pulseboard-bar", "")
+    node.style.minHeight = "2.5rem"
+    document.body.prepend(node)
+    return node
+  }
+
+  function fakeWindow(pathname: string, framed = false): Window {
+    const self = {} as Record<string, unknown>
+    Object.assign(self, { location: { pathname }, self, top: framed ? {} : self })
+    return self as unknown as Window
+  }
+
+  afterEach(() => {
+    document.querySelectorAll("script, [data-pulseboard-bar]").forEach((el) => el.remove())
+    delete (window as unknown as Record<string, unknown>).Pulseboard
+    delete (window as unknown as Record<string, unknown>)[PRERENDER_FLAG]
+  })
+
+  it("reserves the bar space as the first element of <body> with min-height, never height", () => {
+    const doc = new DOMParser().parseFromString(html, "text/html")
+    const first = doc.body.firstElementChild as HTMLElement
+    expect(first.hasAttribute("data-pulseboard-bar")).toBe(true)
+    expect(first.style.minHeight).toBe("2.5rem")
+    expect(first.style.height).toBe("")
+    expect(first.childElementCount).toBe(0)
+  })
+
+  it("ships the SDK v3 artifact for wealthlens at the path the loader requests", () => {
+    expect(artifact).toContain("pulseboard-sdk 3.0.0 for wealthlens")
+    expect(artifact).toContain(
+      '"collector":"https://pulseboard-observatory.commit-atlas.workers.dev"',
+    )
+    expect(observatoryScriptUrl(BASE, VERSION)).toMatch(/\/observatory\.js\?v=/)
+  })
+
+  it("loads the SDK on a production page and keeps the reservation for it", () => {
+    const bar = placeholder()
+    const script = startObservatory({
+      prod: true,
+      base: BASE,
+      version: VERSION,
+      win: fakeWindow("/wealthlens-hq/charts/wealth-shares"),
+    })
+    expect(script?.getAttribute("src")).toBe(`${BASE}observatory.js?v=${VERSION}`)
+    expect(bar.hasAttribute("hidden")).toBe(false)
+  })
+
+  it.each([
+    ["a dev or test build", false, "/wealthlens-hq/", false],
+    ["an embed route", true, "/wealthlens-hq/embed/wealth-shares", false],
+    ["a framed page", true, "/wealthlens-hq/", true],
+  ])("does not load the SDK in %s and releases the reserved space", (_, prod, path, framed) => {
+    const bar = placeholder()
+    const script = startObservatory({
+      prod,
+      base: BASE,
+      version: VERSION,
+      win: fakeWindow(path, framed),
+    })
+    expect(script).toBeNull()
+    expect(findObservatoryScript()).toBeNull()
+    expect(bar.hasAttribute("hidden")).toBe(true)
+    expect(bar.style.minHeight).toBe("0px")
+  })
+
+  it("leaves the reservation in the prerender snapshot for the live page", () => {
+    const bar = placeholder()
+    ;(window as unknown as Record<string, unknown>)[PRERENDER_FLAG] = true
+    expect(startObservatory({ prod: true, base: BASE, version: VERSION })).toBeNull()
+    expect(bar.hasAttribute("hidden")).toBe(false)
+  })
+
+  it("recognises only embed paths under the base", () => {
+    expect(isEmbedPath("/wealthlens-hq/embed/x", BASE)).toBe(true)
+    expect(isEmbedPath("/wealthlens-hq/embedded", BASE)).toBe(false)
+    expect(isEmbedPath("/wealthlens-hq/", BASE)).toBe(false)
+  })
+
+  it("releasing a missing placeholder is a no-op", () => {
+    expect(() => releasePulseboardBar()).not.toThrow()
+  })
+
+  it("product navigation survives window.Pulseboard being undefined or throwing", () => {
+    expect((window as unknown as Record<string, unknown>).Pulseboard).toBeUndefined()
+    expect(notePulseboardNavigation(false)).toBe(false)
+    ;(window as unknown as Record<string, unknown>).Pulseboard = {
+      route() {
+        throw new Error("blocked")
+      },
+    }
+    expect(() => notePulseboardNavigation(false)).not.toThrow()
+    expect(notePulseboardNavigation(false)).toBe(false)
+  })
+
+  it("records later navigations on the registered home route only, never the landing page", () => {
+    const routes: string[] = []
+    ;(window as unknown as Record<string, unknown>).Pulseboard = {
+      route(name: string) {
+        routes.push(name)
+        return true
+      },
+    }
+    expect(notePulseboardNavigation(true)).toBe(false)
+    expect(notePulseboardNavigation(false)).toBe(true)
+    expect(routes).toEqual(["home"])
   })
 })

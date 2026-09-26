@@ -1,9 +1,10 @@
 /**
- * Bootstrap for the vendored Pulseboard Observatory adapter (public/observatory.js).
+ * Bootstrap for the vendored Pulseboard SDK v3 (public/observatory.js; Pulseboard#105).
  *
- * The adapter is inert until a separately reviewed change gives it an endpoint
- * (see observatory/README.md and issue #604). This module only guarantees how it
- * is loaded, so that activation cannot double-count or serve stale bytes:
+ * The SDK shows a Beta consent bar on the published site and only runs on the
+ * registered origin (https://chris0jeky.github.io); see observatory/README.md. This
+ * module guarantees how it is loaded, so that it cannot double-count or serve stale
+ * bytes:
  *
  * - Single instance: never inject while the build-time prerender (ADR 0001) is
  *   snapshotting, so no tag is baked into the static HTML; and at runtime never
@@ -11,6 +12,16 @@
  * - Versioned URL: the request carries `?v=<digest prefix>`, derived at build time
  *   from the locked artifact (scripts/observatory-version.mjs), so the service
  *   worker's cache-first script branch keys a regenerated adapter as a new URL.
+ * - Not in embeds: /embed/* charts and any framed copy of the site never load it,
+ *   so a third-party page embedding a chart never shows the Beta bar.
+ * - Reserved space: index.html carries `[data-pulseboard-bar]` (min-height 2.5rem).
+ *   The SDK releases it itself when no bar shows; wherever the SDK is not loaded
+ *   (dev, tests, embeds) this module releases it, except during the prerender, whose
+ *   snapshot must keep the reservation for the live page.
+ *
+ * Every call into `window.Pulseboard` is optional and guarded: the product works
+ * unchanged when the SDK is absent, blocked or throwing. No product event carries
+ * figures, amounts or anything a visitor typed; only the registered `home` route.
  */
 
 /** Marker attribute on the injected tag; the idempotence check looks for it. */
@@ -70,4 +81,74 @@ export function mountObservatory({
   script.setAttribute(OBSERVATORY_SCRIPT_ATTR, "")
   doc.head.append(script)
   return script
+}
+
+/** The host's reserved bar space; the SDK renders its Beta bar into it. */
+export const PULSEBOARD_BAR_SELECTOR = "[data-pulseboard-bar]"
+
+/** Collapse the reserved bar space exactly as the SDK does when no bar shows. */
+export function releasePulseboardBar(doc: Document = document): void {
+  const node = doc.querySelector<HTMLElement>(PULSEBOARD_BAR_SELECTOR)
+  if (!node) return
+  node.style.height = "0"
+  node.style.minHeight = "0"
+  node.style.overflow = "hidden"
+  node.setAttribute("hidden", "")
+}
+
+/** True inside any iframe, including a sandboxed one where touching `top` throws. */
+export function isFramed(win: Window = window): boolean {
+  try {
+    return win.self !== win.top
+  } catch {
+    return true
+  }
+}
+
+export function isEmbedPath(pathname: string, base: string): boolean {
+  return pathname.startsWith(`${base}embed/`) || pathname === `${base}embed`
+}
+
+export interface StartObservatoryOptions extends MountObservatoryOptions {
+  /** `import.meta.env.PROD`: the SDK is only loaded from production builds. */
+  prod: boolean
+}
+
+/**
+ * Decide whether this page loads the SDK. Returns the adapter tag, or null when it
+ * was not loaded (prerender, dev/test, embed or framed page).
+ */
+export function startObservatory({
+  prod,
+  base,
+  version,
+  doc = document,
+  win = window,
+}: StartObservatoryOptions): HTMLScriptElement | null {
+  if (isPrerendering(win)) return null
+  if (!prod || isFramed(win) || isEmbedPath(win.location.pathname, base)) {
+    releasePulseboardBar(doc)
+    return null
+  }
+  return mountObservatory({ base, version, doc, win })
+}
+
+interface PulseboardApi {
+  route?: (name: string) => unknown
+}
+
+/**
+ * Record an in-app navigation as a `page.view` on the registered `home` route (the
+ * only route Pulseboard registers for WealthLens). The first navigation is skipped:
+ * the SDK records the landing page itself. Never throws; returns whether the SDK
+ * accepted the call.
+ */
+export function notePulseboardNavigation(initial: boolean, win: Window = window): boolean {
+  if (initial) return false
+  try {
+    const api = (win as unknown as { Pulseboard?: PulseboardApi }).Pulseboard
+    return api?.route?.("home") === true
+  } catch {
+    return false
+  }
 }
