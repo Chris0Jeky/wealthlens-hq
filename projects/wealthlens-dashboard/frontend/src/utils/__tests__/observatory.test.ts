@@ -178,6 +178,14 @@ describe("Pulseboard SDK v3 host wiring (Pulseboard#105)", () => {
     expect(bar.hasAttribute("hidden")).toBe(false)
   })
 
+  it("bakes embed snapshots without the reservation, since embeds never load the SDK", () => {
+    const bar = placeholder()
+    const win = fakeWindow("/wealthlens-hq/embed/wealth-shares")
+    ;(win as unknown as Record<string, unknown>)[PRERENDER_FLAG] = true
+    expect(startObservatory({ prod: true, base: BASE, version: VERSION, win })).toBeNull()
+    expect(bar.hasAttribute("hidden")).toBe(true)
+  })
+
   it("recognises only embed paths under the base", () => {
     expect(isEmbedPath("/wealthlens-hq/embed/x", BASE)).toBe(true)
     expect(isEmbedPath("/wealthlens-hq/embedded", BASE)).toBe(false)

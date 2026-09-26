@@ -16,8 +16,8 @@
  *   so a third-party page embedding a chart never shows the Beta bar.
  * - Reserved space: index.html carries `[data-pulseboard-bar]` (min-height 2.5rem).
  *   The SDK releases it itself when no bar shows; wherever the SDK is not loaded
- *   (dev, tests, embeds) this module releases it, except during the prerender, whose
- *   snapshot must keep the reservation for the live page.
+ *   (dev, tests, embeds) this module releases it. The prerender snapshot keeps the
+ *   reservation for the live page, except on embed routes, which never load the SDK.
  *
  * Every call into `window.Pulseboard` is optional and guarded: the product works
  * unchanged when the SDK is absent, blocked or throwing. No product event carries
@@ -125,8 +125,13 @@ export function startObservatory({
   doc = document,
   win = window,
 }: StartObservatoryOptions): HTMLScriptElement | null {
+  // Embeds never load the SDK, so their snapshot is baked without the reservation too.
+  if (isEmbedPath(win.location.pathname, base)) {
+    releasePulseboardBar(doc)
+    return null
+  }
   if (isPrerendering(win)) return null
-  if (!prod || isFramed(win) || isEmbedPath(win.location.pathname, base)) {
+  if (!prod || isFramed(win)) {
     releasePulseboardBar(doc)
     return null
   }
