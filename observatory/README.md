@@ -1,7 +1,7 @@
 # Pulseboard integration
 
-The public WealthLens dashboard loads Pulseboard SDK 3.1.0 ([Pulseboard#105](https://github.com/Chris0Jeky/Pulseboard/issues/105)),
-generated from Pulseboard `main` at `d57e12a461ecccf7e88c8373f57f5eccb1e0bd61` for project id `wealthlens`. The FastAPI
+The public WealthLens dashboard loads Pulseboard SDK 3.2.0 ([Pulseboard#105](https://github.com/Chris0Jeky/Pulseboard/issues/105)),
+generated from Pulseboard `main` at `3a882cc6969b798fcf4cd698f185e3718945a3a7` for project id `wealthlens`. The FastAPI
 backend, the data pipelines and the simulation package are not instrumented and do not change.
 
 ## What is installed
@@ -10,9 +10,9 @@ backend, the data pipelines and the simulation package are not instrumented and 
   (it stays in the frontend `.prettierignore`); regenerate it from a Pulseboard checkout with
   `cd <Pulseboard>/observatory && node adapters/build-sdk.mjs wealthlens <this repo> projects/wealthlens-dashboard/frontend/public/observatory.js`
   after `git rm` of the old file, then update `observatory.lock.json`.
-- `observatory.lock.json` pins its SHA-256 (LF-normalised) and `"sdk": "3.1.0"`.
+- `observatory.lock.json` pins its SHA-256 (LF-normalised) and `"sdk": "3.2.0"`.
 - `observatory/check.mjs` (`node observatory/check.mjs` from the repository root) proves the hash matches the lock,
-  the header names `pulseboard-sdk 3.1.0 for wealthlens` and its body hash is intact, the collector is
+  the header names `pulseboard-sdk 3.2.0 for wealthlens` and its body hash is intact, the collector is
   `https://pulseboard-observatory.commit-atlas.workers.dev`, no server constants ship, the URL version equals the
   lock digest prefix, the script defines `window.Pulseboard` without any network call before the DOM is ready,
   and on any other origin it is inert (no request, timer or storage) and releases the reserved bar space.
