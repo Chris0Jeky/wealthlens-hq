@@ -25,9 +25,11 @@ backend, the data pipelines and the simulation package are not instrumented and 
 drop that line to turn the SDK off) (#604: the versioned URL keeps the
 service worker's cache-first script branch from serving old bytes). It never loads while the prerender snapshots
 (no tag is baked; the prerender fails if a snapshot has one), on `/embed/*` routes, or in any frame, so a site that
-embeds a chart never shows the Beta bar. `index.html` reserves the bar space with
-`<div data-pulseboard-bar style="min-height: 2.5rem">` as the first element of `<body>`; the SDK renders its bar
-into it and releases it when no bar shows, and `startObservatory` releases it wherever the SDK is not loaded (with the flag off, the prerender bakes it released).
+embeds a chart never shows the Beta bar. `App.vue` reserves the bar space with a static, `v-once`
+`<div data-pulseboard-bar style="min-height: 2.5rem">` right after the skip link and before the header, so the skip
+link stays the first Tab stop and no re-render patches the bar. The SDK renders its bar into it and releases it when
+no bar shows; `src/utils/observatory.ts` releases it wherever the SDK is not loaded or its script fails to load (with
+the flag off, the prerender bakes it released).
 
 The SDK only runs on `https://chris0jeky.github.io` and never under automation, so local previews, Lighthouse and
 Playwright runs see it inert. There is no Content-Security-Policy on this site today; if one is added,

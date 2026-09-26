@@ -45,6 +45,12 @@ watch(
        and all --wl-* custom properties update automatically. -->
   <div class="min-h-screen bg-[var(--wl-bg)] text-[var(--wl-ink-body)] font-wl-sans">
     <SkipLink v-if="!isEmbed" />
+    <!-- Reserved space for the Pulseboard Beta bar (observatory/README.md): after the skip
+         link so keyboard users reach "Skip to main content" first. Static and v-once, so a
+         re-render never patches it or the bar the SDK draws inside it; never v-if'd, so it
+         survives route changes. min-height, never height: a wrapped bar grows it. The SDK
+         releases it when no bar shows; src/utils/observatory.ts does wherever it is not loaded. -->
+    <div v-once data-pulseboard-bar style="min-height: 2.5rem"></div>
     <AppHeader v-if="!isEmbed" />
     <main id="main-content" tabindex="-1">
       <ErrorBoundary>

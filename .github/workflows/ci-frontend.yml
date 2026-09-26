@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - "projects/wealthlens-dashboard/frontend/**"
+      - "observatory/**"
+      - "observatory.lock.json"
       - ".github/workflows/ci-frontend.yml"
   pull_request:
     branches: [main]

@@ -14,9 +14,10 @@
  *   worker's cache-first script branch keys a regenerated adapter as a new URL.
  * - Not in embeds: /embed/* charts and any framed copy of the site never load it,
  *   so a third-party page embedding a chart never shows the Beta bar.
- * - Reserved space: index.html carries `[data-pulseboard-bar]` (min-height 2.5rem).
- *   The SDK releases it itself when no bar shows; wherever the SDK is not loaded
- *   (flag off, dev, tests, embeds) this module releases it. The prerender snapshot
+ * - Reserved space: App.vue renders `[data-pulseboard-bar]` (min-height 2.5rem, static,
+ *   v-once) right after the skip link. The SDK releases it itself when no bar shows;
+ *   wherever the SDK is not loaded (flag off, dev, tests, embeds) or its script fails
+ *   to load, this module releases it. The prerender snapshot
  *   keeps the reservation for the live page only when the SDK will load there.
  * - Default off: only a production build with `VITE_PULSEBOARD=on` loads it; the
  *   deploy workflow sets that flag (owner decision, Pulseboard#105).
@@ -81,6 +82,8 @@ export function mountObservatory({
   script.src = observatoryScriptUrl(base, version)
   script.defer = true
   script.setAttribute(OBSERVATORY_SCRIPT_ATTR, "")
+  // A blocked or failed SDK load must not leave an empty reserved strip.
+  script.addEventListener("error", () => releasePulseboardBar(doc))
   doc.head.append(script)
   return script
 }

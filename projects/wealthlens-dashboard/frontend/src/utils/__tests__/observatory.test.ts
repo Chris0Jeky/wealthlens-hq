@@ -1,6 +1,10 @@
 import { readFileSync } from "node:fs"
 import { resolve } from "node:path"
 import { afterEach, describe, expect, it } from "vitest"
+import { nextTick } from "vue"
+import { mount } from "@vue/test-utils"
+import { createMemoryHistory, createRouter } from "vue-router"
+import App from "@/App.vue"
 import {
   OBSERVATORY_SCRIPT_ATTR,
   PRERENDER_FLAG,
@@ -101,7 +105,6 @@ describe("observatoryScriptUrl", () => {
 })
 
 describe("Pulseboard SDK v3 host wiring (Pulseboard#105)", () => {
-  const html = readFileSync(resolve(__dirname, "../../../index.html"), "utf-8")
   const artifact = readFileSync(resolve(__dirname, "../../../public/observatory.js"), "utf-8")
 
   function placeholder(): HTMLElement {
@@ -124,13 +127,73 @@ describe("Pulseboard SDK v3 host wiring (Pulseboard#105)", () => {
     delete (window as unknown as Record<string, unknown>)[PRERENDER_FLAG]
   })
 
-  it("reserves the bar space as the first element of <body> with min-height, never height", () => {
-    const doc = new DOMParser().parseFromString(html, "text/html")
-    const first = doc.body.firstElementChild as HTMLElement
-    expect(first.hasAttribute("data-pulseboard-bar")).toBe(true)
-    expect(first.style.minHeight).toBe("2.5rem")
-    expect(first.style.height).toBe("")
-    expect(first.childElementCount).toBe(0)
+  async function mountApp() {
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: "/", component: { template: "<div>Home</div>" } },
+        { path: "/about", component: { template: "<div>About</div>" } },
+      ],
+    })
+    router.push("/")
+    await router.isReady()
+    const wrapper = mount(App, {
+      attachTo: document.body,
+      global: {
+        plugins: [router],
+        stubs: {
+          ErrorBoundary: { template: "<div><slot /></div>" },
+          AppHeader: { template: '<header><a href="/charts">Charts</a></header>' },
+          AppFooter: { template: "<footer>Footer</footer>" },
+        },
+      },
+    })
+    return { router, wrapper }
+  }
+
+  it("reserves the bar space after the skip link and before the header, with min-height only", async () => {
+    const { wrapper } = await mountApp()
+    const root = document.querySelector<HTMLElement>("[data-pulseboard-bar]")!.parentElement!
+    const order = Array.from(root.children).map((el) =>
+      el.hasAttribute("data-pulseboard-bar") ? "bar" : el.tagName.toLowerCase(),
+    )
+    expect(order.slice(0, 3)).toEqual(["a", "bar", "header"])
+    const bar = root.querySelector<HTMLElement>("[data-pulseboard-bar]")!
+    expect(bar.style.minHeight).toBe("2.5rem")
+    expect(bar.style.height).toBe("")
+    expect(bar.childElementCount).toBe(0)
+    wrapper.unmount()
+  })
+
+  it("never lets an App re-render wipe or restyle the bar the SDK draws inside it", async () => {
+    const { router, wrapper } = await mountApp()
+    const bar = document.querySelector<HTMLElement>("[data-pulseboard-bar]")!
+    // What the SDK does while a bar shows.
+    const drawn = document.createElement("div")
+    drawn.className = "pb-bar"
+    bar.append(drawn)
+    bar.style.height = "auto"
+    await router.push("/about")
+    await nextTick()
+    const after = document.querySelector<HTMLElement>("[data-pulseboard-bar]")!
+    expect(after).toBe(bar)
+    expect(after.firstElementChild).toBe(drawn)
+    expect(after.style.height).toBe("auto")
+    // And while no bar shows: the release survives a re-render too.
+    releasePulseboardBar()
+    await router.push("/")
+    await nextTick()
+    expect(after.hasAttribute("hidden")).toBe(true)
+    expect(after.style.minHeight).toBe("0px")
+    wrapper.unmount()
+  })
+
+  it("releases the reserved space when the SDK script fails to load", () => {
+    const bar = placeholder()
+    const script = mountObservatory({ base: BASE, version: VERSION })!
+    expect(bar.hasAttribute("hidden")).toBe(false)
+    script.dispatchEvent(new Event("error"))
+    expect(bar.hasAttribute("hidden")).toBe(true)
   })
 
   it("ships the SDK 3.1 artifact for wealthlens at the path the loader requests", () => {
