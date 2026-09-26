@@ -258,7 +258,8 @@ function getOrdinal(n: number): string {
         investments, minus any mortgages and debts — and see where you rank among UK households.
       </p>
       <p class="calc__privacy">
-        All calculation happens in your browser. No data is stored or transmitted.
+        All calculation happens in your browser. The figures you enter are never stored or
+        transmitted.
       </p>
       <p class="calc__staleness">
         Based on ONS Wealth and Assets Survey Round 7 (April 2018 to March 2020). More recent data

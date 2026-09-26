@@ -148,7 +148,8 @@ function onSliderChange() {
         different scenarios. The model uses ONS wealth distribution data and a Pareto approximation.
       </p>
       <p class="sim__privacy">
-        All calculation happens in your browser. No data is stored or transmitted.
+        All calculation happens in your browser. The figures you enter are never stored or
+        transmitted.
       </p>
     </header>
 

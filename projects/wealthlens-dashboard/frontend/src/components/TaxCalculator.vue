@@ -73,7 +73,8 @@ function formatGBP(value: number): string {
         — and how they compare to capital gains tax rates paid on investment profits.
       </p>
       <p class="calc__privacy">
-        All calculation happens in your browser. No data is stored or transmitted.
+        All calculation happens in your browser. The figures you enter are never stored or
+        transmitted.
       </p>
     </header>
 

@@ -18,6 +18,8 @@ interface ImportMetaEnv {
   readonly VITE_API_BASE_URL?: string
   /** Plausible Analytics domain — set to enable tracking (optional). */
   readonly VITE_PLAUSIBLE_DOMAIN?: string
+  /** "on" loads the Pulseboard SDK in production builds; anything else keeps it off (default). */
+  readonly VITE_PULSEBOARD?: string
 }
 
 interface ImportMeta {

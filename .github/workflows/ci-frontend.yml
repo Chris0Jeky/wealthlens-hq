@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - "projects/wealthlens-dashboard/frontend/**"
+      - "observatory/**"
+      - "observatory.lock.json"
       - ".github/workflows/ci-frontend.yml"
   pull_request:
     branches: [main]
@@ -41,6 +43,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Pulseboard SDK artifact check (lock hash, header, inert off-origin)
+        run: node ../../../observatory/check.mjs
 
       - name: Format check (prettier)
         run: npm run format:check

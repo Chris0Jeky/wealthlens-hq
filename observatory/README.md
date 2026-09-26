@@ -1,11 +1,52 @@
-# Observatory integration
+# Pulseboard integration
 
-Shared kit and collector: [Pulseboard #15](https://github.com/Chris0Jeky/Pulseboard/pull/15), source commit `8d92fff11f581d600c357e402cd521426665f318`.
+The public WealthLens dashboard loads Pulseboard SDK 3.1.0 ([Pulseboard#105](https://github.com/Chris0Jeky/Pulseboard/issues/105)),
+generated from Pulseboard `main` at `d57e12a461ecccf7e88c8373f57f5eccb1e0bd61` for project id `wealthlens`. The FastAPI
+backend, the data pipelines and the simulation package are not instrumented and do not change.
 
-The production entry loads a vendored, base-aware script with an empty endpoint. No collection, consent storage or account connection is enabled. It is scoped to the public WealthLens site and does not instrument the FastAPI backend or data pipelines.
+## What is installed
 
-Loading (#604): `src/utils/observatory.ts` requests `observatory.js?v=<first 16 hex of the locked SHA-256>`, derived at build time by `frontend/scripts/observatory-version.mjs`, so regenerating the artifact changes the URL and the service worker's cache-first script branch cannot keep serving old bytes. It never injects while the prerender snapshots and never appends a second tag; the prerender fails if a snapshot contains one. `check.mjs` also proves the URL version equals the lock digest prefix.
+- `projects/wealthlens-dashboard/frontend/public/observatory.js`: the generated SDK. Do not edit or reformat it
+  (it stays in the frontend `.prettierignore`); regenerate it from a Pulseboard checkout with
+  `cd <Pulseboard>/observatory && node adapters/build-sdk.mjs wealthlens <this repo> projects/wealthlens-dashboard/frontend/public/observatory.js`
+  after `git rm` of the old file, then update `observatory.lock.json`.
+- `observatory.lock.json` pins its SHA-256 (LF-normalised) and `"sdk": "3.1.0"`.
+- `observatory/check.mjs` (`node observatory/check.mjs` from the repository root) proves the hash matches the lock,
+  the header names `pulseboard-sdk 3.1.0 for wealthlens` and its body hash is intact, the collector is
+  `https://pulseboard-observatory.commit-atlas.workers.dev`, no server constants ship, the URL version equals the
+  lock digest prefix, the script defines `window.Pulseboard` without any network call before the DOM is ready,
+  and on any other origin it is inert (no request, timer or storage) and releases the reserved bar space.
 
-Run `node observatory/check.mjs` from the repository root. Run the existing frontend build, tests, lint, service-worker checks and deployed-path checks before approval. The shared kit has 58 passing local tests; this host's full build has not been executed here.
+## How it loads
 
-Activation requires a deployed collector, reviewed notice/CSP, a regenerated SHA-256-locked script and an explicit consent/withdrawal rehearsal. Keep dashboard secrets out of browser builds. Baseline events are opted-in page views and content-free error occurrences; chart exploration, source opens and shares need separately reviewed semantic hooks. Do not infer individual political views from chart use.
+`src/utils/observatory.ts` (`startObservatory`, called from `src/main.ts`) appends one tag for
+`observatory.js?v=<first 16 hex of the locked SHA-256>` only in production builds with `VITE_PULSEBOARD=on`
+(default off, as the repo requires of new behaviour; `.github/workflows/deploy.yml` sets it for the published site;
+drop that line to turn the SDK off) (#604: the versioned URL keeps the
+service worker's cache-first script branch from serving old bytes). It never loads while the prerender snapshots
+(no tag is baked; the prerender fails if a snapshot has one), on `/embed/*` routes, or in any frame, so a site that
+embeds a chart never shows the Beta bar. `App.vue` reserves the bar space with a static, `v-once`
+`<div data-pulseboard-bar style="min-height: 2.5rem">` right after the skip link and before the header, so the skip
+link stays the first Tab stop and no re-render patches the bar. The SDK renders its bar into it and releases it when
+no bar shows; `src/utils/observatory.ts` releases it wherever the SDK is not loaded or its script fails to load (with
+the flag off, the prerender bakes it released).
+
+The SDK only runs on `https://chris0jeky.github.io` and never under automation, so local previews, Lighthouse and
+Playwright runs see it inert. There is no Content-Security-Policy on this site today; if one is added,
+`connect-src` must include `https://pulseboard-observatory.commit-atlas.workers.dev` (no `unsafe-inline` is needed).
+
+## What is sent
+
+Only the common vocabulary: `page.view` on load, and again on each in-app navigation to a different path
+(`router.afterEach` calls `window.Pulseboard?.route('home')`; `home` is the only registered route), plus the SDK's
+diagnostics. There are no `track` calls. Product events must never carry amounts, balances, holdings, tickers,
+calculator inputs or anything else a visitor enters; any future event needs a registered name and enum-only props.
+
+Consent categories (Pulseboard `observatory/docs/SDK.md`): **Usage counts** (on by default), **Diagnostics** and
+**Journeys and product data** (on by default outside the EEA; in the EEA or when the region is unknown, off until
+the visitor presses OK on the Beta bar). Global Privacy Control or Do Not Track turns everything off with no bar
+and no request. Detailed data is kept 90 days; aggregate counts currently 14 days. The public copy of this notice
+is the "Usage Data (Beta)" section of the About page.
+
+Nothing is stored until the collector admits `wealthlens` (`COLLECT_STAT_PROJECTS` / `COLLECT_PRODUCT_PROJECTS` in
+Pulseboard); until then requests are refused and the SDK stops after three failures per endpoint.
