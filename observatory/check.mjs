@@ -12,7 +12,7 @@ const { observatoryDigest, readObservatoryVersion, OBSERVATORY_VERSION_LENGTH } 
 const lock = JSON.parse(readFileSync(new URL('observatory.lock.json', root), 'utf8'));
 // The SDK version comes from the lock, so an automatic SDK update that rewrites the lock needs no edit here.
 const SDK_VERSION = lock.sdk;
-assert.match(SDK_VERSION, /^\d+\.\d+\.\d+$/, 'The lock must record the SDK version');
+assert.match(String(SDK_VERSION), /^3\.\d+\.\d+$/, 'The lock must name an SDK 3.x.y version; a new major needs a reviewed checker change');
 const SDK_VERSION_RE = SDK_VERSION.replaceAll('.', '\\.');
 const COLLECTOR = 'https://pulseboard-observatory.commit-atlas.workers.dev';
 const ORIGIN = 'https://chris0jeky.github.io';
