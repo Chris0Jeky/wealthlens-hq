@@ -196,8 +196,13 @@ describe("Pulseboard SDK v3 host wiring (Pulseboard#105)", () => {
     expect(bar.hasAttribute("hidden")).toBe(true)
   })
 
-  it("ships the SDK 3.2 artifact for wealthlens at the path the loader requests", () => {
-    expect(artifact).toContain("pulseboard-sdk 3.2.0 for wealthlens")
+  it("ships the locked SDK artifact for wealthlens at the path the loader requests", () => {
+    // The version follows observatory.lock.json, which Pulseboard's site sync keeps current.
+    const lock = JSON.parse(
+      readFileSync(resolve(__dirname, "../../../../../../observatory.lock.json"), "utf-8"),
+    )
+    expect(lock.sdk).toMatch(/^\d+\.\d+\.\d+$/)
+    expect(artifact).toContain(`pulseboard-sdk ${lock.sdk} for wealthlens`)
     expect(artifact).toContain(
       '"collector":"https://pulseboard-observatory.commit-atlas.workers.dev"',
     )
