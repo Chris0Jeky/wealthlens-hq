@@ -3,7 +3,7 @@
 Repo-wide operating rules for ALL coding agents. Session contract + proving checks +
 pitfalls: [CLAUDE.md](./CLAUDE.md); seams: [AGENT_MAP.md](./AGENT_MAP.md); authority:
 `.agent-harness/tier.json` (T3 — push free, merge free on the T3 gate). Merge, review,
-worktree and question doctrine lives in the global laws (`~/.claude/CLAUDE.md`) — one home
+worktree and question doctrine lives in the global laws (`~/.claude/rules/laws.md`; Codex: `~/.codex/AGENTS.md`) — one home
 per policy, never restated here.
 
 ## Scope

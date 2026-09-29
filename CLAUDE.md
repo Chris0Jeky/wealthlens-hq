@@ -1,8 +1,8 @@
 # CLAUDE.md — WealthLens HQ
 
 T3 workshop · authority `.agent-harness/tier.json` (push free / merge free on the T3 gate).
-Merge, review, worktree and question doctrine is the global twelve laws (`~/.claude/CLAUDE.md`,
-auto-injected) — this file never restates them. Repo rules: [AGENTS.md](./AGENTS.md) ·
+Merge, review, worktree and question doctrine is the global twelve laws (`~/.claude/rules/laws.md`,
+auto-injected) — this file never restates them. Repo rules: `AGENTS.md`, imported below ·
 seams: [AGENT_MAP.md](./AGENT_MAP.md).
 
 ## What this repo is
@@ -110,3 +110,5 @@ impossible to ignore — data first, opinion second; open source; accessible by 
 non-partisan. Prioritise: ship something real → make it visible → connect with the right people,
 in that order. Volunteers read this code — clear docstrings; commit subjects
 `<area>: <imperative summary>`.
+
+@AGENTS.md
