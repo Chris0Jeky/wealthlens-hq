@@ -1,10 +1,12 @@
 # Git Workflow — Repo Posture
 
 Solo-developer repo with a **declared relaxed-git posture**: `.agent-harness/tier.json` sets
-`relaxed_work_loss_guards: true`, and the deny floor (`.claude/hooks/dispatch.py`,
-matrix in `smoke_test.py`) enforces the only hard limits — force-push in all
-spellings, catastrophic deletes, pipe-to-shell, secret-file mutation. Everything
-else (amend, rebase, reset, stash, clean, merge, `--force-with-lease`) is allowed.
+`relaxed_work_loss_guards: true`. The hard limits are force-push in all spellings,
+catastrophic deletes, pipe-to-shell and secret-file mutation; the vendored floor
+(`.claude/hooks/dispatch.py`, matrix in `smoke_test.py`) would enforce them but is not
+wired by the committed settings, and no Claude floor runs on DESKTOP-IHKOOJS, so they are
+held by the agent. Everything else (amend, rebase, reset, stash, clean, merge,
+`--force-with-lease`) is allowed.
 
 ## Explain-before-acting
 
@@ -25,4 +27,4 @@ Diverged branches, unresolvable conflicts, detached HEAD:
 ## Merging
 
 Merge doctrine has one home and it is not this repo: the global twelve laws
-(`~/.claude/CLAUDE.md`). This repo's declared row is `.agent-harness/tier.json`.
+(`~/.claude/rules/laws.md`). This repo's declared row is `.agent-harness/tier.json`.

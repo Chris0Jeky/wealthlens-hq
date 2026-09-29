@@ -24,8 +24,8 @@ machines).
   get 403.
 - **Backward compatibility:** never change shared/config defaults incompatibly; new behaviour
   ships toggleable, default OFF; local overrides go in `.env`, never in templates.
-- **Command safety:** the vendored deny floor is `.claude/hooks/dispatch.py` (v1.6.20,
-  tier-aware); after ANY hook change run `python .claude/hooks/smoke_test.py` (~5m30s). Git
+- **Command safety:** the vendored floor `.claude/hooks/dispatch.py` is not wired by the committed settings (no `PreToolUse` hook) and no Claude floor runs on DESKTOP-IHKOOJS, so nothing enforces command safety at runtime: act as if nothing catches an irreversible command. The deny rules in `.claude/settings.json` are a small
+  permission-level tripwire, not a floor. After ANY hook change run `python .claude/hooks/smoke_test.py` (~5m30s). Git
   posture: `docs/agentic/GIT_WORKFLOW.md`.
 
 ## Operational issues
