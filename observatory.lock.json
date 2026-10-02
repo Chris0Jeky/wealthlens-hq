@@ -1,12 +1,12 @@
 {
   "version": "0.2.0",
-  "sdk": "3.3.0",
-  "source": "Chris0Jeky/Pulseboard:observatory@1e7c880e315d7908c64d6b9b83508a4f616a0e4d",
+  "sdk": "3.3.1",
+  "source": "Chris0Jeky/Pulseboard:observatory@ac0ae06c872a4da5fdfd1f3e03f0aeb6926f0faf",
   "installs": {
     "projects/wealthlens-dashboard/frontend/public/observatory.js": {
       "project": "wealthlens",
       "release": "unattributed",
-      "sha256": "a94c605967ddaa99d9c689a34e6f9c125ea944ef32449752349ca671b010354b"
+      "sha256": "c6e0cc334677df70cccc616e8ff4f7e70c8a6d1d70c9cd27fab12e27b792c72c"
     }
   }
 }
