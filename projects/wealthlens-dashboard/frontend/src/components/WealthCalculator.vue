@@ -273,6 +273,18 @@ function getOrdinal(n: number): string {
         Note: the Wealth and Assets Survey {{ WAS_ACCREDITATION_LOSS }}, and household surveys
         under-record wealth at the very top, so treat these rankings as approximate.
       </p>
+      <!-- WAS figures are on screen before a calculation, so the citation is here too. -->
+      <div class="calc__source">
+        <span class="wl-source">
+          {{ COMPARISON_STATS.source }}
+        </span>
+        <p class="calc__source-detail">
+          <a :href="COMPARISON_STATS.sourceUrl" target="_blank" rel="noopener">
+            View source data on ONS
+          </a>
+          &middot; Accessed {{ COMPARISON_STATS.accessed }}
+        </p>
+      </div>
     </header>
 
     <!-- Mode toggle (tablist) -->
@@ -812,6 +824,11 @@ function getOrdinal(n: number): string {
   letter-spacing: 0.04em;
   margin: 6px 0 0;
   line-height: 1.5;
+}
+
+/* Result-panel citation uses 24px vertical margin; inside the padded header that stacks. */
+.calc__header .calc__source {
+  margin: 16px 0 0;
 }
 
 /* ============================================================ */
