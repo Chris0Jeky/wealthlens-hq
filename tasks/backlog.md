@@ -56,6 +56,6 @@ Prioritised tasks that are not in the current sprint. Grouped by domain.
 ## Legal / Governance
 
 - [ ] Register wealthlens.uk domain [Month 1]
-- [ ] Choose licence (MIT or AGPL-3.0) [Month 1]
+- [x] Choose licence (MIT or AGPL-3.0) [Month 1] - settled 2026-08-12: GPL-3.0-only for the software boundary, AGPL-3.0-or-later for the simulator; see LICENSING.md
 - [ ] Incorporate CIC Limited by Shares at month 3-4 (~£130)
 - [ ] Conduct page-by-page licence audit for all think-tank datasets [Month 2]

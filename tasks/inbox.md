@@ -792,7 +792,7 @@ initiative and needs approvals, partnerships, and curriculum design.
 ## Legal and Governance
 
 - [ ] Research domain availability: wealthlens.uk, wealthlensuk.org
-- [ ] Choose licence: MIT or AGPL-3.0 (for dashboard code)
+- [x] Choose licence: MIT or AGPL-3.0 (for dashboard code) - settled 2026-08-12: GPL-3.0-only for the software boundary, AGPL-3.0-or-later for the simulator; see LICENSING.md
 - [ ] Incorporate WealthLens UK as CIC Limited by Shares at month 3-4 (~£130)
 - [ ] Create data-licences.md documenting licence for each data source
 - [ ] Create privacy policy for website

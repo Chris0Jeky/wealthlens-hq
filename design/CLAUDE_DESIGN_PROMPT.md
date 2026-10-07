@@ -179,7 +179,7 @@ No stock photos of sad people or generic "community" images. Instead:
 - Three buttons: "Explore the data" | "Contribute on GitHub" | "Follow on Bluesky"
 
 **Footer:**
-- Logo | Open Source (MIT) | GitHub | Twitter/X | Bluesky | Contact
+- Logo | Open Source (GPLv3) | GitHub | Twitter/X | Bluesky | Contact
 - "Every statistic on this site links to its primary source."
 
 ### DELIVERABLE 2: Dashboard Overview Page
