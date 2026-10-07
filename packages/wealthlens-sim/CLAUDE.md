@@ -1,6 +1,6 @@
 # Region: wealthlens-sim
 
-UK wealth-policy microsimulation library (AGPL-3.0, own pyproject + CI lane ci-sim).
+UK wealth-policy microsimulation library (AGPL-3.0-or-later, own pyproject + CI lane ci-sim).
 Engine + 7 policy families (A–G) + uncertainty propagation are BUILT and merged —
 ignore any "pre-alpha skeleton" wording in older docs. Root seam map: `/AGENT_MAP.md`.
 
