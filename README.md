@@ -1,7 +1,5 @@
 # WealthLens UK
 
-[![wealthlens-hq hero](docs/assets/hero.svg)](https://chris0jeky.github.io/wealthlens-hq/)
-
 **Source-cited UK wealth-inequality charts, tools, and a policy microsim — built to be read, reused, and argued with.**
 
 [![Deploy Charts](https://github.com/Chris0Jeky/wealthlens-hq/actions/workflows/deploy.yml/badge.svg)](https://github.com/Chris0Jeky/wealthlens-hq/actions/workflows/deploy.yml)
@@ -57,9 +55,7 @@ WAS-derived pages (`wealth-by-decile`, `generational-wealth`, and the wealth too
 
 ## Architecture
 
-High-level flow (sources → pipeline → charts → GitHub Pages → share). The mermaid below is the same shape with repo paths.
-
-[![Module map](docs/assets/architecture.svg)](docs/ARCHITECTURE.md)
+Sources on the left, GitHub Pages on the right. Repo paths match the tree below.
 
 ```mermaid
 flowchart TB
