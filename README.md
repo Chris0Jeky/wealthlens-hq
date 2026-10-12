@@ -72,8 +72,9 @@ flowchart TB
     RUN[run_all.py]
     VAL[validate.py]
     SIMGEN[generate_simulator_dashboards.py]
-    STATIC[scripts/generate_static_api.py]
   end
+
+  STATIC["scripts/generate_static_api.py"]
 
   subgraph sim ["packages/wealthlens-sim"]
     REG["registries/*.yml"]
