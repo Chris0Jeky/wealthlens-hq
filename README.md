@@ -1,5 +1,7 @@
 # WealthLens UK
 
+<p align="center"><img src="docs/assets/wealthlens-hq-loop.svg" alt="wealthlens-hq workflow, animated" width="100%"></p>
+
 **Source-cited UK wealth-inequality charts, tools, and a policy microsim — built to be read, reused, and argued with.**
 
 [![Deploy Charts](https://github.com/Chris0Jeky/wealthlens-hq/actions/workflows/deploy.yml/badge.svg)](https://github.com/Chris0Jeky/wealthlens-hq/actions/workflows/deploy.yml)
