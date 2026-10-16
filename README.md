@@ -1,144 +1,303 @@
 # WealthLens UK
 
-**Open-source tools making UK wealth inequality data visible, interactive, and impossible to ignore.**
+<p align="center"><img src="docs/assets/wealthlens-hq-loop.svg" alt="wealthlens-hq workflow, animated" width="100%"></p>
+
+**Source-cited UK wealth-inequality charts, tools, and a policy microsim — built to be read, reused, and argued with.**
 
 [![Deploy Charts](https://github.com/Chris0Jeky/wealthlens-hq/actions/workflows/deploy.yml/badge.svg)](https://github.com/Chris0Jeky/wealthlens-hq/actions/workflows/deploy.yml)
 [![CI Backend](https://github.com/Chris0Jeky/wealthlens-hq/actions/workflows/ci-backend.yml/badge.svg)](https://github.com/Chris0Jeky/wealthlens-hq/actions/workflows/ci-backend.yml)
 [![CI Frontend](https://github.com/Chris0Jeky/wealthlens-hq/actions/workflows/ci-frontend.yml/badge.svg)](https://github.com/Chris0Jeky/wealthlens-hq/actions/workflows/ci-frontend.yml)
+[![CI Simulator](https://github.com/Chris0Jeky/wealthlens-hq/actions/workflows/ci-sim.yml/badge.svg)](https://github.com/Chris0Jeky/wealthlens-hq/actions/workflows/ci-sim.yml)
+[![CI Pipelines](https://github.com/Chris0Jeky/wealthlens-hq/actions/workflows/ci-pipelines.yml/badge.svg)](https://github.com/Chris0Jeky/wealthlens-hq/actions/workflows/ci-pipelines.yml)
+[![CodeQL](https://github.com/Chris0Jeky/wealthlens-hq/actions/workflows/codeql.yml/badge.svg)](https://github.com/Chris0Jeky/wealthlens-hq/actions/workflows/codeql.yml)
 [![License: GPL-3.0 / AGPL-3.0](https://img.shields.io/badge/License-GPL--3.0%20%2F%20AGPL--3.0-blue.svg)](LICENSING.md)
 [![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-blue.svg)](https://www.python.org/downloads/)
-[![Node 22+](https://img.shields.io/badge/Node-22%2B-green.svg)](https://nodejs.org/)
+[![Node 22](https://img.shields.io/badge/Node-22-green.svg)](https://nodejs.org/)
 
-## What is this?
+## What this is
 
-WealthLens UK publishes source-backed, mobile-responsive, accessible interactive charts about wealth inequality in the United Kingdom. Every chart cites its data source, is WCAG AA accessible, and can be freely shared and embedded.
+WealthLens HQ is the public command-centre monorepo for **WealthLens UK**: a source-cited dashboard of UK wealth inequality, the Python pipelines that feed it, and `wealthlens-sim`, an open policy microsimulation library.
 
-### Live site
+The public site is a Vue 3 app on GitHub Pages. Every chart cites a source, URL, and access date. WAS-derived charts carry the June 2025 accreditation-loss caveat. The live FastAPI process is for local development; production serves prerendered HTML plus static JSON/CSV generated at deploy time.
 
-**[chris0jeky.github.io/wealthlens-hq](https://chris0jeky.github.io/wealthlens-hq/)**
+I built this because the official numbers exist — ONS, HMRC, WID, BoE, DWP — and then disappear into spreadsheets, PDFs, and paywalled notes. The job is not to editorialize them. It is to put them on a URL you can open, cite, embed, and check.
 
-Twelve interactive charts with broadsheet aesthetic, dark mode, keyboard navigation, and WCAG AA compliance:
+**Live site:** [chris0jeky.github.io/wealthlens-hq](https://chris0jeky.github.io/wealthlens-hq/)
 
-- **UK Wealth Shares (1820–2024)** — Top 1% and top 10% share of net personal wealth (WID.world)
-- **Housing Affordability by Region** — House price to earnings ratios across England (ONS)
-- **Capital Gains Concentration** — How gains are concentrated among top taxpayers (HMRC)
-- **Wealth by Decile** — Distribution of wealth across population deciles (ONS WAS)
-- **Real Wage Stagnation**
-- **Who Pays Inheritance Tax?**
-- **The Productivity-Pay Gap**
-- **Regional Disposable Income**
-- **What Britain Taxes**
-- **Bank Rate and Inflation**
-- **Child Poverty by Region**
-- **The Generational Wealth Gap**
+## Features
 
-Together these chart pages cover the dashboard's twelve chart-data slugs.
+Shipped in this repo, not planned:
 
-## Tech stack
+- **Twelve interactive chart routes** (`/charts/:name`), each with a source bar and methodology note. The flagship pages (`wealth-shares`, `productivity-pay`, `gdhi-by-region`, `tax-composition`, `boe-rates`, `child-poverty`, `generational-wealth`) use a broadsheet article layout; the other five currently use a simpler title-plus-chart layout.
+- **Chrome-free embeds** at `/embed/:name` for third-party iframes, plus a wired share bar and static CSV mirrors for most datasets (generational-wealth CSV is withheld pending a licence decision).
+- **Interactive tools:** wealth scale (`/tools/wealth-scale`), household-wealth comparator (`/tools/wealth-calculator`), income-tax calculator (`/tools/tax-calculator`), and a wealth-tax band explorer (`/tools/wealth-tax-simulator`).
+- **Policy microsim** (`packages/wealthlens-sim/`): `engine.simulate` scores seven reform families (A–G) against a synthetic GB population, with provenance manifests on published numbers. The public `/simulator` page currently serves two illustrative annual wealth-tax scenarios from precomputed JSON — not live engine calls, and not official forecasts.
+- **Reproducible fetch/process pipelines** from WID, ONS, HMRC, BoE and DWP into CSV + Plotly HTML. `run_all.py` is the single script list and exits non-zero when a fetch fails, so it does not publish partial data. The deploy workflow does not call it: its fetch step logs a failed script, falls back to the embedded data, and still publishes.
+- **Dark mode**, skip-to-content, keyboard-accessible tabs and controls, and WCAG AA as a contribution rule (axe-checked in frontend tests).
+- **Dataset + methodology pages** that share one provenance table (`datasetProvenance.ts`).
 
-| Layer | Technology |
-|---|---|
-| Data pipelines | Python 3.11+, Pandas, Requests |
-| Backend API | FastAPI, Pydantic, SQLite (dev) / PostgreSQL (prod) |
-| Frontend | Vue 3, TypeScript, Pinia, TailwindCSS, D3.js, Vite |
-| Infrastructure | GitHub Pages, GitHub Actions (CI + deploy) |
-| Dev tools | ruff, mypy, bandit, pytest, ESLint, vue-tsc, vitest |
-| Tests | pytest, ESLint, vue-tsc, Vitest |
+### Chart index
 
-## Quick start
+| Slug | Page | Source |
+| --- | --- | --- |
+| `wealth-shares` | Top 1% / top 10% net personal wealth, 1820–2024 | WID.world |
+| `housing-affordability` | House price to earnings by region | ONS |
+| `cgt-concentration` | Capital gains by size of gain | HMRC |
+| `wealth-by-decile` | Total household wealth by decile | ONS WAS |
+| `wage-stagnation` | Median real weekly earnings | ONS ASHE |
+| `inheritance-tax` | Estates liable for IHT | HMRC |
+| `productivity-pay` | Productivity vs real pay | ONS |
+| `gdhi-by-region` | Gross disposable household income per head | ONS |
+| `tax-composition` | UK tax receipts by source | HMRC |
+| `boe-rates` | Bank Rate and CPI | Bank of England |
+| `child-poverty` | Child poverty after housing costs, by region | DWP / HMRC |
+| `generational-wealth` | Median wealth by generation at equivalent ages | Resolution Foundation / ONS WAS |
 
-```bash
-# Clone
-git clone https://github.com/Chris0Jeky/wealthlens-hq.git
-cd wealthlens-hq
+WAS-derived pages (`wealth-by-decile`, `generational-wealth`, and the wealth tools) include the [accreditation-loss caveat](research/methodology/was-caveats.md).
 
-# Backend
-cd projects/wealthlens-dashboard/backend
-python -m venv .venv
-source .venv/bin/activate   # or .venv\Scripts\Activate.ps1 on Windows
-pip install -r requirements.txt -r requirements-dev.txt
-uvicorn app.main:app --reload          # API at http://localhost:8000
+## Architecture
 
-# Frontend (separate terminal)
-cd projects/wealthlens-dashboard/frontend
-npm install
-npm run dev                            # Vite dev server at http://localhost:3000
+Sources on the left, GitHub Pages on the right. Repo paths match the tree below.
 
-# Data pipelines
-cd automation/data-pipelines
-pip install -r requirements.txt
-python run_all.py                      # Fetches live data, generates CSVs
+```mermaid
+flowchart TB
+  subgraph sources [Public sources]
+    WID[WID.world]
+    ONS[ONS]
+    HMRC[HMRC]
+    BOE[Bank of England]
+    DWP[DWP / HMRC]
+  end
+
+  subgraph pipelines ["automation/data-pipelines"]
+    FETCH["fetch_*.py"]
+    RUN[run_all.py]
+    VAL[validate.py]
+    SIMGEN[generate_simulator_dashboards.py]
+  end
+
+  STATIC["scripts/generate_static_api.py"]
+
+  subgraph sim ["packages/wealthlens-sim"]
+    REG["registries/*.yml"]
+    ENGINE["engine.simulate"]
+  end
+
+  subgraph artefacts [Artefacts]
+    CSV["data/processed/*.csv"]
+    PLOTLY["charts/*.html"]
+    SIMJSON["data/simulator/*.json"]
+    PUBLIC["frontend/public/data JSON + CSV"]
+  end
+
+  subgraph serve [Serve]
+    API["FastAPI :8000 — local /api/data + /api/simulator"]
+    VUE["Vue 3 + ECharts + Pinia :3000"]
+    PAGES[GitHub Pages]
+  end
+
+  WID --> FETCH
+  ONS --> FETCH
+  HMRC --> FETCH
+  BOE --> FETCH
+  DWP --> FETCH
+  RUN --> FETCH
+  FETCH --> CSV
+  FETCH --> PLOTLY
+  CSV --> VAL
+  REG --> ENGINE
+  ENGINE --> SIMGEN
+  SIMGEN --> SIMJSON
+  CSV --> STATIC
+  SIMJSON --> STATIC
+  STATIC --> PUBLIC
+  CSV --> API
+  SIMJSON --> API
+  API -->|Vite /api proxy in dev| VUE
+  PUBLIC -->|VITE_STATIC_DATA=true| VUE
+  VUE --> PAGES
+  PLOTLY --> PAGES
+  PUBLIC --> PAGES
 ```
 
-## Project structure
+Production deploy ([`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)) runs the fetch scripts, regenerates the static API, builds the Vue app with `VITE_STATIC_DATA=true`, copies the Plotly gallery into `dist/charts`, prerenders routes ([ADR 0001](docs/adr/0001-dashboard-route-prerendering.md)), and publishes to Pages. There is no application server on the live site.
+
+### Layout
 
 ```
 wealthlens-hq/
 ├── projects/wealthlens-dashboard/
-│   ├── charts/                      # Static Plotly HTML charts (deployed)
-│   ├── data/processed/              # Pipeline output CSVs
-│   ├── backend/                     # FastAPI app (health, data, metadata, CSV, stats)
-│   └── frontend/                    # Vue 3 + TypeScript + Pinia + TailwindCSS
-├── automation/
-│   ├── data-pipelines/              # Python fetch/process scripts
-│   └── social-media/               # chart_to_social.py (4 platform sizes)
-├── research/                        # Raw inputs, synthesised insights, data sources
-├── strategy/                        # Branding, content, outreach playbooks
-├── tasks/                           # Sprint, inbox, done, outreach tracking
-└── .github/workflows/               # CI: backend, frontend, CodeQL, deploy, weekly-update
+│   ├── frontend/                 # Vue 3 + TypeScript + Pinia + Tailwind + ECharts
+│   ├── backend/                  # FastAPI (CSV → JSON; simulator fixtures)
+│   ├── charts/                   # Static Plotly HTML (copied into the Pages build)
+│   └── data/                     # processed/ is gitignored; regenerate locally
+├── packages/wealthlens-sim/      # AGPL microsim; entry point engine.simulate
+├── registries/                   # sources.yml, assumptions.yml, baselines.yml
+├── automation/data-pipelines/    # fetch_*.py, run_all.py, validate.py
+├── automation/social-media/      # chart_to_social.py (PNG export sizes)
+├── scripts/generate_static_api.py
+├── docs/                         # architecture, ADRs, product RFCs, licensing notes
+├── research/                     # data-source registry, methodology (WAS caveats)
+├── tasks/                        # sprint board + inbox
+└── .github/workflows/            # ci-backend, ci-frontend, ci-sim, ci-pipelines,
+                                  # CodeQL, e2e, lighthouse, deploy
 ```
 
-## API Documentation
+`projects/wealthlens-analyst/` is a pointer only. The Analyst RAG app lives in [`Chris0Jeky/wealthlens-analyst`](https://github.com/Chris0Jeky/wealthlens-analyst).
 
-The backend API provides interactive documentation powered by FastAPI:
+## Quick start
 
-| Interface | URL | Description |
-|-----------|-----|-------------|
-| Swagger UI | `http://localhost:8000/docs` | Interactive API explorer with try-it-out |
-| ReDoc | `http://localhost:8000/redoc` | Clean, readable API reference |
+Prerequisites: **Python 3.11+**, **Node 22** (what CI installs), Git, and GNU Make. On Windows use Git Bash and pass `PYTHON=python` to Make — a bare `make` can pick the Windows Store Python stub and exit 49.
 
-Start the backend with `make dev-backend` or `uvicorn app.main:app --reload` from the backend directory, then open either URL in your browser.
+### Frontend only (committed static data)
 
-### Available endpoints
+The Pages-shaped path. Uses the JSON/CSV already in `frontend/public/data/`; no backend and no live fetch.
 
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/health` | Health check |
-| GET | `/api/data/` | List available datasets |
-| GET | `/api/data/metadata` | Metadata for all datasets (with source citations) |
-| GET | `/api/data/{name}/metadata` | Metadata for a single dataset |
-| GET | `/api/data/{name}` | Paginated dataset rows (`?page=` and `?limit=`) |
-| GET | `/api/data/{name}/columns` | Per-column metadata (dtype, null/unique counts) |
-| GET | `/api/data/{name}/summary` | Descriptive statistics for numeric columns |
-| GET | `/api/data/{name}/download` | Download dataset as streaming CSV |
+```bash
+git clone https://github.com/Chris0Jeky/wealthlens-hq.git
+cd wealthlens-hq
+cd projects/wealthlens-dashboard/frontend
+npm install
+VITE_STATIC_DATA=true npm run dev    # http://localhost:3000/wealthlens-hq/
+```
 
-## How to contribute
+Vite's `base` is `/wealthlens-hq/`, matching GitHub Pages. Open that path, not `/`.
 
-We welcome contributions. See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+### Full stack (API + live CSVs)
 
-**Good first contributions:**
-- Add or verify a data source record in the registry
-- Improve a chart's accessibility or methodology note
-- Build a new chart prototype from a cited dataset
-- Fix a bug in a data pipeline
+Processed CSVs live under `projects/wealthlens-dashboard/data/processed/` and are gitignored. The API reads them from disk; without a pipeline run, dataset endpoints return 503.
+
+```bash
+cd wealthlens-hq
+python3 -m venv .venv
+source .venv/bin/activate            # Windows: .venv\Scripts\activate
+pip install -e ".[dev,pipelines]"
+pip install -r projects/wealthlens-dashboard/backend/requirements-dev.txt
+
+make pipelines                       # network; or: python automation/data-pipelines/run_all.py
+make dev-backend                     # http://127.0.0.1:8000  (OpenAPI at /docs)
+```
+
+On Windows under Git Bash, the same steps are:
+
+```bash
+python -m venv .venv
+source .venv/Scripts/activate       # not .venv/bin/activate
+pip install -e ".[dev,pipelines]"
+pip install -r projects/wealthlens-dashboard/backend/requirements-dev.txt
+make PYTHON=python pipelines
+make PYTHON=python dev-backend
+```
+
+In another terminal:
+
+```bash
+make frontend-dev                    # http://localhost:3000 — Vite proxies /api → :8000
+```
+
+`make help` lists the rest. Useful gates:
+
+| Command | What it actually runs |
+| --- | --- |
+| `make ci-quick` | backend ruff + mypy + pytest |
+| `make frontend-test` | Vitest (`npm run test`) |
+| `make frontend-typecheck` | `vue-tsc -b --noEmit --force` |
+| `make pipeline-test` | offline pipeline unit tests |
+| `cd packages/wealthlens-sim && python -m pytest -q` | simulator package tests |
+
+`vue-tsc` without `-b` is not a typecheck here: the root `tsconfig.json` is project-references only. Keep `-b`. Prefer `npx vitest run` over `npm test` if you keep scratch files under `frontend/src` — `npm test` runs `pretest`, which `git clean`s ignored shadows in that tree.
+
+Pipelines need the network and currently known-broken upstream fetches are tracked in [#494](https://github.com/Chris0Jeky/wealthlens-hq/issues/494). The weekly cron is off; refresh is `workflow_dispatch`. The site serves last-good committed static data.
+
+## Tech stack
+
+| Layer | What is actually in the manifests |
+| --- | --- |
+| Frontend | Vue 3, TypeScript, Vue Router, Pinia, Tailwind CSS 4, ECharts (via vue-echarts), Vite. Node 22 in CI. |
+| Backend | FastAPI, Pydantic v2, Uvicorn, Pandas. Serves CSV from disk — no SQLite/Postgres in this repo. |
+| Pipelines | Python 3.11+, Pandas, Requests, Plotly, openpyxl, odfpy |
+| Simulator | numpy, pandas, scipy, pydantic, PyYAML. Tested on Python 3.11 and 3.12; 90% coverage gate in `ci-sim`. |
+| Hosting | GitHub Pages + GitHub Actions (`deploy.yml`). Route prerender with Playwright/Chromium. |
+| Quality | ruff, mypy, bandit, pytest, ESLint, vue-tsc, Vitest, Playwright e2e, Lighthouse CI, CodeQL |
+
+## API
+
+Local FastAPI only. Start it with `make dev-backend`, then [Swagger UI](http://127.0.0.1:8000/docs) or [ReDoc](http://127.0.0.1:8000/redoc). CORS defaults to the Vite origin; override with `CORS_ORIGINS`. In-memory rate limiting is **off** unless `RATE_LIMIT_ENABLED` is set.
+
+On GitHub Pages the same payloads are static files under [`/wealthlens-hq/data/`](https://chris0jeky.github.io/wealthlens-hq/data/datasets.json).
+
+| Method | Path | Notes |
+| --- | --- | --- |
+| GET | `/health` | Liveness (`status: ok`) |
+| GET | `/api/health/data` | Per-dataset CSV presence |
+| GET | `/api/version` | Public version + dataset count |
+| GET | `/api/data/` | Dataset name list |
+| GET | `/api/data/metadata` | Citations for every dataset |
+| GET | `/api/data/freshness` | mtime-based fresh/stale/expired |
+| GET | `/api/data/{name}` | Paginated rows (`page`, `limit` ≤ 1000) |
+| GET | `/api/data/{name}/metadata` | One dataset, with source URL + access date |
+| GET | `/api/data/{name}/columns` | dtype / null / unique |
+| GET | `/api/data/{name}/summary` | Numeric descriptives |
+| GET | `/api/data/{name}/download` | Streaming CSV |
+| GET | `/api/simulator/` | Published scenario list (currently two) |
+| GET | `/api/simulator/scenarios/{id}` | Dashboard JSON (intervals, caveats, provenance) |
+
+`GET /api/version/debug` exists for local/staging and 404s in production-like `APP_ENV`. `inheritance-tax` is a committed static dataset: it is not in the backend `DATASETS` map and is not produced by `fetch_*.py`.
+
+## Status and roadmap
+
+Public dashboard is live at v0.1.0 (`pyproject.toml`). The simulator package is `0.1.0.dev0` (PyPI classifier Pre-Alpha): the engine and families A–G are implemented; the site publishes two synthetic-population scenarios.
+
+Honest gaps, from the repo rather than a pitch deck:
+
+- Weekly pipeline cron is disabled after repeated upstream fetch failures ([#494](https://github.com/Chris0Jeky/wealthlens-hq/issues/494)). Manual `workflow_dispatch` remains.
+- Custom domain `wealthlens.uk` is **planned**, not registered. `SITE_URL` is the GitHub Pages origin until it is.
+- Analyst RAG was extracted to [`wealthlens-analyst`](https://github.com/Chris0Jeky/wealthlens-analyst) on 2026-07-06.
+- Product sequence after the launch/outreach bundle is documented in [`docs/product/PRODUCT_FRONTIER_2026-07.md`](docs/product/PRODUCT_FRONTIER_2026-07.md): finish chart reuse (RFC-001), then citable data packages (RFC-002) and the data-health layer (RFC-007). Do not treat the anti-portfolio in that doc as a backlog.
+
+Sprint board: [`tasks/active-sprint.md`](tasks/active-sprint.md).
 
 ## Data principles
 
-- Every dataset cites its source with URL and access date
-- No fabricated statistics — all numbers are traceable
-- Charts are mobile-responsive and WCAG AA accessible
-- All data pipelines are reproducible
+- Every public figure cites source + URL + access date. No fabricated statistics.
+- Charts are mobile-responsive and held to WCAG AA.
+- Pipelines are meant to be replayable from the listed fetch scripts. Licence and access records live in [`docs/data-licences.md`](docs/data-licences.md) and [`research/data-sources/data-source-registry.md`](research/data-sources/data-source-registry.md).
+- Data first, opinion second. Independent, non-partisan, no party affiliation.
 
-## Values
+## Contributing
 
-- **Data first, opinion second** — present facts, not party politics
-- **Open source always** — code, data, and methodology are public
-- **Accessible by default** — built for everyone, not just specialists
-- **Independent and non-partisan** — no affiliation with any party or campaign
+Contributions are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) (setup, branch names, commit subjects `<area>: <imperative summary>`) and the [Code of Conduct](CODE_OF_CONDUCT.md).
+
+Good first work:
+
+- Add or verify a row in the data-source registry / `docs/data-licences.md`
+- Improve a chart's accessibility or methodology note
+- Add tests around an existing pipeline or view
+- Build a small chart from a cited dataset that is not yet routed
+
+`make ci-quick` is the pre-push minimum. Frontend PRs also run Vitest, `vue-tsc -b`, ESLint, Playwright e2e, and Lighthouse in CI.
+
+LLM-assisted patches are expected in this repo and still need a human review before merge. Policy: [`docs/AI_LLM_DISCLOSURE.md`](docs/AI_LLM_DISCLOSURE.md).
+
+## Security
+
+Do **not** open a public issue for a vulnerability. Email **jeky.tck@gmail.com** as described in [SECURITY.md](SECURITY.md). Secrets never belong in this tree, including "temporary" keys in docs.
 
 ## Licence
 
-Dashboard, API, and data pipelines: [GPL-3.0-only](LICENSE) — Simulator core (`packages/wealthlens-sim/`): [AGPL-3.0-or-later](packages/wealthlens-sim/LICENSE) — Documentation and registries: [CC-BY 4.0](https://creativecommons.org/licenses/by/4.0/) — Synthetic datasets: CC0. See [LICENSING.md](LICENSING.md) for the complete boundary map.
+Dashboard, API, and data pipelines: [GPL-3.0-only](LICENSE). Simulator core (`packages/wealthlens-sim/`): [AGPL-3.0-or-later](packages/wealthlens-sim/LICENSE). Documentation and registries: [CC-BY-4.0](https://creativecommons.org/licenses/by/4.0/). Synthetic public datasets: CC0-1.0 unless a source notice says otherwise. Source datasets keep their own licences (typically OGL v3.0 or CC-BY).
+
+The software boundary moved from MIT to GPL-3.0-only on 12 August 2026. See [LICENSING.md](LICENSING.md), [RELICENSING.md](RELICENSING.md), and [LICENSES/MIT.txt](LICENSES/MIT.txt).
+
+## Links
+
+- Live dashboard: <https://chris0jeky.github.io/wealthlens-hq/>
+- Architecture notes: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+- Simulator package: [packages/wealthlens-sim/README.md](packages/wealthlens-sim/README.md)
+- Product frontier / RFC sequence: [docs/product/PRODUCT_FRONTIER_2026-07.md](docs/product/PRODUCT_FRONTIER_2026-07.md)
+- WAS caveat: [research/methodology/was-caveats.md](research/methodology/was-caveats.md)
+- Analyst (extracted): [Chris0Jeky/wealthlens-analyst](https://github.com/Chris0Jeky/wealthlens-analyst)
+- Agent map for contributors working in-repo: [AGENT_MAP.md](AGENT_MAP.md)
 
 ---
 
