@@ -32,7 +32,7 @@ Shipped in this repo, not planned:
 - **Chrome-free embeds** at `/embed/:name` for third-party iframes, plus a wired share bar and static CSV mirrors for most datasets (generational-wealth CSV is withheld pending a licence decision).
 - **Interactive tools:** wealth scale (`/tools/wealth-scale`), household-wealth comparator (`/tools/wealth-calculator`), income-tax calculator (`/tools/tax-calculator`), and a wealth-tax band explorer (`/tools/wealth-tax-simulator`).
 - **Policy microsim** (`packages/wealthlens-sim/`): `engine.simulate` scores seven reform families (A–G) against a synthetic GB population, with provenance manifests on published numbers. The public `/simulator` page currently serves two illustrative annual wealth-tax scenarios from precomputed JSON — not live engine calls, and not official forecasts.
-- **Reproducible fetch/process pipelines** from WID, ONS, HMRC, BoE and DWP into CSV + Plotly HTML. `run_all.py` is the single script list; a fetch failure is supposed to fail closed rather than publish partial data.
+- **Reproducible fetch/process pipelines** from WID, ONS, HMRC, BoE and DWP into CSV + Plotly HTML. `run_all.py` is the single script list and exits non-zero when a fetch fails, so it does not publish partial data. The deploy workflow does not call it: its fetch step logs a failed script, falls back to the embedded data, and still publishes.
 - **Dark mode**, skip-to-content, keyboard-accessible tabs and controls, and WCAG AA as a contribution rule (axe-checked in frontend tests).
 - **Dataset + methodology pages** that share one provenance table (`datasetProvenance.ts`).
 
@@ -176,6 +176,17 @@ pip install -r projects/wealthlens-dashboard/backend/requirements-dev.txt
 
 make pipelines                       # network; or: python automation/data-pipelines/run_all.py
 make dev-backend                     # http://127.0.0.1:8000  (OpenAPI at /docs)
+```
+
+On Windows under Git Bash, the same steps are:
+
+```bash
+python -m venv .venv
+source .venv/Scripts/activate       # not .venv/bin/activate
+pip install -e ".[dev,pipelines]"
+pip install -r projects/wealthlens-dashboard/backend/requirements-dev.txt
+make PYTHON=python pipelines
+make PYTHON=python dev-backend
 ```
 
 In another terminal:
