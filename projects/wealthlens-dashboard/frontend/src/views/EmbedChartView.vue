@@ -58,8 +58,17 @@ const source = computed(() => {
   return fetchedSource.value
 })
 
-/** Illustrative-composite honesty caveat — must travel with the artifact. */
-const isIllustrative = ref(false)
+/** Provenance caveats must travel with the artifact, even if metadata is unavailable. */
+const dataType = ref<string | null | undefined>(null)
+const caveat = computed(() => {
+  if (dataType.value === "illustrative_fallback") {
+    return "Illustrative composite — figures are worked examples, not published statistics. See the full article for caveats."
+  }
+  if (dataType.value === "live_ons" || dataType.value === "static_published") return ""
+  return chartName.value === "productivity-pay" || dataType.value != null
+    ? "Unverified provenance. These figures have not been verified as official statistics."
+    : ""
+})
 
 /* ---- height auto-resize ---- */
 let resizeObserver: ResizeObserver | null = null
@@ -88,7 +97,7 @@ onMounted(async () => {
     if (!chartConfigs[chartName.value]) {
       fetchedSource.value = { name: meta.source, url: meta.source_url, accessed: meta.access_date }
     }
-    isIllustrative.value = meta.data_type === "illustrative_fallback"
+    dataType.value = meta.data_type
   } catch {
     // Source line falls back to the backlink only — never fabricate a citation.
   }
@@ -115,9 +124,8 @@ usePageMeta({
 
     <ChartComponent />
 
-    <p v-if="isIllustrative" class="embed-caveat" role="note">
-      Illustrative composite — figures are worked examples, not published statistics. See the full
-      article for caveats.
+    <p v-if="caveat" class="embed-caveat" role="note">
+      {{ caveat }}
     </p>
 
     <footer class="embed-foot">

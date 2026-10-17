@@ -189,28 +189,26 @@ def _read_csv_as_records(path: Path, slug: str = "") -> list[dict]:
     return records
 
 
-def _read_data_type(csv_path: Path) -> str | None:
-    """Return the ``data_type`` recorded in the CSV's ``.meta.json`` sidecar.
+def _read_data_type(csv_path: Path, records: list[dict]) -> str | None:
+    """Validate sidecar provenance against any marker carried in the CSV rows.
 
-    The pipelines write a sidecar (e.g. ``productivity_pay_gap.meta.json``)
-    next to each processed CSV recording provenance:
-    - ``"live_ons"`` — fetched live from the official source;
-    - ``"illustrative_fallback"`` — an illustrative composite (figures are
-      examples); the frontend surfaces a data-honesty caveat;
-    - ``"static_published"`` — real published figures compiled statically (not a
-      live fetch and not invented), e.g. child poverty / generational wealth.
-    Any value is passed straight through into the static metadata artifact.
-
-    Returns None when no sidecar exists or it cannot be read/parsed, so a
-    dataset without provenance metadata stays backward-compatible (no caveat).
+    Match the API: missing provenance for productivity-pay, invalid sidecars or
+    contradictory CSV markers are unverified. Real static_published data remains
+    genuine; legacy datasets without a sidecar retain None.
     """
     meta_path = csv_path.with_suffix(".meta.json")
     try:
         sidecar = json.loads(meta_path.read_text(encoding="utf-8"))
-    except (json.JSONDecodeError, OSError):
-        return None
-    value = sidecar.get("data_type")
-    return value if isinstance(value, str) else None
+    except FileNotFoundError:
+        return "unverified" if csv_path.name == DATASETS.get("productivity-pay") else None
+    except (json.JSONDecodeError, UnicodeDecodeError, OSError):
+        return "unverified"
+    value = sidecar.get("data_type") if isinstance(sidecar, dict) else None
+    if not isinstance(value, str) or value not in ("live_ons", "illustrative_fallback", "static_published"):
+        return "unverified"
+    if any("data_type" in row and row["data_type"] != value for row in records):
+        return "unverified"
+    return value
 
 
 def _load_simulator_scenarios() -> dict[str, dict[str, str]]:
@@ -316,7 +314,7 @@ def _write_csv_mirror(slug: str, records: list[dict], data_type: str | None) -> 
     if slug in CSV_MIRROR_EXCLUDED or not records:
         return
     columns = list(records[0].keys())
-    fieldnames = columns + (["data_type"] if data_type else [])
+    fieldnames = columns + (["data_type"] if data_type and "data_type" not in columns else [])
     csv_out = OUT_DIR / f"{slug}.csv"
     with csv_out.open("w", encoding="utf-8", newline="") as fh:
         writer = csv.DictWriter(fh, fieldnames=fieldnames, extrasaction="ignore")
@@ -362,7 +360,8 @@ def main() -> None:
         )
 
         # CSV mirror for the download links (RFC-001a)
-        _write_csv_mirror(slug, records, _read_data_type(csv_path))
+        data_type = _read_data_type(csv_path, records)
+        _write_csv_mirror(slug, records, data_type)
 
         # Metadata response
         meta = DATASET_META.get(slug, {})
@@ -375,7 +374,7 @@ def main() -> None:
             "access_date": meta.get("access_date", ""),
             "row_count": len(records),
             "columns": columns,
-            "data_type": _read_data_type(csv_path),
+            "data_type": data_type,
         }
         meta_path = OUT_DIR / f"{slug}-metadata.json"
         meta_path.write_text(

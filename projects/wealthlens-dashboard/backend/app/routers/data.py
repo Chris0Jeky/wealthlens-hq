@@ -263,7 +263,7 @@ def _build_metadata_safe(dataset_name: str) -> dict[str, Any]:
             data_type = _get_data_type(dataset_name)
         except Exception:
             logger.exception("metadata recovery: data_type failed for %s", dataset_name)
-            data_type = None
+            data_type = "unverified" if dataset_name == "productivity-pay" else None
         return {
             "name": dataset_name,
             "description": meta["description"],
@@ -313,23 +313,22 @@ def _get_data_type(dataset_name: str) -> str | None:
 
     Deliberately UNCACHED (unlike row_count/columns): a pipeline rerun that
     switches a dataset between live and fallback data must be reflected without
-    a server restart, and this is a single cheap small-file read.
+    a server restart. CSV provenance markers are corroborated on every read.
 
-    Returns None when no sidecar exists or it cannot be read/parsed, so a
-    dataset without provenance metadata stays backward-compatible (no caveat).
+    Missing provenance for productivity-pay (which can be synthetic), invalid
+    sidecars, and contradictory CSV markers return "unverified". Legacy datasets
+    without a sidecar retain None; verified static_published data stays genuine.
     """
     sidecar_path = (DATA_DIR / DATASETS[dataset_name]).with_suffix(".meta.json")
     try:
         raw = sidecar_path.read_bytes()
     except FileNotFoundError:
-        return None  # no sidecar -> no provenance metadata (backward-compatible)
+        return "unverified" if dataset_name == "productivity-pay" else None
     except OSError as exc:
         # A present-but-unreadable sidecar is an error, not "no provenance": for an
-        # illustrative dataset, silently returning None would DROP the data-honesty
-        # caveat (the frontend only shows it on a positive match). Surface it so a
-        # corrupt sidecar is detectable, while still degrading to None.
+        # illustrative dataset, unknown provenance must retain a public caveat.
         logger.warning("Cannot read data_type sidecar for %s: %s", dataset_name, exc)
-        return None
+        return "unverified"
     try:
         # json.loads decodes the bytes itself: malformed JSON raises JSONDecodeError,
         # and non-UTF8 byte corruption raises UnicodeDecodeError (a ValueError, NOT an
@@ -338,9 +337,20 @@ def _get_data_type(dataset_name: str) -> str | None:
         sidecar = json.loads(raw)
     except (json.JSONDecodeError, UnicodeDecodeError) as exc:
         logger.warning("Corrupt data_type sidecar for %s: %s", dataset_name, exc)
-        return None
-    value = sidecar.get("data_type")
-    return value if isinstance(value, str) else None
+        return "unverified"
+    value = sidecar.get("data_type") if isinstance(sidecar, dict) else None
+    if not isinstance(value, str) or value not in ("live_ons", "illustrative_fallback", "static_published"):
+        logger.warning("Invalid data_type sidecar for %s", dataset_name)
+        return "unverified"
+    # Read uncached so a pipeline rerun cannot leave a stale provenance decision.
+    try:
+        df = _read_csv(dataset_name)
+    except HTTPException:
+        return "unverified"
+    if "data_type" in df.columns and not df["data_type"].eq(value).all():
+        logger.warning("Conflicting CSV and sidecar data_type for %s", dataset_name)
+        return "unverified"
+    return value
 
 
 def _freshness_status(age_hours: float) -> Literal["fresh", "stale", "expired"]:

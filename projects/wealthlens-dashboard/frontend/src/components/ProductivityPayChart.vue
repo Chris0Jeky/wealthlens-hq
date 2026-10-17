@@ -33,22 +33,23 @@ const chart = ref<EChartsExportable | null>(null)
 
 defineExpose({ chart })
 
-/**
- * Data-honesty caveat: true only when the pipeline fell back to illustrative
- * data (sidecar data_type === "illustrative_fallback"). Default OFF — a live
- * dataset, a missing sidecar, or a failed metadata fetch all leave this false,
- * so the caveat shows ONLY when we positively know the data is illustrative.
- */
-const isIllustrative = ref(false)
+// Unknown provenance must not imply official data, including during metadata loading.
+const dataType = ref<string | null | undefined>(null)
+const caveat = computed(() => {
+  if (dataType.value === "illustrative_fallback") {
+    return "Illustrative. Derived from ONS bulletins, not exact time-series values."
+  }
+  if (dataType.value === "live_ons" || dataType.value === "static_published") return ""
+  return "Unverified provenance. These figures have not been verified as official statistics."
+})
 const dataStore = useDataStore()
 
 onMounted(async () => {
   try {
     const meta = await dataStore.fetchMetadata("productivity-pay")
-    isIllustrative.value = meta.data_type === "illustrative_fallback"
+    dataType.value = meta.data_type
   } catch {
-    // A metadata fetch failure must not break the chart; leave the caveat off.
-    isIllustrative.value = false
+    // Keep the unverified caveat when metadata cannot be loaded.
   }
 })
 
@@ -121,18 +122,15 @@ const tableRows = computed<Record<string, string | number>[]>(() => {
   }))
 })
 
-/**
- * Table caption — appends the illustrative-provenance hedge only when the data
- * is actually illustrative (isIllustrative, set from the dataset metadata), so
- * the caption stays consistent with the on-page caveat. It self-hides if a live
- * ONS dataset is ever served (default OFF), mirroring the caveat.
- */
+/** Keep the accessible table's provenance consistent with the visible caveat. */
 const tableCaption = computed(
   () =>
     "UK productivity index vs real-pay index by year (1997 = 100), with the productivity-vs-pay gap (%)." +
-    (isIllustrative.value
+    (dataType.value === "illustrative_fallback"
       ? " Illustrative figures derived from ONS bulletins, not exact time-series values."
-      : ""),
+      : caveat.value
+        ? ` ${caveat.value}`
+        : ""),
 )
 
 const option = computed(() => {
@@ -248,7 +246,7 @@ const option = computed(() => {
   <div v-else>
     <div
       role="img"
-      :aria-label="`Line chart showing productivity vs real pay divergence from ${yearRange.min} to ${yearRange.max}. Productivity index ranges from ${productivityRange.min.toFixed(0)} to ${productivityRange.max.toFixed(0)}. Real pay index ranges from ${payRange.min.toFixed(0)} to ${payRange.max.toFixed(0)}.`"
+      :aria-label="`Line chart showing productivity vs real pay divergence from ${yearRange.min} to ${yearRange.max}. Productivity index ranges from ${productivityRange.min.toFixed(0)} to ${productivityRange.max.toFixed(0)}. Real pay index ranges from ${payRange.min.toFixed(0)} to ${payRange.max.toFixed(0)}. ${caveat}`"
       class="w-full"
     >
       <VChart ref="chart" class="w-full" style="height: 480px" :option="option" autoresize />
@@ -262,10 +260,8 @@ const option = computed(() => {
       :caption="tableCaption"
     />
 
-    <!-- Data-honesty caveat — shown only when the pipeline used illustrative
-         fallback data (data_type === "illustrative_fallback"). Default OFF. -->
-    <p v-if="isIllustrative" class="text-xs text-[var(--wl-ink-muted)] mt-2 text-center italic">
-      Illustrative. Derived from ONS bulletins, not exact time-series values.
+    <p v-if="caveat" role="note" class="text-xs text-[var(--wl-ink-muted)] mt-2 text-center italic">
+      {{ caveat }}
     </p>
 
     <!-- Source citation -->

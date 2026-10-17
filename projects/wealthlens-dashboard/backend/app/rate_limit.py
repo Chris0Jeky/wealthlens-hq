@@ -35,6 +35,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         self.window_seconds = 60
         self._hits: dict[str, list[float]] = defaultdict(list)
         self._lock = asyncio.Lock()
+        self._next_cleanup = 0.0
 
     def _get_client_ip(self, request: Request) -> str | None:
         if self.trust_forwarded_for:
@@ -72,9 +73,17 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         now = time.time()
 
         async with self._lock:
-            cleaned = self._clean_window(self._hits[client_ip], now)
+            # Reclaim idle clients once per window, including IPs that never return.
+            if now >= self._next_cleanup:
+                cutoff = now - self.window_seconds
+                expired = [ip for ip, hits in self._hits.items() if not hits or hits[-1] <= cutoff]
+                for ip in expired:
+                    del self._hits[ip]
+                self._next_cleanup = now + self.window_seconds
+
+            cleaned = self._clean_window(self._hits.get(client_ip, []), now)
             if not cleaned:
-                del self._hits[client_ip]
+                self._hits.pop(client_ip, None)
             else:
                 self._hits[client_ip] = cleaned
 
@@ -86,9 +95,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                     headers={"Retry-After": str(max(retry_after, 1))},
                 )
 
-            if len(self._hits) >= MAX_TRACKED_IPS and client_ip not in self._hits:
-                return await call_next(request)
-
-            self._hits[client_ip].append(now)
+            if len(self._hits) < MAX_TRACKED_IPS or client_ip in self._hits:
+                self._hits[client_ip].append(now)
 
         return await call_next(request)

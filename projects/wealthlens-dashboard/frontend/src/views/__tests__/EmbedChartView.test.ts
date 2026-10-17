@@ -12,6 +12,7 @@ vi.mock("vue-router", () => ({
 // Stub the chart loader so the test doesn't pull the echarts graph.
 vi.mock("@/config/chartComponents", () => ({
   CHART_COMPONENT_LOADERS: {
+    "productivity-pay": async () => ({ __esModule: true, default: { render: () => null } }),
     "wealth-shares": async () => ({
       __esModule: true,
       default: {
@@ -50,6 +51,7 @@ function mountEmbed() {
 
 describe("EmbedChartView (RFC-001f)", () => {
   beforeEach(() => {
+    mockRoute.params.name = "wealth-shares"
     setActivePinia(createPinia())
     mockFetchMetadata.mockReset()
     mockFetchMetadata.mockResolvedValue({
@@ -108,6 +110,37 @@ describe("EmbedChartView (RFC-001f)", () => {
     await flushPromises()
     expect(wrapper.find(".embed-caveat").text()).toContain("Illustrative composite")
   })
+
+  it.each([null, undefined, "unverified", "invalid"])(
+    "retains the productivity caveat for %s provenance",
+    async (dataType) => {
+      mockRoute.params.name = "productivity-pay"
+      mockFetchMetadata.mockResolvedValue({ data_type: dataType })
+      const wrapper = mountEmbed()
+      await flushPromises()
+      expect(wrapper.find('.embed-caveat[role="note"]').text()).toContain("Unverified provenance")
+    },
+  )
+
+  it("retains the productivity caveat while metadata loads and after a fetch failure", async () => {
+    mockRoute.params.name = "productivity-pay"
+    mockFetchMetadata.mockRejectedValue(new Error("metadata unavailable"))
+    const wrapper = mountEmbed()
+    expect(wrapper.find(".embed-caveat").text()).toContain("Unverified provenance")
+    await flushPromises()
+    expect(wrapper.find(".embed-caveat").text()).toContain("Unverified provenance")
+  })
+
+  it.each(["live_ons", "static_published"])(
+    "has no caveat for verified %s data",
+    async (dataType) => {
+      mockRoute.params.name = "productivity-pay"
+      mockFetchMetadata.mockResolvedValue({ data_type: dataType })
+      const wrapper = mountEmbed()
+      await flushPromises()
+      expect(wrapper.find(".embed-caveat").exists()).toBe(false)
+    },
+  )
 
   it("posts its height to the parent window for iframe auto-resize", async () => {
     const postMessage = vi.fn()

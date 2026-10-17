@@ -51,7 +51,8 @@ class DatasetMetadataResponse(BaseModel):
             "'live_ons' (fetched live), 'illustrative_fallback' (illustrative "
             "composite — figures are examples, caveat shown), 'static_published' "
             "(real published figures compiled statically, not a live fetch), or "
-            "null if no sidecar exists"
+            "'unverified' if provenance is missing for a fallback-capable dataset, "
+            "invalid or inconsistent; null for legacy datasets without a sidecar"
         ),
     )
 

@@ -26,7 +26,8 @@ export interface DatasetMetadataResponse {
   last_updated?: string | null
   /** Pipeline provenance: 'live_ons' (live), 'illustrative_fallback' (example
    * composite — caveat shown), 'static_published' (real published figures
-   * compiled statically, not invented), or null (no sidecar). */
+   * compiled statically, not invented), 'unverified' (missing/invalid/conflicting
+   * evidence), or null (legacy dataset with no sidecar). */
   data_type?: string | null
 }
 
