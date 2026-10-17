@@ -125,12 +125,60 @@ class TestProductivityPayDataType:
     case gets its own client/sidecar state.
     """
 
-    def test_data_type_none_without_sidecar(self, tmp_path: Path) -> None:
-        """No sidecar -> data_type is null (backward-compatible default)."""
+    def test_data_type_unverified_without_sidecar(self, tmp_path: Path) -> None:
+        """Missing provenance must not imply genuine data for this fallback dataset."""
         for client in _client_with_sidecar(tmp_path, data_type=None):
             response = client.get("/api/data/productivity-pay/metadata")
             assert response.status_code == 200
-            assert response.json()["data_type"] is None
+            assert response.json()["data_type"] == "unverified"
+
+    @pytest.mark.parametrize(
+        ("sidecar", "csv_type", "expected"),
+        [
+            ('{"data_type":"illustrative_fallback"}', "illustrative_fallback", "illustrative_fallback"),
+            (None, "illustrative_fallback", "unverified"),
+            ("{ corrupt", "illustrative_fallback", "unverified"),
+            ('{"data_type":"live_ons"}', "illustrative_fallback", "unverified"),
+            ('{"data_type":"illustrative_fallback"}', "live_ons", "unverified"),
+            ('{"data_type":"bogus"}', None, "unverified"),
+            ('{"data_type":[]}', None, "unverified"),
+            ("[]", None, "unverified"),
+            ('{"data_type":"live_ons"}', "live_ons", "live_ons"),
+            ('{"data_type":"static_published"}', "static_published", "static_published"),
+        ],
+    )
+    def test_provenance_requires_consistent_evidence(
+        self,
+        csv_client: TestClient,
+        tmp_path: Path,
+        sidecar: str | None,
+        csv_type: str | None,
+        expected: str,
+    ) -> None:
+        csv_path = tmp_path / "productivity_pay_gap.csv"
+        if csv_type is not None:
+            csv_path.write_text(f"year,data_type\n1997,{csv_type}\n", encoding="utf-8")
+        if sidecar is not None:
+            csv_path.with_suffix(".meta.json").write_text(sidecar, encoding="utf-8")
+        response = csv_client.get("/api/data/productivity-pay/metadata")
+        assert response.status_code == 200
+        assert response.json()["data_type"] == expected
+
+    def test_unreadable_sidecar_is_unverified(
+        self, csv_client: TestClient, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        original = Path.read_bytes
+        sidecar = tmp_path / "productivity_pay_gap.meta.json"
+
+        def read_bytes(path: Path) -> bytes:
+            if path == sidecar:
+                raise PermissionError("sidecar is unreadable")
+            return original(path)
+
+        monkeypatch.setattr(Path, "read_bytes", read_bytes)
+        response = csv_client.get("/api/data/productivity-pay/metadata")
+        assert response.status_code == 200
+        assert response.json()["data_type"] == "unverified"
 
     def test_data_type_illustrative_fallback(self, tmp_path: Path) -> None:
         """An illustrative_fallback sidecar surfaces as data_type."""

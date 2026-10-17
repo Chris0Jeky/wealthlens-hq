@@ -179,10 +179,10 @@ class TestPaginatedData:
 class TestDataTypeSidecar:
     """_get_data_type distinguishes an absent sidecar from a corrupt one."""
 
-    def test_corrupt_sidecar_logs_and_returns_none(
+    def test_corrupt_sidecar_logs_and_returns_unverified(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
     ) -> None:
-        """A present-but-unparseable sidecar warns (not silent) and degrades to None.
+        """A present-but-unparseable sidecar warns and retains a public caveat.
 
         Silently dropping it would hide the data-honesty caveat for an illustrative
         dataset — the exact failure the project guards against.
@@ -198,7 +198,7 @@ class TestDataTypeSidecar:
         with caplog.at_level(logging.WARNING, logger="wealthlens.data"):
             result = data_mod._get_data_type(name)
 
-        assert result is None
+        assert result == "unverified"
         assert "Corrupt data_type sidecar" in caplog.text
 
     def test_absent_sidecar_is_silent_none(
@@ -218,7 +218,7 @@ class TestDataTypeSidecar:
     def test_non_utf8_sidecar_degrades_not_crashes(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
     ) -> None:
-        """A binary-corrupt (non-UTF8) sidecar degrades to None, not a crash.
+        """A binary-corrupt (non-UTF8) sidecar stays unverified, not a crash.
 
         UnicodeDecodeError is a ValueError, NOT an OSError, so it would escape the
         read-time guards and (uncaught) 500 the whole /metadata catalog.
@@ -232,7 +232,7 @@ class TestDataTypeSidecar:
         with caplog.at_level(logging.WARNING, logger="wealthlens.data"):
             result = data_mod._get_data_type(name)
 
-        assert result is None
+        assert result == "unverified"
         assert "Corrupt data_type sidecar" in caplog.text
 
     def test_metadata_recovery_never_reraises(

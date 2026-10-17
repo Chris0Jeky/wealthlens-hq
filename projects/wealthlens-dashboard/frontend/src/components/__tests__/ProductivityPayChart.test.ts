@@ -25,6 +25,7 @@ let mockRows: ReturnType<typeof shallowRef<Record<string, unknown>[]>>
 let mockLoading: ReturnType<typeof ref>
 let mockError: ReturnType<typeof ref>
 let mockDataType: string | null = null
+let mockMetadataFailure = false
 
 vi.mock("@/composables/useChartData", () => ({
   useChartData: () => ({
@@ -36,7 +37,10 @@ vi.mock("@/composables/useChartData", () => ({
 
 vi.mock("@/stores/data", () => ({
   useDataStore: () => ({
-    fetchMetadata: vi.fn().mockResolvedValue({ data_type: mockDataType }),
+    fetchMetadata: vi.fn(async () => {
+      if (mockMetadataFailure) throw new Error("metadata unavailable")
+      return { data_type: mockDataType }
+    }),
   }),
 }))
 
@@ -86,6 +90,7 @@ describe("ProductivityPayChart accessible data table", () => {
     mockLoading = ref(false)
     mockError = ref(null)
     mockDataType = "illustrative_fallback"
+    mockMetadataFailure = false
 
     Object.defineProperty(window, "matchMedia", {
       writable: true,
@@ -172,16 +177,41 @@ describe("ProductivityPayChart accessible data table", () => {
     expect(caption).toContain("Illustrative figures derived from ONS bulletins")
   })
 
-  it("omits the illustrative hedge from the caption when the data is live", async () => {
-    mockDataType = "live_ons"
+  it.each(["live_ons", "static_published"])(
+    "omits the caveat for verified %s data",
+    async (dataType) => {
+      mockDataType = dataType
+      const wrapper = mount(ProductivityPayChart)
+      await flushPromises()
+      const caption = wrapper.find("table caption").text()
+      // The table still renders (a11y is unconditional)...
+      expect(wrapper.text()).toContain("View data as table")
+      // ...but the caption carries no illustrative wording on genuine data.
+      expect(caption).toContain("UK productivity index vs real-pay index by year")
+      expect(caption.toLowerCase()).not.toContain("illustrative")
+      expect(wrapper.find('[role="note"]').exists()).toBe(false)
+    },
+  )
+
+  it.each([null, "unverified", "invalid"])(
+    "retains a caveat for %s provenance",
+    async (dataType) => {
+      mockDataType = dataType
+      const wrapper = mount(ProductivityPayChart)
+      await flushPromises()
+      expect(wrapper.find('[role="note"]').text()).toContain("Unverified provenance")
+      expect(wrapper.find("table caption").text()).toContain(
+        "not been verified as official statistics",
+      )
+    },
+  )
+
+  it("retains a caveat while metadata is loading and after a failed fetch", async () => {
+    mockMetadataFailure = true
     const wrapper = mount(ProductivityPayChart)
+    expect(wrapper.find('[role="note"]').text()).toContain("Unverified provenance")
     await flushPromises()
-    const caption = wrapper.find("table caption").text()
-    // The table still renders (a11y is unconditional)...
-    expect(wrapper.text()).toContain("View data as table")
-    // ...but the caption carries no illustrative wording on genuine data.
-    expect(caption).toContain("UK productivity index vs real-pay index by year")
-    expect(caption.toLowerCase()).not.toContain("illustrative")
+    expect(wrapper.find('[role="note"]').text()).toContain("Unverified provenance")
   })
 
   it("drops a row with a missing PLOTTED column (productivity/pay) instead of fabricating a 0", () => {

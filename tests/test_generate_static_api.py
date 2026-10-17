@@ -145,6 +145,44 @@ def test_generator_emits_csv_mirror_with_data_type_column(
     assert lines[2] == "B,,illustrative_fallback"
 
 
+@pytest.mark.parametrize(
+    ("sidecar", "csv_type", "expected"),
+    [
+        ('{"data_type":"illustrative_fallback"}', "illustrative_fallback", "illustrative_fallback"),
+        (None, "illustrative_fallback", "unverified"),
+        ("{ corrupt", "illustrative_fallback", "unverified"),
+        ('{"data_type":"live_ons"}', "illustrative_fallback", "unverified"),
+        ('{"data_type":"bogus"}', "illustrative_fallback", "unverified"),
+        ("[]", "illustrative_fallback", "unverified"),
+        ('{"data_type":"live_ons"}', "live_ons", "live_ons"),
+        ('{"data_type":"static_published"}', "static_published", "static_published"),
+    ],
+)
+def test_generator_preserves_unverified_provenance(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    sidecar: str | None,
+    csv_type: str,
+    expected: str,
+) -> None:
+    csv_path = tmp_path / "productivity_pay_gap.csv"
+    csv_path.write_text(f"year,data_type\n1997,{csv_type}\n", encoding="utf-8")
+    if sidecar is not None:
+        csv_path.with_suffix(".meta.json").write_text(sidecar, encoding="utf-8")
+    out_dir = tmp_path / "out"
+    monkeypatch.setattr(gsa, "DATA_DIR", tmp_path)
+    monkeypatch.setattr(gsa, "OUT_DIR", out_dir)
+    monkeypatch.setattr(gsa, "DATASETS", {"productivity-pay": csv_path.name})
+    monkeypatch.setattr(gsa, "generate_simulator_static", lambda: 0)
+    gsa.main()
+
+    metadata = json.loads((out_dir / "productivity-pay-metadata.json").read_text(encoding="utf-8"))
+    assert metadata["data_type"] == expected
+    catalog = json.loads((out_dir / "all-metadata.json").read_text(encoding="utf-8"))
+    assert catalog["datasets"][0]["data_type"] == expected
+    assert (out_dir / "productivity-pay.csv").read_text(encoding="utf-8").splitlines()[1] == f"1997,{expected}"
+
+
 def test_generator_skips_csv_mirror_for_nc_nd_dataset(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
