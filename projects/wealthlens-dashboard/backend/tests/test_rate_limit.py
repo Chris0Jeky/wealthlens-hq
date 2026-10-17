@@ -14,6 +14,7 @@ import asyncio
 import importlib
 import time
 
+import pytest
 from app.rate_limit import MAX_TRACKED_IPS, RateLimitMiddleware
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -228,6 +229,65 @@ class TestRateLimitOverflow:
     so if the team later decides to fail-closed at the cap, flip them deliberately.
     Driven via dispatch() directly to avoid 10k HTTP round-trips through TestClient.
     """
+
+    def test_expired_idle_buckets_free_capacity(self, monkeypatch: MonkeyPatch) -> None:
+        mw = RateLimitMiddleware(_noop_asgi, requests_per_minute=1)
+        now = 10_000.0
+        monkeypatch.setattr("app.rate_limit.time.time", lambda: now)
+        _fill_to_cap(mw, MAX_TRACKED_IPS, now - 3600)
+
+        async def run() -> None:
+            new_ip = "203.0.113.5"
+            assert (await mw.dispatch(_make_request(new_ip), _call_next)).status_code == 200
+            assert new_ip in mw._hits
+            assert len(mw._hits) <= MAX_TRACKED_IPS
+            assert (await mw.dispatch(_make_request(new_ip), _call_next)).status_code == 429
+
+        asyncio.run(run())
+        # The purge must run again after another idle period, not just at startup.
+        now += 3600
+        _fill_to_cap(mw, MAX_TRACKED_IPS - 1, now - 3600)
+        asyncio.run(run())
+
+    @pytest.mark.parametrize("failure", [None, TimeoutError, RuntimeError])
+    def test_overflow_downstream_does_not_hold_limiter_lock(self, failure: type[Exception] | None) -> None:
+        mw = RateLimitMiddleware(_noop_asgi, requests_per_minute=2)
+        _fill_to_cap(mw, MAX_TRACKED_IPS, time.time())
+
+        async def run() -> None:
+            started = asyncio.Event()
+            release = asyncio.Event()
+            known_reached = asyncio.Event()
+
+            async def slow_handler(request: Request) -> Response:
+                started.set()
+                await release.wait()
+                if failure is not None:
+                    raise failure("downstream failed")
+                return Response("ok")
+
+            async def known_handler(request: Request) -> Response:
+                known_reached.set()
+                return Response("ok")
+
+            overflow = asyncio.create_task(mw.dispatch(_make_request("203.0.113.99"), slow_handler))
+            try:
+                await asyncio.wait_for(started.wait(), timeout=1)
+                response = await asyncio.wait_for(mw.dispatch(_make_request("10.0.0.0"), known_handler), timeout=1)
+                assert response.status_code == 200
+                assert known_reached.is_set()
+                assert not release.is_set()
+                assert (await mw.dispatch(_make_request("10.0.0.0"), known_handler)).status_code == 429
+            finally:
+                release.set()
+                if failure is None:
+                    assert (await overflow).status_code == 200
+                else:
+                    with pytest.raises(failure, match="downstream failed"):
+                        await overflow
+            assert not mw._lock.locked()
+
+        asyncio.run(run())
 
     def test_below_cap_new_ip_is_tracked_and_limited(self) -> None:
         """Below the cap the normal sliding-window limit still applies."""
