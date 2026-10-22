@@ -20,6 +20,8 @@ interface ImportMetaEnv {
   readonly VITE_PLAUSIBLE_DOMAIN?: string
   /** "on" loads the Pulseboard SDK in production builds; anything else keeps it off (default). */
   readonly VITE_PULSEBOARD?: string
+  /** "on" shows working time-range controls on year-axis charts (#716); anything else hides them (default). */
+  readonly VITE_CHART_RANGE_FILTER?: string
 }
 
 interface ImportMeta {

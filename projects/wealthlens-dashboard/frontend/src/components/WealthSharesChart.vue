@@ -36,7 +36,8 @@ import { COLOR_TOP_10, COLOR_TOP_1 } from "@/config/chartColors"
 // Register only the ECharts modules we need (tree-shaking)
 use([CanvasRenderer, LineChart, GridComponent, TooltipComponent, TitleComponent, LegendComponent])
 
-const { rows, loading, error } = useChartData("wealth-shares")
+const props = withDefaults(defineProps<{ range?: string }>(), { range: "All" })
+const { rows, loading, error } = useChartData("wealth-shares", () => props.range)
 const chart = ref<EChartsExportable | null>(null)
 
 defineExpose({ chart })
