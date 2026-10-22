@@ -59,7 +59,8 @@ cannot drift by construction. To make that true:
   twitter:*, canonical — several of them false: relative `og:image`,
   `og:url`/canonical pointing at the unregistered `wealthlens.uk`) are
   removed; only route-invariant tags stay.
-- `main.ts` strips all `[data-wl-meta]` elements **before** mounting,
+- `main.ts` waits for `router.isReady()`, then strips all `[data-wl-meta]`
+  elements immediately **before** mounting,
   and the mounting view recreates them — so a hydrated page has exactly
   one copy of each tag, and mid-run SPA-fallback serving during the
   prerender loop is self-correcting.
@@ -72,11 +73,31 @@ cannot drift by construction. To make that true:
 
 `app.mount()` clears the container and renders fresh (snapshot-and-remount,
 not true SSR hydration). Crawlers and no-JS readers get the full baked
-content; JS users see the baked page until the bundle loads, then an
-identical re-render. Accepted trade-off: a brief re-render (and, on chart
+content; JS users see the baked page until the initial lazy route resolves,
+then a re-render. Waiting for `router.isReady()` prevents an intermediate
+empty `RouterView` from replacing the snapshot and pulling the footer up.
+Metadata stays baked until that same handover. If the initial route import
+fails, the snapshot stays readable and the bootstrap reports the failure;
+a later successful navigation can still mount the app. An empty dev/SPA
+entry instead mounts the site shell so its navigation remains usable.
+Pulseboard starts after mount so it sees the live reserved bar container;
+service-worker load registration and navigation hooks remain synchronous.
+Accepted trade-off: a brief re-render (and, on chart
 pages, a short loading state while static JSON refetches). True hydration
 would require `createSSRApp` + markup that matches the *initial* client
 render (loading skeletons), which is exactly what we don't want to bake.
+
+The delayed-route regression executes the real entry point with a controlled
+lazy import, proving the snapshot/meta survive until readiness, then mount
+once with one live copy of each tag. Mobile browser coverage gates the
+initial view chunk on home, chart, calculator, embed and 404 entries and
+checks the readable intermediate state, not just settled DOM. The browser
+test records layout-shift observations as diagnostic attachments, not a
+performance budget. Lighthouse's three runs on each of the existing three
+URLs remain the comparable performance measurement; a green warn-only job
+is not evidence that the performance target passed. This change does not
+replace snapshot/remount with SSR hydration or address data-refetch layout
+changes and bundle/render cost.
 
 ## Alternatives considered
 
