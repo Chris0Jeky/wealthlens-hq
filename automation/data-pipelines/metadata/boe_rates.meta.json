@@ -1,5 +1,7 @@
 {
   "dataset": "boe_rates",
+  "data_type": "illustrative_fallback",
+  "provenance_note": "Illustrative worked examples, not published statistics. The source links are references and do not verify these figures; live fetch provenance is written by the pipeline.",
   "description": "Bank of England base rate and CPI annual inflation rate over time.",
   "sources": [
     {

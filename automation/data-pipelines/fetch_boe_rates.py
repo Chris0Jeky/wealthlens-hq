@@ -14,6 +14,7 @@ Output: projects/wealthlens-dashboard/data/processed/boe_rates.csv
 
 from __future__ import annotations
 
+import json
 import logging
 from datetime import date
 from pathlib import Path
@@ -43,6 +44,29 @@ ACCESS_DATE = date.today().isoformat()
 
 logger = logging.getLogger(__name__)
 REQUEST_TIMEOUT_SECONDS = 60
+
+
+def _write_metadata(csv_path: Path, *, data_type: str, access_date: str | None = None) -> None:
+    """Persist provenance beside raw and processed CSVs for all consumers."""
+    metadata = json.loads(
+        (Path(__file__).parent / "metadata/boe_rates.meta.json").read_text(encoding="utf-8")
+    )
+    metadata.update(
+        data_type=data_type,
+        source_url=BOE_IADB_URL,
+        access_date=access_date,
+        generated=ACCESS_DATE,
+        provenance_note=(
+            "Downloaded from the official source."
+            if data_type == "live_ons" else
+            "Illustrative worked examples, not published statistics."
+            if data_type == "illustrative_fallback" else
+            "Unverified provenance; these figures have not been verified as official statistics."
+        ),
+    )
+    csv_path.with_suffix(".meta.json").write_text(
+        json.dumps(metadata, indent=2) + "\n", encoding="utf-8"
+    )
 
 
 def _build_iadb_params(series_codes: str) -> dict[str, str]:
@@ -79,6 +103,7 @@ def fetch() -> Path:
         )
         resp.raise_for_status()
         out_path.write_bytes(resp.content)
+        _write_metadata(out_path, data_type="live_ons", access_date=ACCESS_DATE)
         logger.info("Saved raw BoE data to %s (%d KB)", out_path, len(resp.content) // 1024)
         return out_path
     except (requests.RequestException, OSError) as exc:
@@ -136,13 +161,14 @@ def _write_fallback(out_path: Path) -> Path:
 
     # Write as CSV (same format the process step expects after parsing)
     out_path.write_text(
-        "DATE,IUDBEDR,D7BT\n"
+        "DATE,IUDBEDR,D7BT,data_type\n"
         + "\n".join(
-            f"{r[0]},{r[1]},{r[2]}" for r in fallback_rows
+            f"{r[0]},{r[1]},{r[2]},illustrative_fallback" for r in fallback_rows
         )
         + "\n",
         encoding="utf-8",
     )
+    _write_metadata(out_path, data_type="illustrative_fallback")
     logger.info("Wrote fallback data to %s (%d rows)", out_path, len(fallback_rows))
     return out_path
 
@@ -168,6 +194,21 @@ def process(raw_path: Path) -> pd.DataFrame:
     # Normalise column names to uppercase for matching (wrap in pd.Index so the
     # assignment matches the DataFrame.columns type, not a bare list[str]).
     df_raw.columns = pd.Index([str(c).strip().upper() for c in df_raw.columns])
+
+    # Transport provenance, never row count, determines whether figures are official.
+    # Unknown or conflicting evidence must not silently become official data.
+    try:
+        metadata = json.loads(raw_path.with_suffix(".meta.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        metadata = {}
+    if not isinstance(metadata, dict):
+        metadata = {}
+    data_type = metadata.get("data_type", "unverified")
+    if data_type not in ("live_ons", "illustrative_fallback"):
+        data_type = "unverified"
+    if "DATA_TYPE" in df_raw.columns and not df_raw["DATA_TYPE"].eq(data_type).all():
+        data_type = "unverified"
+    access_date = metadata.get("access_date") if data_type == "live_ons" else None
 
     # Find the date column
     date_col = None
@@ -243,7 +284,10 @@ def process(raw_path: Path) -> pd.DataFrame:
         df["bank_rate"] = df["bank_rate"].ffill()
 
     out_path = PROCESSED_DIR / "boe_rates.csv"
+    df["data_type"] = data_type
+    df.attrs["access_date"] = access_date
     df.to_csv(out_path, index=False)
+    _write_metadata(out_path, data_type=data_type, access_date=access_date)
     logger.info("Processed BoE data saved to %s", out_path)
     logger.info(
         "%d rows, date range %s to %s",
@@ -252,12 +296,10 @@ def process(raw_path: Path) -> pd.DataFrame:
         df["date"].iloc[-1],
     )
 
-    # Check if fallback data was used
-    if len(df) < 50:
+    if data_type != "live_ons":
         logger.warning(
-            "Only %d rows — this may be fallback/illustrative data. "
-            "Re-run when BoE IADB is accessible for full dataset.",
-            len(df),
+            "BoE data provenance is %s. Re-run when BoE IADB is accessible for official data.",
+            data_type,
         )
 
     return df
@@ -307,12 +349,16 @@ def build_chart(df: pd.DataFrame) -> None:
         yref="y2",
     )
 
-    is_fallback = len(df) < 50
-    fallback_note = " (ILLUSTRATIVE FALLBACK DATA)" if is_fallback else ""
+    data_type = df["data_type"].iloc[0] if "data_type" in df.columns else "unverified"
+    fallback_note = (
+        " (ILLUSTRATIVE FALLBACK DATA)" if data_type == "illustrative_fallback"
+        else " (UNVERIFIED PROVENANCE)" if data_type != "live_ons"
+        else ""
+    )
 
     fig.update_layout(
         title=dict(
-            text=f"Bank Rate and CPI Inflation — United Kingdom{fallback_note}",
+            text=f"Bank Rate and CPI Inflation - United Kingdom{fallback_note}",
             font=dict(size=18),
         ),
         xaxis=dict(
@@ -345,8 +391,12 @@ def build_chart(df: pd.DataFrame) -> None:
 
     fig.add_annotation(
         text=(
-            f"Source: Bank of England Interactive Analytical Database · "
-            f"OGL v3.0 · Accessed {ACCESS_DATE}<br>"
+            ("Illustrative worked examples, not published statistics.<br>"
+             if data_type == "illustrative_fallback" else
+             "Unverified provenance, not verified as official statistics.<br>"
+             if data_type != "live_ons" else
+             f"OGL v3.0 · Accessed {df.attrs.get('access_date') or 'unknown'}<br>")
+            + f'Reference: <a href="{BOE_IADB_URL}">Bank of England Interactive Analytical Database</a><br>'
             f"Bank Rate (IUDBEDR) and CPI annual rate (D7BT/ONS). "
             f"2% dashed line = BoE inflation target."
         ),
@@ -360,11 +410,10 @@ def build_chart(df: pd.DataFrame) -> None:
     write_accessible_chart(
         fig,
         out_path,
-        title="Bank Rate and CPI Inflation — United Kingdom",
+        title=f"Bank Rate and CPI Inflation - United Kingdom{fallback_note}",
         description=(
             "Dual-axis line chart showing the Bank of England Bank Rate and "
-            "CPI annual inflation rate from 2000 to present, sourced from "
-            "the Bank of England Interactive Analytical Database."
+            f"CPI annual inflation rate.{fallback_note}"
         ),
     )
 
