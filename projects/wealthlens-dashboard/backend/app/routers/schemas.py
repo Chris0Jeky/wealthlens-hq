@@ -25,6 +25,7 @@ class DatasetMetadataResponse(BaseModel):
     source: str
     source_url: str
     access_date: str
+    sources: list[dict[str, Any]] = Field(default_factory=list)
     available: bool = Field(
         default=True,
         description=(
