@@ -2,12 +2,15 @@
 
 Source: Bank of England Interactive Analytical Database (OGL v3.0)
 Series codes:
-  - IUDBEDR: Official Bank Rate (monthly, not seasonally adjusted)
-  - D7BT: CPI annual rate (12-month % change, ONS series via BoE IADB)
+  - IUMABEDR: Monthly average of official Bank Rate (not end-month).
+  - D7BT: Legacy CPI request, rejected by IADB as an invalid series code.
+    The documented official CPI source is ONS Consumer price inflation, UK
+    (see metadata/boe_rates.meta.json). Until an official CPI annual series
+    can also be fetched, the WHOLE published dataset stays illustrative.
 
 URL pattern:
   https://www.bankofengland.co.uk/boeapps/database/_iadb-fromshowcolumns.asp
-  ?csv.x=yes&SeriesCodes=IUDBEDR,D7BT&...
+  ?csv.x=yes&SeriesCodes=IUMABEDR,D7BT&...
 
 Output: projects/wealthlens-dashboard/data/processed/boe_rates.csv
 """
@@ -17,6 +20,7 @@ from __future__ import annotations
 import json
 import logging
 from datetime import date
+from io import StringIO
 from pathlib import Path
 
 import pandas as pd
@@ -37,8 +41,13 @@ BOE_IADB_URL = (
 )
 
 # Series codes
-BANK_RATE_SERIES = "IUDBEDR"
+BANK_RATE_SERIES = "IUMABEDR"
 CPI_SERIES = "D7BT"
+
+USER_AGENT = (
+    "Mozilla/5.0 (compatible; WealthLensDataPipeline/1.0; "
+    "+https://github.com/Chris0Jeky/wealthlens-hq)"
+)
 
 ACCESS_DATE = date.today().isoformat()
 
@@ -46,14 +55,17 @@ logger = logging.getLogger(__name__)
 REQUEST_TIMEOUT_SECONDS = 60
 
 
-def _write_metadata(csv_path: Path, *, data_type: str, access_date: str | None = None) -> None:
+def _write_metadata(
+    csv_path: Path, *, data_type: str, access_date: str | None = None,
+    source_url: str = BOE_IADB_URL,
+) -> None:
     """Persist provenance beside raw and processed CSVs for all consumers."""
     metadata = json.loads(
         (Path(__file__).parent / "metadata/boe_rates.meta.json").read_text(encoding="utf-8")
     )
     metadata.update(
         data_type=data_type,
-        source_url=BOE_IADB_URL,
+        source_url=source_url,
         access_date=access_date,
         generated=ACCESS_DATE,
         provenance_note=(
@@ -78,35 +90,69 @@ def _build_iadb_params(series_codes: str) -> dict[str, str]:
     return {
         "csv.x": "yes",
         "SeriesCodes": series_codes,
-        "CSVF": "TN",  # Tab-separated with field names
+        "CSVF": "TN",  # CSV with field names
+        "UsingCodes": "Y",
+        "VFD": "N",
         "Datefrom": "01/Jan/2000",
         "Dateto": "01/Dec/2099",  # Far future to always get latest
         "VPD": "Y",  # Values per date
     }
 
 
+def _download_iadb(
+    series_codes: str, *, params: dict[str, str] | None = None,
+) -> requests.Response:
+    """Request official CSV bytes, also usable to capture an unedited test fixture."""
+    response = requests.get(
+        BOE_IADB_URL,
+        params=params if params is not None else _build_iadb_params(series_codes),
+        timeout=REQUEST_TIMEOUT_SECONDS,
+        headers={"User-Agent": USER_AGENT},
+    )
+    response.raise_for_status()
+    return response
+
+
+def _parse_iadb_csv(
+    raw_text: str, *, required_series: tuple[str, ...] = (),
+) -> pd.DataFrame:
+    """Parse IADB comma/tab exports; HTTP success alone does not prove CSV data."""
+    raw_text = raw_text.lstrip("\ufeff\r\n")
+    first_line = raw_text.splitlines()[0] if raw_text else ""
+    delimiter = "\t" if "\t" in first_line else ","
+    header = [value.strip().strip('"').upper() for value in first_line.split(delimiter)]
+    if not {"DATE", "DATES"}.intersection(header):
+        raise ValueError("IADB response is not a dated CSV export (possibly an HTML error page)")
+    frame = pd.read_csv(StringIO(raw_text), delimiter=delimiter, skipinitialspace=True)
+    frame.columns = pd.Index([str(column).strip().upper() for column in frame.columns])
+    missing = set(required_series).difference(frame.columns)
+    if missing:
+        raise ValueError(f"IADB response lacks required series: {', '.join(sorted(missing))}")
+    if frame.empty:
+        raise ValueError("IADB response has no observations")
+    return frame
+
+
 def fetch() -> Path:
     """Download Bank Rate and CPI data from BoE IADB.
 
-    Falls back to illustrative data if the API is unreachable.
+    Falls back as a whole if either official series cannot be downloaded.
     """
     RAW_DIR.mkdir(parents=True, exist_ok=True)
     out_path = RAW_DIR / "boe_iadb_rates.csv"
 
     series = f"{BANK_RATE_SERIES},{CPI_SERIES}"
-    params = _build_iadb_params(series)
-
     try:
         logger.info("Fetching BoE IADB data for %s...", series)
-        resp = requests.get(
-            BOE_IADB_URL, params=params, timeout=REQUEST_TIMEOUT_SECONDS,
-        )
-        resp.raise_for_status()
+        resp = _download_iadb(series)
+        _parse_iadb_csv(resp.content.decode("utf-8-sig"), required_series=(BANK_RATE_SERIES, CPI_SERIES))
         out_path.write_bytes(resp.content)
-        _write_metadata(out_path, data_type="live_ons", access_date=ACCESS_DATE)
+        _write_metadata(
+            out_path, data_type="live_ons", access_date=ACCESS_DATE, source_url=resp.url,
+        )
         logger.info("Saved raw BoE data to %s (%d KB)", out_path, len(resp.content) // 1024)
         return out_path
-    except (requests.RequestException, OSError) as exc:
+    except (requests.RequestException, OSError, ValueError) as exc:
         logger.warning("BoE IADB fetch failed (%s), using fallback data", exc)
         return _write_fallback(out_path)
 
@@ -182,18 +228,8 @@ def process(raw_path: Path) -> pd.DataFrame:
     """
     PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
 
-    # Try reading with common delimiters (IADB uses comma or tab)
     raw_text = raw_path.read_text(encoding="utf-8", errors="replace")
-
-    # Detect delimiter
-    first_line = raw_text.split("\n")[0]
-    delimiter = "\t" if "\t" in first_line else ","
-
-    df_raw = pd.read_csv(raw_path, delimiter=delimiter, skipinitialspace=True)
-
-    # Normalise column names to uppercase for matching (wrap in pd.Index so the
-    # assignment matches the DataFrame.columns type, not a bare list[str]).
-    df_raw.columns = pd.Index([str(c).strip().upper() for c in df_raw.columns])
+    df_raw = _parse_iadb_csv(raw_text)
 
     # Transport provenance, never row count, determines whether figures are official.
     # Unknown or conflicting evidence must not silently become official data.
@@ -209,6 +245,9 @@ def process(raw_path: Path) -> pd.DataFrame:
     if "DATA_TYPE" in df_raw.columns and not df_raw["DATA_TYPE"].eq(data_type).all():
         data_type = "unverified"
     access_date = metadata.get("access_date") if data_type == "live_ons" else None
+    if data_type == "live_ons":
+        # Official exports need BOTH exact series, never a partially official chart.
+        _parse_iadb_csv(raw_text, required_series=(BANK_RATE_SERIES, CPI_SERIES))
 
     # Find the date column
     date_col = None
@@ -221,18 +260,22 @@ def process(raw_path: Path) -> pd.DataFrame:
         logger.error("No DATE column found in BoE data. Columns: %s", list(df_raw.columns))
         raise ValueError(f"No DATE column in BoE raw data: {list(df_raw.columns)}")
 
-    # Parse dates — BoE live uses "02 Jan 2000"; fallback uses "2000-01-01".
+    # Parse dates: BoE live uses day/month-name/year; fallback uses ISO dates.
     # format="mixed" handles both; dayfirst omitted to avoid swapping
     # month/day on ISO dates.
     df_raw[date_col] = pd.to_datetime(df_raw[date_col], format="mixed")
+    if data_type == "live_ons":
+        # IADB labels monthly observations at month-end. The chart uses month-start
+        # labels for that SAME calendar month, not an end-month policy-rate reading.
+        df_raw[date_col] = df_raw[date_col].dt.to_period("M").dt.to_timestamp()
 
     # Extract Bank Rate and CPI columns
     bank_rate_col = None
     cpi_col = None
     for col in df_raw.columns:
-        if BANK_RATE_SERIES in col:
+        if col == BANK_RATE_SERIES or (data_type != "live_ons" and col == "IUDBEDR"):
             bank_rate_col = col
-        if CPI_SERIES in col:
+        if col == CPI_SERIES:
             cpi_col = col
 
     if bank_rate_col is None and cpi_col is None:
@@ -267,6 +310,10 @@ def process(raw_path: Path) -> pd.DataFrame:
         else:
             record["cpi_annual"] = None
 
+        if data_type == "live_ons" and (
+            record["bank_rate"] is None or record["cpi_annual"] is None
+        ):
+            raise ValueError("Official BoE data requires finite Bank Rate and CPI for every month")
         if record.get("bank_rate") is not None or record.get("cpi_annual") is not None:
             records.append(record)
 
@@ -279,15 +326,19 @@ def process(raw_path: Path) -> pd.DataFrame:
     df = pd.DataFrame(records)
     df = df.sort_values("date").reset_index(drop=True)
 
-    # Forward-fill Bank Rate (it stays constant between changes)
-    if "bank_rate" in df.columns:
+    # Legacy illustrative examples retain their existing fill behaviour. A monthly
+    # official average must never be inferred from a previous month's observation.
+    if data_type != "live_ons" and "bank_rate" in df.columns:
         df["bank_rate"] = df["bank_rate"].ffill()
 
     out_path = PROCESSED_DIR / "boe_rates.csv"
     df["data_type"] = data_type
     df.attrs["access_date"] = access_date
     df.to_csv(out_path, index=False)
-    _write_metadata(out_path, data_type=data_type, access_date=access_date)
+    _write_metadata(
+        out_path, data_type=data_type, access_date=access_date,
+        source_url=metadata.get("source_url", BOE_IADB_URL),
+    )
     logger.info("Processed BoE data saved to %s", out_path)
     logger.info(
         "%d rows, date range %s to %s",
@@ -397,8 +448,10 @@ def build_chart(df: pd.DataFrame) -> None:
              if data_type != "live_ons" else
              f"OGL v3.0 · Accessed {df.attrs.get('access_date') or 'unknown'}<br>")
             + f'Reference: <a href="{BOE_IADB_URL}">Bank of England Interactive Analytical Database</a><br>'
-            f"Bank Rate (IUDBEDR) and CPI annual rate (D7BT/ONS). "
-            f"2% dashed line = BoE inflation target."
+            + (f"Bank Rate ({BANK_RATE_SERIES}, monthly average) and CPI annual rate. "
+             if data_type == "live_ons" else
+             "Illustrative Bank Rate and CPI annual rate; reference links do not verify these values. ")
+            + "2% dashed line = BoE inflation target."
         ),
         xref="paper", yref="paper",
         x=0, y=-0.18,

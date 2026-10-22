@@ -67,27 +67,67 @@ def test_failed_fetch_labels_fallback_through_api_and_static_export(
     assert "not published statistics" in chart
 
 
-def test_successful_fetch_records_source_without_row_count_heuristic(
+def test_download_uses_project_user_agent_and_existing_timeout(
     pipeline_dirs: Path, monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    # Use existing bytes to test transport provenance, never invent official figures.
-    # This is a mocked response, not evidence that the fixture is official data.
-    raw_dir = pipeline_dirs / "raw"
-    raw_dir.mkdir()
-    fixture = boe._write_fallback(raw_dir / "fixture.csv")
-    frame = pd.read_csv(fixture).drop(columns=["data_type"], errors="ignore").head(1)
-    response = Mock(content=frame.to_csv(index=False).encode())
-    monkeypatch.setattr(boe.requests, "get", Mock(return_value=response))
+    response = Mock(content=BANK_RATE_FIXTURE.read_bytes())
+    request = Mock(return_value=response)
+    monkeypatch.setattr(boe.requests, "get", request)
+    assert boe._download_iadb(boe.BANK_RATE_SERIES) is response
+    request.assert_called_once_with(
+        boe.BOE_IADB_URL,
+        params=boe._build_iadb_params(boe.BANK_RATE_SERIES),
+        timeout=boe.REQUEST_TIMEOUT_SECONDS,
+        headers={"User-Agent": boe.USER_AGENT},
+    )
+    assert "Mozilla/5.0" in boe.USER_AGENT
+    assert "WealthLensDataPipeline" in boe.USER_AGENT
+    response.raise_for_status.assert_called_once()
 
+
+BANK_RATE_FIXTURE = Path(__file__).parent / "fixtures/boe_iumabedr_2024.csv"
+
+
+@pytest.mark.parametrize("delimiter", [",", "\t"])
+def test_parser_reads_captured_iadb_monthly_average_export(delimiter: str) -> None:
+    # Expected observations come from captured official bytes, never typed figures.
+    original = pd.read_csv(BANK_RATE_FIXTURE)
+    raw_text = BANK_RATE_FIXTURE.read_text(encoding="utf-8").replace(",", delimiter)
+    parsed = boe._parse_iadb_csv(raw_text, required_series=(boe.BANK_RATE_SERIES,))
+    pd.testing.assert_frame_equal(parsed, original)
+    dates = pd.to_datetime(parsed["DATE"], format="%d %b %Y")
+    assert dates.dt.is_month_end.all()
+    assert dates.dt.to_period("M").is_unique
+
+
+@pytest.mark.parametrize("response_body", [
+    b"<html><title>Error</title>Invalid series code value supplied.</html>",
+    BANK_RATE_FIXTURE.read_bytes(),
+])
+def test_successful_http_without_both_series_keeps_whole_dataset_illustrative(
+    pipeline_dirs: Path, monkeypatch: pytest.MonkeyPatch, response_body: bytes,
+) -> None:
+    response = Mock(content=response_body)
+    monkeypatch.setattr(boe.requests, "get", Mock(return_value=response))
     result = boe.process(boe.fetch())
-    sidecar = json.loads((pipeline_dirs / "processed/boe_rates.meta.json").read_text())
-    assert sidecar["data_type"] == "live_ons"
-    assert sidecar["access_date"] == boe.ACCESS_DATE
-    assert sidecar["source_url"] == boe.BOE_IADB_URL
-    assert "Illustrative" not in sidecar["provenance_note"]
-    assert result["data_type"].eq("live_ons").all()
-    boe.build_chart(result)
-    assert "ILLUSTRATIVE FALLBACK DATA" not in (pipeline_dirs / "charts/boe_rates.html").read_text()
+    expected = boe.process(boe._write_fallback(pipeline_dirs / "expected.csv"))
+    pd.testing.assert_frame_equal(result, expected)
+    assert result["data_type"].eq("illustrative_fallback").all()
+
+
+def test_processing_incomplete_official_export_fails_before_writing(
+    pipeline_dirs: Path,
+) -> None:
+    raw = pipeline_dirs / "incomplete.csv"
+    raw.write_bytes(BANK_RATE_FIXTURE.read_bytes())
+    citation = json.loads(BANK_RATE_FIXTURE.with_suffix(".meta.json").read_text())
+    boe._write_metadata(
+        raw, data_type="live_ons", source_url=citation["source_url"],
+        access_date=citation["access_date"],
+    )
+    with pytest.raises(ValueError, match="lacks required series"):
+        boe.process(raw)
+    assert not (pipeline_dirs / "processed/boe_rates.csv").exists()
 
 
 @pytest.mark.parametrize("sidecar_text", [None, "{ corrupt", "[]", '{"data_type":"live_ons"}'])
