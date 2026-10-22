@@ -87,7 +87,7 @@ def test_download_uses_project_user_agent_and_existing_timeout(
     response.raise_for_status.assert_called_once()
 
 
-BANK_RATE_FIXTURE = Path(__file__).parent / "fixtures/boe_iumabedr_2024.csv"
+BANK_RATE_FIXTURE = Path(__file__).parent / "fixtures/boe_iumabedr.csv"
 CPI_FIXTURE = Path(__file__).parent / "fixtures/ons_d7g7_mm23.csv"
 
 
@@ -151,19 +151,31 @@ def test_missing_corrupt_or_conflicting_raw_provenance_never_becomes_official(
     assert meta["data_type"] in {"illustrative_fallback", "unverified"}
 
 
-def test_committed_boe_artifacts_preserve_fallback_provenance(pipeline_dirs: Path) -> None:
+def test_committed_boe_values_rebuild_exactly_from_full_official_fixtures(
+    pipeline_dirs: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Every public byte must be reproducible offline, including every Bank Rate month."""
+    bank_citation = json.loads(BANK_RATE_FIXTURE.with_suffix(".meta.json").read_text())
+    cpi_citation = json.loads(CPI_FIXTURE.with_suffix(".meta.json").read_text())
+    monkeypatch.setattr(boe, "ACCESS_DATE", bank_citation["access_date"])
+    monkeypatch.setattr(boe.requests, "get", Mock(side_effect=[
+        Mock(content=BANK_RATE_FIXTURE.read_bytes(), status_code=requests.codes.ok, url=bank_citation["source_url"]),
+        Mock(content=CPI_FIXTURE.read_bytes(), status_code=requests.codes.ok, url=cpi_citation["source_url"]),
+    ]))
+    frame = boe.process(boe.fetch())
     public = ROOT / "projects/wealthlens-dashboard/frontend/public/data"
-    metadata = json.loads((public / "boe-rates-metadata.json").read_text())
-    assert metadata["data_type"] in {"illustrative_fallback", "live_ons"}
-    published = pd.read_csv(public / "boe-rates.csv")
-    assert published["data_type"].eq(metadata["data_type"]).all()
-    fallback = pd.read_csv(boe._write_fallback(pipeline_dirs / "fallback.csv"))
-    expected = fallback.rename(columns={"DATE": "date", "IUDBEDR": "bank_rate", "D7BT": "cpi_annual"})
-    values = ["date", "bank_rate", "cpi_annual"]
-    if published[values].equals(expected[values]):
-        assert metadata["data_type"] == "illustrative_fallback"
-    template = json.loads((ROOT / "automation/data-pipelines/metadata/boe_rates.meta.json").read_text())
-    assert template["data_type"] == "illustrative_fallback"
+    output = pipeline_dirs / "public"
+    monkeypatch.setattr(static_api, "DATA_DIR", pipeline_dirs / "processed")
+    monkeypatch.setattr(static_api, "OUT_DIR", output)
+    monkeypatch.setattr(static_api, "DATASETS", {"boe-rates": "boe_rates.csv"})
+    monkeypatch.setattr(static_api, "generate_simulator_static", lambda: 0)
+    static_api.main()
+    for filename in ("boe-rates.json", "boe-rates.csv", "boe-rates-metadata.json"):
+        assert (output / filename).read_bytes() == (public / filename).read_bytes(), filename
+    assert frame["data_type"].eq("live_ons").all()
+    assert frame["date"].iloc[0] == "2000-01-01"
+    bank = boe._parse_iadb_csv(BANK_RATE_FIXTURE.read_text())
+    assert len(frame) == len(bank)
 
 
 def test_missing_boe_sidecar_is_unverified_in_both_publication_paths(
@@ -242,7 +254,8 @@ def test_two_official_fetches_join_months_and_publish_sources(
     assert json.loads((processed / "boe_rates.meta.json").read_text())["sources"] == metadata["sources"]
     monkeypatch.setattr(api, "DATA_DIR", processed)
     monkeypatch.setattr(api, "_metadata_cache", {})
-    assert api._build_metadata("boe-rates")["data_type"] == "live_ons"
+    api_metadata = api._build_metadata("boe-rates")
+    assert api_metadata["data_type"] == "live_ons"
     monkeypatch.setattr(static_api, "DATA_DIR", processed)
     monkeypatch.setattr(static_api, "OUT_DIR", pipeline_dirs / "public")
     monkeypatch.setattr(static_api, "DATASETS", {"boe-rates": "boe_rates.csv"})
@@ -252,6 +265,8 @@ def test_two_official_fetches_join_months_and_publish_sources(
     assert published["sources"] == metadata["sources"]
     assert published["access_date"] == metadata["access_date"]
     assert published["data_type"] == "live_ons"
+    for key in ("description", "source", "source_url", "access_date", "sources", "data_type"):
+        assert api_metadata[key] == published[key]
     boe.build_chart(result)
     chart = (pipeline_dirs / "charts/boe_rates.html").read_text(encoding="utf-8")
     assert "ILLUSTRATIVE FALLBACK DATA" not in chart
