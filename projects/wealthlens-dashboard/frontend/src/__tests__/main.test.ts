@@ -29,7 +29,8 @@ describe("initial route bootstrap", () => {
       vi.stubEnv("VITE_PULSEBOARD", sdkEnabled ? "on" : "off")
       const noteRoute = vi.fn(() => true)
       if (sdkEnabled) vi.stubGlobal("Pulseboard", { route: noteRoute })
-      document.body.innerHTML = '<div id="app"><main id="baked-main">Baked route</main></div>'
+      document.body.innerHTML =
+        '<div id="app" data-v-app><main id="baked-main">Baked route</main></div>'
       document.head.innerHTML = '<meta data-wl-meta property="og:title" content="Baked title">'
       const bakedMain = document.getElementById("baked-main")!
       const bakedMeta = document.head.querySelector("[data-wl-meta]")!
@@ -70,7 +71,9 @@ describe("initial route bootstrap", () => {
       try {
         expect(bakedMain.isConnected).toBe(true)
         expect(bakedMeta.isConnected).toBe(true)
-        expect(document.querySelector("#app[data-v-app]")).toBeNull()
+        expect(
+          (document.getElementById("app") as HTMLElement & { __vue_app__?: App }).__vue_app__,
+        ).toBeUndefined()
         expect(mounts).toBe(0)
       } finally {
         releaseRoute()
@@ -119,7 +122,8 @@ describe("initial route bootstrap", () => {
   })
 
   it("retains the baked fallback and reports a rejected initial route import", async () => {
-    document.body.innerHTML = '<div id="app"><main id="baked-main">Baked route</main></div>'
+    document.body.innerHTML =
+      '<div id="app" data-v-app><main id="baked-main">Baked route</main></div>'
     document.head.innerHTML = '<meta data-wl-meta property="og:title" content="Baked title">'
     const bakedMain = document.getElementById("baked-main")!
     const bakedMeta = document.head.querySelector("[data-wl-meta]")!
@@ -138,7 +142,9 @@ describe("initial route bootstrap", () => {
 
     expect(bakedMain.isConnected).toBe(true)
     expect(bakedMeta.isConnected).toBe(true)
-    expect(document.querySelector("#app[data-v-app]")).toBeNull()
+    expect(
+      (document.getElementById("app") as HTMLElement & { __vue_app__?: App }).__vue_app__,
+    ).toBeUndefined()
     expect(report).toHaveBeenCalledWith("[App] Initial route failed:", error)
 
     router.addRoute({ path: "/recovered", component: { render: () => h("h1", "Recovered route") } })

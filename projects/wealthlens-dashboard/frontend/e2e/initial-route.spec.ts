@@ -26,6 +26,12 @@ test.describe("initial lazy route over the baked snapshot", () => {
       // that assertions against the final settled page cannot detect.
       let release!: () => void
       const gate = new Promise<void>((resolve) => (release = resolve))
+      let releaseEntry!: () => void
+      const entryGate = new Promise<void>((resolve) => (releaseEntry = resolve))
+      await page.route(/\/assets\/index-[^/]+\.js$/, async (route) => {
+        await entryGate
+        await route.continue()
+      })
       let requested!: () => void
       const chunkRequested = new Promise<void>((resolve) => (requested = resolve))
       await page.route(new RegExp(`/assets/${landing.chunk}-[^/]+\\.js$`), async (route) => {
@@ -63,7 +69,15 @@ test.describe("initial lazy route over the baked snapshot", () => {
       })
 
       try {
-        await page.goto(landing.path, { waitUntil: "domcontentloaded" })
+        await page.goto(landing.path, { waitUntil: "commit" })
+        await expect(page.locator(landing.embed ? ".embed-title" : "main h1").first()).toBeVisible()
+        // The snapshot already carries Vue's data-v-app attribute. Capture a
+        // real baked DOM node before releasing the entry, not that stale flag.
+        await page.evaluate(() => {
+          ;(window as unknown as { __wlBakedMain: Element | null }).__wlBakedMain =
+            document.querySelector("main")
+        })
+        releaseEntry()
         await chunkRequested
         await page.waitForFunction(
           () => (window as unknown as { __wlBoot: BootMeasurements }).__wlBoot.entryLoaded,
@@ -73,14 +87,21 @@ test.describe("initial lazy route over the baked snapshot", () => {
           () =>
             new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
         )
-        await expect(page.locator("#app[data-v-app]")).toHaveCount(0)
+        expect(
+          await page.evaluate(
+            () => (window as unknown as { __wlBakedMain: Element }).__wlBakedMain.isConnected,
+          ),
+        ).toBe(true)
         await expect(page.locator(landing.embed ? ".embed-title" : "main h1").first()).toBeVisible()
         await expect(page.locator('meta[data-wl-meta][property="og:title"]')).toHaveCount(1)
       } finally {
+        releaseEntry()
         release()
       }
 
-      await expect(page.locator("#app[data-v-app]")).toHaveCount(1)
+      await page.waitForFunction(
+        () => !(window as unknown as { __wlBakedMain: Element }).__wlBakedMain.isConnected,
+      )
       await page.waitForLoadState("networkidle")
       await expect(page.locator(landing.embed ? ".embed-title" : "main h1").first()).toBeVisible()
       await expect(page.locator('meta[property="og:title"]')).toHaveCount(1)
