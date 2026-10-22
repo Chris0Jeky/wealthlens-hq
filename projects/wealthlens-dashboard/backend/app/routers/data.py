@@ -125,13 +125,13 @@ DATASET_META: dict[str, dict[str, str]] = {
         "access_date": "2026-05-16",
     },
     "child-poverty": {
-        "description": "Child poverty rates by UK region (after housing costs)",
-        "source": "DWP/HMRC Children in Low Income Families",
+        "description": "HBAI regional relative low income after housing costs, 2021/22 to 2023/24 (three-year average)",
+        "source": "DWP Households Below Average Income (HBAI), tables 4.16ts and 4.17ts",
         "source_url": (
             "https://www.gov.uk/government/statistics/"
-            "children-in-low-income-families-local-area-statistics-2014-to-2023"
+            "households-below-average-income-for-financial-years-ending-1995-to-2024"
         ),
-        "access_date": "2026-05-16",
+        "access_date": "2026-10-22",
     },
     "generational-wealth": {
         "description": "Median household wealth by generation at equivalent ages",

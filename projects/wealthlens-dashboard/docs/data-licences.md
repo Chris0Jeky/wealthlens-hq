@@ -17,7 +17,7 @@ Every dataset used in WealthLens charts is listed here with its licence and attr
 | Tax and NIC Receipts | HMRC | OGL v3.0 | Yes — "Contains public sector information licensed under the Open Government Licence v3.0" | https://www.gov.uk/government/statistics/hmrc-tax-and-nics-receipts-for-the-uk |
 | Bank Rate and CPI Inflation | Bank of England | OGL v3.0 | Yes — "Source: Bank of England" | https://www.bankofengland.co.uk/boeapps/database/ |
 | Real Wage Stagnation | ONS | OGL v3.0 | Yes — "Source: ONS ASHE" | https://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/earningsandworkinghours/datasets/ashe1702 |
-| Child Poverty by Region | DWP / HMRC (Children in Low Income Families) | OGL v3.0 | Yes — "Source: DWP/HMRC CiLIF" | https://www.gov.uk/government/statistics/children-in-low-income-families-local-area-statistics-2014-to-2023 |
+| Child Poverty by Region | DWP Households Below Average Income (HBAI), tables 4.16ts and 4.17ts | OGL v3.0 | Yes, "Source: DWP HBAI" | https://www.gov.uk/government/statistics/households-below-average-income-for-financial-years-ending-1995-to-2024 |
 | Productivity-Pay Gap | ONS (Labour Productivity & AWE) | OGL v3.0 | Yes — "Source: ONS" | https://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/labourproductivity/timeseries/lzvd/prdy/data |
 | Generational Wealth Gap | Resolution Foundation / ONS WAS | RF series: CC BY-NC-ND 4.0; ONS WAS: OGL v3.0 | Yes — "Source: Resolution Foundation / ONS WAS" | https://www.resolutionfoundation.org/publications/ |
 

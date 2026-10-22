@@ -28,17 +28,20 @@ sources:
       Pipeline includes hardcoded fallback if IADB endpoint is unavailable.
 
   - id: dwp-child-poverty
-    name: DWP/HMRC Children in Low Income Families
-    url: https://www.gov.uk/government/statistics/children-in-low-income-families-local-area-statistics-2014-to-2023
-    access_date: "2026-05-16"
-    format: xlsx
+    name: DWP Households Below Average Income (HBAI), tables 4.16ts and 4.17ts
+    url: https://www.gov.uk/government/statistics/households-below-average-income-for-financial-years-ending-1995-to-2024
+    access_date: "2026-10-22"
+    format: ods-in-zip
     licence: OGL-3.0
     update_pattern: annual
     pipeline: fetch_child_poverty.py
     notes: >
-      Percentage of children in relative low income after housing costs by
-      UK region. Currently uses hardcoded 2022/23 figures; spreadsheet URL
-      changes with each annual release.
+      Regional relative low income after housing costs, below 60% of contemporary
+      median equivalised disposable household income, 2021/22 to 2023/24
+      three-year average. Rates from table 4.16ts, counts from 4.17ts, read at
+      published precision. The UK reference covers the same period. Pinned
+      official download, no hardcoded fallback. The previous CiLIF citation
+      could not substantiate an AHC measure and the legacy constants were unverified.
 
   - id: resolution-generational-wealth
     name: Resolution Foundation Intergenerational Audit

@@ -104,10 +104,10 @@ DATASET_META: dict[str, dict[str, str]] = {
         "access_date": "2026-05-16",
     },
     "child-poverty": {
-        "description": "Child poverty rates by UK region (after housing costs)",
-        "source": "DWP/HMRC Children in Low Income Families",
-        "source_url": "https://www.gov.uk/government/statistics/children-in-low-income-families-local-area-statistics-2014-to-2023",
-        "access_date": "2026-05-16",
+        "description": "HBAI regional relative low income after housing costs, 2021/22 to 2023/24 (three-year average)",
+        "source": "DWP Households Below Average Income (HBAI), tables 4.16ts and 4.17ts",
+        "source_url": "https://www.gov.uk/government/statistics/households-below-average-income-for-financial-years-ending-1995-to-2024",
+        "access_date": "2026-10-22",
     },
     "generational-wealth": {
         "description": "Median household wealth by generation at equivalent ages",
@@ -364,7 +364,12 @@ def main() -> None:
         _write_csv_mirror(slug, records, data_type)
 
         # Metadata response
-        meta = DATASET_META.get(slug, {})
+        meta = DATASET_META.get(slug, {}).copy()
+        if slug == "child-poverty":
+            # The fetch records the actual access date and table identifiers.
+            # Never replace those with the static catalogue's historical date.
+            child_meta = json.loads(csv_path.with_suffix(".meta.json").read_text(encoding="utf-8"))
+            meta.update({k: child_meta[k] for k in ("source", "source_url", "access_date")})
         columns = list(records[0].keys()) if records else []
         meta_response = {
             "name": slug,
@@ -376,6 +381,9 @@ def main() -> None:
             "columns": columns,
             "data_type": data_type,
         }
+        if slug == "child-poverty":
+            for key in ("download_url", "tables", "period", "measure", "rounding"):
+                meta_response[key] = child_meta[key]
         meta_path = OUT_DIR / f"{slug}-metadata.json"
         meta_path.write_text(
             json.dumps(meta_response, allow_nan=False), encoding="utf-8"
