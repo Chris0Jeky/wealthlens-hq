@@ -372,8 +372,14 @@ usePageMeta({
           <div class="chart-source-bar__left">
             <span>
               Source:
-              <a :href="config.source.url" target="_blank" rel="noopener">
-                {{ config.source.name }}
+              <a
+                v-for="link in config.source.links ?? [config.source]"
+                :key="link.url"
+                :href="link.url"
+                target="_blank"
+                rel="noopener"
+              >
+                {{ link.name }}
               </a>
             </span>
             <span aria-hidden="true">&middot;</span>

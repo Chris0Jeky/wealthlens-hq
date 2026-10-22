@@ -46,6 +46,7 @@ export interface ChartConfig {
     licence: string
     accessed: string
     chartId: string
+    links?: { name: string; url: string }[]
   }
   /** Article body sections. */
   article: {
@@ -681,68 +682,83 @@ export const chartConfigs: Record<string, ChartConfig> = {
     ],
     pills: [
       { text: "Economy", accent: true },
-      { text: "2000–present" },
+      { text: "Monthly observations since 2000" },
       { text: "United Kingdom" },
-      { text: "Updated 16 May 2026" },
+      { text: "Accessed 2026-10-22" },
     ],
     headline: "The cost of borrowing:",
-    headlineEmphasis: "25 years of interest rate history.",
-    lede: "From <strong>around 6% in 2000–01</strong> to a historic low of <strong>0.1% in 2020–21</strong>, then the fastest rise in decades to <strong>5.25% by late 2023</strong>. The Bank Rate shapes mortgages, savings, and the real value of money.",
+    headlineEmphasis: "monthly Bank Rate and inflation.",
+    lede: "The monthly average of official Bank Rate went from <strong>6% through most of 2000</strong> to a historic low of <strong>0.1% from April 2020 to November 2021</strong>, then climbed to <strong>5.25% from September 2023</strong>. CPI inflation (ONS annual rate) peaked at <strong>11.1% in October 2022</strong>.",
     meta: [
       {
-        label: "Source",
-        value: "Bank of England IADB",
-        href: "https://www.bankofengland.co.uk/boeapps/database/",
+        label: "Bank Rate source",
+        value: "BoE IUMABEDR, monthly average of official Bank Rate",
+        href: "https://www.bankofengland.co.uk/boeapps/database/_iadb-fromshowcolumns.asp?csv.x=yes&SeriesCodes=IUMABEDR&CSVF=TN&UsingCodes=Y&VFD=N&Datefrom=01%2FJan%2F2000&Dateto=01%2FDec%2F2099&VPD=Y",
       },
-      { label: "Series", value: "IUDBEDR (Bank Rate) + D7BT (CPI)" },
-      { label: "Coverage", value: "2000 — present" },
-      { label: "Updated", value: "16 May 2026" },
-      { label: "Licence", value: "OGL v3.0" },
-      { label: "Source cadence", value: "BoE monthly series (IUDBEDR)" },
+      {
+        label: "CPI source",
+        value: "ONS D7G7 (MM23), CPI annual rate",
+        href: "https://www.ons.gov.uk/generator?format=csv&uri=/economy/inflationandpriceindices/timeseries/d7g7/mm23",
+      },
+      { label: "Coverage", value: "2000-01-01 to 2026-09-01" },
+      { label: "Accessed", value: "2026-10-22" },
+      { label: "Licence", value: "Bank of England terms / ONS OGL v3.0" },
+      { label: "Source cadence", value: "Monthly" },
       { label: "Chart ID", value: "WL-E-001" },
     ],
+    // Figures below are derived from public/data/boe-rates.json; the provenance spec checks parity.
     stats: [
       {
-        label: "Peak rate (2023)",
+        label: "Peak Bank Rate (Sep 2023 to Jul 2024)",
         value: "5.25",
         unit: "%",
-        description: "Highest Bank Rate since 2008, reached August 2023",
+        description: "Monthly average of official Bank Rate at its 2023-24 peak (BoE IUMABEDR)",
         headline: true,
       },
       {
-        label: "Historic low",
+        label: "Low (Apr 2020 to Nov 2021)",
         value: "0.1",
         unit: "%",
-        description: "Emergency rate held from March 2020 to December 2021",
+        description: "Lowest monthly-average Bank Rate in the plotted series (BoE IUMABEDR)",
       },
       {
-        label: "Peak CPI (2022)",
+        label: "Peak CPI (October 2022)",
         value: "11.1",
         unit: "%",
-        description: "Highest CPI inflation in 41 years, October 2022",
+        description: "Highest CPI annual rate in the plotted series (ONS D7G7, MM23)",
       },
       {
-        label: "Rate rises (2021–23)",
-        value: "14",
-        unit: "",
-        description: "Consecutive rate increases — the fastest tightening cycle since the 1980s",
+        label: "Latest Bank Rate (September 2026)",
+        value: "3.75",
+        unit: "%",
+        description: "Monthly average of official Bank Rate (BoE IUMABEDR)",
       },
     ],
     toolbar: {
-      title: "Bank Rate vs CPI inflation (%)",
+      title: "Monthly-average Bank Rate vs CPI annual inflation (%)",
       unit: "%",
       series: [
-        { label: "Bank Rate", color: "#1a56db", bold: true },
-        { label: "CPI Inflation", color: "var(--wl-red)" },
+        { label: "Monthly-average Bank Rate", color: "#1a56db", bold: true },
+        { label: "CPI annual inflation", color: "var(--wl-red)" },
       ],
       ranges: ["All", "10y", "5y"],
       defaultRange: "All",
     },
     source: {
-      name: "Bank of England Interactive Analytical Database",
-      url: "https://www.bankofengland.co.uk/boeapps/database/",
-      licence: "OGL v3.0",
-      accessed: "2026-05-16",
+      name: "Bank of England IUMABEDR / ONS D7G7 (MM23)",
+      url: "https://www.bankofengland.co.uk/boeapps/database/_iadb-fromshowcolumns.asp?csv.x=yes&SeriesCodes=IUMABEDR&CSVF=TN&UsingCodes=Y&VFD=N&Datefrom=01%2FJan%2F2000&Dateto=01%2FDec%2F2099&VPD=Y",
+      links: [
+        {
+          name: "Bank of England IUMABEDR",
+          url: "https://www.bankofengland.co.uk/boeapps/database/_iadb-fromshowcolumns.asp?csv.x=yes&SeriesCodes=IUMABEDR&CSVF=TN&UsingCodes=Y&VFD=N&Datefrom=01%2FJan%2F2000&Dateto=01%2FDec%2F2099&VPD=Y",
+        },
+        {
+          name: "ONS D7G7",
+          url: "https://www.ons.gov.uk/generator?format=csv&uri=/economy/inflationandpriceindices/timeseries/d7g7/mm23",
+        },
+      ],
+      licence: "Bank of England terms / ONS OGL v3.0",
+      accessed: "2026-10-22",
       chartId: "WL-E-001",
     },
     article: {
@@ -750,35 +766,29 @@ export const chartConfigs: Record<string, ChartConfig> = {
         {
           heading: "What this chart shows",
           paragraphs: [
-            "Two series across 2000–present: the <em>Bank of England official Bank Rate</em> (the BoE's monthly series — the interest rate it charges to commercial banks, which directly influences mortgage and savings rates) and the <em>CPI annual inflation rate</em> (the 12-month percentage change in consumer prices). Together they show how monetary policy responds to — and sometimes lags behind — price pressures.",
-          ],
-        },
-        {
-          heading: "",
-          paragraphs: [
-            "The story has three distinct chapters. From 2000 to 2008, rates were relatively stable at 4–5%, keeping inflation near the 2% target. The 2008 crisis triggered emergency cuts to 0.5%, then 0.25%, and finally 0.1% in 2020. When inflation surged past 10% in 2022 — driven by energy prices and post-COVID supply shocks — the Bank raised rates 14 consecutive times in under two years, the fastest tightening cycle since the 1980s.",
+            "The monthly average of official Bank Rate (BoE IUMABEDR) and the CPI annual inflation rate (ONS D7G7, MM23) are joined by calendar month. The Bank Rate series averages the official rate during each month; it does not show the policy setting on an individual decision date.",
           ],
         },
         {
           heading: "Why it",
           headingEmphasis: "matters",
           paragraphs: [
-            'Interest rates are the mechanism through which monetary policy reaches households. A 5.25% rate means a typical £200,000 mortgage costs roughly £500/month more than at 0.1%. Savers benefit, but homeowners and renters (via landlord costs) bear the burden. The interaction between rates and inflation also determines real wage growth — when CPI outstrips pay rises, workers get poorer even in a "growing" economy.',
+            "Bank Rate influences mortgage and savings rates, while CPI measures changes in consumer prices. Comparing the series helps explain the pressures on borrowers and savers. Commercial borrowing rates also include lender margins, so the chart does not estimate an individual household's mortgage payments.",
           ],
         },
       ],
       pullQuote: {
-        text: "From <strong>0.1%</strong> to <strong>5.25%</strong> in under two years — the fastest rate-rise cycle in decades. For a typical mortgage holder, that means hundreds of pounds more per month.",
+        text: "Monthly averages describe the rate across a whole month. A policy decision within that month can produce a different setting from the average plotted here.",
       },
     },
     methodology: `
-      <p>Bank Rate data uses the BoE series IUDBEDR (Official Bank Rate, monthly, not seasonally adjusted). CPI uses series D7BT (CPI annual rate, 12-month % change) accessed via the BoE Interactive Analytical Database (IADB).</p>
+      <p>Bank Rate is the <a href="https://www.bankofengland.co.uk/boeapps/database/_iadb-fromshowcolumns.asp?csv.x=yes&amp;SeriesCodes=IUMABEDR&amp;CSVF=TN&amp;UsingCodes=Y&amp;VFD=N&amp;Datefrom=01%2FJan%2F2000&amp;Dateto=01%2FDec%2F2099&amp;VPD=Y">BoE IUMABEDR monthly average of official Bank Rate</a>, not seasonally adjusted. CPI is the <a href="https://www.ons.gov.uk/generator?format=csv&amp;uri=/economy/inflationandpriceindices/timeseries/d7g7/mm23">ONS D7G7 (MM23) CPI annual rate</a>. Both sources accessed 2026-10-22.</p>
       <ul>
-        <li>Bank Rate is a step function — it changes only on MPC decision dates.</li>
-        <li>CPI is the headline consumer price index (not CPIH which includes owner-occupier housing costs).</li>
-        <li>Date range starts from January 2000 to capture the full modern inflation-targeting era.</li>
+        <li>BoE month-end dates label monthly averages. The chart labels the same calendar month at its start; it does not plot individual MPC decisions.</li>
+        <li>CPI is the annual percentage change in consumer prices, not CPIH.</li>
+        <li>Only months covered by both official sources from January 2000 onwards are published, without filling or interpolating missing observations.</li>
       </ul>
-      <p><strong>Known caveats:</strong> CPI does not include mortgage interest payments (unlike the old RPI). The Bank Rate is not the same as the rate borrowers pay — commercial rates include a margin. Real interest rates (Bank Rate minus CPI) were deeply negative in 2021–22, effectively eroding the value of savings.</p>
+      <p><strong>Known caveats:</strong> CPI excludes mortgage interest payments. Bank Rate is not the rate individual borrowers pay; commercial rates include a margin.</p>
     `,
     related: [
       {

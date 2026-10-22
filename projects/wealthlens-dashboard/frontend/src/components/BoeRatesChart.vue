@@ -193,7 +193,6 @@ const option = computed(() => {
         type: "line" as const,
         data: data.bankRate,
         smooth: false,
-        step: "end" as const,
         lineStyle: { width: 2.5, color: COLOR_BANK_RATE },
         itemStyle: { color: COLOR_BANK_RATE },
         symbol: "circle",
@@ -253,7 +252,7 @@ const option = computed(() => {
       :rows="tableRows"
       :columns="tableColumns"
       :numeric-columns="tableNumericColumns"
-      :caption="`Bank of England base rate (%) and CPI annual inflation rate (%) by date, in chronological order. Source: Bank of England (Bank Rate) and ONS (CPI). ${caveat}`"
+      :caption="`Monthly average of official Bank Rate (%) and CPI annual inflation rate (%) by date, in chronological order. Source: Bank of England (Bank Rate) and ONS (CPI). ${caveat}`"
     />
 
     <p v-if="caveat" role="note" class="text-xs text-[var(--wl-ink-muted)] mt-2 text-center italic">

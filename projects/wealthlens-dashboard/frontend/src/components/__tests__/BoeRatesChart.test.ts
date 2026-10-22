@@ -257,3 +257,15 @@ describe("BoeRatesChart accessible data table", () => {
     expect(wrapper.text()).not.toContain("—")
   })
 })
+
+describe("monthly-average rendering", () => {
+  it("joins monthly observations without a policy-decision step function", () => {
+    mockRows.value = BOE_ROWS
+    const wrapper = mount(BoeRatesChart)
+    const option = wrapper.findComponent({ name: "VChart" }).props("option")
+    const bank = option.series.find((series: { name: string }) => series.name === "Bank Rate")
+    expect(bank.step).toBeUndefined()
+    expect(bank.data).toEqual(BOE_ROWS.map((row) => row.bank_rate))
+    wrapper.unmount()
+  })
+})

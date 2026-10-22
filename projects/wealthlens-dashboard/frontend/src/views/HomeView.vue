@@ -72,7 +72,8 @@ const FALLBACK_DESCRIPTIONS: Record<string, string> = {
   "productivity-pay": "Gap between productivity growth and median pay in the UK (ONS)",
   "gdhi-by-region": "Gross disposable household income by UK region (ONS)",
   "tax-composition": "Breakdown of UK tax receipts by source over time (HMRC/OBR)",
-  "boe-rates": "Bank of England base interest rate history (BoE)",
+  "boe-rates":
+    "Monthly-average official Bank Rate (BoE IUMABEDR) and CPI annual rate (ONS D7G7, MM23)",
   "child-poverty": "Children in relative poverty by UK region and nation (DWP)",
   "generational-wealth": "Wealth distribution across generations in Great Britain (ONS WAS)",
 }
