@@ -55,13 +55,13 @@ export const TOTAL_UK_WEALTH = 15_200_000_000_000 // £15.2 trillion
 
 /**
  * UK GDP for calendar year 2023 at current market prices (GBP).
- * Source: Office for National Statistics, YBHA, PN2 (seasonally adjusted).
- * Observation: £2,752,164 million = £2,752,164,000,000.
- * URL: https://www.ons.gov.uk/economy/grossdomesticproductgdp/timeseries/ybha/pn2
- * Release/vintage: 2026-08-13
+ * Source: Office for National Statistics, YBHA, Quarterly National Accounts (QNA), seasonally adjusted.
+ * Observation: £2,766,446 million = £2,766,446,000,000.
+ * URL: https://www.ons.gov.uk/economy/grossdomesticproductgdp/timeseries/ybha/qna
+ * Release/vintage: 2026-09-30 (supersedes the 2026-08-13 PN2 first estimate of £2,752,164m)
  * Accessed: 2026-10-22
  */
-export const UK_GDP = 2_752_164_000_000
+export const UK_GDP = 2_766_446_000_000
 export const UK_GDP_YEAR = 2023
 
 /**
@@ -466,8 +466,8 @@ export const SIMULATOR_SOURCES = {
       accessDate: "2026-05-17",
     },
     {
-      label: `ONS GDP at current market prices, ${UK_GDP_YEAR} (YBHA, PN2; release 2026-08-13)`,
-      url: "https://www.ons.gov.uk/economy/grossdomesticproductgdp/timeseries/ybha/pn2",
+      label: `ONS GDP at current market prices, ${UK_GDP_YEAR} (YBHA, QNA; release 2026-09-30)`,
+      url: "https://www.ons.gov.uk/economy/grossdomesticproductgdp/timeseries/ybha/qna",
       accessDate: "2026-10-22",
     },
   ],

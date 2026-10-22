@@ -64,7 +64,7 @@ describe("simulateWealthTax", () => {
   it("uses the cited 2023 GDP for the default 1% above £2m scenario", () => {
     const result = simulateWealthTax([{ threshold: 2_000_000, rate: 0.01 }])
     expect(result.annualRevenue).toBe(17_540_000_000)
-    expect(result.revenueAsPercentGDP).toBe(0.64)
+    expect(result.revenueAsPercentGDP).toBe(0.63)
   })
 
   it("averageTaxPerTaxpayer equals revenue / affected taxpayers", () => {
@@ -227,7 +227,7 @@ describe("getSpendingComparison", () => {
 
 describe("source metadata", () => {
   it("pins the 2023 GDP observation in GBP from ONS YBHA", () => {
-    expect(UK_GDP).toBe(2_752_164_000_000)
+    expect(UK_GDP).toBe(2_766_446_000_000)
   })
 
   it("keeps estimate anchors backed by source URLs and access dates", () => {
