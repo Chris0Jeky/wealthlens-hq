@@ -141,19 +141,23 @@ const isSupported = computed(
   () => chartName.value in chartConfigs || chartName.value in simpleChartTitles,
 )
 
-/** Active range for toolbar (local UI state). */
-const activeRange = ref("")
+/** Only these charts offer selectable time windows and accept the range prop. */
+const timeRanges = computed(() =>
+  ["wealth-shares", "productivity-pay", "boe-rates"].includes(chartName.value)
+    ? ["All", ...(config.value?.toolbar.ranges ?? []).filter((range) => range !== "All")]
+    : [],
+)
+
+/** All preserves the full dataset until the reader selects a shorter window. */
+const activeRange = ref("All")
 
 /**
- * Reset activeRange to the chart's default when navigating between charts.
- * This prevents stale range selections from persisting across pages
- * (e.g. "200y" showing on a chart that only has ["All", "10y", "5y"]).
+ * Reset the range when navigating so each chart starts with its full dataset.
  */
 watch(
   () => chartName.value,
-  (name) => {
-    const cfg = chartConfigs[name]
-    activeRange.value = cfg?.toolbar.defaultRange ?? ""
+  () => {
+    activeRange.value = "All"
   },
   { immediate: true },
 )
@@ -320,7 +324,7 @@ usePageMeta({
             :title="config.toolbar.title"
             :unit="config.toolbar.unit"
             :series="config.toolbar.series"
-            :ranges="config.toolbar.ranges"
+            :ranges="timeRanges"
             :active-range="activeRange"
             @range-change="onRangeChange"
           />
@@ -329,17 +333,26 @@ usePageMeta({
           </div>
         </div>
         <div class="chart-stage">
-          <WealthSharesChart v-if="chartName === 'wealth-shares'" ref="chartComponentRef" />
+          <WealthSharesChart
+            v-if="chartName === 'wealth-shares'"
+            ref="chartComponentRef"
+            :range="activeRange"
+          />
           <ProductivityPayChart
             v-else-if="chartName === 'productivity-pay'"
             ref="chartComponentRef"
+            :range="activeRange"
           />
           <GdhiByRegionChart v-else-if="chartName === 'gdhi-by-region'" ref="chartComponentRef" />
           <TaxCompositionChart
             v-else-if="chartName === 'tax-composition'"
             ref="chartComponentRef"
           />
-          <BoeRatesChart v-else-if="chartName === 'boe-rates'" ref="chartComponentRef" />
+          <BoeRatesChart
+            v-else-if="chartName === 'boe-rates'"
+            ref="chartComponentRef"
+            :range="activeRange"
+          />
           <ChildPovertyChart v-else-if="chartName === 'child-poverty'" ref="chartComponentRef" />
           <GenerationalWealthChart
             v-else-if="chartName === 'generational-wealth'"
