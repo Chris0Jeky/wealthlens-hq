@@ -1,5 +1,79 @@
 import { describe, expect, it } from "vitest"
-import { escapeHtml, safeMinMax, toNumberOrNaN } from "../chart"
+import {
+  escapeHtml,
+  filterChartRowsByRange,
+  parseChartRows,
+  safeMinMax,
+  toNumberOrNaN,
+} from "../chart"
+import type { DatasetRow } from "@/types/api"
+
+describe("parseChartRows", () => {
+  it("derives WID percentile keys without mutating raw rows or values", () => {
+    const rows: DatasetRow[] = [
+      { variable: "shweal_p90p100_992_j", value: 0.5 },
+      { variable: "shweal_p99p100_992_j", value: 0.2 },
+    ]
+    const original = structuredClone(rows)
+    expect(parseChartRows("wealth-shares", rows)).toEqual([
+      { ...rows[0], percentile: "p90p100" },
+      { ...rows[1], percentile: "p99p100" },
+    ])
+    expect(rows).toEqual(original)
+  })
+
+  it("preserves supplied percentiles, missing variables and unrelated datasets", () => {
+    const rows: DatasetRow[] = [
+      { variable: "shweal_p90p100_992_j", percentile: "p99p100" },
+      { variable: null },
+      { variable: "" },
+      { value: 0 },
+    ]
+    expect(parseChartRows("wealth-shares", rows)).toEqual(rows)
+    expect(parseChartRows("other", rows)).toBe(rows)
+  })
+
+  it("mirrors the exporter's fallback for an unrecognised variable", () => {
+    expect(parseChartRows("wealth-shares", [{ variable: "unknown" }])).toEqual([
+      { variable: "unknown", percentile: "unknown" },
+    ])
+  })
+})
+
+describe("filterChartRowsByRange", () => {
+  const rows = [{ year: 2024 }, { year: "1999" }, { year: 2000 }, { year: null }]
+
+  it("keeps an inclusive window anchored to the newest dataset year, regardless of order", () => {
+    expect(filterChartRowsByRange(rows, "25y")).toEqual([rows[0], rows[2]])
+    expect(filterChartRowsByRange(rows, "1y")).toEqual([rows[0]])
+    expect(filterChartRowsByRange(rows, "200y")).toEqual(rows.slice(0, 3))
+  })
+
+  it("leaves All and unsupported ranges unchanged", () => {
+    for (const range of ["All", "all", "", "bad", "0y", "-1y"]) {
+      expect(filterChartRowsByRange(rows, range)).toBe(rows)
+    }
+  })
+
+  it("uses UTC calendar years for date-axis rows", () => {
+    const dates = [
+      { date: "2019-12-31" },
+      { date: "2020-01-01" },
+      { date: "2024-01-01" },
+      { date: "bad" },
+      { date: "" },
+      { date: null },
+    ]
+    expect(filterChartRowsByRange(dates, "5y")).toEqual(dates.slice(1, 3))
+  })
+
+  it("handles empty datasets and missing years without fabricating a year zero", () => {
+    expect(filterChartRowsByRange([], "25y")).toEqual([])
+    expect(filterChartRowsByRange([{ year: "" }, { year: null }, { year: "bad" }], "25y")).toEqual(
+      [],
+    )
+  })
+})
 
 describe("toNumberOrNaN", () => {
   it("maps null / undefined / blank strings to NaN (not a fabricated 0)", () => {

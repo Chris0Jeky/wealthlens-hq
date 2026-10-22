@@ -28,7 +28,8 @@ import AccessibleDataTable from "@/components/AccessibleDataTable.vue"
 // Register only the ECharts modules we need (tree-shaking)
 use([CanvasRenderer, LineChart, GridComponent, TooltipComponent, TitleComponent, LegendComponent])
 
-const { rows, loading, error } = useChartData("boe-rates")
+const props = withDefaults(defineProps<{ range?: string }>(), { range: "All" })
+const { rows, loading, error } = useChartData("boe-rates", () => props.range)
 const chart = ref<EChartsExportable | null>(null)
 
 defineExpose({ chart })
