@@ -2,7 +2,25 @@ import { describe, it, expect, vi, beforeEach } from "vitest"
 import { mount, flushPromises } from "@vue/test-utils"
 import { createPinia, setActivePinia } from "pinia"
 import { nextTick, ref, shallowRef } from "vue"
+import { readFileSync } from "node:fs"
 import { _resetForTesting, useTheme } from "@/composables/useTheme"
+
+const tokens = readFileSync("src/assets/tokens.css", "utf8")
+
+function contrast(foreground: string, background: string): number {
+  const luminance = (hex: string) => {
+    const value = hex.slice(1)
+    const channels = value.length === 3 ? [...value].map((c) => c + c) : value.match(/../g)!
+    return channels
+      .map((c) => {
+        const s = parseInt(c, 16) / 255
+        return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4
+      })
+      .reduce((sum, c, i) => sum + c * [0.2126, 0.7152, 0.0722][i], 0)
+  }
+  const values = [luminance(foreground), luminance(background)].sort((a, b) => b - a)
+  return (values[0] + 0.05) / (values[1] + 0.05)
+}
 
 /**
  * Mock the useChartData composable before importing chart components.
@@ -138,7 +156,19 @@ describe("Chart components", () => {
     })
   })
 
+  const themedLineCharts = [
+    {
+      component: WealthSharesChart,
+      row: { year: 2020, percentile: "p90p100", value: 0.527 },
+    },
+    {
+      component: ProductivityPayChart,
+      row: { year: 2020, productivity_index: 128.0, pay_index: 114.0, gap_pct: 12.3 },
+    },
+  ]
+
   const themedCharts = [
+    ...themedLineCharts,
     { component: HousingAffordabilityChart, row: { region: "London", year: 2020, ratio: 12 } },
     {
       component: CgtConcentrationChart,
@@ -179,6 +209,67 @@ describe("Chart components", () => {
       row: { generation: "Baby Boomers", age_milestone: 30, median_wealth_gbp: 100000 },
     },
   ]
+
+  for (const { component, row } of themedLineCharts) {
+    it(`${component.__name} keeps text and line marks above AA contrast in both themes`, async () => {
+      const style = document.createElement("style")
+      style.textContent = [
+        tokens.match(/:root \{[\s\S]*?\n\}/)![0],
+        tokens.match(/\[data-theme="dark"\] \{[\s\S]*?\n\}/)![0],
+      ].join("\n")
+      document.head.appendChild(style)
+      mockLoading.value = false
+      mockRows.value = [row]
+      const wrapper = mount(component)
+      try {
+        for (const theme of ["light", "dark"] as const) {
+          if (theme === "dark") useTheme().toggleTheme()
+          await nextTick()
+          const option = wrapper.findComponent({ name: "VChart" }).props("option")
+          const css = getComputedStyle(document.documentElement)
+          const card = css.getPropertyValue("--wl-card").trim()
+          const heading = css.getPropertyValue("--wl-ink").trim()
+          const text = css.getPropertyValue("--wl-ink-body").trim()
+          const muted = css.getPropertyValue("--wl-ink-muted").trim()
+          expect(option.title.textStyle.color).toBe(heading)
+          expect(contrast(option.title.textStyle.color, card)).toBeGreaterThanOrEqual(4.5)
+          for (const color of [option.textStyle.color, option.legend.textStyle.color]) {
+            expect(color).toBe(text)
+            expect(contrast(color, card)).toBeGreaterThanOrEqual(4.5)
+          }
+          expect(option.legend.inactiveColor).toBe(muted)
+          expect(contrast(option.legend.inactiveColor, card)).toBeGreaterThanOrEqual(4.5)
+          for (const axis of [option.xAxis, option.yAxis]) {
+            for (const color of [axis.axisLabel.color, axis.nameTextStyle.color]) {
+              expect(color).toBe(text)
+              expect(contrast(color, card)).toBeGreaterThanOrEqual(4.5)
+            }
+            for (const color of [axis.axisLine.lineStyle.color, axis.axisTick.lineStyle.color]) {
+              expect(color).toBe(muted)
+              expect(contrast(color, card)).toBeGreaterThanOrEqual(3)
+            }
+          }
+          expect(option.series).toHaveLength(2)
+          for (const series of option.series) {
+            expect(series.itemStyle.color).toBe(series.lineStyle.color)
+            expect(contrast(series.lineStyle.color, card)).toBeGreaterThanOrEqual(3)
+          }
+          if (theme === "light") {
+            expect(
+              option.series.map(
+                (series: { itemStyle: { color: string } }) => series.itemStyle.color,
+              ),
+            ).toEqual(["#1a56db", "#dc2626"])
+          }
+        }
+      } finally {
+        wrapper.unmount()
+        style.remove()
+        _resetForTesting()
+        localStorage.clear()
+      }
+    })
+  }
 
   for (const { component, row } of themedCharts) {
     it(`${component.__name} updates ECharts title, axes and series on theme changes`, async () => {

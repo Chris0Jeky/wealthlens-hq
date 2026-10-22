@@ -221,6 +221,7 @@ const option = computed(() => {
     return {
       name: gen,
       type: "bar" as const,
+      itemStyle: { color },
       data,
       barMaxWidth: 40,
     }
