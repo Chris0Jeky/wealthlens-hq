@@ -84,6 +84,20 @@ sources:
       and Fulham (£79,500) to Blackpool (£14,200). Fallback URL available for
       1997-2022 edition.
 
+  - id: ons-gdp-ybha
+    name: ONS Gross Domestic Product at market prices, current price, seasonally adjusted (YBHA)
+    url: https://www.ons.gov.uk/economy/grossdomesticproductgdp/timeseries/ybha/qna
+    access_date: "2026-10-22"
+    format: csv
+    licence: OGL-3.0
+    update_pattern: quarterly
+    pipeline: null
+    notes: >
+      Calendar-year 2023 value (2,766,446m GBP, Quarterly National Accounts
+      release 2026-09-30) is the wealth tax simulator's GDP denominator
+      (frontend/src/utils/wealthTaxSimulator.ts UK_GDP). Hand-copied
+      constant, re-check on each QNA release.
+
   - id: ons-housing-affordability
     name: ONS Housing Affordability in England and Wales
     url: https://www.ons.gov.uk/file?uri=/peoplepopulationandcommunity/housing/datasets/ratioofhousepricetoworkplacebasedearningslowerquartileandmedian/current/aff1ratioofhousepricetoworkplacebasedearnings.xlsx
