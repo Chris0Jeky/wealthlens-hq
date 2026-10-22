@@ -108,7 +108,11 @@ test.describe("initial lazy route over the baked snapshot", () => {
       await expect(page.locator('link[rel="canonical"]')).toHaveCount(
         landing.path === "404.html" ? 0 : 1,
       )
-      await expect(page.locator('footer[role="contentinfo"]')).toHaveCount(landing.embed ? 0 : 1)
+      // Chart articles also have a contentinfo footer; only the app's direct
+      // child is site chrome, which embed routes must suppress.
+      await expect(page.locator('#app > div > footer[role="contentinfo"]')).toHaveCount(
+        landing.embed ? 0 : 1,
+      )
       await expect(page.locator("[data-pulseboard-bar]")).toBeHidden()
       await testInfo.attach("mobile-bootstrap-measurements", {
         body: JSON.stringify(
