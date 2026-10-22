@@ -279,7 +279,7 @@ function getOrdinal(n: number): string {
           {{ COMPARISON_STATS.source }}
         </span>
         <p class="calc__source-detail">
-          <a :href="COMPARISON_STATS.sourceUrl" target="_blank" rel="noopener">
+          <a :href="COMPARISON_STATS.sourceUrl" target="_blank" rel="noopener noreferrer">
             View source data on ONS
           </a>
           &middot; Accessed {{ COMPARISON_STATS.accessed }}
@@ -487,19 +487,6 @@ function getOrdinal(n: number): string {
         <!-- Context message -->
         <div class="calc__context">
           <p class="calc__context-text">{{ contextMessage }}</p>
-        </div>
-
-        <!-- Source citation -->
-        <div class="calc__source">
-          <span class="wl-source">
-            {{ COMPARISON_STATS.source }}
-          </span>
-          <p class="calc__source-detail">
-            <a :href="COMPARISON_STATS.sourceUrl" target="_blank" rel="noopener">
-              View source data on ONS
-            </a>
-            &middot; Accessed {{ COMPARISON_STATS.accessed }}
-          </p>
         </div>
 
         <!-- Reset -->
@@ -734,19 +721,6 @@ function getOrdinal(n: number): string {
               </span>
             </div>
           </div>
-        </div>
-
-        <!-- Source citation -->
-        <div class="calc__source">
-          <span class="wl-source">
-            {{ COMPARISON_STATS.source }}
-          </span>
-          <p class="calc__source-detail">
-            <a :href="COMPARISON_STATS.sourceUrl" target="_blank" rel="noopener">
-              View source data on ONS
-            </a>
-            &middot; Accessed {{ COMPARISON_STATS.accessed }}
-          </p>
         </div>
 
         <!-- Reset -->
