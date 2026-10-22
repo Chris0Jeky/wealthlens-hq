@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest"
-import { escapeHtml, filterChartRowsByRange, parseChartRows, safeMinMax, toNumberOrNaN } from "../chart"
+import {
+  escapeHtml,
+  filterChartRowsByRange,
+  parseChartRows,
+  safeMinMax,
+  toNumberOrNaN,
+} from "../chart"
 import type { DatasetRow } from "@/types/api"
 
 describe("parseChartRows", () => {
@@ -51,15 +57,21 @@ describe("filterChartRowsByRange", () => {
 
   it("uses UTC calendar years for date-axis rows", () => {
     const dates = [
-      { date: "2019-12-31" }, { date: "2020-01-01" }, { date: "2024-01-01" },
-      { date: "bad" }, { date: "" }, { date: null },
+      { date: "2019-12-31" },
+      { date: "2020-01-01" },
+      { date: "2024-01-01" },
+      { date: "bad" },
+      { date: "" },
+      { date: null },
     ]
     expect(filterChartRowsByRange(dates, "5y")).toEqual(dates.slice(1, 3))
   })
 
   it("handles empty datasets and missing years without fabricating a year zero", () => {
     expect(filterChartRowsByRange([], "25y")).toEqual([])
-    expect(filterChartRowsByRange([{ year: "" }, { year: null }, { year: "bad" }], "25y")).toEqual([])
+    expect(filterChartRowsByRange([{ year: "" }, { year: null }, { year: "bad" }], "25y")).toEqual(
+      [],
+    )
   })
 })
 

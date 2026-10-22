@@ -141,8 +141,13 @@ const isSupported = computed(
   () => chartName.value in chartConfigs || chartName.value in simpleChartTitles,
 )
 
-/** Only these charts offer selectable time windows and accept the range prop. */
+/**
+ * Only these charts offer selectable time windows and accept the range prop.
+ * Default off (new behaviour ships toggleable): without VITE_CHART_RANGE_FILTER=on no
+ * range controls render and every chart plots its full dataset.
+ */
 const timeRanges = computed(() =>
+  import.meta.env.VITE_CHART_RANGE_FILTER === "on" &&
   ["wealth-shares", "productivity-pay", "boe-rates"].includes(chartName.value)
     ? ["All", ...(config.value?.toolbar.ranges ?? []).filter((range) => range !== "All")]
     : [],

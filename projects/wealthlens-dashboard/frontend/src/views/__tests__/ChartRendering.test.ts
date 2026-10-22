@@ -16,8 +16,12 @@ vi.mock("echarts/core", () => ({ use: vi.fn() }))
 vi.mock("echarts/renderers", () => ({ CanvasRenderer: {} }))
 vi.mock("echarts/charts", () => ({ LineChart: {}, BarChart: {} }))
 vi.mock("echarts/components", () => ({
-  GridComponent: {}, TooltipComponent: {}, TitleComponent: {}, LegendComponent: {},
-  MarkLineComponent: {}, MarkPointComponent: {},
+  GridComponent: {},
+  TooltipComponent: {},
+  TitleComponent: {},
+  LegendComponent: {},
+  MarkLineComponent: {},
+  MarkPointComponent: {},
 }))
 
 // Synthetic rows exercise transport shapes and window boundaries, not source figures.
@@ -33,7 +37,11 @@ const staticRows = liveRows.map((row) => ({
 function piniaWithRows(rows: DatasetRow[]) {
   const pinia = createTestingPinia({ createSpy: vi.fn })
   vi.mocked(useDataStore(pinia).fetchDataset).mockResolvedValue({
-    data: rows, total: rows.length, page: 1, limit: 1000, total_pages: 1,
+    data: rows,
+    total: rows.length,
+    page: 1,
+    limit: 1000,
+    total_pages: 1,
   })
   return pinia
 }
@@ -43,10 +51,13 @@ type ChartOption = { xAxis: { data: number[] }; series: { data: number[] }[] }
 enableAutoUnmount(afterEach)
 beforeEach(() => {
   vi.stubGlobal("matchMedia", vi.fn().mockReturnValue({ matches: false }))
+  // The #716 range controls ship default off; these specs exercise them switched on.
+  vi.stubEnv("VITE_CHART_RANGE_FILTER", "on")
 })
 afterEach(() => {
   vi.restoreAllMocks()
   vi.unstubAllGlobals()
+  vi.unstubAllEnvs()
 })
 
 describe("chart rendering regressions", () => {
@@ -55,7 +66,10 @@ describe("chart rendering regressions", () => {
     await flushPromises()
     const expected = exported.findComponent({ name: "VChart" }).props("option") as ChartOption
     expect(expected.xAxis.data).toEqual([1820, 1999, 2000, 2024])
-    expect(expected.series.map((s) => s.data)).toEqual([[50, 50, 50, 50], [20, 20, 20, 20]])
+    expect(expected.series.map((s) => s.data)).toEqual([
+      [50, 50, 50, 50],
+      [20, 20, 20, 20],
+    ])
 
     const live = mount(WealthSharesChart, { global: { plugins: [piniaWithRows(liveRows)] } })
     await flushPromises()
@@ -85,7 +99,9 @@ describe("chart rendering regressions", () => {
       global: {
         plugins: [router, piniaWithRows(staticRows)],
         stubs: {
-          StatStrip: true, ShareBar: true, RelatedCharts: true,
+          StatStrip: true,
+          ShareBar: true,
+          RelatedCharts: true,
           DataFreshnessBadge: { props: ["dataset"], template: "<div />" },
           ExportButton: true,
         },
@@ -101,7 +117,10 @@ describe("chart rendering regressions", () => {
     expect(shortRange.attributes("aria-selected")).toBe("true")
     expect(shortRange.attributes("tabindex")).toBe("0")
     expect(option().xAxis.data).toEqual([2000, 2024])
-    expect(option().series.map((s) => s.data)).toEqual([[50, 50], [20, 20]])
+    expect(option().series.map((s) => s.data)).toEqual([
+      [50, 50],
+      [20, 20],
+    ])
     expect(wrapper.findComponent({ name: "AccessibleDataTable" }).props("rows")).toEqual([
       { Year: 2000, "Top 1% share": "20.0%", "Top 10% share": "50.0%" },
       { Year: 2024, "Top 1% share": "20.0%", "Top 10% share": "50.0%" },
@@ -135,7 +154,10 @@ describe("chart rendering regressions", () => {
       name: "productivity-pay",
       range: "10y",
       rows: [2000, 2014, 2015, 2024].map((year) => ({
-        year, productivity_index: 100, pay_index: 90, gap_pct: 10,
+        year,
+        productivity_index: 100,
+        pay_index: 90,
+        gap_pct: 10,
       })),
       all: [2000, 2014, 2015, 2024],
       filtered: [2015, 2024],
@@ -144,12 +166,65 @@ describe("chart rendering regressions", () => {
       name: "boe-rates",
       range: "5y",
       rows: ["2000-01-01", "2019-12-31", "2020-01-01", "2024-10-01"].map((date) => ({
-        date, bank_rate: 1, cpi_annual: 2,
+        date,
+        bank_rate: 1,
+        cpi_annual: 2,
       })),
       all: ["2000-01", "2019-12", "2020-01", "2024-10"],
       filtered: ["2020-01", "2024-10"],
     },
-  ])("#716 filters $name through the page toolbar", async ({ name, range, rows, all, filtered }) => {
+  ])(
+    "#716 filters $name through the page toolbar",
+    async ({ name, range, rows, all, filtered }) => {
+      const router = createRouter({
+        history: createMemoryHistory(),
+        routes: [
+          { path: "/charts/:name", component: ChartView },
+          { path: "/", component: { template: "<div />" } },
+        ],
+      })
+      await router.push(`/charts/${name}`)
+      const pinia = piniaWithRows(rows)
+      vi.mocked(useDataStore(pinia).fetchMetadata).mockResolvedValue({
+        name,
+        description: "",
+        source: "",
+        source_url: "",
+        access_date: "",
+        columns: [],
+        row_count: rows.length,
+        data_type: "static_published",
+      })
+      const wrapper = mount(ChartView, {
+        global: {
+          plugins: [router, pinia],
+          stubs: {
+            StatStrip: true,
+            ShareBar: true,
+            RelatedCharts: true,
+            ExportButton: true,
+            DataFreshnessBadge: { props: ["dataset"], template: "<div />" },
+          },
+        },
+      })
+      await flushPromises()
+      await vi.dynamicImportSettled()
+      await flushPromises()
+      const option = () => wrapper.findComponent({ name: "VChart" }).props("option") as ChartOption
+      expect(option().xAxis.data).toEqual(all)
+      await wrapper
+        .findAll('[role="tab"]')
+        .find((tab) => tab.text() === range)!
+        .trigger("click")
+      expect(option().xAxis.data).toEqual(filtered)
+      expect(option().series.every((series) => series.data.length === filtered.length)).toBe(true)
+      expect(wrapper.findComponent({ name: "AccessibleDataTable" }).props("rows")).toHaveLength(2)
+      expect(useDataStore(pinia).fetchDataset).toHaveBeenCalledTimes(1)
+      wrapper.unmount()
+    },
+  )
+  it("#716 hides the range controls by default (VITE_CHART_RANGE_FILTER unset)", async () => {
+    vi.unstubAllEnvs()
     const router = createRouter({
       history: createMemoryHistory(),
       routes: [
@@ -157,31 +232,33 @@ describe("chart rendering regressions", () => {
         { path: "/", component: { template: "<div />" } },
       ],
     })
-    await router.push(`/charts/${name}`)
-    const pinia = piniaWithRows(rows)
+    await router.push("/charts/wealth-shares")
+    const pinia = piniaWithRows([])
     vi.mocked(useDataStore(pinia).fetchMetadata).mockResolvedValue({
-      name, description: "", source: "", source_url: "", access_date: "",
-      columns: [], row_count: rows.length, data_type: "static_published",
+      name: "wealth-shares",
+      description: "",
+      source: "",
+      source_url: "",
+      access_date: "",
+      columns: [],
+      row_count: 0,
+      data_type: "static_published",
     })
     const wrapper = mount(ChartView, {
       global: {
         plugins: [router, pinia],
         stubs: {
-          StatStrip: true, ShareBar: true, RelatedCharts: true, ExportButton: true,
+          StatStrip: true,
+          ShareBar: true,
+          RelatedCharts: true,
+          ExportButton: true,
           DataFreshnessBadge: { props: ["dataset"], template: "<div />" },
         },
       },
     })
     await flushPromises()
-    await vi.dynamicImportSettled()
-    await flushPromises()
-    const option = () => wrapper.findComponent({ name: "VChart" }).props("option") as ChartOption
-    expect(option().xAxis.data).toEqual(all)
-    await wrapper.findAll('[role="tab"]').find((tab) => tab.text() === range)!.trigger("click")
-    expect(option().xAxis.data).toEqual(filtered)
-    expect(option().series.every((series) => series.data.length === filtered.length)).toBe(true)
-    expect(wrapper.findComponent({ name: "AccessibleDataTable" }).props("rows")).toHaveLength(2)
-    expect(useDataStore(pinia).fetchDataset).toHaveBeenCalledTimes(1)
+    expect(wrapper.findAll('[role="tab"]').map((tab) => tab.text())).not.toContain("25y")
+    expect(wrapper.findComponent(WealthSharesChart).props("range")).toBe("All")
     wrapper.unmount()
   })
 })
