@@ -407,3 +407,24 @@ class TestHVCTSResult:
         )
         with pytest.raises(ValidationError, match="frozen"):
             result.total_surcharge = 0
+
+
+class TestUncappedBandPlacement:
+    """Issue #708: only the last band may be uncapped."""
+
+    def test_uncapped_band_before_last_rejected(self) -> None:
+        with pytest.raises(ValidationError, match="no upper bound but is not the last band"):
+            HVCTSConfig(bands=(
+                HVCTSBand(lower=2_000_000, upper=None, annual_surcharge=2_500),
+                HVCTSBand(lower=5_000_000, upper=None, annual_surcharge=7_500),
+            ))
+
+    def test_unsorted_input_with_uncapped_last_band_accepted(self) -> None:
+        config = HVCTSConfig(bands=(
+            HVCTSBand(lower=5_000_000, upper=None, annual_surcharge=7_500),
+            HVCTSBand(lower=2_000_000, upper=5_000_000, annual_surcharge=2_500),
+        ))
+        assert len(config.bands) == 2
+
+    def test_announced_bands_still_valid(self) -> None:
+        assert HVCTSConfig(bands=ANNOUNCED_BANDS).bands == ANNOUNCED_BANDS

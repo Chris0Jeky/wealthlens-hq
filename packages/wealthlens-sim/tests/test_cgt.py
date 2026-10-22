@@ -344,3 +344,27 @@ class TestHouseholdCGTResultModel:
         r2 = HouseholdCGTResult.model_validate(data)
         assert r2.household_id == "hh1"
         assert len(r2.person_results) == 1
+
+
+class TestTrusteeExemptAmount:
+    """Issue #700: ordinary-trust trustees get half the individual exempt amount."""
+
+    def test_trustee_defaults_to_half_exemption(self) -> None:
+        config = CGTConfig(taxpayer_type=TaxpayerType.TRUSTEE)
+        assert config.annual_exempt_amount == 1_500
+
+    def test_trustee_repro_2000_gain_owes_120(self) -> None:
+        config = CGTConfig(taxpayer_type=TaxpayerType.TRUSTEE)
+        taxable, liability = _compute_person_cgt(2_000, 0, config)
+        assert taxable == 500
+        assert liability == pytest.approx(120)
+
+    def test_trustee_string_type_also_defaults(self) -> None:
+        assert CGTConfig(taxpayer_type="trustee").annual_exempt_amount == 1_500
+
+    def test_explicit_exempt_amount_overrides_trustee_default(self) -> None:
+        config = CGTConfig(taxpayer_type=TaxpayerType.TRUSTEE, annual_exempt_amount=3_000)
+        assert config.annual_exempt_amount == 3_000
+
+    def test_individual_default_unchanged(self) -> None:
+        assert CGTConfig().annual_exempt_amount == 3_000

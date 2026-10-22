@@ -83,7 +83,11 @@ class HVCTSConfig(BaseModel):
         for i in range(len(sorted_bands) - 1):
             current_upper = sorted_bands[i].upper
             next_lower = sorted_bands[i + 1].lower
-            if current_upper is not None and current_upper > next_lower:
+            if current_upper is None:
+                # An uncapped band before the last would shadow every later band.
+                msg = f"band {i} has no upper bound but is not the last band"
+                raise ValueError(msg)
+            if current_upper > next_lower:
                 msg = (
                     f"band {i} upper ({current_upper}) overlaps "
                     f"band {i + 1} lower ({next_lower})"

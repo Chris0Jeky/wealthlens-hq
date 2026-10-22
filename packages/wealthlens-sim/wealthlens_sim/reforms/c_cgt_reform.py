@@ -8,7 +8,9 @@ Current-law baseline (2026-27):
 - Individual rates: 18% (basic rate) / 24% (higher rate)
 - Trustees and PRs: 24% flat
 - BADR/IR: 18%
-- Annual exempt amount: £3,000
+- Annual exempt amount: £3,000 (individuals); £1,500 for trustees of an
+  ordinary trust (GOV.UK, Trusts and Capital Gains Tax,
+  https://www.gov.uk/trusts-taxes/trusts-and-capital-gains-tax, accessed 2026-10-22)
 - Death uplift: gains wiped on death (no CGT charge)
 - Main-residence relief: PPR gains fully exempt
 
@@ -25,6 +27,12 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from wealthlens_sim.schema.household import Household
 
+ANNUAL_EXEMPT_AMOUNT_2026: float = 3_000
+#: Ordinary-trust trustees get half the individual amount. Personal
+#: representatives and vulnerable-beneficiary trusts get the full amount:
+#: pass annual_exempt_amount explicitly for those. Registry: registries/baselines.yml
+#: id cgt-trustee-annual-exempt-amount.
+TRUSTEE_ANNUAL_EXEMPT_AMOUNT_2026: float = 1_500
 BASIC_RATE_BAND_2026: float = 37_700
 PERSONAL_ALLOWANCE_2026: float = 12_570
 
@@ -43,7 +51,8 @@ class CGTConfig(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     annual_exempt_amount: float = Field(
-        default=3_000, ge=0, description="Annual exempt amount (GBP)"
+        default=ANNUAL_EXEMPT_AMOUNT_2026, ge=0,
+        description="Annual exempt amount (GBP); defaults by taxpayer_type when omitted",
     )
     basic_rate: float = Field(
         default=0.18, ge=0, le=1, description="CGT rate for basic-rate taxpayers"
@@ -80,6 +89,18 @@ class CGTConfig(BaseModel):
         default=TaxpayerType.INDIVIDUAL,
         description="Tax entity type (individual or trustee)",
     )
+
+    @model_validator(mode="before")
+    @classmethod
+    def _default_exempt_amount_by_type(cls, data: object) -> object:
+        # An omitted exempt amount follows the taxpayer type; an explicit one always wins.
+        if (
+            isinstance(data, dict)
+            and "annual_exempt_amount" not in data
+            and data.get("taxpayer_type") in (TaxpayerType.TRUSTEE, TaxpayerType.TRUSTEE.value)
+        ):
+            return {**data, "annual_exempt_amount": TRUSTEE_ANNUAL_EXEMPT_AMOUNT_2026}
+        return data
 
     @model_validator(mode="after")
     def _rates_consistent(self) -> CGTConfig:

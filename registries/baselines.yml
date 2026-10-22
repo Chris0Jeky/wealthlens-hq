@@ -63,6 +63,21 @@ baselines:
     source_url: https://www.gov.uk/capital-gains-tax/allowances
     notes: Family C baseline parameter. Threshold frozen at £3,000.
 
+  - id: cgt-trustee-annual-exempt-amount
+    area: Capital Gains Tax
+    status: current_law
+    effective_date: "2024-04-06"
+    description: >
+      Trustees of an ordinary trust get half the individual CGT Annual
+      Exempt Amount (£1,500). Personal representatives and trusts for
+      vulnerable beneficiaries get the full individual amount.
+    wealthlens_treatment: Current-law baseline (trustee default in CGTConfig)
+    source_url: https://www.gov.uk/trusts-taxes/trusts-and-capital-gains-tax
+    notes: >
+      Family C baseline parameter (wealthlens_sim/reforms/c_cgt_reform.py
+      TRUSTEE_ANNUAL_EXEMPT_AMOUNT_2026); accessed 2026-10-22. The split
+      across trusts created by the same settlor is not modelled.
+
   - id: iht-nil-rate-bands-frozen
     area: Inheritance Tax
     status: current_law
