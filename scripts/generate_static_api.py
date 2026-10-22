@@ -367,6 +367,17 @@ def main() -> None:
 
         # Metadata response
         meta = DATASET_META.get(slug, {})
+        if slug == "boe-rates" and data_type == "live_ons":
+            # The pipeline sidecar records the actual two-source fetch and date.
+            sidecar = json.loads(csv_path.with_suffix(".meta.json").read_text(encoding="utf-8"))
+            sources = sidecar["sources"]
+            meta = {
+                **meta,
+                "description": sidecar["description"],
+                "source": " / ".join(source["name"] for source in sources),
+                "source_url": sidecar["source_url"],
+                "access_date": sidecar["access_date"],
+            }
         columns = list(records[0].keys()) if records else []
         meta_response = {
             "name": slug,
@@ -378,6 +389,8 @@ def main() -> None:
             "columns": columns,
             "data_type": data_type,
         }
+        if slug == "boe-rates" and data_type == "live_ons":
+            meta_response["sources"] = sources
         meta_path = OUT_DIR / f"{slug}-metadata.json"
         meta_path.write_text(
             json.dumps(meta_response, allow_nan=False), encoding="utf-8"

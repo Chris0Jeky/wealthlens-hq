@@ -8,6 +8,7 @@ from pathlib import Path
 from unittest.mock import Mock
 
 import fetch_boe_rates as boe
+import http_retry
 import pandas as pd
 import pytest
 import requests
@@ -25,6 +26,7 @@ def pipeline_dirs(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     monkeypatch.setattr(boe, "RAW_DIR", tmp_path / "raw")
     monkeypatch.setattr(boe, "PROCESSED_DIR", tmp_path / "processed")
     monkeypatch.setattr(boe, "CHART_DIR", tmp_path / "charts")
+    monkeypatch.setattr(http_retry.time, "sleep", lambda _: None)
     return tmp_path
 
 
@@ -70,7 +72,7 @@ def test_failed_fetch_labels_fallback_through_api_and_static_export(
 def test_download_uses_project_user_agent_and_existing_timeout(
     pipeline_dirs: Path, monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    response = Mock(content=BANK_RATE_FIXTURE.read_bytes())
+    response = Mock(content=BANK_RATE_FIXTURE.read_bytes(), status_code=200)
     request = Mock(return_value=response)
     monkeypatch.setattr(boe.requests, "get", request)
     assert boe._download_iadb(boe.BANK_RATE_SERIES) is response
@@ -86,6 +88,7 @@ def test_download_uses_project_user_agent_and_existing_timeout(
 
 
 BANK_RATE_FIXTURE = Path(__file__).parent / "fixtures/boe_iumabedr_2024.csv"
+CPI_FIXTURE = Path(__file__).parent / "fixtures/ons_d7g7_mm23.csv"
 
 
 @pytest.mark.parametrize("delimiter", [",", "\t"])
@@ -107,7 +110,7 @@ def test_parser_reads_captured_iadb_monthly_average_export(delimiter: str) -> No
 def test_successful_http_without_both_series_keeps_whole_dataset_illustrative(
     pipeline_dirs: Path, monkeypatch: pytest.MonkeyPatch, response_body: bytes,
 ) -> None:
-    response = Mock(content=response_body)
+    response = Mock(content=response_body, status_code=200)
     monkeypatch.setattr(boe.requests, "get", Mock(return_value=response))
     result = boe.process(boe.fetch())
     expected = boe.process(boe._write_fallback(pipeline_dirs / "expected.csv"))
@@ -174,3 +177,140 @@ def test_missing_boe_sidecar_is_unverified_in_both_publication_paths(
     monkeypatch.setattr(api, "_metadata_cache", {})
     assert api._build_metadata("boe-rates")["data_type"] == "unverified"
     assert static_api._read_data_type(csv_path, frame.to_dict("records")) == "unverified"
+
+
+def test_parser_reads_captured_ons_months_only() -> None:
+    import csv
+
+    original = list(csv.reader(CPI_FIXTURE.read_text(encoding="utf-8-sig").splitlines()))
+    monthly = [row for row in original if len(row[0].split()) == 2 and row[0].split()[1] in
+               ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"]]
+    parsed = boe._parse_ons_csv(CPI_FIXTURE.read_text(encoding="utf-8"))
+    assert len(parsed) == len(monthly)
+    assert parsed[boe.CPI_SERIES].tolist() == [float(row[1]) for row in monthly]
+    assert pd.to_datetime(parsed["DATE"]).dt.strftime("%Y %b").str.upper().tolist() == [
+        row[0] for row in monthly
+    ]
+
+
+@pytest.mark.parametrize("damage", ["html", "wrong-series", "no-months", "duplicate", "non-finite"])
+def test_ons_parser_rejects_invalid_exports(damage: str) -> None:
+    text = CPI_FIXTURE.read_text(encoding="utf-8")
+    lines = text.splitlines()
+    monthly = next(line for line in lines if ' JAN"' in line)
+    if damage == "html":
+        text = "<html>Temporarily unavailable</html>"
+    elif damage == "wrong-series":
+        text = text.replace('"D7G7"', '"OTHER"')
+    elif damage == "no-months":
+        text = "\n".join(lines[:8])
+    elif damage == "duplicate":
+        text += monthly + "\n"
+    else:
+        text = text.replace(monthly, monthly.rsplit(",", 1)[0] + ',"NaN"')
+    with pytest.raises(ValueError):
+        boe._parse_ons_csv(text)
+
+
+def test_two_official_fetches_join_months_and_publish_sources(
+    pipeline_dirs: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    bank_response = Mock(content=BANK_RATE_FIXTURE.read_bytes(), status_code=200, url=boe.BOE_IADB_URL)
+    cpi_response = Mock(content=CPI_FIXTURE.read_bytes(), status_code=200, url=boe.ONS_CPI_URL)
+    request = Mock(side_effect=[bank_response, cpi_response])
+    monkeypatch.setattr(boe.requests, "get", request)
+    raw = boe.fetch()
+    result = boe.process(raw)
+    bank = boe._parse_iadb_csv(BANK_RATE_FIXTURE.read_text())
+    cpi = boe._parse_ons_csv(CPI_FIXTURE.read_text())
+    expected = boe._join_monthly(bank, cpi).rename(columns={
+        "DATE": "date", boe.BANK_RATE_SERIES: "bank_rate", boe.CPI_SERIES: "cpi_annual",
+    })
+    pd.testing.assert_frame_equal(result.drop(columns="data_type"), expected)
+    assert result["data_type"].eq("live_ons").all()
+    assert pd.to_datetime(result["date"]).dt.is_month_start.all()
+    assert len(result) == len(bank)
+    assert request.call_args_list[0].kwargs["params"]["SeriesCodes"] == boe.BANK_RATE_SERIES
+    assert request.call_args_list[1].args == (boe.ONS_CPI_URL,)
+    for call in request.call_args_list:
+        assert call.kwargs["timeout"] == boe.REQUEST_TIMEOUT_SECONDS
+        assert call.kwargs["headers"] == {"User-Agent": boe.USER_AGENT}
+    metadata = json.loads(raw.with_suffix(".meta.json").read_text())
+    assert [source["url"] for source in metadata["sources"]] == [boe.BOE_IADB_URL, boe.ONS_CPI_URL]
+    assert all(source["access_date"] == boe.ACCESS_DATE for source in metadata["sources"])
+    processed = pipeline_dirs / "processed"
+    assert json.loads((processed / "boe_rates.meta.json").read_text())["sources"] == metadata["sources"]
+    monkeypatch.setattr(api, "DATA_DIR", processed)
+    monkeypatch.setattr(api, "_metadata_cache", {})
+    assert api._build_metadata("boe-rates")["data_type"] == "live_ons"
+    monkeypatch.setattr(static_api, "DATA_DIR", processed)
+    monkeypatch.setattr(static_api, "OUT_DIR", pipeline_dirs / "public")
+    monkeypatch.setattr(static_api, "DATASETS", {"boe-rates": "boe_rates.csv"})
+    monkeypatch.setattr(static_api, "generate_simulator_static", lambda: 0)
+    static_api.main()
+    published = json.loads((pipeline_dirs / "public/boe-rates-metadata.json").read_text())
+    assert published["sources"] == metadata["sources"]
+    assert published["access_date"] == metadata["access_date"]
+    assert published["data_type"] == "live_ons"
+    boe.build_chart(result)
+    chart = (pipeline_dirs / "charts/boe_rates.html").read_text(encoding="utf-8")
+    assert "ILLUSTRATIVE FALLBACK DATA" not in chart
+    assert "UNVERIFIED PROVENANCE" not in chart
+    assert "ONS D7G7" in chart
+
+
+@pytest.mark.parametrize("damage", ["missing-month", "duplicate", "non-finite", "no-overlap"])
+def test_join_rejects_incomplete_official_months(damage: str) -> None:
+    bank = boe._parse_iadb_csv(BANK_RATE_FIXTURE.read_text())
+    cpi = boe._parse_ons_csv(CPI_FIXTURE.read_text())
+    if damage == "missing-month":
+        bank = bank.drop(bank.index[len(bank) // 2])
+    elif damage == "duplicate":
+        bank = pd.concat([bank, bank.iloc[:1]])
+    elif damage == "non-finite":
+        bank.loc[bank.index[0], boe.BANK_RATE_SERIES] = float("inf")
+    else:
+        cpi = cpi.loc[cpi["DATE"] < "2000-01-01"]
+    with pytest.raises(ValueError):
+        boe._join_monthly(bank, cpi)
+
+
+def test_join_limits_to_common_source_coverage() -> None:
+    bank = boe._parse_iadb_csv(BANK_RATE_FIXTURE.read_text())
+    cpi = boe._parse_ons_csv(CPI_FIXTURE.read_text())
+    expected = boe._join_monthly(bank, cpi)
+    cpi = cpi.loc[cpi["DATE"] <= expected["DATE"].iloc[-2]]
+    actual = boe._join_monthly(bank, cpi)
+    pd.testing.assert_frame_equal(actual, expected.iloc[:-1])
+
+
+@pytest.mark.parametrize("source", ["bank", "cpi"])
+def test_both_official_downloads_retry_transient_failures(
+    pipeline_dirs: Path, monkeypatch: pytest.MonkeyPatch, source: str,
+) -> None:
+    fixture = BANK_RATE_FIXTURE if source == "bank" else CPI_FIXTURE
+    response = Mock(content=fixture.read_bytes(), status_code=requests.codes.ok)
+    request = Mock(side_effect=[requests.Timeout("temporary upstream timeout"), response])
+    monkeypatch.setattr(boe.requests, "get", request)
+    download = (lambda: boe._download_iadb(boe.BANK_RATE_SERIES)) if source == "bank" else boe._download_ons
+    assert download() is response
+    assert request.call_count == 2
+    assert request.call_args_list[0] == request.call_args_list[1]
+
+
+def test_ons_outage_cannot_publish_partially_official_data(
+    pipeline_dirs: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    bank_response = Mock(content=BANK_RATE_FIXTURE.read_bytes(), status_code=requests.codes.ok)
+
+    def get(url: str, **kwargs: object) -> Mock:
+        if url == boe.BOE_IADB_URL:
+            return bank_response
+        raise requests.ConnectionError("ONS unavailable")
+
+    monkeypatch.setattr(boe.requests, "get", get)
+    result = boe.process(boe.fetch())
+    assert result["data_type"].eq("illustrative_fallback").all()
+    metadata = json.loads((pipeline_dirs / "processed/boe_rates.meta.json").read_text())
+    assert metadata["access_date"] is None
+    assert all(source["access_date"] is None for source in metadata["sources"])

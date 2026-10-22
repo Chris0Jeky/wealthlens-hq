@@ -1,24 +1,16 @@
-"""Fetch Bank of England Bank Rate and CPI inflation data.
+"""Fetch monthly Bank Rate (BoE IUMABEDR) and annual CPI inflation (ONS D7G7).
 
-Source: Bank of England Interactive Analytical Database (OGL v3.0)
-Series codes:
-  - IUMABEDR: Monthly average of official Bank Rate (not end-month).
-  - D7BT: Legacy CPI request, rejected by IADB as an invalid series code.
-    The documented official CPI source is ONS Consumer price inflation, UK
-    (see metadata/boe_rates.meta.json). Until an official CPI annual series
-    can also be fetched, the WHOLE published dataset stays illustrative.
-
-URL pattern:
-  https://www.bankofengland.co.uk/boeapps/database/_iadb-fromshowcolumns.asp
-  ?csv.x=yes&SeriesCodes=IUMABEDR,D7BT&...
-
-Output: projects/wealthlens-dashboard/data/processed/boe_rates.csv
+Join official observations by calendar month from 2000 onwards, labelling each
+month YYYY-MM-01. IADB dates are month-end labels for monthly averages, not
+end-month policy readings. Only months covered by both sources are published.
 """
 
 from __future__ import annotations
 
+import csv
 import json
 import logging
+import re
 from datetime import date
 from io import StringIO
 from pathlib import Path
@@ -28,6 +20,7 @@ import plotly.graph_objects as go
 import requests
 from _cells import to_finite_float
 from chart_html import write_accessible_chart
+from http_retry import fetch_with_retry
 
 ROOT = Path(__file__).resolve().parents[2]
 DATA_DIR = ROOT / "projects" / "wealthlens-dashboard" / "data"
@@ -42,7 +35,11 @@ BOE_IADB_URL = (
 
 # Series codes
 BANK_RATE_SERIES = "IUMABEDR"
-CPI_SERIES = "D7BT"
+CPI_SERIES = "D7G7"
+ONS_CPI_URL = (
+    "https://www.ons.gov.uk/generator?format=csv&uri="
+    "/economy/inflationandpriceindices/timeseries/d7g7/mm23"
+)
 
 USER_AGENT = (
     "Mozilla/5.0 (compatible; WealthLensDataPipeline/1.0; "
@@ -57,12 +54,15 @@ REQUEST_TIMEOUT_SECONDS = 60
 
 def _write_metadata(
     csv_path: Path, *, data_type: str, access_date: str | None = None,
-    source_url: str = BOE_IADB_URL,
+    source_url: str = BOE_IADB_URL, sources: list[dict] | None = None,
 ) -> None:
     """Persist provenance beside raw and processed CSVs for all consumers."""
     metadata = json.loads(
         (Path(__file__).parent / "metadata/boe_rates.meta.json").read_text(encoding="utf-8")
     )
+    metadata["sources"] = sources if sources is not None else [
+        {**source, "access_date": access_date} for source in metadata["sources"]
+    ]
     metadata.update(
         data_type=data_type,
         source_url=source_url,
@@ -103,14 +103,71 @@ def _download_iadb(
     series_codes: str, *, params: dict[str, str] | None = None,
 ) -> requests.Response:
     """Request official CSV bytes, also usable to capture an unedited test fixture."""
-    response = requests.get(
+    return _download_csv(
         BOE_IADB_URL,
         params=params if params is not None else _build_iadb_params(series_codes),
-        timeout=REQUEST_TIMEOUT_SECONDS,
+    )
+
+
+def _download_csv(url: str, *, params: dict[str, str] | None = None) -> requests.Response:
+    """Use the same User-Agent, timeout and transient retry policy for both sources."""
+    response = fetch_with_retry(
+        url, params=params, timeout=REQUEST_TIMEOUT_SECONDS,
         headers={"User-Agent": USER_AGENT},
     )
     response.raise_for_status()
     return response
+
+
+def _download_ons() -> requests.Response:
+    """Download the official MM23 D7G7 CSV, including its metadata header."""
+    return _download_csv(ONS_CPI_URL)
+
+
+def _parse_ons_csv(raw_text: str) -> pd.DataFrame:
+    """Read only YYYY MON observations; skip metadata, annual and quarterly rows."""
+    months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"]
+    rows = list(csv.reader(StringIO(raw_text.lstrip("\ufeff"))))
+    headers = {row[0]: row[1] for row in rows if len(row) == 2}
+    if headers.get("CDID") != CPI_SERIES or headers.get("Source dataset ID") != "MM23":
+        raise ValueError("ONS response is not D7G7 from MM23")
+    records = []
+    for row in rows:
+        if not row or not re.fullmatch(r"\d{4} [A-Z]{3}", row[0].strip()):
+            continue
+        year, month = row[0].strip().split()
+        if month not in months or len(row) != 2:
+            raise ValueError("Invalid ONS monthly observation")
+        value = to_finite_float(row[1])
+        if value is None:
+            raise ValueError("ONS monthly CPI must be finite")
+        records.append({"DATE": f"{year}-{months.index(month) + 1:02d}-01", CPI_SERIES: value})
+    if not records:
+        raise ValueError("ONS response has no monthly observations")
+    frame = pd.DataFrame(records)
+    if frame["DATE"].duplicated().any():
+        raise ValueError("Duplicate ONS month")
+    return frame.sort_values("DATE").reset_index(drop=True)
+
+
+def _join_monthly(bank: pd.DataFrame, cpi: pd.DataFrame) -> pd.DataFrame:
+    """Inner join calendar months, without filling or interpolating either series."""
+    bank = bank.rename(columns={"DATES": "DATE"})[["DATE", BANK_RATE_SERIES]].copy()
+    bank["DATE"] = pd.to_datetime(bank["DATE"], format="mixed").dt.to_period("M").dt.to_timestamp()
+    bank["DATE"] = bank["DATE"].dt.strftime("%Y-%m-%d")
+    if bank["DATE"].duplicated().any():
+        raise ValueError("Duplicate IADB month")
+    joined = bank.merge(cpi, on="DATE", how="inner", validate="one_to_one")
+    joined = joined.loc[joined["DATE"] >= "2000-01-01"].sort_values("DATE").reset_index(drop=True)
+    if joined.empty:
+        raise ValueError("Official sources have no common months from 2000 onwards")
+    for column in (BANK_RATE_SERIES, CPI_SERIES):
+        if any(to_finite_float(value) is None for value in joined[column]):
+            raise ValueError("Official monthly observations must be finite")
+    expected = pd.period_range(joined["DATE"].iloc[0], joined["DATE"].iloc[-1], freq="M")
+    if len(joined) != len(expected):
+        raise ValueError("Official sources have missing months within their common range")
+    return joined
 
 
 def _parse_iadb_csv(
@@ -134,26 +191,41 @@ def _parse_iadb_csv(
 
 
 def fetch() -> Path:
-    """Download Bank Rate and CPI data from BoE IADB.
+    """Download Bank Rate from BoE IADB and CPI annual inflation from ONS.
 
     Falls back as a whole if either official series cannot be downloaded.
     """
     RAW_DIR.mkdir(parents=True, exist_ok=True)
     out_path = RAW_DIR / "boe_iadb_rates.csv"
 
-    series = f"{BANK_RATE_SERIES},{CPI_SERIES}"
     try:
-        logger.info("Fetching BoE IADB data for %s...", series)
-        resp = _download_iadb(series)
-        _parse_iadb_csv(resp.content.decode("utf-8-sig"), required_series=(BANK_RATE_SERIES, CPI_SERIES))
-        out_path.write_bytes(resp.content)
-        _write_metadata(
-            out_path, data_type="live_ons", access_date=ACCESS_DATE, source_url=resp.url,
+        logger.info("Fetching BoE %s and ONS %s...", BANK_RATE_SERIES, CPI_SERIES)
+        bank_response = _download_iadb(BANK_RATE_SERIES)
+        bank = _parse_iadb_csv(
+            bank_response.content.decode("utf-8-sig"), required_series=(BANK_RATE_SERIES,),
         )
-        logger.info("Saved raw BoE data to %s (%d KB)", out_path, len(resp.content) // 1024)
+        cpi_response = _download_ons()
+        cpi = _parse_ons_csv(cpi_response.content.decode("utf-8-sig"))
+        joined = _join_monthly(bank, cpi)
+        # Keep both unedited responses for audit; publish only the validated join.
+        (RAW_DIR / "boe_iumabedr.csv").write_bytes(bank_response.content)
+        (RAW_DIR / "ons_d7g7.csv").write_bytes(cpi_response.content)
+        joined.to_csv(out_path, index=False)
+        template = json.loads(
+            (Path(__file__).parent / "metadata/boe_rates.meta.json").read_text(encoding="utf-8")
+        )
+        sources = [
+            {**source, "url": response.url, "access_date": ACCESS_DATE}
+            for source, response in zip(template["sources"], (bank_response, cpi_response), strict=True)
+        ]
+        _write_metadata(
+            out_path, data_type="live_ons", access_date=ACCESS_DATE,
+            source_url=bank_response.url, sources=sources,
+        )
+        logger.info("Saved joined official monthly data to %s (%d rows)", out_path, len(joined))
         return out_path
     except (requests.RequestException, OSError, ValueError) as exc:
-        logger.warning("BoE IADB fetch failed (%s), using fallback data", exc)
+        logger.warning("Official Bank Rate/CPI fetch failed (%s), using fallback data", exc)
         return _write_fallback(out_path)
 
 
@@ -275,7 +347,7 @@ def process(raw_path: Path) -> pd.DataFrame:
     for col in df_raw.columns:
         if col == BANK_RATE_SERIES or (data_type != "live_ons" and col == "IUDBEDR"):
             bank_rate_col = col
-        if col == CPI_SERIES:
+        if col == CPI_SERIES or (data_type != "live_ons" and col == "D7BT"):
             cpi_col = col
 
     if bank_rate_col is None and cpi_col is None:
@@ -337,7 +409,7 @@ def process(raw_path: Path) -> pd.DataFrame:
     df.to_csv(out_path, index=False)
     _write_metadata(
         out_path, data_type=data_type, access_date=access_date,
-        source_url=metadata.get("source_url", BOE_IADB_URL),
+        source_url=metadata.get("source_url", BOE_IADB_URL), sources=metadata.get("sources"),
     )
     logger.info("Processed BoE data saved to %s", out_path)
     logger.info(
@@ -446,9 +518,11 @@ def build_chart(df: pd.DataFrame) -> None:
              if data_type == "illustrative_fallback" else
              "Unverified provenance, not verified as official statistics.<br>"
              if data_type != "live_ons" else
-             f"OGL v3.0 · Accessed {df.attrs.get('access_date') or 'unknown'}<br>")
+             f"Accessed {df.attrs.get('access_date') or 'unknown'}<br>")
             + f'Reference: <a href="{BOE_IADB_URL}">Bank of England Interactive Analytical Database</a><br>'
-            + (f"Bank Rate ({BANK_RATE_SERIES}, monthly average) and CPI annual rate. "
+            + 'Bank Rate: Bank of England terms.<br>'
+            + f'CPI: <a href="{ONS_CPI_URL}">ONS D7G7 (MM23)</a>, OGL v3.0.<br>'
+            + (f"Bank Rate ({BANK_RATE_SERIES}, monthly average) and CPI annual rate ({CPI_SERIES}). "
              if data_type == "live_ons" else
              "Illustrative Bank Rate and CPI annual rate; reference links do not verify these values. ")
             + "2% dashed line = BoE inflation target."

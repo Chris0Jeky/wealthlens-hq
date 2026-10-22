@@ -264,22 +264,24 @@ const option = computed(() => {
     <p class="text-sm text-[var(--wl-ink-muted)] mt-4 text-center">
       Source:
       <a
-        href="https://www.bankofengland.co.uk/monetary-policy/the-interest-rate-bank-rate"
+        href="https://www.bankofengland.co.uk/boeapps/database/Bank-Rate.asp"
         target="_blank"
         rel="noopener"
         class="underline hover:text-[var(--wl-ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--wl-red)] rounded"
       >
-        Bank of England<span class="sr-only"> (opens in new tab)</span></a
+        Bank of England (IUMABEDR, monthly average)<span class="sr-only">
+          (opens in new tab)</span
+        ></a
       >
       /
       <a
-        href="https://www.ons.gov.uk/economy/inflationandpriceindices"
+        href="https://www.ons.gov.uk/economy/inflationandpriceindices/timeseries/d7g7/mm23"
         target="_blank"
         rel="noopener"
         class="underline hover:text-[var(--wl-ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--wl-red)] rounded"
       >
-        ONS CPI<span class="sr-only"> (opens in new tab)</span></a
-      >, accessed 2026-05-14
+        ONS CPI (D7G7)<span class="sr-only"> (opens in new tab)</span></a
+      >, accessed 2026-10-22
     </p>
   </div>
 </template>

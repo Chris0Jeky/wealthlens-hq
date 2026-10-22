@@ -1,6 +1,6 @@
 # Data Sources and Licences
 
-Last updated: 2026-06-27
+Last updated: 2026-10-22
 
 Every dataset used in WealthLens charts is listed here with its licence and attribution requirements. See also `research/data-sources/data-source-registry.md` for the full source catalogue.
 
@@ -40,6 +40,11 @@ Every dataset used in WealthLens charts is listed here with its licence and attr
 | Wealth tax simulator | Free school meals comparison | Institute for Fiscal Studies | Source attribution required | 2026-05-17 | https://ifs.org.uk/articles/benefits-and-costs-expanding-access-free-school-meals-will-grow-over-time |
 
 ## Provenance notes
+
+- Bank Rate and CPI: both official CSV sources accessed 2026-10-22, updated monthly.
+  Join monthly observations from 2000 onwards over common coverage. IADB month-end
+  dates label the monthly average Bank Rate; chart dates label the same month as
+  YYYY-MM-01. No interpolation or forward fill is applied to official observations.
 
 - Inheritance Tax chart: HMRC Inheritance Tax Statistics 2021-22, Table 12.1 ("Estates notified and liable to IHT"), accessed 2026-05-16, transformed into `frontend/public/data/inheritance-tax.json`.
 
