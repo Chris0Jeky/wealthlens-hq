@@ -30,6 +30,7 @@ import {
   getSpendingComparison,
   PRESET_SCENARIOS,
   SIMULATOR_SOURCES,
+  UK_GDP_YEAR,
   type WealthTaxBand,
   type PresetScenario,
 } from "@/utils/wealthTaxSimulator"
@@ -286,7 +287,7 @@ function onSliderChange() {
           </span>
         </div>
         <div class="sim__stat">
-          <span class="sim__stat-label">Revenue as % of GDP</span>
+          <span class="sim__stat-label">Revenue as % of {{ UK_GDP_YEAR }} GDP</span>
           <span class="sim__stat-value wl-num"> {{ results.revenueAsPercentGDP }}% </span>
         </div>
       </div>

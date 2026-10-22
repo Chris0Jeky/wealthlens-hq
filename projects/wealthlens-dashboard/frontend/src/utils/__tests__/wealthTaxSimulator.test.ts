@@ -61,10 +61,10 @@ describe("simulateWealthTax", () => {
     expect(multi.annualRevenue).toBeGreaterThan(single.annualRevenue)
   })
 
-  it("revenueAsPercentGDP is consistent with annualRevenue", () => {
+  it("uses the cited 2023 GDP for the default 1% above £2m scenario", () => {
     const result = simulateWealthTax([{ threshold: 2_000_000, rate: 0.01 }])
-    const expectedPct = (result.annualRevenue / UK_GDP) * 100
-    expect(result.revenueAsPercentGDP).toBeCloseTo(expectedPct, 1)
+    expect(result.annualRevenue).toBe(17_540_000_000)
+    expect(result.revenueAsPercentGDP).toBe(0.64)
   })
 
   it("averageTaxPerTaxpayer equals revenue / affected taxpayers", () => {
@@ -226,6 +226,10 @@ describe("getSpendingComparison", () => {
 })
 
 describe("source metadata", () => {
+  it("pins the 2023 GDP observation in GBP from ONS YBHA", () => {
+    expect(UK_GDP).toBe(2_752_164_000_000)
+  })
+
   it("keeps estimate anchors backed by source URLs and access dates", () => {
     expect(WEALTH_THRESHOLDS.length).toBeGreaterThan(0)
     for (const source of SIMULATOR_SOURCES.references) {
