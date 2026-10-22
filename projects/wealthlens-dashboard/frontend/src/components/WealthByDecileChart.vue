@@ -18,10 +18,13 @@ import { CanvasRenderer } from "echarts/renderers"
 import { BarChart } from "echarts/charts"
 import { GridComponent, TooltipComponent, TitleComponent } from "echarts/components"
 import VChart from "vue-echarts"
+import { useChartTheme } from "@/composables/useChartTheme"
 import { useChartData } from "@/composables/useChartData"
 import type { EChartsExportable } from "@/composables/useChartExport"
 import { escapeHtml, toNumberOrNaN, warnIfSignificantDataLoss } from "@/utils/chart"
 import AccessibleDataTable from "@/components/AccessibleDataTable.vue"
+
+const { colors, axisStyle, markColor } = useChartTheme()
 
 // Register only the ECharts modules we need (tree-shaking)
 use([CanvasRenderer, BarChart, GridComponent, TooltipComponent, TitleComponent])
@@ -108,13 +111,14 @@ const option = computed(() => {
 
   return {
     animation: !prefersReducedMotion,
+    textStyle: { color: colors.value.text },
     title: {
       text: "Total Household Wealth by Decile (GBP Billions)",
       left: "center",
       textStyle: {
         fontSize: 16,
         fontWeight: "bold",
-        color: "#111827",
+        color: colors.value.heading,
       },
     },
     tooltip: {
@@ -147,20 +151,22 @@ const option = computed(() => {
       containLabel: true,
     },
     xAxis: {
+      ...axisStyle.value,
       type: "category" as const,
       data: labels,
       axisLabel: {
-        color: "#374151",
+        color: colors.value.text,
         rotate: 30,
       },
     },
     yAxis: {
+      ...axisStyle.value,
       type: "value" as const,
       name: "Total wealth (GBP bn)",
       nameLocation: "middle" as const,
       nameGap: 60,
       axisLabel: {
-        color: "#374151",
+        color: colors.value.text,
         formatter: (value: number) => `£${value.toLocaleString()}`,
       },
     },
@@ -170,7 +176,7 @@ const option = computed(() => {
         type: "bar" as const,
         data: values.map((v, i) => ({
           value: v,
-          itemStyle: { color: barColors[i] },
+          itemStyle: { color: markColor(barColors[i]) },
         })),
         barMaxWidth: 60,
       },

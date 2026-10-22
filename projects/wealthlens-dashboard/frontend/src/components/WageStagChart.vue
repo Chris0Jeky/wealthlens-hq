@@ -25,9 +25,12 @@ import {
   MarkLineComponent,
 } from "echarts/components"
 import VChart from "vue-echarts"
+import { useChartTheme } from "@/composables/useChartTheme"
 import { useChartData } from "@/composables/useChartData"
 import { escapeHtml, toNumberOrNaN } from "@/utils/chart"
 import AccessibleDataTable from "@/components/AccessibleDataTable.vue"
+
+const { colors, axisStyle, markColor, onMark } = useChartTheme()
 
 // Register only the ECharts modules we need (tree-shaking)
 use([
@@ -162,6 +165,7 @@ const tableRows = computed(() =>
 const option = computed(() => {
   return {
     animation: !prefersReducedMotion,
+    textStyle: { color: colors.value.text },
     title: {
       text: "UK Real Wage Stagnation",
       subtext: "Median real weekly earnings (2024 prices, CPI-adjusted)",
@@ -169,11 +173,11 @@ const option = computed(() => {
       textStyle: {
         fontSize: 16,
         fontWeight: "bold",
-        color: "#111827",
+        color: colors.value.heading,
       },
       subtextStyle: {
         fontSize: 12,
-        color: "#6b7280",
+        color: colors.value.muted,
       },
     },
     tooltip: {
@@ -197,9 +201,10 @@ const option = computed(() => {
       },
     },
     legend: {
+      inactiveColor: colors.value.muted,
       bottom: 0,
       data: ["Actual earnings", "If 1.5% growth continued"],
-      textStyle: { color: "#374151" },
+      textStyle: { color: colors.value.text },
     },
     grid: {
       left: "3%",
@@ -209,23 +214,25 @@ const option = computed(() => {
       containLabel: true,
     },
     xAxis: {
+      ...axisStyle.value,
       type: "category" as const,
       data: years.value,
       name: "Year",
       nameLocation: "middle" as const,
       nameGap: 30,
       axisLabel: {
-        color: "#374151",
+        color: colors.value.text,
       },
     },
     yAxis: {
+      ...axisStyle.value,
       type: "value" as const,
       name: "£ per week",
       nameLocation: "middle" as const,
       nameGap: 50,
       min: 440,
       axisLabel: {
-        color: "#374151",
+        color: colors.value.text,
         formatter: "£{value}",
       },
     },
@@ -236,8 +243,8 @@ const option = computed(() => {
         stack: "lost-wage-gap",
         data: actualValues.value,
         smooth: !prefersReducedMotion,
-        lineStyle: { width: 3, color: COLOR_ACTUAL },
-        itemStyle: { color: COLOR_ACTUAL },
+        lineStyle: { width: 3, color: markColor(COLOR_ACTUAL) },
+        itemStyle: { color: markColor(COLOR_ACTUAL) },
         symbol: "circle",
         symbolSize: 4,
         markPoint: {
@@ -247,11 +254,11 @@ const option = computed(() => {
               coord: [years.value.indexOf(PEAK_YEAR), PEAK_VALUE],
               symbol: "pin",
               symbolSize: 40,
-              itemStyle: { color: COLOR_ACTUAL },
+              itemStyle: { color: markColor(COLOR_ACTUAL) },
               label: {
                 show: true,
                 formatter: "2008\npeak",
-                color: "#fff",
+                color: onMark.value,
                 fontSize: 10,
               },
             },
@@ -282,10 +289,10 @@ const option = computed(() => {
         smooth: !prefersReducedMotion,
         lineStyle: {
           width: 2,
-          color: COLOR_COUNTERFACTUAL,
+          color: markColor(COLOR_COUNTERFACTUAL),
           type: "dashed" as const,
         },
-        itemStyle: { color: COLOR_COUNTERFACTUAL },
+        itemStyle: { color: markColor(COLOR_COUNTERFACTUAL) },
         symbol: "none",
         z: 1,
       },
