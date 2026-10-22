@@ -34,6 +34,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         self.trust_forwarded_for = trust_forwarded_for
         self.window_seconds = 60
         self._hits: dict[str, list[float]] = defaultdict(list)
+        self._overflow_hits: list[float] = []
         self._lock = asyncio.Lock()
         self._next_cleanup = 0.0
 
@@ -87,15 +88,22 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             else:
                 self._hits[client_ip] = cleaned
 
-            if len(self._hits.get(client_ip, [])) >= self.requests_per_minute:
-                retry_after = int(self.window_seconds - (now - self._hits[client_ip][0]))
+            if client_ip not in self._hits and len(self._hits) >= MAX_TRACKED_IPS:
+                # Share one bounded bucket so untracked clients cannot bypass the
+                # normal limit when all per-IP slots are active.
+                self._overflow_hits = self._clean_window(self._overflow_hits, now)
+                hits = self._overflow_hits
+            else:
+                hits = self._hits[client_ip]
+
+            if len(hits) >= self.requests_per_minute:
+                retry_after = int(self.window_seconds - (now - hits[0]))
                 return JSONResponse(
                     status_code=429,
                     content={"detail": "Rate limit exceeded. Try again later."},
                     headers={"Retry-After": str(max(retry_after, 1))},
                 )
 
-            if len(self._hits) < MAX_TRACKED_IPS or client_ip in self._hits:
-                self._hits[client_ip].append(now)
+            hits.append(now)
 
         return await call_next(request)
