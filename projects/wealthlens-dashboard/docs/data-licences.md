@@ -30,6 +30,7 @@ Every dataset used in WealthLens charts is listed here with its licence and attr
 | Tool | Estimate/source | Publisher | Licence | Access date | URL |
 |---|---|---|---|---|---|
 | Wealth tax simulator | Total wealth and household wealth distribution anchors | ONS | OGL v3.0 | 2026-05-16 | https://www.ons.gov.uk/peoplepopulationandcommunity/personalandhouseholdfinances/incomeandwealth/bulletins/totalwealthingreatbritain/april2018tomarch2020 |
+| Wealth tax simulator | UK GDP at current market prices, 2023 (YBHA, QNA, release 2026-09-30), denominator for revenue as % of GDP | ONS | OGL v3.0 | 2026-10-22 | https://www.ons.gov.uk/economy/grossdomesticproductgdp/timeseries/ybha/qna |
 | WealthLens-Sim synth generator | WAS total wealth, median, top-decile/top-1% thresholds, wealth component shares | ONS | OGL v3.0 | 2026-05-30 | https://www.ons.gov.uk/peoplepopulationandcommunity/personalandhouseholdfinances/incomeandwealth/datasets/totalwealthwealthingreatbritain |
 | WealthLens-Sim synth generator | Great Britain household count and nation shares | ONS | OGL v3.0 | 2026-05-30 | https://www.ons.gov.uk/peoplepopulationandcommunity/birthsdeathsandmarriages/families/datasets/householdsbytypeofhouseholdandfamilyregionsofenglandandgbconstituentcountries/2022 |
 | Wealth tax simulator | Threshold taxpayer counts and taxable-base revenue modelling | Fiscal Studies / Wealth Tax Commission authors | CC-BY 4.0 | 2026-05-17 | https://doi.org/10.1111/1475-5890.12280 |

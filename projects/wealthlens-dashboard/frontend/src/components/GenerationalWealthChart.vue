@@ -20,10 +20,13 @@ import {
   LegendComponent,
 } from "echarts/components"
 import VChart from "vue-echarts"
+import { useChartTheme } from "@/composables/useChartTheme"
 import { useChartData } from "@/composables/useChartData"
 import type { EChartsExportable } from "@/composables/useChartExport"
 import { escapeHtml, safeMinMax, toNumberOrNaN, warnIfSignificantDataLoss } from "@/utils/chart"
 import AccessibleDataTable from "@/components/AccessibleDataTable.vue"
+
+const { colors, axisStyle, markColor } = useChartTheme()
 
 // Register only the ECharts modules we need (tree-shaking)
 use([CanvasRenderer, BarChart, GridComponent, TooltipComponent, TitleComponent, LegendComponent])
@@ -197,7 +200,7 @@ const option = computed(() => {
       dataMap.set(d.age, { wealth: d.wealth, projected: d.projected })
     }
 
-    const color = genColor(gen)
+    const color = markColor(genColor(gen))
     const data = ages.map((age) => {
       const entry = dataMap.get(age)
       if (!entry) return null
@@ -206,7 +209,7 @@ const option = computed(() => {
         itemStyle: entry.projected
           ? {
               color,
-              opacity: 0.5,
+              opacity: 0.75,
               borderWidth: 2,
               borderColor: color,
               borderType: "dashed" as const,
@@ -218,6 +221,7 @@ const option = computed(() => {
     return {
       name: gen,
       type: "bar" as const,
+      itemStyle: { color },
       data,
       barMaxWidth: 40,
     }
@@ -225,13 +229,14 @@ const option = computed(() => {
 
   return {
     animation: !prefersReducedMotion,
+    textStyle: { color: colors.value.text },
     title: {
       text: "Median Wealth by Generation at Key Ages",
       left: "center",
       textStyle: {
         fontSize: 16,
         fontWeight: "bold",
-        color: "#111827",
+        color: colors.value.heading,
       },
     },
     tooltip: {
@@ -251,9 +256,10 @@ const option = computed(() => {
       },
     },
     legend: {
+      inactiveColor: colors.value.muted,
       bottom: 0,
       data: generationOrder,
-      textStyle: { color: "#374151" },
+      textStyle: { color: colors.value.text },
     },
     grid: {
       left: "3%",
@@ -263,22 +269,24 @@ const option = computed(() => {
       containLabel: true,
     },
     xAxis: {
+      ...axisStyle.value,
       type: "category" as const,
       data: ages.map((a) => String(a)),
       name: "Age",
       nameLocation: "middle" as const,
       nameGap: 30,
       axisLabel: {
-        color: "#374151",
+        color: colors.value.text,
       },
     },
     yAxis: {
+      ...axisStyle.value,
       type: "value" as const,
       name: "Median wealth (£)",
       nameLocation: "middle" as const,
       nameGap: 60,
       axisLabel: {
-        color: "#374151",
+        color: colors.value.text,
         formatter: (value: number) => `£${(value / 1000).toFixed(0)}k`,
       },
     },

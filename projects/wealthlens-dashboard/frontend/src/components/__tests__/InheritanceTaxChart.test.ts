@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import { mount } from "@vue/test-utils"
+import { nextTick } from "vue"
+import { useTheme, _resetForTesting } from "@/composables/useTheme"
 
 /**
  * Mock vue-echarts: the VChart component requires a full ECharts registry.
@@ -71,6 +73,7 @@ describe("InheritanceTaxChart", () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+    _resetForTesting()
 
     // Stub window.matchMedia (not available in jsdom by default)
     Object.defineProperty(window, "matchMedia", {
@@ -202,10 +205,54 @@ describe("InheritanceTaxChart", () => {
     expect(trendTab?.attributes("aria-selected")).toBe("true")
     expect(bandTab?.attributes("aria-selected")).toBe("false")
 
-    // Default view renders the trend dual panel (donut + bar) and does NOT
-    // show the band view's data table.
+    // Default view renders the trend dual panel and its own data table.
     expect(wrapper.findAll(".vchart-stub")).toHaveLength(2)
-    expect(wrapper.text()).not.toContain("View data as table")
+    expect(wrapper.text()).toContain("View data as table")
+  })
+
+  it("exposes every plotted trend point in a captioned table with scoped headers and units", async () => {
+    const wrapper = mount(InheritanceTaxChart)
+    await vi.waitFor(() => expect(wrapper.findAllComponents({ name: "VChart" })).toHaveLength(2))
+
+    const option = wrapper.findAllComponents({ name: "VChart" })[1].props("option")
+    expect(option.xAxis.data).toEqual(MOCK_IHT_DATA.by_year.map((row) => row.year))
+    expect(option.series[0].data).toEqual(MOCK_IHT_DATA.by_year.map((row) => row.rate_pct))
+    expect(wrapper.find("caption").text()).toContain("IHT liability rate by tax year")
+    expect(wrapper.findAll("th").map((th) => [th.text(), th.attributes("scope")])).toEqual([
+      ["Tax year", "col"],
+      ["Estates liable (%)", "col"],
+    ])
+    expect(
+      wrapper.findAll("tbody tr").map((row) => row.findAll("td").map((td) => td.text())),
+    ).toEqual(
+      option.xAxis.data.map((year: string, i: number) => [year, `${option.series[0].data[i]}%`]),
+    )
+    // The table must remain outside role=img so its semantics reach assistive technology.
+    expect(wrapper.find("[role='img'] table").exists()).toBe(false)
+    expect(wrapper.find("details summary").text()).toBe("View data as table")
+  })
+
+  it("updates chart text when the active theme changes", async () => {
+    const wrapper = mount(InheritanceTaxChart)
+    await vi.waitFor(() => expect(wrapper.findAllComponents({ name: "VChart" })).toHaveLength(2))
+    const titles = () =>
+      wrapper
+        .findAllComponents({ name: "VChart" })
+        .map((chart) => chart.props("option").title.textStyle.color)
+    const light = titles()
+    useTheme().toggleTheme()
+    await nextTick()
+    expect(titles()).not.toEqual(light)
+    useTheme().toggleTheme()
+    await nextTick()
+    expect(titles()).toEqual(light)
+    await wrapper.findAll("[role='tab']")[1].trigger("click")
+    useTheme().toggleTheme()
+    await nextTick()
+    expect(titles()).toEqual(["#e8e8e8"])
+    const bandOption = wrapper.findComponent({ name: "VChart" }).props("option")
+    expect(bandOption.series[0].label.color).toBe("#cccccc")
+    wrapper.unmount()
   })
 
   it("renders the by-estate-size band view when its tab is activated", async () => {

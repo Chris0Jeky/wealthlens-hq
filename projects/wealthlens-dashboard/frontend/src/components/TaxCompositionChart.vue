@@ -20,10 +20,13 @@ import {
   LegendComponent,
 } from "echarts/components"
 import VChart from "vue-echarts"
+import { useChartTheme } from "@/composables/useChartTheme"
 import { useChartData } from "@/composables/useChartData"
 import type { EChartsExportable } from "@/composables/useChartExport"
 import { escapeHtml, toNumberOrNaN, warnIfSignificantDataLoss } from "@/utils/chart"
 import AccessibleDataTable from "@/components/AccessibleDataTable.vue"
+
+const { colors, axisStyle, markColor } = useChartTheme()
 
 // Register only the ECharts modules we need (tree-shaking)
 use([CanvasRenderer, BarChart, GridComponent, TooltipComponent, TitleComponent, LegendComponent])
@@ -149,13 +152,14 @@ const option = computed(() => {
 
   return {
     animation: !prefersReducedMotion,
+    textStyle: { color: colors.value.text },
     title: {
       text: "UK Tax Revenue — Work vs Wealth",
       left: "center",
       textStyle: {
         fontSize: 16,
         fontWeight: "bold",
-        color: "#111827",
+        color: colors.value.heading,
       },
     },
     tooltip: {
@@ -177,9 +181,10 @@ const option = computed(() => {
       },
     },
     legend: {
+      inactiveColor: colors.value.muted,
       bottom: 0,
       data: ["Income Tax", "NICs", "CGT", "IHT", "SDLT"],
-      textStyle: { color: "#374151" },
+      textStyle: { color: colors.value.text },
     },
     grid: {
       left: "3%",
@@ -189,23 +194,25 @@ const option = computed(() => {
       containLabel: true,
     },
     xAxis: {
+      ...axisStyle.value,
       type: "category" as const,
       data: data.years,
       name: "Tax Year",
       nameLocation: "middle" as const,
       nameGap: 30,
       axisLabel: {
-        color: "#374151",
+        color: colors.value.text,
         rotate: 25,
       },
     },
     yAxis: {
+      ...axisStyle.value,
       type: "value" as const,
       name: "Revenue (£ billion)",
       nameLocation: "middle" as const,
       nameGap: 50,
       axisLabel: {
-        color: "#374151",
+        color: colors.value.text,
         formatter: "£{value}bn",
       },
     },
@@ -215,35 +222,35 @@ const option = computed(() => {
         type: "bar" as const,
         stack: "total",
         data: data.incomeTax,
-        itemStyle: { color: COLOR_INCOME_TAX },
+        itemStyle: { color: markColor(COLOR_INCOME_TAX) },
       },
       {
         name: "NICs",
         type: "bar" as const,
         stack: "total",
         data: data.nics,
-        itemStyle: { color: COLOR_NICS },
+        itemStyle: { color: markColor(COLOR_NICS) },
       },
       {
         name: "CGT",
         type: "bar" as const,
         stack: "total",
         data: data.cgt,
-        itemStyle: { color: COLOR_CGT },
+        itemStyle: { color: markColor(COLOR_CGT) },
       },
       {
         name: "IHT",
         type: "bar" as const,
         stack: "total",
         data: data.iht,
-        itemStyle: { color: COLOR_IHT },
+        itemStyle: { color: markColor(COLOR_IHT) },
       },
       {
         name: "SDLT",
         type: "bar" as const,
         stack: "total",
         data: data.sdlt,
-        itemStyle: { color: COLOR_SDLT },
+        itemStyle: { color: markColor(COLOR_SDLT) },
       },
     ],
   }
