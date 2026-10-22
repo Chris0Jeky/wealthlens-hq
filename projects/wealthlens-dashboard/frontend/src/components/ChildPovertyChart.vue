@@ -20,10 +20,13 @@ import {
   MarkLineComponent,
 } from "echarts/components"
 import VChart from "vue-echarts"
+import { useChartTheme } from "@/composables/useChartTheme"
 import { useChartData } from "@/composables/useChartData"
 import type { EChartsExportable } from "@/composables/useChartExport"
 import { escapeHtml, safeMinMax, toNumberOrNaN, warnIfSignificantDataLoss } from "@/utils/chart"
 import AccessibleDataTable from "@/components/AccessibleDataTable.vue"
+
+const { colors, axisStyle, markColor } = useChartTheme()
 
 // Register only the ECharts modules we need (tree-shaking)
 use([
@@ -135,13 +138,14 @@ const option = computed(() => {
 
   return {
     animation: !prefersReducedMotion,
+    textStyle: { color: colors.value.text },
     title: {
       text: "Child Poverty Rate by UK Region",
       left: "center",
       textStyle: {
         fontSize: 16,
         fontWeight: "bold",
-        color: "#111827",
+        color: colors.value.heading,
       },
     },
     tooltip: {
@@ -166,21 +170,23 @@ const option = computed(() => {
       containLabel: true,
     },
     xAxis: {
+      ...axisStyle.value,
       type: "value" as const,
       name: "Child poverty rate (%)",
       nameLocation: "middle" as const,
       nameGap: 30,
       axisLabel: {
-        color: "#374151",
+        color: colors.value.text,
         formatter: "{value}%",
       },
       max: data.values.length > 0 ? Math.ceil((Math.max(...data.values) * 1.1) / 5) * 5 : 45,
     },
     yAxis: {
+      ...axisStyle.value,
       type: "category" as const,
       data: [...data.regions].reverse(),
       axisLabel: {
-        color: "#374151",
+        color: colors.value.text,
         fontSize: 11,
       },
     },
@@ -191,7 +197,9 @@ const option = computed(() => {
         data: [...data.values].reverse().map((val, i) => ({
           value: val,
           itemStyle: {
-            color: data.aboveAvg[data.regions.length - 1 - i] ? COLOR_ABOVE_AVG : COLOR_BELOW_AVG,
+            color: markColor(
+              data.aboveAvg[data.regions.length - 1 - i] ? COLOR_ABOVE_AVG : COLOR_BELOW_AVG,
+            ),
           },
         })),
         barMaxWidth: 24,
@@ -199,11 +207,16 @@ const option = computed(() => {
           ? {
               silent: true,
               symbol: "none",
-              lineStyle: { color: COLOR_NATIONAL_AVG, type: "dashed" as const, width: 2 },
+              lineStyle: {
+                color: markColor(COLOR_NATIONAL_AVG),
+                type: "dashed" as const,
+                width: 2,
+              },
               data: [
                 {
                   xAxis: data.nationalAvg,
                   label: {
+                    color: colors.value.text,
                     formatter: `UK avg: ${data.nationalAvg}%`,
                     position: "end" as const,
                   },

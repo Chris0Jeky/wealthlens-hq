@@ -32,12 +32,15 @@ import {
   LegendComponent,
 } from "echarts/components"
 import VChart from "vue-echarts"
+import { useChartTheme } from "@/composables/useChartTheme"
 import TabGroup, { type Tab } from "@/components/TabGroup.vue"
 import AccessibleDataTable from "@/components/AccessibleDataTable.vue"
 import type { DatasetRow } from "@/stores/data"
 import { useChartData } from "@/composables/useChartData"
 import type { EChartsExportable } from "@/composables/useChartExport"
 import { escapeHtml, toNumberOrNaN, warnIfSignificantDataLoss } from "@/utils/chart"
+
+const { colors, axisStyle, markColor } = useChartTheme()
 
 // Register only the ECharts modules we need (tree-shaking). The y=x equality
 // reference line is drawn as an ordinary line series, so no MarkLineComponent.
@@ -136,13 +139,14 @@ const option = computed(() => {
 
   return {
     animation: !prefersReducedMotion,
+    textStyle: { color: colors.value.text },
     title: {
       text: "Capital Gains Tax — Concentration by Size of Gain",
       left: "center",
       textStyle: {
         fontSize: 16,
         fontWeight: "bold",
-        color: "#111827",
+        color: colors.value.heading,
       },
     },
     tooltip: {
@@ -165,9 +169,10 @@ const option = computed(() => {
       },
     },
     legend: {
+      inactiveColor: colors.value.muted,
       bottom: 0,
       data: ["Share of total gains", "Cumulative from top"],
-      textStyle: { color: "#374151" },
+      textStyle: { color: colors.value.text },
     },
     grid: {
       left: "3%",
@@ -177,33 +182,36 @@ const option = computed(() => {
       containLabel: true,
     },
     xAxis: {
+      ...axisStyle.value,
       type: "category" as const,
       data: labels,
       axisLabel: {
-        color: "#374151",
+        color: colors.value.text,
         rotate: labels.length > 6 ? 30 : 0,
       },
     },
     yAxis: [
       {
+        ...axisStyle.value,
         type: "value" as const,
         name: "Share of total gains (%)",
         nameLocation: "middle" as const,
         nameGap: 50,
         position: "left" as const,
         axisLabel: {
-          color: "#374151",
+          color: colors.value.text,
           formatter: "{value}%",
         },
       },
       {
+        ...axisStyle.value,
         type: "value" as const,
         name: "Cumulative from top (%)",
         nameLocation: "middle" as const,
         nameGap: 50,
         position: "right" as const,
         axisLabel: {
-          color: "#374151",
+          color: colors.value.text,
           formatter: "{value}%",
         },
       },
@@ -214,7 +222,7 @@ const option = computed(() => {
         type: "bar" as const,
         data: shareValues,
         yAxisIndex: 0,
-        itemStyle: { color: COLOR_BARS },
+        itemStyle: { color: markColor(COLOR_BARS) },
         barMaxWidth: 50,
       },
       {
@@ -223,8 +231,8 @@ const option = computed(() => {
         data: cumulValues,
         yAxisIndex: 1,
         smooth: !prefersReducedMotion,
-        lineStyle: { width: 2.5, color: COLOR_LINE },
-        itemStyle: { color: COLOR_LINE },
+        lineStyle: { width: 2.5, color: markColor(COLOR_LINE) },
+        itemStyle: { color: markColor(COLOR_LINE) },
         symbol: "circle",
         symbolSize: 6,
       },
@@ -296,13 +304,14 @@ const curveOption = computed(() => {
 
   return {
     animation: !prefersReducedMotion,
+    textStyle: { color: colors.value.text },
     title: {
       text: "Capital gains concentration curve",
       left: "center",
       textStyle: {
         fontSize: 16,
         fontWeight: "bold",
-        color: "#111827",
+        color: colors.value.heading,
       },
     },
     tooltip: {
@@ -322,9 +331,10 @@ const curveOption = computed(() => {
       },
     },
     legend: {
+      inactiveColor: colors.value.muted,
       bottom: 0,
       data: ["Concentration curve", "Equality line (y = x)"],
-      textStyle: { color: "#374151" },
+      textStyle: { color: colors.value.text },
     },
     grid: {
       left: "3%",
@@ -334,6 +344,7 @@ const curveOption = computed(() => {
       containLabel: true,
     },
     xAxis: {
+      ...axisStyle.value,
       type: "value" as const,
       name: "Cumulative share of taxpayers, from top (%)",
       nameLocation: "middle" as const,
@@ -341,11 +352,12 @@ const curveOption = computed(() => {
       min: 0,
       max: 100,
       axisLabel: {
-        color: "#374151",
+        color: colors.value.text,
         formatter: "{value}%",
       },
     },
     yAxis: {
+      ...axisStyle.value,
       type: "value" as const,
       name: "Cumulative share of gains, from top (%)",
       nameLocation: "middle" as const,
@@ -353,7 +365,7 @@ const curveOption = computed(() => {
       min: 0,
       max: 100,
       axisLabel: {
-        color: "#374151",
+        color: colors.value.text,
         formatter: "{value}%",
       },
     },
@@ -364,8 +376,8 @@ const curveOption = computed(() => {
         data: seriesData,
         // No smoothing: keep the curve faithful to the actual data points.
         smooth: false,
-        lineStyle: { width: 2.5, color: COLOR_CURVE },
-        itemStyle: { color: COLOR_CURVE },
+        lineStyle: { width: 2.5, color: markColor(COLOR_CURVE) },
+        itemStyle: { color: markColor(COLOR_CURVE) },
         symbol: "circle",
         symbolSize: 7,
       },
@@ -381,8 +393,8 @@ const curveOption = computed(() => {
           [100, 100],
         ],
         showSymbol: false,
-        lineStyle: { width: 1.5, color: COLOR_EQUALITY, type: "dashed" as const },
-        itemStyle: { color: COLOR_EQUALITY },
+        lineStyle: { width: 1.5, color: markColor(COLOR_EQUALITY), type: "dashed" as const },
+        itemStyle: { color: markColor(COLOR_EQUALITY) },
         silent: true,
       },
     ],

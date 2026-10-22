@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { mount, flushPromises } from "@vue/test-utils"
 import { createPinia, setActivePinia } from "pinia"
-import { ref, shallowRef } from "vue"
+import { nextTick, ref, shallowRef } from "vue"
+import { _resetForTesting, useTheme } from "@/composables/useTheme"
 
 /**
  * Mock the useChartData composable before importing chart components.
@@ -113,6 +114,7 @@ const chartComponents = [
 describe("Chart components", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    _resetForTesting()
     setActivePinia(createPinia())
     mockRows = shallowRef([])
     mockLoading = ref(true)
@@ -135,6 +137,89 @@ describe("Chart components", () => {
       })),
     })
   })
+
+  const themedCharts = [
+    { component: HousingAffordabilityChart, row: { region: "London", year: 2020, ratio: 12 } },
+    {
+      component: CgtConcentrationChart,
+      row: {
+        gain_band: "£100k+",
+        band_lower: 100000,
+        share_of_gains_pct: 18,
+        share_of_taxpayers_pct: 9,
+        cumul_gains_from_top_pct: 85,
+        cumul_taxpayers_from_top_pct: 22,
+      },
+    },
+    { component: WealthByDecileChart, row: { decile: "10th", total_wealth_bn: 100 } },
+    { component: WageStagChart, row: { year: 2020, real_weekly: 520 } },
+    { component: GdhiByRegionChart, row: { region: "London", gdhi_per_head: 36000, year: 2023 } },
+    {
+      component: TaxCompositionChart,
+      row: {
+        year: "2022-23",
+        income_tax_bn: 100,
+        nics_bn: 100,
+        cgt_bn: 10,
+        iht_bn: 10,
+        sdlt_bn: 10,
+      },
+    },
+    {
+      component: ChildPovertyChart,
+      row: {
+        region: "North East",
+        child_poverty_pct: 35,
+        children_in_poverty: 100000,
+        national_avg_pct: 30,
+      },
+    },
+    {
+      component: GenerationalWealthChart,
+      row: { generation: "Baby Boomers", age_milestone: 30, median_wealth_gbp: 100000 },
+    },
+  ]
+
+  for (const { component, row } of themedCharts) {
+    it(`${component.__name} updates ECharts title, axes and series on theme changes`, async () => {
+      mockLoading.value = false
+      mockRows.value = [row]
+      const wrapper = mount(component)
+      await flushPromises()
+      const chart = wrapper.findComponent({ name: "VChart" })
+      expect(chart.exists()).toBe(true)
+      const light = chart.props("option")
+      useTheme().toggleTheme()
+      await nextTick()
+      const dark = chart.props("option")
+      expect(dark.title.textStyle.color).not.toBe(light.title.textStyle.color)
+      expect(dark.series).not.toEqual(light.series)
+      if (dark.legend) {
+        expect(dark.legend.textStyle.color).toBe("#cccccc")
+        expect(dark.legend.inactiveColor).toBe("#999999")
+      }
+      for (const axis of [dark.xAxis, dark.yAxis].flat()) {
+        expect(axis.axisLabel.color).toBe("#cccccc")
+        expect(axis.nameTextStyle.color).toBe("#cccccc")
+      }
+      useTheme().toggleTheme()
+      await nextTick()
+      expect(JSON.stringify(chart.props("option"))).toBe(JSON.stringify(light))
+      if (component === CgtConcentrationChart) {
+        await wrapper.findAll("[role='tab']")[1].trigger("click")
+        const curve = wrapper.findComponent({ name: "VChart" })
+        const lightCurve = JSON.stringify(curve.props("option"))
+        useTheme().toggleTheme()
+        await nextTick()
+        expect(curve.props("option").title.textStyle.color).toBe("#e8e8e8")
+        expect(curve.props("option").xAxis.nameTextStyle.color).toBe("#cccccc")
+        useTheme().toggleTheme()
+        await nextTick()
+        expect(JSON.stringify(curve.props("option"))).toBe(lightCurve)
+      }
+      wrapper.unmount()
+    })
+  }
 
   for (const { name, component } of chartComponents) {
     describe(name, () => {

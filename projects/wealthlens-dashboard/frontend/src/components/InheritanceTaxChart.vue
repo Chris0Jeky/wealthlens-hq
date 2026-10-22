@@ -15,7 +15,7 @@
  * Accessed: 2026-05-16
  *
  * Accessibility: WCAG AA high-contrast colors, aria-label, keyboard tooltip,
- * an accessible tab group, and an AccessibleDataTable fallback for the band
+ * an accessible tab group, and an AccessibleDataTable fallback for each
  * view (WCAG 1.1.1 non-text content).
  */
 import { computed, onMounted, ref } from "vue"
@@ -29,11 +29,14 @@ import {
   LegendComponent,
 } from "echarts/components"
 import VChart from "vue-echarts"
+import { useChartTheme } from "@/composables/useChartTheme"
 import TabGroup, { type Tab } from "@/components/TabGroup.vue"
 import AccessibleDataTable from "@/components/AccessibleDataTable.vue"
 import type { DatasetRow } from "@/stores/data"
 import { escapeHtml } from "@/utils/chart"
 import { fetchWithRetry } from "@/utils/fetchWithRetry"
+
+const { colors, axisStyle, markColor } = useChartTheme()
 
 // Register only the ECharts modules we need (tree-shaking)
 use([
@@ -175,6 +178,7 @@ const donutOption = computed(() => {
 
   return {
     animation: !prefersReducedMotion,
+    textStyle: { color: colors.value.text },
     title: {
       text: "Estates paying IHT",
       left: "center",
@@ -182,7 +186,7 @@ const donutOption = computed(() => {
       textStyle: {
         fontSize: 15,
         fontWeight: "bold",
-        color: "#111827",
+        color: colors.value.heading,
       },
     },
     tooltip: {
@@ -192,9 +196,10 @@ const donutOption = computed(() => {
       },
     },
     legend: {
+      inactiveColor: colors.value.muted,
       bottom: 0,
       data: ["Pay IHT", "Don't pay IHT"],
-      textStyle: { color: "#374151" },
+      textStyle: { color: colors.value.text },
     },
     series: [
       {
@@ -205,10 +210,11 @@ const donutOption = computed(() => {
         avoidLabelOverlap: true,
         itemStyle: {
           borderRadius: 4,
-          borderColor: "#fff",
+          borderColor: colors.value.card,
           borderWidth: 2,
         },
         label: {
+          color: colors.value.text,
           show: true,
           fontSize: 14,
           fontWeight: "bold",
@@ -225,12 +231,12 @@ const donutOption = computed(() => {
           {
             value: liability_rate_pct,
             name: "Pay IHT",
-            itemStyle: { color: COLOR_LIABLE },
+            itemStyle: { color: markColor(COLOR_LIABLE) },
           },
           {
             value: notLiable,
             name: "Don't pay IHT",
-            itemStyle: { color: COLOR_NOT_LIABLE },
+            itemStyle: { color: markColor(COLOR_NOT_LIABLE) },
           },
         ],
       },
@@ -246,6 +252,7 @@ const barOption = computed(() => {
 
   return {
     animation: !prefersReducedMotion,
+    textStyle: { color: colors.value.text },
     title: {
       text: "IHT liability rate over time",
       left: "center",
@@ -253,7 +260,7 @@ const barOption = computed(() => {
       textStyle: {
         fontSize: 15,
         fontWeight: "bold",
-        color: "#111827",
+        color: colors.value.heading,
       },
     },
     tooltip: {
@@ -273,14 +280,16 @@ const barOption = computed(() => {
       containLabel: true,
     },
     xAxis: {
+      ...axisStyle.value,
       type: "category" as const,
       data: years,
       axisLabel: {
-        color: "#374151",
+        color: colors.value.text,
         rotate: 30,
       },
     },
     yAxis: {
+      ...axisStyle.value,
       type: "value" as const,
       name: "% of estates",
       nameLocation: "middle" as const,
@@ -288,7 +297,7 @@ const barOption = computed(() => {
       min: 0,
       max: 6,
       axisLabel: {
-        color: "#374151",
+        color: colors.value.text,
         formatter: "{value}%",
       },
     },
@@ -297,14 +306,14 @@ const barOption = computed(() => {
         name: "Liability rate",
         type: "bar" as const,
         data: rates,
-        itemStyle: { color: COLOR_BAR },
+        itemStyle: { color: markColor(COLOR_BAR) },
         barMaxWidth: 40,
         label: {
           show: true,
           position: "top" as const,
           formatter: "{c}%",
           fontSize: 12,
-          color: "#374151",
+          color: colors.value.text,
         },
       },
     ],
@@ -327,6 +336,7 @@ const bandOption = computed(() => {
 
   return {
     animation: !prefersReducedMotion,
+    textStyle: { color: colors.value.text },
     title: {
       text: "IHT paid by estate size",
       left: "center",
@@ -334,7 +344,7 @@ const bandOption = computed(() => {
       textStyle: {
         fontSize: 15,
         fontWeight: "bold",
-        color: "#111827",
+        color: colors.value.heading,
       },
     },
     tooltip: {
@@ -354,24 +364,26 @@ const bandOption = computed(() => {
       containLabel: true,
     },
     xAxis: {
+      ...axisStyle.value,
       type: "category" as const,
       data: bands,
       name: "Estate size band",
       nameLocation: "middle" as const,
       nameGap: 50,
       axisLabel: {
-        color: "#374151",
+        color: colors.value.text,
         rotate: 30,
       },
     },
     yAxis: {
+      ...axisStyle.value,
       type: "value" as const,
       name: "IHT paid (£m)",
       nameLocation: "middle" as const,
       nameGap: 55,
       min: 0,
       axisLabel: {
-        color: "#374151",
+        color: colors.value.text,
         formatter: "£{value}m",
       },
     },
@@ -380,19 +392,28 @@ const bandOption = computed(() => {
         name: "IHT paid",
         type: "bar" as const,
         data: taxPaid,
-        itemStyle: { color: COLOR_BAR },
+        itemStyle: { color: markColor(COLOR_BAR) },
         barMaxWidth: 48,
         label: {
           show: true,
           position: "top" as const,
           formatter: "£{c}m",
           fontSize: 12,
-          color: "#374151",
+          color: colors.value.text,
         },
       },
     ],
   }
 })
+
+/** The trend table uses the same by_year rows and order as the plotted bars. */
+const yearTableColumns = ["Tax year", "Estates liable (%)"]
+const yearTableRows = computed<DatasetRow[]>(() =>
+  (data.value?.by_year ?? []).map((row) => ({
+    "Tax year": row.year,
+    "Estates liable (%)": `${row.rate_pct}%`,
+  })),
+)
 
 /** Column headers for the by-estate-size accessible data-table fallback. */
 const bandTableColumns = ["Estate size band", "Estates", "IHT paid (£m)"]
@@ -480,6 +501,12 @@ const bandAriaLabel = computed(() => {
             </div>
           </div>
         </div>
+
+        <AccessibleDataTable
+          :rows="yearTableRows"
+          :columns="yearTableColumns"
+          caption="IHT liability rate by tax year: estates liable for inheritance tax (%). Source: HMRC Inheritance Tax Statistics 2021-22, Table 12.1."
+        />
       </template>
 
       <template #bands>
