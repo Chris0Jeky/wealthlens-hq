@@ -817,7 +817,7 @@ export const chartConfigs: Record<string, ChartConfig> = {
     ],
     pills: [
       { text: "Poverty", accent: true },
-      { text: "Regional ? 2021/22 to 2023/24" },
+      { text: "Regional · 2021/22 to 2023/24" },
       { text: "United Kingdom" },
       { text: "Three-year average" },
     ],
