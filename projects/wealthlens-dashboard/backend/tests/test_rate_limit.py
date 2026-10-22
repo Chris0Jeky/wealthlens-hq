@@ -220,14 +220,9 @@ def _fill_to_cap(mw: RateLimitMiddleware, count: int, now: float) -> None:
 
 
 class TestRateLimitOverflow:
-    """Characterise CURRENT behaviour when the IP table hits MAX_TRACKED_IPS.
+    """Keep memory bounded and enforce limits at MAX_TRACKED_IPS.
 
-    rate_limit.py hard-caps tracking at MAX_TRACKED_IPS (10_000) distinct IPs.
-    Once the table is full, a *previously unseen* IP is allowed through without
-    being counted (fail-open) -- see rate_limit.py lines 75-76. These tests LOCK
-    that documented behaviour; they are NOT asserting a desired/changed design,
-    so if the team later decides to fail-closed at the cap, flip them deliberately.
-    Driven via dispatch() directly to avoid 10k HTTP round-trips through TestClient.
+    Drive dispatch() directly to avoid 10k HTTP round-trips through TestClient.
     """
 
     def test_expired_idle_buckets_free_capacity(self, monkeypatch: MonkeyPatch) -> None:
@@ -240,7 +235,8 @@ class TestRateLimitOverflow:
             new_ip = "203.0.113.5"
             assert (await mw.dispatch(_make_request(new_ip), _call_next)).status_code == 200
             assert new_ip in mw._hits
-            assert len(mw._hits) <= MAX_TRACKED_IPS
+            assert len(mw._hits) == 1
+            assert not mw._overflow_hits
             assert (await mw.dispatch(_make_request(new_ip), _call_next)).status_code == 429
 
         asyncio.run(run())
@@ -309,37 +305,38 @@ class TestRateLimitOverflow:
 
         asyncio.run(run())
 
-    def test_at_cap_new_ip_fails_open(self) -> None:
-        """At the cap a brand-new IP is allowed through and NOT tracked."""
+    def test_at_cap_new_ip_is_rate_limited(self, monkeypatch: MonkeyPatch) -> None:
+        """A full active-IP table must not leave a new client unlimited."""
         mw = RateLimitMiddleware(_noop_asgi, requests_per_minute=1)
-        now = time.time()
+        now = 10_000.0
+        monkeypatch.setattr("app.rate_limit.time.time", lambda: now)
         _fill_to_cap(mw, MAX_TRACKED_IPS, now)
         assert len(mw._hits) == MAX_TRACKED_IPS
 
         async def run() -> None:
             new_ip = "203.0.113.99"
-            # requests_per_minute is 1, so any tracked IP would 429 on a 2nd hit;
-            # but an unseen IP at the cap fails open on every request.
-            for _ in range(5):
-                resp = await mw.dispatch(_make_request(new_ip), _call_next)
-                assert resp.status_code == 200
-            # Documented fail-open: the new IP is never added to the table.
+            responses = [await mw.dispatch(_make_request(new_ip), _call_next) for _ in range(3)]
+            assert [response.status_code for response in responses] == [200, 429, 429]
+            for response in responses[1:]:
+                assert response.headers["Retry-After"] == "60"
+                assert response.body == b'{"detail":"Rate limit exceeded. Try again later."}'
             assert new_ip not in mw._hits
             assert len(mw._hits) == MAX_TRACKED_IPS
+            assert mw._overflow_hits == [now]
+
+            # Rotating to another untracked IP shares the same bounded limit.
+            assert (await mw.dispatch(_make_request("203.0.113.100"), _call_next)).status_code == 429
+            assert len(mw._hits) == MAX_TRACKED_IPS
+            assert mw._overflow_hits == [now]
 
         asyncio.run(run())
+        # Keep the per-IP table active while the overflow window expires.
+        now += mw.window_seconds
+        _fill_to_cap(mw, MAX_TRACKED_IPS, now)
+        asyncio.run(run())
 
-    def test_at_cap_known_under_limit_ip_is_tracked_not_failed_open(self) -> None:
-        """Overflow bypass applies ONLY to unseen IPs: a KNOWN IP that is under
-        its limit while the table is full is still tracked (appended, not fail-
-        open'd) and is eventually limited.
-
-        This pins the `client_ip not in self._hits` half of the overflow guard
-        (rate_limit.py:75): seed the known IP UNDER its limit so the line-67
-        per-minute check does NOT short-circuit first. Removing the `not in`
-        guard would fail-open the first request (200 but not appended), so the
-        IP would never reach its limit and the final assertion (429) would fail.
-        """
+    def test_at_cap_known_under_limit_ip_is_tracked_and_limited(self) -> None:
+        """Known clients retain independent per-IP limits when the table is full."""
         mw = RateLimitMiddleware(_noop_asgi, requests_per_minute=3)
         now = time.time()
         _fill_to_cap(mw, MAX_TRACKED_IPS - 1, now)
@@ -348,13 +345,12 @@ class TestRateLimitOverflow:
         assert len(mw._hits) == MAX_TRACKED_IPS
 
         async def run() -> None:
-            # Known + under limit -> tracked through the cap (NOT failed open),
-            # so each request is appended rather than bypassed.
+            # Known clients keep their own bucket at capacity.
             for _ in range(2):
                 resp = await mw.dispatch(_make_request(existing_ip), _call_next)
                 assert resp.status_code == 200
             assert len(mw._hits[existing_ip]) == 3  # 1 seeded + 2 appended
-            # Now at the per-minute limit -> 429 (the bypass never applied to it).
+            # Now at the per-minute limit -> 429.
             resp = await mw.dispatch(_make_request(existing_ip), _call_next)
             assert resp.status_code == 429
 
