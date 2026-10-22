@@ -263,7 +263,7 @@ def _build_metadata_safe(dataset_name: str) -> dict[str, Any]:
             data_type = _get_data_type(dataset_name)
         except Exception:
             logger.exception("metadata recovery: data_type failed for %s", dataset_name)
-            data_type = "unverified" if dataset_name == "productivity-pay" else None
+            data_type = "unverified" if dataset_name in ("productivity-pay", "boe-rates") else None
         return {
             "name": dataset_name,
             "description": meta["description"],
@@ -315,7 +315,7 @@ def _get_data_type(dataset_name: str) -> str | None:
     switches a dataset between live and fallback data must be reflected without
     a server restart. CSV provenance markers are corroborated on every read.
 
-    Missing provenance for productivity-pay (which can be synthetic), invalid
+    Missing provenance for productivity-pay or boe-rates (which can be synthetic), invalid
     sidecars, and contradictory CSV markers return "unverified". Legacy datasets
     without a sidecar retain None; verified static_published data stays genuine.
     """
@@ -323,7 +323,7 @@ def _get_data_type(dataset_name: str) -> str | None:
     try:
         raw = sidecar_path.read_bytes()
     except FileNotFoundError:
-        return "unverified" if dataset_name == "productivity-pay" else None
+        return "unverified" if dataset_name in ("productivity-pay", "boe-rates") else None
     except OSError as exc:
         # A present-but-unreadable sidecar is an error, not "no provenance": for an
         # illustrative dataset, unknown provenance must retain a public caveat.

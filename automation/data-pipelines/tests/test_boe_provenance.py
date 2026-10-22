@@ -121,3 +121,16 @@ def test_committed_boe_artifacts_preserve_fallback_provenance(pipeline_dirs: Pat
         assert metadata["data_type"] == "illustrative_fallback"
     template = json.loads((ROOT / "automation/data-pipelines/metadata/boe_rates.meta.json").read_text())
     assert template["data_type"] == "illustrative_fallback"
+
+
+def test_missing_boe_sidecar_is_unverified_in_both_publication_paths(
+    pipeline_dirs: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    frame = boe.process(boe._write_fallback(pipeline_dirs / "input.csv"))
+    processed = pipeline_dirs / "processed"
+    csv_path = processed / "boe_rates.csv"
+    csv_path.with_suffix(".meta.json").unlink()
+    monkeypatch.setattr(api, "DATA_DIR", processed)
+    monkeypatch.setattr(api, "_metadata_cache", {})
+    assert api._build_metadata("boe-rates")["data_type"] == "unverified"
+    assert static_api._read_data_type(csv_path, frame.to_dict("records")) == "unverified"
