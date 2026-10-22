@@ -512,7 +512,7 @@ export const chartConfigs: Record<string, ChartConfig> = {
       {
         domain: "Poverty · UK",
         title: "Child poverty by UK region",
-        finding: "Up to <b>38%</b> of children in the North East live in poverty.",
+        finding: "Compare official regional child poverty estimates after housing costs.",
         to: "/charts/child-poverty",
         sparkType: "bar",
       },
@@ -813,72 +813,46 @@ export const chartConfigs: Record<string, ChartConfig> = {
       { label: "Home", to: "/" },
       { label: "The data", to: "/" },
       { label: "Poverty", to: "#" },
-      { label: "One in three children in parts of Britain grows up in poverty" },
+      { label: "Child poverty by UK region" },
     ],
     pills: [
       { text: "Poverty", accent: true },
-      { text: "Regional · 2022-23" },
+      { text: "Regional ? 2021/22 to 2023/24" },
       { text: "United Kingdom" },
-      { text: "Updated 16 May 2026" },
+      { text: "Three-year average" },
     ],
-    headline: "One in three children in parts of Britain",
-    headlineEmphasis: "grows up in poverty.",
-    lede: "After housing costs, <strong>38%</strong> of children in the North East live in relative poverty — the highest regional rate in the UK. Even the lowest region (South East) has a rate of <strong>22%</strong>. Nationally, over 3.3 million children are affected.",
+    headline: "Child poverty varies",
+    headlineEmphasis: "across UK regions.",
+    lede: "Official survey estimates of relative low income after housing costs, averaged over 2021/22 to 2023/24. Rates and counts come from DWP's Households Below Average Income (HBAI) regional tables. They replace legacy figures whose provenance could not be verified.",
     meta: [
       {
         label: "Source",
-        value: "DWP/HMRC Statistics",
-        href: "https://www.gov.uk/government/statistics/children-in-low-income-families-local-area-statistics-2014-to-2023",
+        value: "DWP Households Below Average Income",
+        href: "https://www.gov.uk/government/statistics/households-below-average-income-for-financial-years-ending-1995-to-2024",
       },
-      { label: "Series", value: "Children in Low Income Families" },
-      { label: "Coverage", value: "2022-23 (12 regions)" },
-      { label: "Updated", value: "16 May 2026" },
+      { label: "Tables", value: "4.16ts (rates), 4.17ts (counts)" },
+      { label: "Coverage", value: "2021/22 to 2023/24, three-year average" },
+      { label: "Accessed", value: "2026-10-22" },
       { label: "Licence", value: "OGL v3.0" },
-      { label: "Measure", value: "After housing costs" },
+      { label: "Measure", value: "Relative low income after housing costs" },
       { label: "Chart ID", value: "WL-PV-001" },
     ],
-    stats: [
-      {
-        label: "Highest (North East)",
-        value: "38",
-        unit: "%",
-        description: "More than one in three children in relative poverty after housing costs",
-        headline: true,
-      },
-      {
-        label: "London",
-        value: "36",
-        unit: "%",
-        description: "Around 700,000 children in poverty in the capital",
-      },
-      {
-        label: "Lowest (South East)",
-        value: "22",
-        unit: "%",
-        description: "Even the 'best' region has more than one in five children in poverty",
-      },
-      {
-        label: "Children affected (UK)",
-        value: "3.3",
-        unit: "m+",
-        description: "Total children in relative poverty across all regions",
-      },
-    ],
+    stats: [],
     toolbar: {
-      title: "Child poverty rate by UK region (%)",
+      title: "Child poverty rate by UK region after housing costs (%)",
       unit: "%",
       series: [
         { label: "Above UK average", color: "#b91c1c", bold: true },
-        { label: "Below UK average", color: "#1a56db" },
+        { label: "At or below UK average", color: "#1a56db" },
       ],
       ranges: ["All"],
       defaultRange: "All",
     },
     source: {
-      name: "DWP/HMRC Children in Low Income Families (local area statistics, 2014–2023)",
-      url: "https://www.gov.uk/government/statistics/children-in-low-income-families-local-area-statistics-2014-to-2023",
+      name: "DWP HBAI, tables 4.16ts and 4.17ts, 2021/22 to 2023/24 (three-year average)",
+      url: "https://www.gov.uk/government/statistics/households-below-average-income-for-financial-years-ending-1995-to-2024",
       licence: "OGL v3.0",
-      accessed: "2026-05-16",
+      accessed: "2026-10-22",
       chartId: "WL-PV-001",
     },
     article: {
@@ -886,36 +860,26 @@ export const chartConfigs: Record<string, ChartConfig> = {
         {
           heading: "What this chart shows",
           paragraphs: [
-            "The percentage of children living in relative low income <em>after housing costs</em> (AHC) by UK region. Relative low income means a household income below 60% of the median. After-housing-costs is the more policy-relevant measure because housing costs vary enormously by region and consume a large share of low-income families' budgets.",
+            "The percentage of dependent children living in households below 60% of contemporary median equivalised disposable household income after housing costs (AHC). The chart covers the nine English regions and Wales, Scotland and Northern Ireland. All regional figures and the UK reference cover the same three-year period.",
           ],
         },
         {
-          heading: "",
+          heading: "How to interpret the estimates",
           paragraphs: [
-            "The North East has the highest rate at 38%, closely followed by London (36%) and the West Midlands (35%). London's high rate may seem paradoxical given high average incomes — but extreme housing costs push many families below the poverty line after rent is paid. The South East and East of England have the lowest rates, but even these exceed 20%. No region in the UK has a child poverty rate below one in five.",
-          ],
-        },
-        {
-          heading: "Why it",
-          headingEmphasis: "matters",
-          paragraphs: [
-            "Child poverty is the single strongest predictor of poor outcomes in education, health, and lifetime earnings. It is also the most tractable form of inequality — targeted benefit increases (e.g. child benefit, universal credit child elements) have historically reduced child poverty rates rapidly. The regional variation shows that poverty is not evenly distributed: it clusters in areas already affected by deindustrialisation, low GDHI, and poor housing.",
+            "HBAI uses the Family Resources Survey. Regional estimates are averaged across years to reduce sampling variability. Rates are published as whole percentages; counts are rounded to the nearest hundred thousand. Independently rounded regional counts may not sum to the UK total. Differences between regions are subject to sampling uncertainty.",
           ],
         },
       ],
-      pullQuote: {
-        text: "No region in the UK has a child poverty rate below <strong>one in five</strong>. In the North East, it is closer to <strong>two in five</strong>. These are not edge cases — they are millions of children.",
-      },
     },
     methodology: `
-      <p>Data is from the DWP/HMRC "Children in Low Income Families" local area statistics, which combine HMRC administrative data on family incomes with DWP benefit records.</p>
+      <p>Source: DWP Households Below Average Income, FYE 1995 to FYE 2024 release, tables 4.16ts and 4.17ts, accessed 2026-10-22. This pinned release includes the correction to 2022/23 cost-of-living support. It is not presented as the latest release.</p>
       <ul>
-        <li><strong>Measure:</strong> Relative low income after housing costs (below 60% of national median equivalised household income, AHC).</li>
-        <li><strong>Unit:</strong> Percentage of dependent children in each region.</li>
-        <li><strong>Year:</strong> 2022-23 financial year (the most recent available).</li>
-        <li>"Children in poverty" counts are rounded to nearest thousand.</li>
+        <li><strong>Measure:</strong> Below 60% of contemporary median equivalised disposable household income after housing costs.</li>
+        <li><strong>Period:</strong> 2021/22 to 2023/24, three-year average for both regional observations and the UK reference.</li>
+        <li><strong>Children:</strong> Under 16, or aged 16 to 19, unmarried and in full-time non-advanced education.</li>
+        <li><strong>Precision:</strong> Published whole percentages and counts rounded to the nearest hundred thousand. Counts are read from the official table, never inferred from rounded rates.</li>
       </ul>
-      <p><strong>Known caveats:</strong> The measure is "relative" — if median income falls, the poverty line falls too, potentially reducing measured poverty even if living standards worsen. Regional averages mask significant local variation (e.g. within London, rates range from under 20% in Richmond to over 50% in Tower Hamlets). Self-employed income is modelled, not directly measured.</p>
+      <p>The former figures were hard-coded fallback data with unverified provenance. Their citation to the 2014 to 2023 Children in Low Income Families release could not substantiate an AHC measure: that release covers before housing costs. The replacement HBAI figures use a different source and period.</p>
     `,
     related: [
       {
