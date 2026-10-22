@@ -27,6 +27,7 @@ import { useChartData } from "@/composables/useChartData"
 import type { EChartsExportable } from "@/composables/useChartExport"
 import { escapeHtml, safeMinMax, toNumberOrNaN, warnIfSignificantDataLoss } from "@/utils/chart"
 import AccessibleDataTable from "@/components/AccessibleDataTable.vue"
+import childPovertySource from "../../public/data/child-poverty-metadata.json"
 
 const { colors, axisStyle, markColor } = useChartTheme()
 
@@ -47,16 +48,26 @@ const chart = ref<EChartsExportable | null>(null)
 defineExpose({ chart })
 
 // Use the existing metadata provenance contract; missing evidence fails closed.
-const metadata = ref<DatasetMetadataResponse | null>(null)
+type ChildPovertyMetadata = DatasetMetadataResponse &
+  Partial<Pick<typeof childPovertySource, "download_url" | "tables" | "period" | "measure">>
+const metadata = ref<ChildPovertyMetadata | null>(null)
 const dataStore = useDataStore()
 const caveat = computed(() => {
   if (metadata.value?.data_type === "illustrative_fallback") {
     return "Illustrative legacy data. Its measure, period and source are unverified."
   }
+  // Require the same checked source evidence from API and static responses.
+  const evidenceMatches = (["download_url", "tables", "period", "measure"] as const).every(
+    (field) =>
+      JSON.stringify(metadata.value?.[field]) === JSON.stringify(childPovertySource[field]),
+  )
   if (
+    evidenceMatches &&
     ["live_ons", "static_published"].includes(metadata.value?.data_type ?? "") &&
-    metadata.value?.source_url ===
-      "https://www.gov.uk/government/statistics/households-below-average-income-for-financial-years-ending-1995-to-2024"
+    metadata.value?.source_url === childPovertySource.source_url &&
+    metadata.value?.source === childPovertySource.source &&
+    metadata.value?.description === childPovertySource.description &&
+    metadata.value?.access_date === childPovertySource.access_date
   )
     return ""
   return "Unverified provenance. These figures have not been verified as official AHC statistics."
@@ -156,7 +167,7 @@ const tableCaption = computed(
     "to the nearest hundred thousand. The UK reference covers the same period. " +
     (caveat.value
       ? caveat.value
-      : `Source: ${metadata.value?.source}, ${metadata.value?.source_url}, accessed ${metadata.value?.access_date}.`),
+      : `Source: ${metadata.value?.source}, ${childPovertySource.download_url}, accessed ${metadata.value?.access_date}.`),
 )
 
 const option = computed(() => {
@@ -306,7 +317,7 @@ const option = computed(() => {
     <p v-if="!caveat && metadata" class="text-sm text-[var(--wl-ink-muted)] mt-4 text-center">
       Source:
       <a
-        :href="metadata.source_url"
+        :href="childPovertySource.download_url"
         target="_blank"
         rel="noopener"
         class="underline hover:text-[var(--wl-ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--wl-red)] rounded"

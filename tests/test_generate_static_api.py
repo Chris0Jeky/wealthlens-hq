@@ -200,3 +200,60 @@ def test_generator_skips_csv_mirror_for_nc_nd_dataset(
 
     assert (out_dir / "generational-wealth.json").exists()
     assert not (out_dir / "generational-wealth.csv").exists()
+
+
+@pytest.mark.parametrize("case", [
+    "current", "static-current", "legacy", "missing", "corrupt", "source", "source_url",
+    "download_url", "tables", "period", "measure", "access_date",
+])
+def test_child_poverty_static_metadata_requires_hbai_sidecar(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, case: str
+) -> None:
+    current = json.loads((SCRIPTS_DIR.parent / "projects/wealthlens-dashboard/frontend/public/data"
+                          / "child-poverty-metadata.json").read_text(encoding="utf-8"))
+    sidecar = current.copy()
+    if case == "static-current":
+        sidecar["data_type"] = "static_published"
+    elif case == "legacy":
+        sidecar = {
+            "data_type": "static_published",
+            "source": "DWP/HMRC Children in Low Income Families",
+            "source_url": "https://www.gov.uk/government/statistics/children-in-low-income-families-local-area-statistics-2014-to-2023",
+            "access_date": "2026-05-16",
+        }
+    elif case not in ("current", "missing", "corrupt"):
+        sidecar[case] = ["4.16ts"] if case == "tables" else "mismatch"
+    verified = case in ("current", "static-current")
+    csv = tmp_path / "child_poverty_by_region.csv"
+    csv.write_text(
+        "region,child_poverty_pct,children_in_poverty,national_avg_pct,above_national_avg\n"
+        + ("North East,34,200000,30,True\n" if verified else "North East,38,185000,29.8,True\n"),
+        encoding="utf-8",
+    )
+    if case != "missing":
+        csv.with_suffix(".meta.json").write_text(
+            "{ corrupt" if case == "corrupt" else json.dumps(sidecar), encoding="utf-8"
+        )
+    out_dir = tmp_path / "out"
+    monkeypatch.setattr(gsa, "DATA_DIR", tmp_path)
+    monkeypatch.setattr(gsa, "OUT_DIR", out_dir)
+    monkeypatch.setattr(gsa, "DATASETS", {"child-poverty": csv.name})
+    monkeypatch.setattr(gsa, "generate_simulator_static", lambda: 0)
+    gsa.main()
+    metadata = json.loads((out_dir / "child-poverty-metadata.json").read_text(encoding="utf-8"))
+    catalogue = json.loads((out_dir / "all-metadata.json").read_text(encoding="utf-8"))["datasets"][0]
+    assert metadata == catalogue
+    if verified:
+        assert metadata["data_type"] == sidecar["data_type"]
+        for key in ("source", "source_url", "access_date", "download_url", "tables", "period", "measure"):
+            assert metadata[key] == current[key]
+    else:
+        assert metadata["data_type"] == "unverified"
+        assert metadata["source"] == "Unverified child-poverty data"
+        assert metadata["source_url"] == ""
+        assert "HBAI" not in json.dumps(metadata)
+        assert "download_url" not in metadata
+        records = json.loads((out_dir / "child-poverty.json").read_text(encoding="utf-8"))["data"]
+        assert records[0]["child_poverty_pct"] == 38
+        assert records[0]["children_in_poverty"] == 185000
+        assert (out_dir / "child-poverty.csv").read_text(encoding="utf-8").splitlines()[1].endswith(",unverified")

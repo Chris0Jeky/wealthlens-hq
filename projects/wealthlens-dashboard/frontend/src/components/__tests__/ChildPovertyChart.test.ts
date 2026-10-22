@@ -56,6 +56,7 @@ vi.mock("echarts/components", () => ({
 
 import ChildPovertyChart from "@/components/ChildPovertyChart.vue"
 import { chartConfigs } from "@/config/chartArticles"
+import childPovertySource from "../../../public/data/child-poverty-metadata.json"
 
 /**
  * Two regions with deliberately distinct values per column so a column swap would
@@ -83,13 +84,7 @@ const CHILD_POVERTY_ROWS = [
 describe("ChildPovertyChart accessible data table", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockFetchMetadata.mockResolvedValue({
-      source: "DWP HBAI, tables 4.16ts and 4.17ts",
-      source_url:
-        "https://www.gov.uk/government/statistics/households-below-average-income-for-financial-years-ending-1995-to-2024",
-      access_date: "2026-10-22",
-      data_type: "live_ons",
-    })
+    mockFetchMetadata.mockResolvedValue(childPovertySource)
     setActivePinia(createPinia())
     mockRows = shallowRef(CHILD_POVERTY_ROWS)
     mockLoading = ref(false)
@@ -150,11 +145,13 @@ describe("ChildPovertyChart accessible data table", () => {
     const caption = wrapper.find("table caption").text()
     expect(caption).toContain("after housing costs (AHC)")
     expect(caption).toContain("2021/22 to 2023/24 (three-year average)")
-    expect(caption).toContain("Source: DWP HBAI, tables 4.16ts and 4.17ts")
+    expect(caption).toContain(
+      "Source: DWP Households Below Average Income (HBAI), tables 4.16ts and 4.17ts",
+    )
     expect(caption).toContain("nearest hundred thousand")
     expect(caption).not.toContain("Children in Low Income Families")
     expect(wrapper.find("[role='note']").exists()).toBe(false)
-    expect(wrapper.find("a").attributes("href")).toContain("households-below-average-income")
+    expect(wrapper.find("a").attributes("href")).toBe(childPovertySource.download_url)
     expect(wrapper.text()).toContain("accessed 2026-10-22")
     expect(wrapper.find("[role='img']").attributes("aria-label")).toContain("three-year average")
   })
@@ -175,13 +172,71 @@ describe("ChildPovertyChart accessible data table", () => {
 
   it("rejects the former CiLIF citation even when marked static published", async () => {
     mockFetchMetadata.mockResolvedValue({
+      ...childPovertySource,
       data_type: "static_published",
+      source: "DWP/HMRC Children in Low Income Families",
+      access_date: "2026-05-16",
       source_url:
         "https://www.gov.uk/government/statistics/children-in-low-income-families-local-area-statistics-2014-to-2023",
     })
     const wrapper = mount(ChildPovertyChart)
     await flushPromises()
     expect(wrapper.find("[role='note']").text()).toContain("Unverified provenance")
+    expect(wrapper.find("a").exists()).toBe(false)
+  })
+
+  it.each([
+    "source",
+    "source_url",
+    "description",
+    "access_date",
+    "data_type",
+    "download_url",
+    "tables",
+    "period",
+    "measure",
+  ])("retains the caveat when the returned HBAI %s does not match the catalogue", async (key) => {
+    mockFetchMetadata.mockResolvedValue({ ...childPovertySource, [key]: "mismatch" })
+    const wrapper = mount(ChildPovertyChart)
+    await flushPromises()
+    expect(wrapper.find("[role='note']").text()).toContain("Unverified provenance")
+    expect(wrapper.find("table caption").text()).not.toContain("Source: DWP")
+    expect(wrapper.find("a").exists()).toBe(false)
+  })
+
+  it.each(["download_url", "tables", "period", "measure"])(
+    "retains the caveat when a catalogue-only API response omits %s evidence",
+    async (field) => {
+      const metadata: Record<string, unknown> = { ...childPovertySource }
+      delete metadata[field]
+      mockFetchMetadata.mockResolvedValue(metadata)
+      const wrapper = mount(ChildPovertyChart)
+      await flushPromises()
+      expect(wrapper.find("[role='note']").text()).toContain("Unverified provenance")
+      expect(wrapper.find("a").exists()).toBe(false)
+    },
+  )
+
+  it("shows the caveat for the backend's legacy 38% / 185,000 unverified response", async () => {
+    mockFetchMetadata.mockResolvedValue({
+      name: "child-poverty",
+      description: "Child poverty figures with unverified source, measure and period",
+      source: "Unverified child-poverty data",
+      source_url: "",
+      access_date: "",
+      data_type: "unverified",
+    })
+    const wrapper = mount(ChildPovertyChart)
+    await flushPromises()
+    const firstRow = wrapper.find("tbody tr").text()
+    expect(firstRow).toContain("North East")
+    expect(firstRow).toContain("38")
+    expect(firstRow).toContain("185,000")
+    const caveat = wrapper.find("[role='note']").text()
+    expect(caveat).toContain("Unverified provenance")
+    expect(wrapper.find("table caption").text()).toContain(caveat)
+    expect(wrapper.find("[role='img']").attributes("aria-label")).toContain(caveat)
+    expect(wrapper.text()).not.toContain(childPovertySource.source)
     expect(wrapper.find("a").exists()).toBe(false)
   })
 

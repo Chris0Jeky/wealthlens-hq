@@ -54,7 +54,7 @@ DATASETS: dict[str, str] = {
     "generational-wealth": "generational_wealth_gap.csv",
 }
 
-DATASET_META: dict[str, dict[str, str]] = {
+DATASET_META: dict[str, dict[str, Any]] = {
     "wealth-shares": {
         "description": "Top 1%/10% wealth shares in GB",
         "source": "World Inequality Database",
@@ -108,6 +108,11 @@ DATASET_META: dict[str, dict[str, str]] = {
         "source": "DWP Households Below Average Income (HBAI), tables 4.16ts and 4.17ts",
         "source_url": "https://www.gov.uk/government/statistics/households-below-average-income-for-financial-years-ending-1995-to-2024",
         "access_date": "2026-10-22",
+        "download_url": "https://assets.publishing.service.gov.uk/media/6836dae29411f0341f323689/HBAI_2324_ods_table_pack.zip",
+        "tables": ["4.16ts", "4.17ts"],
+        "period": "2021/22 to 2023/24 (three-year average)",
+        "measure": "Children below 60% of contemporary median equivalised disposable household income after housing costs",
+        "rounding": "Published whole percentages; counts converted from published 0.1 million",
     },
     "generational-wealth": {
         "description": "Median household wealth by generation at equivalent ages",
@@ -116,6 +121,27 @@ DATASET_META: dict[str, dict[str, str]] = {
         "access_date": "2026-05-16",
     },
 }
+
+
+def _child_poverty_source_matches(sidecar: dict[str, Any]) -> bool:
+    """Require the pinned HBAI source, tables, AHC measure and averaging period."""
+    expected = DATASET_META["child-poverty"]
+    return all(
+        sidecar.get(key) == expected[key]
+        for key in ("source", "source_url", "access_date", "download_url", "tables", "period", "measure")
+    )
+
+
+def _metadata_citation(dataset_name: str, data_type: str | None) -> dict[str, Any]:
+    """Never certify retained legacy child-poverty files with the HBAI citation."""
+    if dataset_name == "child-poverty" and data_type not in ("live_ons", "static_published"):
+        return {
+            "description": "Child poverty figures with unverified source, measure and period",
+            "source": "Unverified child-poverty data",
+            "source_url": "",
+            "access_date": "",
+        }
+    return DATASET_META.get(dataset_name, {}).copy()
 
 
 def _extract_percentile(variable: str) -> str:
@@ -192,19 +218,21 @@ def _read_csv_as_records(path: Path, slug: str = "") -> list[dict]:
 def _read_data_type(csv_path: Path, records: list[dict]) -> str | None:
     """Validate sidecar provenance against any marker carried in the CSV rows.
 
-    Match the API: missing provenance for productivity-pay, invalid sidecars or
+    Match the API: missing provenance for productivity-pay or child-poverty, invalid sidecars or
     contradictory CSV markers are unverified. Real static_published data remains
-    genuine; legacy datasets without a sidecar retain None.
+    genuine only when its source matches the catalogue; other legacy datasets without a sidecar retain None.
     """
     meta_path = csv_path.with_suffix(".meta.json")
     try:
         sidecar = json.loads(meta_path.read_text(encoding="utf-8"))
     except FileNotFoundError:
-        return "unverified" if csv_path.name == DATASETS.get("productivity-pay") else None
+        return "unverified" if csv_path.name in (DATASETS.get("productivity-pay"), DATASETS.get("child-poverty")) else None
     except (json.JSONDecodeError, UnicodeDecodeError, OSError):
         return "unverified"
     value = sidecar.get("data_type") if isinstance(sidecar, dict) else None
     if not isinstance(value, str) or value not in ("live_ons", "illustrative_fallback", "static_published"):
+        return "unverified"
+    if csv_path.name == DATASETS.get("child-poverty") and not _child_poverty_source_matches(sidecar):
         return "unverified"
     if any("data_type" in row and row["data_type"] != value for row in records):
         return "unverified"
@@ -364,12 +392,7 @@ def main() -> None:
         _write_csv_mirror(slug, records, data_type)
 
         # Metadata response
-        meta = DATASET_META.get(slug, {}).copy()
-        if slug == "child-poverty":
-            # The fetch records the actual access date and table identifiers.
-            # Never replace those with the static catalogue's historical date.
-            child_meta = json.loads(csv_path.with_suffix(".meta.json").read_text(encoding="utf-8"))
-            meta.update({k: child_meta[k] for k in ("source", "source_url", "access_date")})
+        meta = _metadata_citation(slug, data_type)
         columns = list(records[0].keys()) if records else []
         meta_response = {
             "name": slug,
@@ -381,9 +404,9 @@ def main() -> None:
             "columns": columns,
             "data_type": data_type,
         }
-        if slug == "child-poverty":
+        if slug == "child-poverty" and data_type in ("live_ons", "static_published"):
             for key in ("download_url", "tables", "period", "measure", "rounding"):
-                meta_response[key] = child_meta[key]
+                meta_response[key] = meta[key]
         meta_path = OUT_DIR / f"{slug}-metadata.json"
         meta_path.write_text(
             json.dumps(meta_response, allow_nan=False), encoding="utf-8"

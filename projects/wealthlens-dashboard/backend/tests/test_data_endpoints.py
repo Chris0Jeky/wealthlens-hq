@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 from pathlib import Path
 
@@ -253,3 +254,74 @@ class TestDataTypeSidecar:
         assert entry["available"] is False
         assert entry["data_type"] is None
         assert entry["source"]  # citation still served
+
+
+class TestChildPovertyProvenance:
+    """Old CiLIF observations must never inherit the HBAI catalogue citation."""
+
+    @pytest.mark.parametrize("endpoint", ["/api/data/child-poverty/metadata", "/api/data/metadata"])
+    @pytest.mark.parametrize("case", [
+        "current", "static-current", "legacy", "missing", "corrupt", "source", "source_url",
+        "download_url", "tables", "period", "measure", "access_date",
+    ])
+    def test_citation_requires_matching_sidecar(
+        self, client: TestClient, tmp_path: Path, endpoint: str, case: str
+    ) -> None:
+        current = json.loads((Path(__file__).resolve().parents[2] / "frontend" / "public" / "data"
+                              / "child-poverty-metadata.json").read_text(encoding="utf-8"))
+        sidecar = current.copy()
+        if case == "static-current":
+            sidecar["data_type"] = "static_published"
+        elif case == "legacy":
+            sidecar = {
+                "data_type": "static_published",
+                "source": "DWP/HMRC Children in Low Income Families",
+                "source_url": "https://www.gov.uk/government/statistics/children-in-low-income-families-local-area-statistics-2014-to-2023",
+                "access_date": "2026-05-16",
+            }
+        elif case not in ("current", "missing", "corrupt"):
+            sidecar[case] = ["4.16ts"] if case == "tables" else "mismatch"
+        verified = case in ("current", "static-current")
+        csv = tmp_path / data_mod.DATASETS["child-poverty"]
+        csv.write_text(
+            "region,child_poverty_pct,children_in_poverty,national_avg_pct,above_national_avg\n"
+            + ("North East,34,200000,30,True\n" if verified else "North East,38,185000,29.8,True\n"),
+            encoding="utf-8",
+        )
+        if case != "missing":
+            csv.with_suffix(".meta.json").write_text(
+                "{ corrupt" if case == "corrupt" else json.dumps(sidecar), encoding="utf-8"
+            )
+        response = client.get(endpoint)
+        assert response.status_code == 200
+        metadata = response.json()
+        if endpoint == "/api/data/metadata":
+            metadata = next(d for d in metadata["datasets"] if d["name"] == "child-poverty")
+        if verified:
+            assert metadata["data_type"] == sidecar["data_type"]
+            for key in ("source", "source_url", "description", "access_date", "download_url", "tables", "period", "measure"):
+                assert metadata[key] == current[key]
+        else:
+            assert metadata["data_type"] == "unverified"
+            assert metadata["source"] == "Unverified child-poverty data"
+            assert metadata["source_url"] == ""
+            assert metadata["access_date"] == ""
+            assert "HBAI" not in json.dumps(metadata)
+            rows = client.get("/api/data/child-poverty").json()["data"]
+            assert rows[0]["child_poverty_pct"] == 38
+            assert rows[0]["children_in_poverty"] == 185000
+
+    def test_catalogue_recovery_withholds_hbai_citation(
+        self, client: TestClient, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        (tmp_path / data_mod.DATASETS["child-poverty"]).unlink()
+
+        def fail(_name: str) -> str | None:
+            raise OSError("sidecar unavailable")
+
+        monkeypatch.setattr(data_mod, "_get_data_type", fail)
+        metadata = next(d for d in client.get("/api/data/metadata").json()["datasets"]
+                        if d["name"] == "child-poverty")
+        assert metadata["available"] is False
+        assert metadata["data_type"] == "unverified"
+        assert "HBAI" not in json.dumps(metadata)

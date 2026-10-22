@@ -18,6 +18,7 @@ import SkeletonLoader from "@/components/SkeletonLoader.vue"
 import { DATASET_PROVENANCE } from "@/constants/datasetProvenance"
 import { usePageMeta } from "@/composables/usePageMeta"
 import { SITE_URL } from "@/constants/site"
+import childPovertySource from "../../public/data/child-poverty-metadata.json"
 
 usePageMeta({
   title: "Data Sources",
@@ -46,7 +47,21 @@ const filteredDatasets = computed(() => {
 
 onMounted(async () => {
   try {
-    allMetadata.value = await store.fetchAllMetadata()
+    allMetadata.value = (await store.fetchAllMetadata()).map((ds) =>
+      ds.name === "child-poverty" &&
+      (["download_url", "tables", "period", "measure"] as const).every(
+        (field) =>
+          JSON.stringify((ds as DatasetMetadata & Partial<typeof childPovertySource>)[field]) ===
+          JSON.stringify(childPovertySource[field]),
+      ) &&
+      ["live_ons", "static_published"].includes(ds.data_type ?? "") &&
+      ds.source === childPovertySource.source &&
+      ds.source_url === childPovertySource.source_url &&
+      ds.description === childPovertySource.description &&
+      ds.access_date === childPovertySource.access_date
+        ? { ...ds, source_url: childPovertySource.download_url }
+        : ds,
+    )
   } catch (e) {
     error.value = e instanceof Error ? e.message : "Failed to load data source information"
   } finally {
