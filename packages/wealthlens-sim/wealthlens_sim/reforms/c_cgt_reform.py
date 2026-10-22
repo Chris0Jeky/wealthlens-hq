@@ -30,7 +30,8 @@ from wealthlens_sim.schema.household import Household
 ANNUAL_EXEMPT_AMOUNT_2026: float = 3_000
 #: Ordinary-trust trustees get half the individual amount. Personal
 #: representatives and vulnerable-beneficiary trusts get the full amount:
-#: pass annual_exempt_amount explicitly for those.
+#: pass annual_exempt_amount explicitly for those. Registry: registries/baselines.yml
+#: id cgt-trustee-annual-exempt-amount.
 TRUSTEE_ANNUAL_EXEMPT_AMOUNT_2026: float = 1_500
 BASIC_RATE_BAND_2026: float = 37_700
 PERSONAL_ALLOWANCE_2026: float = 12_570
