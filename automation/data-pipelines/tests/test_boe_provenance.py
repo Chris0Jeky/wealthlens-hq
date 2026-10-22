@@ -170,8 +170,12 @@ def test_committed_boe_values_rebuild_exactly_from_full_official_fixtures(
     monkeypatch.setattr(static_api, "DATASETS", {"boe-rates": "boe_rates.csv"})
     monkeypatch.setattr(static_api, "generate_simulator_static", lambda: 0)
     static_api.main()
+    # Compare text with normalised line endings: git stores these files with LF and
+    # checks them out with the platform's endings, while the CSV writer emits CRLF.
     for filename in ("boe-rates.json", "boe-rates.csv", "boe-rates-metadata.json"):
-        assert (output / filename).read_bytes() == (public / filename).read_bytes(), filename
+        built = (output / filename).read_bytes().replace(b"\r\n", b"\n")
+        committed = (public / filename).read_bytes().replace(b"\r\n", b"\n")
+        assert built == committed, filename
     assert frame["data_type"].eq("live_ons").all()
     assert frame["date"].iloc[0] == "2000-01-01"
     bank = boe._parse_iadb_csv(BANK_RATE_FIXTURE.read_text())
