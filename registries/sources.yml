@@ -16,16 +16,32 @@
 
 sources:
   - id: boe-bank-rate-cpi
-    name: Bank of England Bank Rate and CPI
+    name: Bank of England monthly average of official Bank Rate (IUMABEDR)
     url: https://www.bankofengland.co.uk/boeapps/database/_iadb-fromshowcolumns.asp
-    access_date: "2026-05-16"
+    access_date: "2026-10-22"
+    format: csv
+    licence: Bank of England terms (https://www.bankofengland.co.uk/legal)
+    update_pattern: monthly
+    pipeline: fetch_boe_rates.py
+    notes: >
+      IUMABEDR is a monthly average, not an end-month policy rate. Retain the
+      existing registry ID for compatibility. Join with ONS D7G7 by calendar
+      month from 2000 onwards; chart dates use YYYY-MM-01. The whole dataset
+      remains illustrative if either official source cannot be fetched.
+
+  - id: ons-cpi-d7g7
+    name: ONS CPI ANNUAL RATE 00 ALL ITEMS 2015=100 (D7G7, MM23)
+    url: https://www.ons.gov.uk/economy/inflationandpriceindices/timeseries/d7g7/mm23
+    api_url: https://www.ons.gov.uk/generator?format=csv&uri=/economy/inflationandpriceindices/timeseries/d7g7/mm23
+    access_date: "2026-10-22"
     format: csv
     licence: OGL-3.0
     update_pattern: monthly
     pipeline: fetch_boe_rates.py
     notes: >
-      Series IUDBEDR (Bank Rate) and D7BT (CPI annual rate via ONS).
-      Pipeline includes hardcoded fallback if IADB endpoint is unavailable.
+      Read monthly YYYY MON observations only, skipping metadata, annual and
+      quarterly rows. D7G7 is an ONS series, not an IADB code. Publish only
+      common months with BoE IUMABEDR, without interpolation or forward fill.
 
   - id: dwp-child-poverty
     name: DWP/HMRC Children in Low Income Families

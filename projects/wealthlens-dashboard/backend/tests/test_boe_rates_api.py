@@ -6,6 +6,7 @@ correctly, and returns proper metadata with source citations.
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pytest
@@ -93,3 +94,41 @@ def test_boe_rates_503_when_csv_missing(tmp_path: Path, monkeypatch: pytest.Monk
     body = response.json()
     message = body.get("error", {}).get("message", body.get("detail", ""))
     assert message
+
+
+@pytest.mark.parametrize("use_sidecar", [True, False])
+def test_boe_api_citation_matches_committed_static_metadata(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, use_sidecar: bool,
+) -> None:
+    """Exercise response serialization so neither source nor its access date is lost."""
+    public = Path(__file__).resolve().parents[2] / "frontend/public/data"
+    published = json.loads((public / "boe-rates-metadata.json").read_text())
+    (tmp_path / "boe_rates.csv").write_bytes((public / "boe-rates.csv").read_bytes())
+    if use_sidecar:
+        (tmp_path / "boe_rates.meta.json").write_text(json.dumps(published))
+    monkeypatch.setattr(data_module, "DATA_DIR", tmp_path)
+    monkeypatch.setattr(data_module, "_metadata_cache", {})
+    response = client.get("/api/data/boe-rates/metadata")
+    assert response.status_code == 200
+    for key in ("description", "source", "source_url", "access_date", "sources"):
+        assert response.json()[key] == published[key]
+    catalog = client.get("/api/data/metadata").json()["datasets"]
+    entry = next(item for item in catalog if item["name"] == "boe-rates")
+    assert entry["sources"] == published["sources"]
+
+
+def test_boe_api_prefers_current_pipeline_citation(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """A later pipeline must override the committed last-good source order and date."""
+    public = Path(__file__).resolve().parents[2] / "frontend/public/data"
+    sidecar = json.loads((public / "boe-rates-metadata.json").read_text())
+    sidecar["sources"].reverse()
+    sidecar["access_date"] = sidecar["sources"][0]["access_date"] = "recorded-pipeline-access-date"
+    (tmp_path / "boe_rates.meta.json").write_text(json.dumps(sidecar))
+    (tmp_path / "boe_rates.csv").write_bytes((public / "boe-rates.csv").read_bytes())
+    monkeypatch.setattr(data_module, "DATA_DIR", tmp_path)
+    monkeypatch.setattr(data_module, "_metadata_cache", {})
+    response = client.get("/api/data/boe-rates/metadata")
+    assert response.status_code == 200
+    assert response.json()["sources"] == sidecar["sources"]
+    assert response.json()["access_date"] == sidecar["access_date"]
+    assert response.json()["source"] == " / ".join(source["name"] for source in sidecar["sources"])
