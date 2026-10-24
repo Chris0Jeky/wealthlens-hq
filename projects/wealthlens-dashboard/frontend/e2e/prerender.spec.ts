@@ -1,4 +1,6 @@
 import { test, expect } from "@playwright/test"
+import { readFileSync } from "node:fs"
+import { buildPrerenderRoutes, routeToOutputFile } from "../scripts/prerender-manifest"
 
 /**
  * Prerender contract (ADR 0001).
@@ -34,6 +36,55 @@ const DEEP_LINKS = [
 ]
 
 test.describe("baked HTML (no JavaScript executed — what crawlers see)", () => {
+  test("every baked route has portable assets that resolve under the deployment base", async ({
+    request,
+  }) => {
+    const datasets = await (await request.get("data/datasets.json")).json()
+    const files = [
+      ...buildPrerenderRoutes(datasets.datasets).map((route) => routeToOutputFile(route.path)),
+      "404.html",
+    ]
+    const assets = new Set<string>()
+
+    for (const file of files) {
+      const response = await request.get(file)
+      expect(response.status(), file).toBe(200)
+      const html = await response.text()
+      // A missing .html can silently fall back to index.html with 200. Require
+      // the actual generated file, and prove that its bytes are what is served.
+      expect(html, file).toBe(readFileSync(new URL(`../dist/${file}`, import.meta.url), "utf8"))
+      expect(html, file).not.toMatch(/(?:https?:)?\/\/(?:localhost|127(?:\.\d+){3}|\[::1\])[:/]/i)
+
+      const resources = [...html.matchAll(/<(?:script|link)\b[^>]*\b(?:src|href)="([^"]+)"/g)]
+        .map((match) => match[1]!)
+        .filter((url) => /\.(?:js|css)(?:[?#]|$)/.test(url))
+      expect(
+        resources.some((url) => url.endsWith(".js")),
+        file,
+      ).toBe(true)
+      expect(
+        resources.some((url) => url.endsWith(".css")),
+        file,
+      ).toBe(true)
+      for (const url of resources) {
+        // Root-relative, NOT route-relative or /assets/: both would break deep
+        // links when the site is served from the GitHub Pages repository path.
+        expect(url, `${file}: ${url}`).toMatch(/^\/wealthlens-hq\/assets\//)
+        assets.add(url)
+      }
+    }
+
+    for (const asset of assets) {
+      const response = await request.get(asset)
+      expect(response.status(), asset).toBe(200)
+      // An SPA fallback can also return 200 for a missing asset. Prove that
+      // each URL serves actual JavaScript/CSS rather than the HTML shell.
+      expect(response.headers()["content-type"], asset).toMatch(
+        asset.endsWith(".css") ? /text\/css/ : /(?:text|application)\/javascript/,
+      )
+    }
+  })
+
   for (const link of DEEP_LINKS) {
     test(`raw ${link.path} returns 200 with baked route meta`, async ({ request }) => {
       const res = await request.get(link.path)

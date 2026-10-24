@@ -27,6 +27,7 @@ import {
   type PrerenderRoute,
 } from "./prerender-manifest"
 import { buildSitemapXml } from "./sitemap-xml"
+import { containsPreviewOrigin, normalizePrerenderedAssetUrls } from "./prerender-assets"
 import { SITE_URL } from "../src/constants/site"
 import { META_MARKER_ATTR } from "../src/composables/usePageMeta"
 import { PRERENDER_FLAG } from "../src/utils/observatory"
@@ -106,7 +107,13 @@ async function snapshotRoute(
     )
   }
 
+  // Vite's lazy-route runtime inserts absolute modulepreload + stylesheet
+  // links. Serialize portable paths, not this build machine's preview origin.
+  await page.evaluate(normalizePrerenderedAssetUrls, origin)
   const html = await page.content()
+  if (containsPreviewOrigin(html, origin)) {
+    throw new Error(`${route.path}: snapshot still contains the preview origin ${origin}.`)
+  }
   const outputFile = routeToOutputFile(route.path)
   const outputPath = join(DIST_DIR, outputFile)
   mkdirSync(dirname(outputPath), { recursive: true })

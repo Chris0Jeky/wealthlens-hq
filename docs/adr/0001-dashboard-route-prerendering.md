@@ -23,6 +23,12 @@ Mechanics (implemented in `frontend/scripts/prerender.ts`):
    colour scheme, reduced motion), waits for network idle plus the
    `usePageMeta` marker (`meta[data-wl-meta][property="og:url"]`), then
    serialises the full document.
+   Before serialization, same-preview-origin script and link URLs are made
+   root-relative, preserving the full deployment path (`/wealthlens-hq/`),
+   query and fragment. Vite adds absolute lazy-route preload and stylesheet
+   URLs at runtime; persisting those would make public pages request assets
+   from the visitor's localhost. A remaining preview-origin reference fails
+   the build. Canonical metadata and external resources are left unchanged.
 3. Output is a **flat `.html` file per route** (`/faq` →
    `dist/faq.html`, `/charts/wealth-shares` →
    `dist/charts/wealth-shares.html`). GitHub Pages serves `/faq` from
@@ -94,6 +100,9 @@ render (loading skeletons), which is exactly what we don't want to bake.
   audit the prerendered artifact (deploy parity). `ci-frontend` keeps
   the plain build (no browser install) — prerender correctness is
   gated by the e2e job.
+  That job checks every generated route and `404.html` for loopback references,
+  verifies JS/CSS URLs retain the repository base, and fetches those resources
+  with JavaScript/CSS content types (an HTML SPA fallback with 200 is not enough).
 - The service-worker cache name is bumped (`wl-v1` → `wl-v2`) so
   previously cached SPA-fallback documents are purged; HTML stays
   network-first, so online users always get the prerendered pages.
