@@ -25,10 +25,12 @@ import type { EChartsExportable } from "@/composables/useChartExport"
 import { escapeHtml, safeMinMax, toNumberOrNaN, warnIfSignificantDataLoss } from "@/utils/chart"
 import AccessibleDataTable from "@/components/AccessibleDataTable.vue"
 import { useDataStore } from "@/stores/data"
+import { useChartTheme } from "@/composables/useChartTheme"
 
 // Register only the ECharts modules we need (tree-shaking)
 use([CanvasRenderer, LineChart, GridComponent, TooltipComponent, TitleComponent, LegendComponent])
 
+const { colors, axisStyle, markColor } = useChartTheme()
 const props = withDefaults(defineProps<{ range?: string }>(), { range: "All" })
 const { rows, loading, error } = useChartData("boe-rates", () => props.range)
 const chart = ref<EChartsExportable | null>(null)
@@ -38,6 +40,20 @@ defineExpose({ chart })
 // Reuse the embed's provenance rules and the existing chart caveat styling.
 // Missing metadata must not imply that fallback-capable data is official.
 const dataType = ref<string | null | undefined>(null)
+const accessDate = ref("")
+// Citation links come from the published metadata; until it loads (or if it
+// fails) the two canonical landing pages are shown with no access date.
+const FALLBACK_SOURCES = [
+  {
+    name: "Bank of England (IUMABEDR, monthly average)",
+    url: "https://www.bankofengland.co.uk/boeapps/database/Bank-Rate.asp",
+  },
+  {
+    name: "ONS CPI (D7G7)",
+    url: "https://www.ons.gov.uk/economy/inflationandpriceindices/timeseries/d7g7/mm23",
+  },
+]
+const sources = ref<{ name: string; url: string }[]>(FALLBACK_SOURCES)
 const caveat = computed(() => {
   if (dataType.value === "illustrative_fallback") {
     return "Illustrative composite. Figures are worked examples, not published statistics."
@@ -51,6 +67,9 @@ onMounted(async () => {
   try {
     const meta = await store.fetchMetadata("boe-rates")
     dataType.value = meta.data_type
+    accessDate.value = (meta.access_date ?? "").trim()
+    const published = (meta.sources ?? []).filter((s) => s.name && /^https?:\/\//.test(s.url))
+    if (published.length) sources.value = published
   } catch {
     // Keep the unverified caveat when metadata cannot be loaded.
   }
@@ -131,13 +150,14 @@ const option = computed(() => {
 
   return {
     animation: !prefersReducedMotion,
+    textStyle: { color: colors.value.text },
     title: {
       text: "Bank of England Base Rate vs CPI Inflation",
       left: "center",
       textStyle: {
         fontSize: 16,
         fontWeight: "bold",
-        color: "#111827",
+        color: colors.value.heading,
       },
     },
     tooltip: {
@@ -154,9 +174,10 @@ const option = computed(() => {
       },
     },
     legend: {
+      inactiveColor: colors.value.muted,
       bottom: 0,
       data: ["Bank Rate", "CPI Inflation"],
-      textStyle: { color: "#374151" },
+      textStyle: { color: colors.value.text },
     },
     grid: {
       left: "3%",
@@ -166,24 +187,26 @@ const option = computed(() => {
       containLabel: true,
     },
     xAxis: {
+      ...axisStyle.value,
       type: "category" as const,
       data: data.dates,
       name: "Date",
       nameLocation: "middle" as const,
       nameGap: 30,
       axisLabel: {
-        color: "#374151",
+        color: colors.value.text,
         rotate: 45,
         interval: Math.max(0, Math.floor(data.dates.length / 12)),
       },
     },
     yAxis: {
+      ...axisStyle.value,
       type: "value" as const,
       name: "Rate (%)",
       nameLocation: "middle" as const,
       nameGap: 40,
       axisLabel: {
-        color: "#374151",
+        color: colors.value.text,
         formatter: "{value}%",
       },
     },
@@ -193,8 +216,8 @@ const option = computed(() => {
         type: "line" as const,
         data: data.bankRate,
         smooth: false,
-        lineStyle: { width: 2.5, color: COLOR_BANK_RATE },
-        itemStyle: { color: COLOR_BANK_RATE },
+        lineStyle: { width: 2.5, color: markColor(COLOR_BANK_RATE) },
+        itemStyle: { color: markColor(COLOR_BANK_RATE) },
         symbol: "circle",
         symbolSize: 4,
       },
@@ -203,8 +226,8 @@ const option = computed(() => {
         type: "line" as const,
         data: data.cpi,
         smooth: !prefersReducedMotion,
-        lineStyle: { width: 2.5, color: COLOR_CPI },
-        itemStyle: { color: COLOR_CPI },
+        lineStyle: { width: 2.5, color: markColor(COLOR_CPI) },
+        itemStyle: { color: markColor(COLOR_CPI) },
         symbol: "circle",
         symbolSize: 4,
       },
@@ -259,28 +282,19 @@ const option = computed(() => {
       {{ caveat }}
     </p>
 
-    <!-- Source citation -->
+    <!-- Source citation: links and access date come from the dataset metadata. -->
     <p class="text-sm text-[var(--wl-ink-muted)] mt-4 text-center">
       Source:
-      <a
-        href="https://www.bankofengland.co.uk/boeapps/database/Bank-Rate.asp"
-        target="_blank"
-        rel="noopener"
-        class="underline hover:text-[var(--wl-ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--wl-red)] rounded"
-      >
-        Bank of England (IUMABEDR, monthly average)<span class="sr-only">
-          (opens in new tab)</span
-        ></a
-      >
-      /
-      <a
-        href="https://www.ons.gov.uk/economy/inflationandpriceindices/timeseries/d7g7/mm23"
-        target="_blank"
-        rel="noopener"
-        class="underline hover:text-[var(--wl-ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--wl-red)] rounded"
-      >
-        ONS CPI (D7G7)<span class="sr-only"> (opens in new tab)</span></a
-      >, accessed 2026-10-22
+      <template v-for="(s, i) in sources" :key="s.url">
+        <template v-if="i > 0"> / </template>
+        <a
+          :href="s.url"
+          target="_blank"
+          rel="noopener"
+          class="underline hover:text-[var(--wl-ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--wl-red)] rounded"
+          >{{ s.name }}<span class="sr-only"> (opens in new tab)</span></a
+        > </template
+      ><template v-if="accessDate">, accessed {{ accessDate }}</template>
     </p>
   </div>
 </template>

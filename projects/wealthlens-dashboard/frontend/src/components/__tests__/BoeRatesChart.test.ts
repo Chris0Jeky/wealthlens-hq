@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach } from "vitest"
 import { flushPromises, mount } from "@vue/test-utils"
 import { createPinia, setActivePinia } from "pinia"
 import { ref, shallowRef } from "vue"
+import { readFileSync } from "node:fs"
+import { resolve } from "node:path"
 
 /**
  * BoeRatesChart tests — focused on the ADDITION in the a11y slice: the
@@ -266,6 +268,98 @@ describe("monthly-average rendering", () => {
     const bank = option.series.find((series: { name: string }) => series.name === "Bank Rate")
     expect(bank.step).toBeUndefined()
     expect(bank.data).toEqual(BOE_ROWS.map((row) => row.bank_rate))
+    wrapper.unmount()
+  })
+})
+
+describe("source citation from metadata", () => {
+  const SOURCES = [
+    { name: "Bank of England", url: "https://example.test/boe.csv", access_date: "2027-01-15" },
+    { name: "ONS", url: "https://example.test/ons.csv", access_date: "2027-01-15" },
+  ]
+  const citation = (wrapper: ReturnType<typeof mount>) =>
+    wrapper.findAll("p").find((p) => p.text().startsWith("Source:"))!
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    setActivePinia(createPinia())
+    mockRows.value = BOE_ROWS
+    mockLoading.value = false
+    mockError.value = null
+  })
+
+  it("renders the access date and links from metadata, not hard-coded values", async () => {
+    mockFetchMetadata.mockResolvedValue({
+      data_type: "live_ons",
+      access_date: "2027-01-15",
+      sources: SOURCES,
+    })
+    const wrapper = mount(BoeRatesChart)
+    await flushPromises()
+    const p = citation(wrapper)
+    expect(p.text()).toBe(
+      "Source: Bank of England (opens in new tab) / ONS (opens in new tab), accessed 2027-01-15",
+    )
+    expect(p.text()).not.toContain("2026-10-22")
+    const links = p.findAll("a")
+    expect(links.map((a) => a.attributes("href"))).toEqual(SOURCES.map((s) => s.url))
+    expect(links.map((a) => a.text())).toEqual([
+      "Bank of England (opens in new tab)",
+      "ONS (opens in new tab)",
+    ])
+    wrapper.unmount()
+  })
+
+  it("renders the actual published metadata verbatim", async () => {
+    const published = JSON.parse(
+      readFileSync(resolve("public/data/boe-rates-metadata.json"), "utf-8"),
+    )
+    mockFetchMetadata.mockResolvedValue(published)
+    const wrapper = mount(BoeRatesChart)
+    await flushPromises()
+    const p = citation(wrapper)
+    expect(p.text()).toContain(`accessed ${published.access_date}`)
+    expect(p.findAll("a").map((a) => a.attributes("href"))).toEqual(
+      published.sources.map((s: { url: string }) => s.url),
+    )
+    wrapper.unmount()
+  })
+
+  it.each(["", "  ", null, undefined])("shows no date when access_date is %j", async (date) => {
+    mockFetchMetadata.mockResolvedValue({
+      data_type: "live_ons",
+      access_date: date,
+      sources: SOURCES,
+    })
+    const wrapper = mount(BoeRatesChart)
+    await flushPromises()
+    expect(citation(wrapper).text()).not.toContain("accessed")
+    expect(citation(wrapper).findAll("a")).toHaveLength(2)
+    wrapper.unmount()
+  })
+
+  it("never invents a date while metadata loads or after a failed fetch", async () => {
+    mockFetchMetadata.mockRejectedValue(new Error("metadata unavailable"))
+    const wrapper = mount(BoeRatesChart)
+    expect(citation(wrapper).text()).not.toContain("accessed")
+    await flushPromises()
+    expect(citation(wrapper).text()).not.toContain("accessed")
+    expect(citation(wrapper).text()).not.toMatch(/\d{4}-\d{2}-\d{2}/)
+    wrapper.unmount()
+  })
+
+  it("ignores non-http(s) source urls from metadata", async () => {
+    mockFetchMetadata.mockResolvedValue({
+      data_type: "live_ons",
+      access_date: "2027-01-15",
+      sources: [{ name: "Bad", url: "javascript:alert(1)" }, SOURCES[1]],
+    })
+    const wrapper = mount(BoeRatesChart)
+    await flushPromises()
+    const hrefs = citation(wrapper)
+      .findAll("a")
+      .map((a) => a.attributes("href"))
+    expect(hrefs).toEqual([SOURCES[1].url])
     wrapper.unmount()
   })
 })
