@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import sys
 from pathlib import Path
 from unittest.mock import Mock
@@ -30,14 +31,66 @@ def pipeline_dirs(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     return tmp_path
 
 
-def test_failed_fetch_labels_fallback_through_api_and_static_export(
-    pipeline_dirs: Path, monkeypatch: pytest.MonkeyPatch,
+@pytest.mark.parametrize("entrypoint", ["fetch", "main"])
+@pytest.mark.parametrize("source", ["bank", "cpi"])
+@pytest.mark.parametrize("failure", ["download", "parse", "oserror"])
+@pytest.mark.parametrize("existing_outputs", [False, True])
+def test_failed_fetch_preserves_last_good_outputs(
+    pipeline_dirs: Path, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture,
+    entrypoint: str, source: str, failure: str, existing_outputs: bool,
+) -> None:
+    if existing_outputs:
+        for relative in (
+            "raw/boe_iumabedr.csv", "raw/ons_d7g7.csv", "raw/boe_iadb_rates.csv",
+            "raw/boe_iadb_rates.meta.json", "processed/boe_rates.csv",
+            "processed/boe_rates.meta.json", "charts/boe_rates.html",
+        ):
+            path = pipeline_dirs / relative
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(b"last-good\x00\xff\r\n")
+    before = {p.relative_to(pipeline_dirs): p.read_bytes() for p in pipeline_dirs.rglob("*") if p.is_file()}
+    paths_before = set(pipeline_dirs.rglob("*"))
+    bank_response = Mock(content=BANK_RATE_FIXTURE.read_bytes(), status_code=200)
+    if failure == "parse":
+        failed_response: object = Mock(content=b"<html>Upstream error</html>", status_code=200)
+    elif failure == "oserror":
+        failed_response = OSError("offline fixture read failed")
+    else:
+        failed_response = requests.ConnectionError("offline regression fixture")
+    responses = ([] if source == "bank" else [bank_response]) + [failed_response] * 4
+    monkeypatch.setattr(boe.requests, "get", Mock(side_effect=responses))
+    monkeypatch.setattr(sys, "argv", ["fetch_boe_rates.py"])
+
+    with caplog.at_level(logging.ERROR, logger=boe.__name__), pytest.raises(
+        RuntimeError, match="BoE IUMABEDR / ONS D7G7",
+    ) as error:
+        if entrypoint == "fetch":
+            boe.fetch()
+        else:
+            boe.main()
+
+    expected_error = ValueError if failure == "parse" else OSError if failure == "oserror" else requests.ConnectionError
+    assert isinstance(error.value.__cause__, expected_error)
+    assert {p.relative_to(pipeline_dirs): p.read_bytes() for p in pipeline_dirs.rglob("*") if p.is_file()} == before
+    assert set(pipeline_dirs.rglob("*")) == paths_before
+    assert any(record.name == boe.__name__ and record.levelno == logging.ERROR for record in caplog.records)
+    assert "using fallback data" not in caplog.text
+
+
+@pytest.mark.parametrize("entrypoint", ["fetch", "main"])
+def test_opt_in_failed_fetch_labels_fallback_through_api_and_static_export(
+    pipeline_dirs: Path, monkeypatch: pytest.MonkeyPatch, entrypoint: str,
 ) -> None:
     def unavailable(*args: object, **kwargs: object) -> None:
         raise requests.ConnectionError("offline regression fixture")
 
     monkeypatch.setattr(boe.requests, "get", unavailable)
-    frame = boe.process(boe.fetch())
+    if entrypoint == "fetch":
+        frame = boe.process(boe.fetch(allow_fallback=True))
+    else:
+        monkeypatch.setattr(sys, "argv", ["fetch_boe_rates.py", "--allow-illustrative-fallback"])
+        boe.main()
+        frame = pd.read_csv(pipeline_dirs / "processed/boe_rates.csv")
     processed = pipeline_dirs / "processed"
     sidecar = json.loads((processed / "boe_rates.meta.json").read_text())
     assert sidecar["data_type"] == "illustrative_fallback"
@@ -112,7 +165,7 @@ def test_successful_http_without_both_series_keeps_whole_dataset_illustrative(
 ) -> None:
     response = Mock(content=response_body, status_code=200)
     monkeypatch.setattr(boe.requests, "get", Mock(return_value=response))
-    result = boe.process(boe.fetch())
+    result = boe.process(boe.fetch(allow_fallback=True))
     expected = boe.process(boe._write_fallback(pipeline_dirs / "expected.csv"))
     pd.testing.assert_frame_equal(result, expected)
     assert result["data_type"].eq("illustrative_fallback").all()
@@ -328,7 +381,7 @@ def test_ons_outage_cannot_publish_partially_official_data(
         raise requests.ConnectionError("ONS unavailable")
 
     monkeypatch.setattr(boe.requests, "get", get)
-    result = boe.process(boe.fetch())
+    result = boe.process(boe.fetch(allow_fallback=True))
     assert result["data_type"].eq("illustrative_fallback").all()
     metadata = json.loads((pipeline_dirs / "processed/boe_rates.meta.json").read_text())
     assert metadata["access_date"] is None
