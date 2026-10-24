@@ -319,6 +319,9 @@ describe("source citation from metadata", () => {
     await flushPromises()
     const p = citation(wrapper)
     expect(p.text()).toContain(`accessed ${published.access_date}`)
+    // The series disclosure (monthly average, not end-month; D7G7) stays visible.
+    for (const s of published.sources) expect(p.text()).toContain(s.publication)
+    expect(p.text()).toContain("not end-month")
     expect(p.findAll("a").map((a) => a.attributes("href"))).toEqual(
       published.sources.map((s: { url: string }) => s.url),
     )

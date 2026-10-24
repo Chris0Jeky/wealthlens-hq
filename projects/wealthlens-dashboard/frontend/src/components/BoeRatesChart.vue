@@ -53,7 +53,7 @@ const FALLBACK_SOURCES = [
     url: "https://www.ons.gov.uk/economy/inflationandpriceindices/timeseries/d7g7/mm23",
   },
 ]
-const sources = ref<{ name: string; url: string }[]>(FALLBACK_SOURCES)
+const sources = ref<{ name: string; url: string; publication?: string }[]>(FALLBACK_SOURCES)
 const caveat = computed(() => {
   if (dataType.value === "illustrative_fallback") {
     return "Illustrative composite. Figures are worked examples, not published statistics."
@@ -293,7 +293,7 @@ const option = computed(() => {
           rel="noopener"
           class="underline hover:text-[var(--wl-ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--wl-red)] rounded"
           >{{ s.name }}<span class="sr-only"> (opens in new tab)</span></a
-        > </template
+        ><template v-if="s.publication"> ({{ s.publication }})</template> </template
       ><template v-if="accessDate">, accessed {{ accessDate }}</template>
     </p>
   </div>
