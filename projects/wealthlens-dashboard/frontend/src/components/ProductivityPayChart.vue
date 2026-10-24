@@ -19,16 +19,20 @@ import {
   LegendComponent,
 } from "echarts/components"
 import VChart from "vue-echarts"
+import { useChartTheme } from "@/composables/useChartTheme"
 import { useChartData } from "@/composables/useChartData"
 import type { EChartsExportable } from "@/composables/useChartExport"
 import { useDataStore } from "@/stores/data"
 import { escapeHtml, safeMinMax, toNumberOrNaN, warnIfSignificantDataLoss } from "@/utils/chart"
 import AccessibleDataTable from "@/components/AccessibleDataTable.vue"
 
+const { colors, axisStyle, markColor } = useChartTheme()
+
 // Register only the ECharts modules we need (tree-shaking)
 use([CanvasRenderer, LineChart, GridComponent, TooltipComponent, TitleComponent, LegendComponent])
 
-const { rows, loading, error } = useChartData("productivity-pay")
+const props = withDefaults(defineProps<{ range?: string }>(), { range: "All" })
+const { rows, loading, error } = useChartData("productivity-pay", () => props.range)
 const chart = ref<EChartsExportable | null>(null)
 
 defineExpose({ chart })
@@ -138,13 +142,14 @@ const option = computed(() => {
 
   return {
     animation: !prefersReducedMotion,
+    textStyle: { color: colors.value.text },
     title: {
       text: "Productivity vs Pay — The Growing Divergence",
       left: "center",
       textStyle: {
         fontSize: 16,
         fontWeight: "bold",
-        color: "#111827",
+        color: colors.value.heading,
       },
     },
     tooltip: {
@@ -161,9 +166,10 @@ const option = computed(() => {
       },
     },
     legend: {
+      inactiveColor: colors.value.muted,
       bottom: 0,
       data: ["Productivity (index)", "Real Pay (index)"],
-      textStyle: { color: "#374151" },
+      textStyle: { color: colors.value.text },
     },
     grid: {
       left: "3%",
@@ -173,23 +179,25 @@ const option = computed(() => {
       containLabel: true,
     },
     xAxis: {
+      ...axisStyle.value,
       type: "category" as const,
       data: data.years,
       name: "Year",
       nameLocation: "middle" as const,
       nameGap: 30,
       axisLabel: {
-        color: "#374151",
+        color: colors.value.text,
         rotate: data.years.length > 30 ? 45 : 0,
       },
     },
     yAxis: {
+      ...axisStyle.value,
       type: "value" as const,
       name: "Index (1997 = 100)",
       nameLocation: "middle" as const,
       nameGap: 50,
       axisLabel: {
-        color: "#374151",
+        color: colors.value.text,
       },
     },
     series: [
@@ -198,8 +206,8 @@ const option = computed(() => {
         type: "line" as const,
         data: data.productivity,
         smooth: !prefersReducedMotion,
-        lineStyle: { width: 2.5, color: COLOR_PRODUCTIVITY },
-        itemStyle: { color: COLOR_PRODUCTIVITY },
+        lineStyle: { width: 2.5, color: markColor(COLOR_PRODUCTIVITY) },
+        itemStyle: { color: markColor(COLOR_PRODUCTIVITY) },
         symbol: "circle",
         symbolSize: 4,
       },
@@ -208,8 +216,8 @@ const option = computed(() => {
         type: "line" as const,
         data: data.pay,
         smooth: !prefersReducedMotion,
-        lineStyle: { width: 2.5, color: COLOR_PAY },
-        itemStyle: { color: COLOR_PAY },
+        lineStyle: { width: 2.5, color: markColor(COLOR_PAY) },
+        itemStyle: { color: markColor(COLOR_PAY) },
         symbol: "circle",
         symbolSize: 4,
       },

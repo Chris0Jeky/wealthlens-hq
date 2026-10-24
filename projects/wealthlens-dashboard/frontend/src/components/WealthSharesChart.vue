@@ -26,6 +26,7 @@ import {
   LegendComponent,
 } from "echarts/components"
 import VChart from "vue-echarts"
+import { useChartTheme } from "@/composables/useChartTheme"
 import AccessibleDataTable from "@/components/AccessibleDataTable.vue"
 import { useChartData } from "@/composables/useChartData"
 import type { DatasetRow } from "@/stores/data"
@@ -33,10 +34,13 @@ import type { EChartsExportable } from "@/composables/useChartExport"
 import { escapeHtml, safeMinMax, toNumberOrNaN, warnIfSignificantDataLoss } from "@/utils/chart"
 import { COLOR_TOP_10, COLOR_TOP_1 } from "@/config/chartColors"
 
+const { colors, axisStyle, markColor } = useChartTheme()
+
 // Register only the ECharts modules we need (tree-shaking)
 use([CanvasRenderer, LineChart, GridComponent, TooltipComponent, TitleComponent, LegendComponent])
 
-const { rows, loading, error } = useChartData("wealth-shares")
+const props = withDefaults(defineProps<{ range?: string }>(), { range: "All" })
+const { rows, loading, error } = useChartData("wealth-shares", () => props.range)
 const chart = ref<EChartsExportable | null>(null)
 
 defineExpose({ chart })
@@ -141,13 +145,14 @@ const option = computed(() => {
 
   return {
     animation: !prefersReducedMotion,
+    textStyle: { color: colors.value.text },
     title: {
       text: "UK Wealth Concentration Over Time",
       left: "center",
       textStyle: {
         fontSize: 16,
         fontWeight: "bold",
-        color: "#111827",
+        color: colors.value.heading,
       },
     },
     tooltip: {
@@ -164,9 +169,10 @@ const option = computed(() => {
       },
     },
     legend: {
+      inactiveColor: colors.value.muted,
       bottom: 0,
       data: ["Top 10%", "Top 1%"],
-      textStyle: { color: "#374151" },
+      textStyle: { color: colors.value.text },
     },
     grid: {
       left: "3%",
@@ -176,23 +182,25 @@ const option = computed(() => {
       containLabel: true,
     },
     xAxis: {
+      ...axisStyle.value,
       type: "category" as const,
       data: years,
       name: "Year",
       nameLocation: "middle" as const,
       nameGap: 30,
       axisLabel: {
-        color: "#374151",
+        color: colors.value.text,
         rotate: years.length > 30 ? 45 : 0,
       },
     },
     yAxis: {
+      ...axisStyle.value,
       type: "value" as const,
       name: "Share of wealth (%)",
       nameLocation: "middle" as const,
       nameGap: 50,
       axisLabel: {
-        color: "#374151",
+        color: colors.value.text,
         formatter: "{value}%",
       },
     },
@@ -202,8 +210,8 @@ const option = computed(() => {
         type: "line" as const,
         data: top10Values,
         smooth: !prefersReducedMotion,
-        lineStyle: { width: 2.5, color: COLOR_TOP_10 },
-        itemStyle: { color: COLOR_TOP_10 },
+        lineStyle: { width: 2.5, color: markColor(COLOR_TOP_10) },
+        itemStyle: { color: markColor(COLOR_TOP_10) },
         symbol: "circle",
         symbolSize: 4,
       },
@@ -212,8 +220,8 @@ const option = computed(() => {
         type: "line" as const,
         data: top1Values,
         smooth: !prefersReducedMotion,
-        lineStyle: { width: 2.5, color: COLOR_TOP_1 },
-        itemStyle: { color: COLOR_TOP_1 },
+        lineStyle: { width: 2.5, color: markColor(COLOR_TOP_1) },
+        itemStyle: { color: markColor(COLOR_TOP_1) },
         symbol: "circle",
         symbolSize: 4,
       },

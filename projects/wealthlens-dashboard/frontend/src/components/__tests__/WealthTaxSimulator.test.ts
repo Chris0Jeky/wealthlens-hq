@@ -44,6 +44,17 @@ describe("WealthTaxSimulator", () => {
     expect(revenue.text()).toContain("£")
   })
 
+  it("labels the GDP year and displays the corrected default percentage", () => {
+    const wrapper = mount(WealthTaxSimulator, {
+      global: { stubs: globalStubs },
+    })
+    const gdpStat = wrapper
+      .findAll(".sim__stat")
+      .find((stat) => stat.find(".sim__stat-label").text() === "Revenue as % of 2023 GDP")
+    expect(gdpStat).toBeDefined()
+    expect(gdpStat!.find(".sim__stat-value").text()).toBe("0.63%")
+  })
+
   it("preset buttons populate sliders and update results", async () => {
     const wrapper = mount(WealthTaxSimulator, {
       global: { stubs: globalStubs },
@@ -179,6 +190,14 @@ describe("WealthTaxSimulator", () => {
     // Wealth Tax Commission source should be included
     expect(links[2].attributes("href")).toContain("ukwealth.tax")
     expect(wrapper.text()).toContain("Accessed 2026-05-17")
+    const gdpSource = wrapper.find(
+      '.sim__source-item:has(a[href="https://www.ons.gov.uk/economy/grossdomesticproductgdp/timeseries/ybha/qna"])',
+    )
+    expect(gdpSource.exists()).toBe(true)
+    expect(gdpSource.text()).toContain("ONS GDP at current market prices, 2023")
+    expect(gdpSource.text()).toContain("YBHA, QNA")
+    expect(gdpSource.text()).toContain("release 2026-09-30")
+    expect(gdpSource.text()).toContain("Accessed 2026-10-22")
   })
 
   it("has aria-live on results section for screen reader updates", () => {

@@ -54,10 +54,15 @@ export interface SimulationResult {
 export const TOTAL_UK_WEALTH = 15_200_000_000_000 // £15.2 trillion
 
 /**
- * UK GDP 2023 (approximate).
- * Source: ONS National Accounts
+ * UK GDP for calendar year 2023 at current market prices (GBP).
+ * Source: Office for National Statistics, YBHA, Quarterly National Accounts (QNA), seasonally adjusted.
+ * Observation: £2,766,446 million = £2,766,446,000,000.
+ * URL: https://www.ons.gov.uk/economy/grossdomesticproductgdp/timeseries/ybha/qna
+ * Release/vintage: 2026-09-30 (supersedes the 2026-08-13 PN2 first estimate of £2,752,164m)
+ * Accessed: 2026-10-22
  */
-export const UK_GDP = 2_300_000_000_000 // £2.3 trillion
+export const UK_GDP = 2_766_446_000_000
+export const UK_GDP_YEAR = 2023
 
 /**
  * Total UK households (approximate).
@@ -459,6 +464,11 @@ export const SIMULATOR_SOURCES = {
       label: "Wealth Tax Commission (2020), A wealth tax for the UK",
       url: "https://www.ukwealth.tax/",
       accessDate: "2026-05-17",
+    },
+    {
+      label: `ONS GDP at current market prices, ${UK_GDP_YEAR} (YBHA, QNA; release 2026-09-30)`,
+      url: "https://www.ons.gov.uk/economy/grossdomesticproductgdp/timeseries/ybha/qna",
+      accessDate: "2026-10-22",
     },
   ],
   disclaimer:

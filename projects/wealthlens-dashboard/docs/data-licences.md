@@ -1,6 +1,6 @@
 # Data Sources and Licences
 
-Last updated: 2026-06-27
+Last updated: 2026-10-22
 
 Every dataset used in WealthLens charts is listed here with its licence and attribution requirements. See also `research/data-sources/data-source-registry.md` for the full source catalogue.
 
@@ -30,6 +30,7 @@ Every dataset used in WealthLens charts is listed here with its licence and attr
 | Tool | Estimate/source | Publisher | Licence | Access date | URL |
 |---|---|---|---|---|---|
 | Wealth tax simulator | Total wealth and household wealth distribution anchors | ONS | OGL v3.0 | 2026-05-16 | https://www.ons.gov.uk/peoplepopulationandcommunity/personalandhouseholdfinances/incomeandwealth/bulletins/totalwealthingreatbritain/april2018tomarch2020 |
+| Wealth tax simulator | UK GDP at current market prices, 2023 (YBHA, QNA, release 2026-09-30), denominator for revenue as % of GDP | ONS | OGL v3.0 | 2026-10-22 | https://www.ons.gov.uk/economy/grossdomesticproductgdp/timeseries/ybha/qna |
 | WealthLens-Sim synth generator | WAS total wealth, median, top-decile/top-1% thresholds, wealth component shares | ONS | OGL v3.0 | 2026-05-30 | https://www.ons.gov.uk/peoplepopulationandcommunity/personalandhouseholdfinances/incomeandwealth/datasets/totalwealthwealthingreatbritain |
 | WealthLens-Sim synth generator | Great Britain household count and nation shares | ONS | OGL v3.0 | 2026-05-30 | https://www.ons.gov.uk/peoplepopulationandcommunity/birthsdeathsandmarriages/families/datasets/householdsbytypeofhouseholdandfamilyregionsofenglandandgbconstituentcountries/2022 |
 | Wealth tax simulator | Threshold taxpayer counts and taxable-base revenue modelling | Fiscal Studies / Wealth Tax Commission authors | CC-BY 4.0 | 2026-05-17 | https://doi.org/10.1111/1475-5890.12280 |
@@ -40,6 +41,11 @@ Every dataset used in WealthLens charts is listed here with its licence and attr
 | Wealth tax simulator | Free school meals comparison | Institute for Fiscal Studies | Source attribution required | 2026-05-17 | https://ifs.org.uk/articles/benefits-and-costs-expanding-access-free-school-meals-will-grow-over-time |
 
 ## Provenance notes
+
+- Bank Rate and CPI: both official CSV sources accessed 2026-10-22, updated monthly.
+  Join monthly observations from 2000 onwards over common coverage. IADB month-end
+  dates label the monthly average Bank Rate; chart dates label the same month as
+  YYYY-MM-01. No interpolation or forward fill is applied to official observations.
 
 - Inheritance Tax chart: HMRC Inheritance Tax Statistics 2021-22, Table 12.1 ("Estates notified and liable to IHT"), accessed 2026-05-16, transformed into `frontend/public/data/inheritance-tax.json`.
 

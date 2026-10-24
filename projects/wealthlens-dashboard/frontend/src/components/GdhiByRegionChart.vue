@@ -20,10 +20,13 @@ import {
   MarkLineComponent,
 } from "echarts/components"
 import VChart from "vue-echarts"
+import { useChartTheme } from "@/composables/useChartTheme"
 import { useChartData } from "@/composables/useChartData"
 import type { EChartsExportable } from "@/composables/useChartExport"
 import { escapeHtml, safeMinMax, toNumberOrNaN, warnIfSignificantDataLoss } from "@/utils/chart"
 import AccessibleDataTable from "@/components/AccessibleDataTable.vue"
+
+const { colors, axisStyle, markColor } = useChartTheme()
 
 // Register only the ECharts modules we need (tree-shaking)
 use([
@@ -114,13 +117,14 @@ const option = computed(() => {
 
   return {
     animation: !prefersReducedMotion,
+    textStyle: { color: colors.value.text },
     title: {
       text: "Gross Disposable Household Income by Region (2023)",
       left: "center",
       textStyle: {
         fontSize: 16,
         fontWeight: "bold",
-        color: "#111827",
+        color: colors.value.heading,
       },
     },
     tooltip: {
@@ -141,20 +145,22 @@ const option = computed(() => {
       containLabel: true,
     },
     xAxis: {
+      ...axisStyle.value,
       type: "value" as const,
       name: "GDHI per head (£)",
       nameLocation: "middle" as const,
       nameGap: 30,
       axisLabel: {
-        color: "#374151",
+        color: colors.value.text,
         formatter: (value: number) => `£${(value / 1000).toFixed(0)}k`,
       },
     },
     yAxis: {
+      ...axisStyle.value,
       type: "category" as const,
       data: [...data.regions].reverse(),
       axisLabel: {
-        color: "#374151",
+        color: colors.value.text,
         fontSize: 11,
       },
     },
@@ -168,10 +174,11 @@ const option = computed(() => {
             // Highlight above-average only when there IS a finite UK average;
             // otherwise show every bar in the default colour (never falsely grey
             // them against a fabricated £0 reference).
-            color:
+            color: markColor(
               !Number.isFinite(data.ukAvg) || data.values[data.regions.length - 1 - i] >= data.ukAvg
                 ? COLOR_BAR
                 : "#6b7280",
+            ),
           },
         })),
         barMaxWidth: 24,
@@ -179,7 +186,7 @@ const option = computed(() => {
           ? {
               silent: true,
               symbol: "none",
-              lineStyle: { color: COLOR_UK_AVG, type: "dashed" as const, width: 2 },
+              lineStyle: { color: markColor(COLOR_UK_AVG), type: "dashed" as const, width: 2 },
               data: [
                 { xAxis: data.ukAvg, label: { formatter: "UK avg", position: "end" as const } },
               ],

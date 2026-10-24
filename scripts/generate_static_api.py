@@ -192,7 +192,7 @@ def _read_csv_as_records(path: Path, slug: str = "") -> list[dict]:
 def _read_data_type(csv_path: Path, records: list[dict]) -> str | None:
     """Validate sidecar provenance against any marker carried in the CSV rows.
 
-    Match the API: missing provenance for productivity-pay, invalid sidecars or
+    Match the API: missing provenance for productivity-pay or boe-rates, invalid sidecars or
     contradictory CSV markers are unverified. Real static_published data remains
     genuine; legacy datasets without a sidecar retain None.
     """
@@ -200,7 +200,9 @@ def _read_data_type(csv_path: Path, records: list[dict]) -> str | None:
     try:
         sidecar = json.loads(meta_path.read_text(encoding="utf-8"))
     except FileNotFoundError:
-        return "unverified" if csv_path.name == DATASETS.get("productivity-pay") else None
+        return "unverified" if csv_path.name in (
+            DATASETS.get("productivity-pay"), DATASETS.get("boe-rates"),
+        ) else None
     except (json.JSONDecodeError, UnicodeDecodeError, OSError):
         return "unverified"
     value = sidecar.get("data_type") if isinstance(sidecar, dict) else None
@@ -365,6 +367,17 @@ def main() -> None:
 
         # Metadata response
         meta = DATASET_META.get(slug, {})
+        if slug == "boe-rates" and data_type == "live_ons":
+            # The pipeline sidecar records the actual two-source fetch and date.
+            sidecar = json.loads(csv_path.with_suffix(".meta.json").read_text(encoding="utf-8"))
+            sources = sidecar["sources"]
+            meta = {
+                **meta,
+                "description": sidecar["description"],
+                "source": " / ".join(source["name"] for source in sources),
+                "source_url": sidecar["source_url"],
+                "access_date": sidecar["access_date"],
+            }
         columns = list(records[0].keys()) if records else []
         meta_response = {
             "name": slug,
@@ -376,6 +389,8 @@ def main() -> None:
             "columns": columns,
             "data_type": data_type,
         }
+        if slug == "boe-rates" and data_type == "live_ons":
+            meta_response["sources"] = sources
         meta_path = OUT_DIR / f"{slug}-metadata.json"
         meta_path.write_text(
             json.dumps(meta_response, allow_nan=False), encoding="utf-8"

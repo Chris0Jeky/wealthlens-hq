@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs"
+import { resolve } from "node:path"
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { mount, flushPromises } from "@vue/test-utils"
 import { createPinia, setActivePinia } from "pinia"
@@ -189,6 +191,21 @@ describe("DataSourcesView", () => {
     const hrefs = links.map((l) => l.attributes("href"))
     expect(hrefs).toContain("https://wid.world/")
     expect(hrefs).toContain("https://www.gov.uk/government/statistics/capital-gains-tax-statistics")
+  })
+
+  it("shows both recorded BoE and ONS URLs on desktop and mobile", async () => {
+    const published: DatasetMetadata = JSON.parse(
+      readFileSync(resolve("public/data/boe-rates-metadata.json"), "utf-8"),
+    )
+    mockFetchAllMetadata.mockResolvedValue([published])
+    const wrapper = mountView()
+    await flushPromises()
+    for (const surface of [wrapper.get("tbody"), wrapper.get('[role="list"]')]) {
+      const hrefs = surface.findAll("a").map((link) => link.attributes("href"))
+      expect(hrefs).toEqual(published.sources!.map((source) => source.url))
+      expect(surface.text()).toContain(published.access_date)
+    }
+    wrapper.unmount()
   })
 
   it("shows source organisation names", async () => {

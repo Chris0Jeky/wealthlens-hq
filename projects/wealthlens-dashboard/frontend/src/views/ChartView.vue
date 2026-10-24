@@ -32,6 +32,8 @@ import { SITE_URL } from "@/constants/site"
 import ChartSkeleton from "@/components/ChartSkeleton.vue"
 import ChartLoadError from "@/components/ChartLoadError.vue"
 import { chartConfigs, simpleChartTitles } from "@/config/chartArticles"
+import { COLOR_TOP_1 } from "@/config/chartColors"
+import { useChartTheme } from "@/composables/useChartTheme"
 
 /**
  * Lazy-load chart components to avoid bundling ECharts on every route.
@@ -136,24 +138,44 @@ const hasFullConfig = computed(() => chartName.value in chartConfigs)
 /** The full config for the current chart, if available. */
 const config = computed(() => chartConfigs[chartName.value])
 
+const { markColor } = useChartTheme()
+const toolbarSeries = computed(() => {
+  const series = config.value?.toolbar.series ?? []
+  if (!["wealth-shares", "productivity-pay"].includes(chartName.value)) return series
+  return series.map((item) => ({
+    ...item,
+    // Real Pay uses the same fixed red palette as wealth shares, not the brand token.
+    color: markColor(item.color === "var(--wl-red)" ? COLOR_TOP_1 : item.color),
+  }))
+})
+
 /** Whether this chart name is supported at all (full or simple). */
 const isSupported = computed(
   () => chartName.value in chartConfigs || chartName.value in simpleChartTitles,
 )
 
-/** Active range for toolbar (local UI state). */
-const activeRange = ref("")
+/**
+ * Only these charts offer selectable time windows and accept the range prop.
+ * Default off (new behaviour ships toggleable): without VITE_CHART_RANGE_FILTER=on no
+ * range controls render and every chart plots its full dataset.
+ */
+const timeRanges = computed(() =>
+  import.meta.env.VITE_CHART_RANGE_FILTER === "on" &&
+  ["wealth-shares", "productivity-pay", "boe-rates"].includes(chartName.value)
+    ? ["All", ...(config.value?.toolbar.ranges ?? []).filter((range) => range !== "All")]
+    : [],
+)
+
+/** All preserves the full dataset until the reader selects a shorter window. */
+const activeRange = ref("All")
 
 /**
- * Reset activeRange to the chart's default when navigating between charts.
- * This prevents stale range selections from persisting across pages
- * (e.g. "200y" showing on a chart that only has ["All", "10y", "5y"]).
+ * Reset the range when navigating so each chart starts with its full dataset.
  */
 watch(
   () => chartName.value,
-  (name) => {
-    const cfg = chartConfigs[name]
-    activeRange.value = cfg?.toolbar.defaultRange ?? ""
+  () => {
+    activeRange.value = "All"
   },
   { immediate: true },
 )
@@ -319,8 +341,8 @@ usePageMeta({
           <ChartToolbar
             :title="config.toolbar.title"
             :unit="config.toolbar.unit"
-            :series="config.toolbar.series"
-            :ranges="config.toolbar.ranges"
+            :series="toolbarSeries"
+            :ranges="timeRanges"
             :active-range="activeRange"
             @range-change="onRangeChange"
           />
@@ -329,17 +351,26 @@ usePageMeta({
           </div>
         </div>
         <div class="chart-stage">
-          <WealthSharesChart v-if="chartName === 'wealth-shares'" ref="chartComponentRef" />
+          <WealthSharesChart
+            v-if="chartName === 'wealth-shares'"
+            ref="chartComponentRef"
+            :range="activeRange"
+          />
           <ProductivityPayChart
             v-else-if="chartName === 'productivity-pay'"
             ref="chartComponentRef"
+            :range="activeRange"
           />
           <GdhiByRegionChart v-else-if="chartName === 'gdhi-by-region'" ref="chartComponentRef" />
           <TaxCompositionChart
             v-else-if="chartName === 'tax-composition'"
             ref="chartComponentRef"
           />
-          <BoeRatesChart v-else-if="chartName === 'boe-rates'" ref="chartComponentRef" />
+          <BoeRatesChart
+            v-else-if="chartName === 'boe-rates'"
+            ref="chartComponentRef"
+            :range="activeRange"
+          />
           <ChildPovertyChart v-else-if="chartName === 'child-poverty'" ref="chartComponentRef" />
           <GenerationalWealthChart
             v-else-if="chartName === 'generational-wealth'"
@@ -354,8 +385,14 @@ usePageMeta({
           <div class="chart-source-bar__left">
             <span>
               Source:
-              <a :href="config.source.url" target="_blank" rel="noopener">
-                {{ config.source.name }}
+              <a
+                v-for="link in config.source.links ?? [config.source]"
+                :key="link.url"
+                :href="link.url"
+                target="_blank"
+                rel="noopener"
+              >
+                {{ link.name }}
               </a>
             </span>
             <span aria-hidden="true">&middot;</span>

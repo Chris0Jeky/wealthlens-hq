@@ -119,10 +119,11 @@ DATASET_META: dict[str, dict[str, str]] = {
         "access_date": "2026-05-16",
     },
     "boe-rates": {
-        "description": "Bank Rate and CPI annual inflation",
-        "source": "Bank of England Interactive Analytical Database",
-        "source_url": ("https://www.bankofengland.co.uk/boeapps/database/"),
-        "access_date": "2026-05-16",
+        "description": "Monthly average of official Bank Rate (BoE IUMABEDR) and CPI annual inflation (ONS D7G7, MM23).",
+        "source": "Bank of England / ONS",
+        "source_url": "https://www.bankofengland.co.uk/boeapps/database/",
+        # The access date belongs to the recorded fetch, never a hard-coded API vintage.
+        "access_date": "",
     },
     "child-poverty": {
         "description": "Child poverty rates by UK region (after housing costs)",
@@ -190,13 +191,39 @@ def _read_csv(dataset_name: str) -> pd.DataFrame:
         ) from e
 
 
+def _citation_metadata(dataset_name: str) -> dict[str, Any]:
+    """Prefer recorded pipeline citations, then the committed last-good static reference."""
+    if dataset_name != "boe-rates":
+        return DATASET_META[dataset_name]
+    sidecar_path = (DATA_DIR / DATASETS[dataset_name]).with_suffix(".meta.json")
+    static_path = FilePath(__file__).resolve().parents[3] / "frontend/public/data/boe-rates-metadata.json"
+    for path in (sidecar_path, static_path):
+        try:
+            metadata = json.loads(path.read_bytes())
+            sources = metadata["sources"]
+            if not isinstance(sources, list) or not sources:
+                continue
+            return {
+                "description": metadata["description"],
+                "source": " / ".join(source["name"] for source in sources),
+                "source_url": metadata.get("source_url", sources[0]["url"]),
+                "access_date": metadata.get("access_date") or "",
+                "sources": sources,
+            }
+        except (OSError, ValueError, KeyError, TypeError):
+            # The data_type helper independently marks missing/corrupt evidence unverified.
+            continue
+    # Backend-only distributions may omit the static assets. Keep the catalog available.
+    return {**DATASET_META[dataset_name], "sources": []}
+
+
 def _build_metadata(dataset_name: str) -> dict[str, Any]:
     """Build the full metadata dict for a single dataset.
 
     Uses a module-level cache so that CSV files are only read once for
     row_count and column information.
     """
-    meta = DATASET_META[dataset_name]
+    meta = _citation_metadata(dataset_name)
 
     if dataset_name not in _metadata_cache:
         df = _read_csv(dataset_name)
@@ -211,10 +238,7 @@ def _build_metadata(dataset_name: str) -> dict[str, Any]:
 
     return {
         "name": dataset_name,
-        "description": meta["description"],
-        "source": meta["source"],
-        "source_url": meta["source_url"],
-        "access_date": meta["access_date"],
+        **meta,
         "available": True,
         "row_count": row_count,
         "columns": columns,
@@ -248,7 +272,7 @@ def _build_metadata_safe(dataset_name: str) -> dict[str, Any]:
         return _build_metadata(dataset_name)
     except Exception:
         logger.exception("metadata: %s unavailable; serving citation-only entry", dataset_name)
-        meta = DATASET_META[dataset_name]
+        meta = _citation_metadata(dataset_name)
         # The recovery path must NOT itself raise — its whole purpose is to keep the
         # catalog up when one dataset fails — so degrade each provenance helper to
         # None on any error (a single bad sidecar can never 500 every dataset's
@@ -263,13 +287,10 @@ def _build_metadata_safe(dataset_name: str) -> dict[str, Any]:
             data_type = _get_data_type(dataset_name)
         except Exception:
             logger.exception("metadata recovery: data_type failed for %s", dataset_name)
-            data_type = "unverified" if dataset_name == "productivity-pay" else None
+            data_type = "unverified" if dataset_name in ("productivity-pay", "boe-rates") else None
         return {
             "name": dataset_name,
-            "description": meta["description"],
-            "source": meta["source"],
-            "source_url": meta["source_url"],
-            "access_date": meta["access_date"],
+            **meta,
             "available": False,
             "row_count": None,
             "columns": [],
@@ -315,7 +336,7 @@ def _get_data_type(dataset_name: str) -> str | None:
     switches a dataset between live and fallback data must be reflected without
     a server restart. CSV provenance markers are corroborated on every read.
 
-    Missing provenance for productivity-pay (which can be synthetic), invalid
+    Missing provenance for productivity-pay or boe-rates (which can be synthetic), invalid
     sidecars, and contradictory CSV markers return "unverified". Legacy datasets
     without a sidecar retain None; verified static_published data stays genuine.
     """
@@ -323,7 +344,7 @@ def _get_data_type(dataset_name: str) -> str | None:
     try:
         raw = sidecar_path.read_bytes()
     except FileNotFoundError:
-        return "unverified" if dataset_name == "productivity-pay" else None
+        return "unverified" if dataset_name in ("productivity-pay", "boe-rates") else None
     except OSError as exc:
         # A present-but-unreadable sidecar is an error, not "no provenance": for an
         # illustrative dataset, unknown provenance must retain a public caveat.

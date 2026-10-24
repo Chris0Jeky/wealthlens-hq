@@ -53,9 +53,14 @@ const fetchedSource = ref<{ name: string; url: string; accessed: string } | null
 const source = computed(() => {
   const config = chartConfigs[chartName.value]
   if (config) {
-    return { name: config.source.name, url: config.source.url, accessed: config.source.accessed }
+    return {
+      accessed: config.source.accessed,
+      links: config.source.links ?? [{ name: config.source.name, url: config.source.url }],
+    }
   }
   return fetchedSource.value
+    ? { accessed: fetchedSource.value.accessed, links: [fetchedSource.value] }
+    : null
 })
 
 /** Provenance caveats must travel with the artifact, even if metadata is unavailable. */
@@ -132,7 +137,15 @@ usePageMeta({
       <span class="embed-source">
         <template v-if="source">
           Source:
-          <a :href="source.url" target="_blank" rel="noopener">{{ source.name }}</a>
+          <a
+            v-for="link in source.links"
+            :key="link.url"
+            :href="link.url"
+            target="_blank"
+            rel="noopener"
+          >
+            {{ link.name }}
+          </a>
           <template v-if="source.accessed"> · accessed {{ source.accessed }}</template>
           <template v-if="provenance"> · {{ provenance.licence }}</template>
         </template>

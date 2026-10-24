@@ -1,3 +1,32 @@
+import type { DatasetRow } from "@/types/api"
+
+/** Normalize live and static rows at the shared frontend chart boundary. */
+export function parseChartRows(datasetName: string, rows: DatasetRow[]): DatasetRow[] {
+  if (datasetName !== "wealth-shares") return rows
+  return rows.map((row) => {
+    if (row.percentile || typeof row.variable !== "string" || !row.variable) return row
+    // Port of scripts/generate_static_api.py::_extract_percentile. Keep raw
+    // values intact; only derive the grouping key missing from live API rows.
+    const percentile = row.variable.match(/(p\d+p\d+)/)?.[1] ?? row.variable
+    return { ...row, percentile }
+  })
+}
+
+/** Latest N calendar years, including the newest year; All preserves every row. */
+export function filterChartRowsByRange(rows: DatasetRow[], range: string): DatasetRow[] {
+  const match = range.match(/^([1-9]\d*)y$/)
+  if (!match) return rows
+  const yearOf = (row: DatasetRow): number => {
+    if (row.year != null) return toNumberOrNaN(row.year)
+    return typeof row.date === "string" ? new Date(row.date).getUTCFullYear() : NaN
+  }
+  const years = rows.map(yearOf)
+  const validYears = years.filter(Number.isFinite)
+  if (validYears.length === 0) return []
+  const firstYear = safeMinMax(validYears).max - Number(match[1]) + 1
+  return rows.filter((_, i) => Number.isFinite(years[i]) && years[i] >= firstYear)
+}
+
 /** Escape HTML special characters to prevent XSS in tooltip content. */
 export function escapeHtml(str: string): string {
   return str
