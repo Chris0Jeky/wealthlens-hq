@@ -9,7 +9,7 @@
  *
  * Accessibility: WCAG AA high-contrast colors, aria-label, keyboard tooltip.
  */
-import { computed, ref } from "vue"
+import { computed, onMounted, ref } from "vue"
 import { use } from "echarts/core"
 import { CanvasRenderer } from "echarts/renderers"
 import { LineChart } from "echarts/charts"
@@ -24,6 +24,7 @@ import { useChartData } from "@/composables/useChartData"
 import type { EChartsExportable } from "@/composables/useChartExport"
 import { escapeHtml, safeMinMax, toNumberOrNaN, warnIfSignificantDataLoss } from "@/utils/chart"
 import AccessibleDataTable from "@/components/AccessibleDataTable.vue"
+import { useDataStore } from "@/stores/data"
 
 // Register only the ECharts modules we need (tree-shaking)
 use([CanvasRenderer, LineChart, GridComponent, TooltipComponent, TitleComponent, LegendComponent])
@@ -33,6 +34,27 @@ const { rows, loading, error } = useChartData("boe-rates", () => props.range)
 const chart = ref<EChartsExportable | null>(null)
 
 defineExpose({ chart })
+
+// Reuse the embed's provenance rules and the existing chart caveat styling.
+// Missing metadata must not imply that fallback-capable data is official.
+const dataType = ref<string | null | undefined>(null)
+const caveat = computed(() => {
+  if (dataType.value === "illustrative_fallback") {
+    return "Illustrative composite. Figures are worked examples, not published statistics."
+  }
+  if (dataType.value === "live_ons" || dataType.value === "static_published") return ""
+  return "Unverified provenance. These figures have not been verified as official statistics."
+})
+const store = useDataStore()
+
+onMounted(async () => {
+  try {
+    const meta = await store.fetchMetadata("boe-rates")
+    dataType.value = meta.data_type
+  } catch {
+    // Keep the unverified caveat when metadata cannot be loaded.
+  }
+})
 
 /**
  * Respect prefers-reduced-motion (WCAG 2.3.3).
@@ -171,7 +193,6 @@ const option = computed(() => {
         type: "line" as const,
         data: data.bankRate,
         smooth: false,
-        step: "end" as const,
         lineStyle: { width: 2.5, color: COLOR_BANK_RATE },
         itemStyle: { color: COLOR_BANK_RATE },
         symbol: "circle",
@@ -220,7 +241,7 @@ const option = computed(() => {
   <div v-else>
     <div
       role="img"
-      :aria-label="`Line chart showing Bank of England base rate and CPI inflation from ${chartData.dates[0]} to ${chartData.dates[chartData.dates.length - 1]}. Bank rate ranged from ${rateRange.min.toFixed(2)}% to ${rateRange.max.toFixed(2)}%. CPI inflation ranged from ${cpiRange.min.toFixed(1)}% to ${cpiRange.max.toFixed(1)}%.`"
+      :aria-label="`Line chart showing Bank of England base rate and CPI inflation from ${chartData.dates[0]} to ${chartData.dates[chartData.dates.length - 1]}. Bank rate ranged from ${rateRange.min.toFixed(2)}% to ${rateRange.max.toFixed(2)}%. CPI inflation ranged from ${cpiRange.min.toFixed(1)}% to ${cpiRange.max.toFixed(1)}%. ${caveat}`"
       class="w-full"
     >
       <VChart ref="chart" class="w-full" style="height: 480px" :option="option" autoresize />
@@ -231,29 +252,35 @@ const option = computed(() => {
       :rows="tableRows"
       :columns="tableColumns"
       :numeric-columns="tableNumericColumns"
-      caption="Bank of England base rate (%) and CPI annual inflation rate (%) by date, in chronological order. Source: Bank of England (Bank Rate) and ONS (CPI)."
+      :caption="`Monthly average of official Bank Rate (%) and CPI annual inflation rate (%) by date, in chronological order. Source: Bank of England (Bank Rate) and ONS (CPI). ${caveat}`"
     />
+
+    <p v-if="caveat" role="note" class="text-xs text-[var(--wl-ink-muted)] mt-2 text-center italic">
+      {{ caveat }}
+    </p>
 
     <!-- Source citation -->
     <p class="text-sm text-[var(--wl-ink-muted)] mt-4 text-center">
       Source:
       <a
-        href="https://www.bankofengland.co.uk/monetary-policy/the-interest-rate-bank-rate"
+        href="https://www.bankofengland.co.uk/boeapps/database/Bank-Rate.asp"
         target="_blank"
         rel="noopener"
         class="underline hover:text-[var(--wl-ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--wl-red)] rounded"
       >
-        Bank of England<span class="sr-only"> (opens in new tab)</span></a
+        Bank of England (IUMABEDR, monthly average)<span class="sr-only">
+          (opens in new tab)</span
+        ></a
       >
       /
       <a
-        href="https://www.ons.gov.uk/economy/inflationandpriceindices"
+        href="https://www.ons.gov.uk/economy/inflationandpriceindices/timeseries/d7g7/mm23"
         target="_blank"
         rel="noopener"
         class="underline hover:text-[var(--wl-ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--wl-red)] rounded"
       >
-        ONS CPI<span class="sr-only"> (opens in new tab)</span></a
-      >, accessed 2026-05-14
+        ONS CPI (D7G7)<span class="sr-only"> (opens in new tab)</span></a
+      >, accessed 2026-10-22
     </p>
   </div>
 </template>

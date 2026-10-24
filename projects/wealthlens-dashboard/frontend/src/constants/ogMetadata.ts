@@ -71,10 +71,10 @@ export const OG_METADATA: Record<string, OgMetadataEntry> = {
     sourceAccessDate: "2026-05-16",
   },
   "boe-rates": {
-    title: "Bank Rate and Inflation",
-    subtitle: "Bank of England rates alongside CPI inflation history",
-    source: "Bank of England Interactive Database",
-    sourceAccessDate: "2026-05-16",
+    title: "Monthly Bank Rate and Inflation",
+    subtitle: "Monthly average of official Bank Rate (IUMABEDR) and CPI annual rate (D7G7, MM23)",
+    source: "BoE IUMABEDR / ONS D7G7 (MM23)",
+    sourceAccessDate: "2026-10-22",
   },
   "child-poverty": {
     title: "Child Poverty by Region",

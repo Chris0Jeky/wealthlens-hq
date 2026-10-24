@@ -18,6 +18,7 @@ import json
 import re
 import sys
 from collections.abc import Callable
+from datetime import date
 from pathlib import Path
 from typing import Any
 
@@ -126,9 +127,14 @@ DATASET_META: dict[str, dict[str, Any]] = {
 def _child_poverty_source_matches(sidecar: dict[str, Any]) -> bool:
     """Require the pinned HBAI source, tables, AHC measure and averaging period."""
     expected = DATASET_META["child-poverty"]
+    try:
+        # The access date is the fetch's own record; the download URL pins the table pack.
+        date.fromisoformat(sidecar["access_date"])
+    except (KeyError, TypeError, ValueError):
+        return False
     return all(
         sidecar.get(key) == expected[key]
-        for key in ("source", "source_url", "access_date", "download_url", "tables", "period", "measure")
+        for key in ("source", "source_url", "download_url", "tables", "period", "measure")
     )
 
 
@@ -218,7 +224,7 @@ def _read_csv_as_records(path: Path, slug: str = "") -> list[dict]:
 def _read_data_type(csv_path: Path, records: list[dict]) -> str | None:
     """Validate sidecar provenance against any marker carried in the CSV rows.
 
-    Match the API: missing provenance for productivity-pay or child-poverty, invalid sidecars or
+    Match the API: missing provenance for productivity-pay, boe-rates or child-poverty, invalid sidecars or
     contradictory CSV markers are unverified. Real static_published data remains
     genuine only when its source matches the catalogue; other legacy datasets without a sidecar retain None.
     """
@@ -226,7 +232,9 @@ def _read_data_type(csv_path: Path, records: list[dict]) -> str | None:
     try:
         sidecar = json.loads(meta_path.read_text(encoding="utf-8"))
     except FileNotFoundError:
-        return "unverified" if csv_path.name in (DATASETS.get("productivity-pay"), DATASETS.get("child-poverty")) else None
+        return "unverified" if csv_path.name in (
+            DATASETS.get("productivity-pay"), DATASETS.get("boe-rates"), DATASETS.get("child-poverty"),
+        ) else None
     except (json.JSONDecodeError, UnicodeDecodeError, OSError):
         return "unverified"
     value = sidecar.get("data_type") if isinstance(sidecar, dict) else None
@@ -393,6 +401,21 @@ def main() -> None:
 
         # Metadata response
         meta = _metadata_citation(slug, data_type)
+        if slug == "child-poverty" and data_type in ("live_ons", "static_published"):
+            # Verified sidecar: publish the fetch's own access date.
+            sidecar = json.loads(csv_path.with_suffix(".meta.json").read_text(encoding="utf-8"))
+            meta["access_date"] = sidecar["access_date"]
+        if slug == "boe-rates" and data_type == "live_ons":
+            # The pipeline sidecar records the actual two-source fetch and date.
+            sidecar = json.loads(csv_path.with_suffix(".meta.json").read_text(encoding="utf-8"))
+            sources = sidecar["sources"]
+            meta = {
+                **meta,
+                "description": sidecar["description"],
+                "source": " / ".join(source["name"] for source in sources),
+                "source_url": sidecar["source_url"],
+                "access_date": sidecar["access_date"],
+            }
         columns = list(records[0].keys()) if records else []
         meta_response = {
             "name": slug,
@@ -407,6 +430,8 @@ def main() -> None:
         if slug == "child-poverty" and data_type in ("live_ons", "static_published"):
             for key in ("download_url", "tables", "period", "measure", "rounding"):
                 meta_response[key] = meta[key]
+        if slug == "boe-rates" and data_type == "live_ons":
+            meta_response["sources"] = sources
         meta_path = OUT_DIR / f"{slug}-metadata.json"
         meta_path.write_text(
             json.dumps(meta_response, allow_nan=False), encoding="utf-8"

@@ -32,6 +32,8 @@ import { SITE_URL } from "@/constants/site"
 import ChartSkeleton from "@/components/ChartSkeleton.vue"
 import ChartLoadError from "@/components/ChartLoadError.vue"
 import { chartConfigs, simpleChartTitles } from "@/config/chartArticles"
+import { COLOR_TOP_1 } from "@/config/chartColors"
+import { useChartTheme } from "@/composables/useChartTheme"
 
 /**
  * Lazy-load chart components to avoid bundling ECharts on every route.
@@ -135,6 +137,17 @@ const hasFullConfig = computed(() => chartName.value in chartConfigs)
 
 /** The full config for the current chart, if available. */
 const config = computed(() => chartConfigs[chartName.value])
+
+const { markColor } = useChartTheme()
+const toolbarSeries = computed(() => {
+  const series = config.value?.toolbar.series ?? []
+  if (!["wealth-shares", "productivity-pay"].includes(chartName.value)) return series
+  return series.map((item) => ({
+    ...item,
+    // Real Pay uses the same fixed red palette as wealth shares, not the brand token.
+    color: markColor(item.color === "var(--wl-red)" ? COLOR_TOP_1 : item.color),
+  }))
+})
 
 /** Whether this chart name is supported at all (full or simple). */
 const isSupported = computed(
@@ -328,7 +341,7 @@ usePageMeta({
           <ChartToolbar
             :title="config.toolbar.title"
             :unit="config.toolbar.unit"
-            :series="config.toolbar.series"
+            :series="toolbarSeries"
             :ranges="timeRanges"
             :active-range="activeRange"
             @range-change="onRangeChange"
@@ -372,8 +385,14 @@ usePageMeta({
           <div class="chart-source-bar__left">
             <span>
               Source:
-              <a :href="config.source.url" target="_blank" rel="noopener">
-                {{ config.source.name }}
+              <a
+                v-for="link in config.source.links ?? [config.source]"
+                :key="link.url"
+                :href="link.url"
+                target="_blank"
+                rel="noopener"
+              >
+                {{ link.name }}
               </a>
             </span>
             <span aria-hidden="true">&middot;</span>

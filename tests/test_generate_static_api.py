@@ -204,7 +204,7 @@ def test_generator_skips_csv_mirror_for_nc_nd_dataset(
 
 @pytest.mark.parametrize("case", [
     "current", "static-current", "legacy", "missing", "corrupt", "source", "source_url",
-    "download_url", "tables", "period", "measure", "access_date",
+    "download_url", "tables", "period", "measure", "access_date", "later-fetch",
 ])
 def test_child_poverty_static_metadata_requires_hbai_sidecar(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, case: str
@@ -214,6 +214,9 @@ def test_child_poverty_static_metadata_requires_hbai_sidecar(
     sidecar = current.copy()
     if case == "static-current":
         sidecar["data_type"] = "static_published"
+    elif case == "later-fetch":
+        # A re-fetch of the pinned table pack on another day stays verified.
+        sidecar["access_date"] = "2027-01-15"
     elif case == "legacy":
         sidecar = {
             "data_type": "static_published",
@@ -223,7 +226,7 @@ def test_child_poverty_static_metadata_requires_hbai_sidecar(
         }
     elif case not in ("current", "missing", "corrupt"):
         sidecar[case] = ["4.16ts"] if case == "tables" else "mismatch"
-    verified = case in ("current", "static-current")
+    verified = case in ("current", "static-current", "later-fetch")
     csv = tmp_path / "child_poverty_by_region.csv"
     csv.write_text(
         "region,child_poverty_pct,children_in_poverty,national_avg_pct,above_national_avg\n"
@@ -246,7 +249,7 @@ def test_child_poverty_static_metadata_requires_hbai_sidecar(
     if verified:
         assert metadata["data_type"] == sidecar["data_type"]
         for key in ("source", "source_url", "access_date", "download_url", "tables", "period", "measure"):
-            assert metadata[key] == current[key]
+            assert metadata[key] == sidecar[key]
     else:
         assert metadata["data_type"] == "unverified"
         assert metadata["source"] == "Unverified child-poverty data"

@@ -43,7 +43,8 @@ const CHARTS = {
   "boe-rates": {
     name: "boe-rates",
     title: "Bank of England Rates",
-    description: "Bank Rate history and monetary policy changes (Bank of England)",
+    description:
+      "Monthly-average official Bank Rate (BoE IUMABEDR) and CPI annual rate (ONS D7G7, MM23)",
   },
   "child-poverty": {
     name: "child-poverty",

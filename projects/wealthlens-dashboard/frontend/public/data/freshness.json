@@ -6,7 +6,7 @@
   "productivity-pay": { "last_updated": "2026-04-10", "source": "ONS" },
   "gdhi-by-region": { "last_updated": "2026-05-16", "source": "ONS/Nomis" },
   "tax-composition": { "last_updated": "2026-05-16", "source": "HMRC" },
-  "boe-rates": { "last_updated": "2026-05-16", "source": "Bank of England" },
+  "boe-rates": { "last_updated": "2026-10-22", "source": "Bank of England / ONS" },
   "child-poverty": { "last_updated": "2026-03-01", "source": "DWP/HBAI" },
   "generational-wealth": { "last_updated": "2026-05-16", "source": "Resolution Foundation" },
   "wage-stagnation": { "last_updated": "2026-05-16", "source": "ONS ASHE" },

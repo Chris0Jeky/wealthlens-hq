@@ -159,8 +159,14 @@ function formatDatasetName(name: string): string {
                 {{ ds.description }}
               </td>
               <td class="py-3 px-4">
-                <ExternalLink :href="ds.source_url">
-                  {{ ds.source }}
+                <ExternalLink
+                  v-for="source in ds.sources?.length
+                    ? ds.sources
+                    : [{ name: ds.source, url: ds.source_url }]"
+                  :key="source.url"
+                  :href="source.url"
+                >
+                  {{ source.name }}
                 </ExternalLink>
               </td>
               <td class="py-3 px-4 text-[var(--wl-ink-body)]">
@@ -198,8 +204,14 @@ function formatDatasetName(name: string): string {
             <div class="flex gap-2">
               <dt class="font-medium text-[var(--wl-ink)] min-w-[5rem]">Source:</dt>
               <dd>
-                <ExternalLink :href="ds.source_url">
-                  {{ ds.source }}
+                <ExternalLink
+                  v-for="source in ds.sources?.length
+                    ? ds.sources
+                    : [{ name: ds.source, url: ds.source_url }]"
+                  :key="source.url"
+                  :href="source.url"
+                >
+                  {{ source.name }}
                 </ExternalLink>
               </dd>
             </div>
