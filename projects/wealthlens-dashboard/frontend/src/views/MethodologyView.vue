@@ -9,6 +9,7 @@
 import { DATASET_PROVENANCE } from "@/constants/datasetProvenance"
 import { usePageMeta } from "@/composables/usePageMeta"
 import { SITE_URL } from "@/constants/site"
+import childPovertySource from "../../public/data/child-poverty-metadata.json"
 
 usePageMeta({
   title: "Methodology",
@@ -103,11 +104,10 @@ const DATASET_CITATIONS: Omit<DatasetSource, "updateFrequency">[] = [
   },
   {
     name: "child-poverty",
-    description: "Child poverty rates by UK region (after housing costs)",
-    source: "DWP/HMRC Children in Low Income Families",
-    sourceUrl:
-      "https://www.gov.uk/government/statistics/children-in-low-income-families-local-area-statistics-2014-to-2023",
-    accessDate: "2026-05-16",
+    description: childPovertySource.description,
+    source: childPovertySource.source,
+    sourceUrl: childPovertySource.download_url,
+    accessDate: childPovertySource.access_date,
   },
   {
     name: "generational-wealth",

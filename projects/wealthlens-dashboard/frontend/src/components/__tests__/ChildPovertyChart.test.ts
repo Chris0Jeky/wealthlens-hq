@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
-import { mount } from "@vue/test-utils"
+import { flushPromises, mount } from "@vue/test-utils"
 import { createPinia, setActivePinia } from "pinia"
 import { ref, shallowRef } from "vue"
 
@@ -16,6 +16,11 @@ import { ref, shallowRef } from "vue"
  * The component reads data through useChartData(), so we mock that composable
  * (mirroring the other chart tests) to drive rows/loading/error directly.
  */
+
+const { mockFetchMetadata } = vi.hoisted(() => ({ mockFetchMetadata: vi.fn() }))
+vi.mock("@/stores/data", () => ({
+  useDataStore: () => ({ fetchMetadata: mockFetchMetadata }),
+}))
 
 let mockRows: ReturnType<typeof shallowRef>
 let mockLoading: ReturnType<typeof ref>
@@ -50,6 +55,8 @@ vi.mock("echarts/components", () => ({
 }))
 
 import ChildPovertyChart from "@/components/ChildPovertyChart.vue"
+import { chartConfigs } from "@/config/chartArticles"
+import childPovertySource from "../../../public/data/child-poverty-metadata.json"
 
 /**
  * Two regions with deliberately distinct values per column so a column swap would
@@ -77,6 +84,7 @@ const CHILD_POVERTY_ROWS = [
 describe("ChildPovertyChart accessible data table", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockFetchMetadata.mockResolvedValue(childPovertySource)
     setActivePinia(createPinia())
     mockRows = shallowRef(CHILD_POVERTY_ROWS)
     mockLoading = ref(false)
@@ -131,15 +139,112 @@ describe("ChildPovertyChart accessible data table", () => {
     expect(cells(1)).toEqual(["South East", fmt(22), fmt(310000), fmt(29.8)])
   })
 
-  it("captions the table with the registered DWP/HMRC source and the estimate caveat", () => {
+  it("cites the official AHC tables, averaging period and published precision", async () => {
     const wrapper = mount(ChildPovertyChart)
+    await flushPromises()
     const caption = wrapper.find("table caption").text()
-    expect(caption).toContain("Child poverty rate (%) by UK region")
-    // Must cite the REGISTERED source (registries/sources.yml + backend
-    // metadata), not the unrelated HBAI collection the chart used to credit.
-    expect(caption).toContain("Source: DWP/HMRC Children in Low Income Families")
-    expect(caption).not.toContain("HBAI")
-    expect(caption).toContain("estimates")
+    expect(caption).toContain("after housing costs (AHC)")
+    expect(caption).toContain("2021/22 to 2023/24 (three-year average)")
+    expect(caption).toContain(
+      "Source: DWP Households Below Average Income (HBAI), tables 4.16ts and 4.17ts",
+    )
+    expect(caption).toContain("nearest hundred thousand")
+    expect(caption).not.toContain("Children in Low Income Families")
+    expect(wrapper.find("[role='note']").exists()).toBe(false)
+    expect(wrapper.find("a").attributes("href")).toBe(childPovertySource.download_url)
+    expect(wrapper.text()).toContain("accessed 2026-10-22")
+    expect(wrapper.find("[role='img']").attributes("aria-label")).toContain("three-year average")
+  })
+
+  it.each([null, "unverified", "illustrative_fallback"])(
+    "exposes an accessible caveat for %s provenance",
+    async (dataType) => {
+      mockFetchMetadata.mockResolvedValue({ data_type: dataType })
+      const wrapper = mount(ChildPovertyChart)
+      await flushPromises()
+      const caveat = wrapper.find("[role='note']").text()
+      expect(caveat).toMatch(/unverified|Unverified/)
+      expect(wrapper.find("table caption").text()).toContain(caveat)
+      expect(wrapper.find("[role='img']").attributes("aria-label")).toContain(caveat)
+      expect(wrapper.find("a").exists()).toBe(false)
+    },
+  )
+
+  it("rejects the former CiLIF citation even when marked static published", async () => {
+    mockFetchMetadata.mockResolvedValue({
+      ...childPovertySource,
+      data_type: "static_published",
+      source: "DWP/HMRC Children in Low Income Families",
+      access_date: "2026-05-16",
+      source_url:
+        "https://www.gov.uk/government/statistics/children-in-low-income-families-local-area-statistics-2014-to-2023",
+    })
+    const wrapper = mount(ChildPovertyChart)
+    await flushPromises()
+    expect(wrapper.find("[role='note']").text()).toContain("Unverified provenance")
+    expect(wrapper.find("a").exists()).toBe(false)
+  })
+
+  it.each([
+    "source",
+    "source_url",
+    "description",
+    "access_date",
+    "data_type",
+    "download_url",
+    "tables",
+    "period",
+    "measure",
+  ])("retains the caveat when the returned HBAI %s does not match the catalogue", async (key) => {
+    mockFetchMetadata.mockResolvedValue({ ...childPovertySource, [key]: "mismatch" })
+    const wrapper = mount(ChildPovertyChart)
+    await flushPromises()
+    expect(wrapper.find("[role='note']").text()).toContain("Unverified provenance")
+    expect(wrapper.find("table caption").text()).not.toContain("Source: DWP")
+    expect(wrapper.find("a").exists()).toBe(false)
+  })
+
+  it.each(["download_url", "tables", "period", "measure"])(
+    "retains the caveat when a catalogue-only API response omits %s evidence",
+    async (field) => {
+      const metadata: Record<string, unknown> = { ...childPovertySource }
+      delete metadata[field]
+      mockFetchMetadata.mockResolvedValue(metadata)
+      const wrapper = mount(ChildPovertyChart)
+      await flushPromises()
+      expect(wrapper.find("[role='note']").text()).toContain("Unverified provenance")
+      expect(wrapper.find("a").exists()).toBe(false)
+    },
+  )
+
+  it("shows the caveat for the backend's legacy 38% / 185,000 unverified response", async () => {
+    mockFetchMetadata.mockResolvedValue({
+      name: "child-poverty",
+      description: "Child poverty figures with unverified source, measure and period",
+      source: "Unverified child-poverty data",
+      source_url: "",
+      access_date: "",
+      data_type: "unverified",
+    })
+    const wrapper = mount(ChildPovertyChart)
+    await flushPromises()
+    const firstRow = wrapper.find("tbody tr").text()
+    expect(firstRow).toContain("North East")
+    expect(firstRow).toContain("38")
+    expect(firstRow).toContain("185,000")
+    const caveat = wrapper.find("[role='note']").text()
+    expect(caveat).toContain("Unverified provenance")
+    expect(wrapper.find("table caption").text()).toContain(caveat)
+    expect(wrapper.find("[role='img']").attributes("aria-label")).toContain(caveat)
+    expect(wrapper.text()).not.toContain(childPovertySource.source)
+    expect(wrapper.find("a").exists()).toBe(false)
+  })
+
+  it("keeps unverified provenance visible when metadata cannot be fetched", async () => {
+    mockFetchMetadata.mockRejectedValue(new Error("metadata unavailable"))
+    const wrapper = mount(ChildPovertyChart)
+    await flushPromises()
+    expect(wrapper.find("[role='note']").text()).toContain("Unverified provenance")
   })
 
   it("renders a missing children-in-poverty count as —, not 0", () => {
@@ -213,5 +318,18 @@ describe("ChildPovertyChart accessible data table", () => {
     expect(bodyRows).toHaveLength(1)
     expect(bodyRows[0].findAll("td")[0].text()).toBe("North East")
     expect(wrapper.text()).not.toContain("Nowhere")
+  })
+})
+
+describe("child-poverty article provenance", () => {
+  it("uses the generated measure and citation without retaining legacy headline claims", () => {
+    const article = chartConfigs["child-poverty"]
+    expect(article.source.url).toContain("households-below-average-income")
+    expect(article.source.accessed).toBe("2026-10-22")
+    expect(article.source.name).toContain("4.16ts and 4.17ts")
+    expect(article.methodology).toContain("2021/22 to 2023/24, three-year average")
+    expect(article.stats).toEqual([])
+    expect(article.lede).not.toContain("38%")
+    expect(article.lede).not.toContain("3.3 million")
   })
 })

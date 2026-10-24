@@ -11,16 +11,16 @@ import json
 import logging
 import math
 import os
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from pathlib import Path as FilePath
 from typing import Any, Literal
 
 import pandas as pd
 from fastapi import APIRouter, HTTPException, Path, Query, Response
 from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
 
 from app.routers.schemas import (
-    AllDatasetsMetadataResponse,
     DatasetColumnsResponse,
     DatasetListResponse,
     DatasetMetadataResponse,
@@ -28,6 +28,22 @@ from app.routers.schemas import (
     FreshnessResponse,
     PaginatedDatasetResponse,
 )
+
+
+class SourceMetadataResponse(DatasetMetadataResponse):
+    """Expose the checked source evidence used by the child-poverty caveat."""
+
+    download_url: str | None = None
+    tables: list[str] | None = None
+    period: str | None = None
+    measure: str | None = None
+
+
+class AllSourceMetadataResponse(BaseModel):
+    """Catalogue metadata including the same source evidence as individual entries."""
+
+    datasets: list[SourceMetadataResponse]
+
 
 logger = logging.getLogger("wealthlens.data")
 
@@ -61,7 +77,7 @@ DATASETS: dict[str, str] = {
 }
 
 # Source citations — every dataset must document where the data came from.
-DATASET_META: dict[str, dict[str, str]] = {
+DATASET_META: dict[str, dict[str, Any]] = {
     "wealth-shares": {
         "description": "Top 1%/10% wealth shares in GB",
         "source": "World Inequality Database",
@@ -126,13 +142,14 @@ DATASET_META: dict[str, dict[str, str]] = {
         "access_date": "",
     },
     "child-poverty": {
-        "description": "Child poverty rates by UK region (after housing costs)",
-        "source": "DWP/HMRC Children in Low Income Families",
-        "source_url": (
-            "https://www.gov.uk/government/statistics/"
-            "children-in-low-income-families-local-area-statistics-2014-to-2023"
-        ),
-        "access_date": "2026-05-16",
+        "description": "HBAI regional relative low income after housing costs, 2021/22 to 2023/24 (three-year average)",
+        "source": "DWP Households Below Average Income (HBAI), tables 4.16ts and 4.17ts",
+        "source_url": "https://www.gov.uk/government/statistics/households-below-average-income-for-financial-years-ending-1995-to-2024",
+        "access_date": "2026-10-22",
+        "download_url": "https://assets.publishing.service.gov.uk/media/6836dae29411f0341f323689/HBAI_2324_ods_table_pack.zip",
+        "tables": ["4.16ts", "4.17ts"],
+        "period": "2021/22 to 2023/24 (three-year average)",
+        "measure": "Children below 60% of contemporary median equivalised disposable household income after housing costs",
     },
     "generational-wealth": {
         "description": "Median household wealth by generation at equivalent ages",
@@ -149,6 +166,43 @@ DATASET_META: dict[str, dict[str, str]] = {
         "access_date": "2026-05-16",
     },
 }
+
+
+def _child_poverty_source_matches(sidecar: dict[str, Any]) -> bool:
+    """Require the pinned HBAI source, tables, AHC measure and averaging period.
+
+    The access date is the fetch's own record (any ISO date), not part of the pin:
+    the download URL already pins the exact table pack.
+    """
+    expected = DATASET_META["child-poverty"]
+    try:
+        date.fromisoformat(sidecar["access_date"])
+    except (KeyError, TypeError, ValueError):
+        return False
+    return all(
+        sidecar.get(key) == expected[key]
+        for key in ("source", "source_url", "download_url", "tables", "period", "measure")
+    )
+
+
+def _metadata_citation(dataset_name: str, data_type: str | None) -> dict[str, Any]:
+    """Never certify retained legacy child-poverty files with the HBAI citation."""
+    if dataset_name == "child-poverty" and data_type not in ("live_ons", "static_published"):
+        return {
+            "description": "Child poverty figures with unverified source, measure and period",
+            "source": "Unverified child-poverty data",
+            "source_url": "",
+            "access_date": "",
+        }
+    if dataset_name == "child-poverty":
+        # Verified above, so the sidecar exists and carries an ISO access date.
+        sidecar_path = (DATA_DIR / DATASETS[dataset_name]).with_suffix(".meta.json")
+        try:
+            access_date = json.loads(sidecar_path.read_bytes())["access_date"]
+        except (OSError, ValueError, KeyError, TypeError):
+            access_date = DATASET_META[dataset_name]["access_date"]
+        return {**DATASET_META[dataset_name], "access_date": access_date}
+    return dict(_citation_metadata(dataset_name))
 
 
 def _read_csv(dataset_name: str) -> pd.DataFrame:
@@ -223,8 +277,6 @@ def _build_metadata(dataset_name: str) -> dict[str, Any]:
     Uses a module-level cache so that CSV files are only read once for
     row_count and column information.
     """
-    meta = _citation_metadata(dataset_name)
-
     if dataset_name not in _metadata_cache:
         df = _read_csv(dataset_name)
         row_count = len(df)
@@ -235,6 +287,7 @@ def _build_metadata(dataset_name: str) -> dict[str, Any]:
 
     last_updated = _get_last_updated(dataset_name)
     data_type = _get_data_type(dataset_name)
+    meta = _metadata_citation(dataset_name, data_type)
 
     return {
         "name": dataset_name,
@@ -244,6 +297,7 @@ def _build_metadata(dataset_name: str) -> dict[str, Any]:
         "columns": columns,
         "last_updated": last_updated,
         "data_type": data_type,
+        **{key: meta[key] for key in ("download_url", "tables", "period", "measure") if key in meta},
     }
 
 
@@ -272,7 +326,6 @@ def _build_metadata_safe(dataset_name: str) -> dict[str, Any]:
         return _build_metadata(dataset_name)
     except Exception:
         logger.exception("metadata: %s unavailable; serving citation-only entry", dataset_name)
-        meta = _citation_metadata(dataset_name)
         # The recovery path must NOT itself raise — its whole purpose is to keep the
         # catalog up when one dataset fails — so degrade each provenance helper to
         # None on any error (a single bad sidecar can never 500 every dataset's
@@ -287,7 +340,8 @@ def _build_metadata_safe(dataset_name: str) -> dict[str, Any]:
             data_type = _get_data_type(dataset_name)
         except Exception:
             logger.exception("metadata recovery: data_type failed for %s", dataset_name)
-            data_type = "unverified" if dataset_name in ("productivity-pay", "boe-rates") else None
+            data_type = "unverified" if dataset_name in ("productivity-pay", "boe-rates", "child-poverty") else None
+        meta = _metadata_citation(dataset_name, data_type)
         return {
             "name": dataset_name,
             **meta,
@@ -336,15 +390,16 @@ def _get_data_type(dataset_name: str) -> str | None:
     switches a dataset between live and fallback data must be reflected without
     a server restart. CSV provenance markers are corroborated on every read.
 
-    Missing provenance for productivity-pay or boe-rates (which can be synthetic), invalid
-    sidecars, and contradictory CSV markers return "unverified". Legacy datasets
-    without a sidecar retain None; verified static_published data stays genuine.
+    Missing provenance for productivity-pay, boe-rates (which can be synthetic) or
+    child-poverty, invalid sidecars, mismatched HBAI source evidence and contradictory
+    CSV markers return "unverified". Other legacy datasets without a sidecar retain
+    None; verified static_published data stays genuine.
     """
     sidecar_path = (DATA_DIR / DATASETS[dataset_name]).with_suffix(".meta.json")
     try:
         raw = sidecar_path.read_bytes()
     except FileNotFoundError:
-        return "unverified" if dataset_name in ("productivity-pay", "boe-rates") else None
+        return "unverified" if dataset_name in ("productivity-pay", "boe-rates", "child-poverty") else None
     except OSError as exc:
         # A present-but-unreadable sidecar is an error, not "no provenance": for an
         # illustrative dataset, unknown provenance must retain a public caveat.
@@ -362,6 +417,9 @@ def _get_data_type(dataset_name: str) -> str | None:
     value = sidecar.get("data_type") if isinstance(sidecar, dict) else None
     if not isinstance(value, str) or value not in ("live_ons", "illustrative_fallback", "static_published"):
         logger.warning("Invalid data_type sidecar for %s", dataset_name)
+        return "unverified"
+    if dataset_name == "child-poverty" and not _child_poverty_source_matches(sidecar):
+        logger.warning("Unverified HBAI source, tables or period for child-poverty")
         return "unverified"
     # Read uncached so a pipeline rerun cannot leave a stale provenance decision.
     try:
@@ -488,7 +546,7 @@ def dataset_freshness(response: Response) -> dict[str, Any]:
 
 @router.get(
     "/metadata",
-    response_model=AllDatasetsMetadataResponse,
+    response_model=AllSourceMetadataResponse,
     summary="Metadata for all datasets",
 )
 def all_datasets_metadata(response: Response) -> dict[str, list[dict[str, Any]]]:
@@ -508,7 +566,7 @@ def all_datasets_metadata(response: Response) -> dict[str, list[dict[str, Any]]]
 
 @router.get(
     "/{dataset_name}/metadata",
-    response_model=DatasetMetadataResponse,
+    response_model=SourceMetadataResponse,
     summary="Metadata for one dataset",
 )
 def dataset_metadata(

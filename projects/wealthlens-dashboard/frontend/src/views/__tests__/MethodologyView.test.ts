@@ -43,6 +43,24 @@ describe("MethodologyView", () => {
     }
   })
 
+  it("cites the HBAI tables, AHC period, table pack and access date for child poverty", () => {
+    const wrapper = mountWithRouter()
+    const card = wrapper
+      .findAll(".source-card")
+      .find((entry) => entry.text().includes("child-poverty"))!
+    expect(card.text()).toContain(
+      "DWP Households Below Average Income (HBAI), tables 4.16ts and 4.17ts",
+    )
+    expect(card.text()).toContain("after housing costs")
+    expect(card.text()).toContain("2021/22 to 2023/24 (three-year average)")
+    expect(card.text()).toContain("2026-10-22")
+    expect(card.find("a").attributes("href")).toBe(
+      "https://assets.publishing.service.gov.uk/media/6836dae29411f0341f323689/HBAI_2324_ods_table_pack.zip",
+    )
+    expect(card.text()).not.toContain("Children in Low Income Families")
+    expect(card.text()).not.toContain("2026-05-16")
+  })
+
   it("contains privacy note", () => {
     const wrapper = mountWithRouter()
     expect(wrapper.text()).toContain("does not collect personal data")

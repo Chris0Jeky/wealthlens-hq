@@ -5,6 +5,7 @@ import { mount, flushPromises } from "@vue/test-utils"
 import { createPinia, setActivePinia } from "pinia"
 import { defineComponent, h } from "vue"
 import type { DatasetMetadata } from "@/stores/data"
+import childPovertySource from "../../../public/data/child-poverty-metadata.json"
 
 const mockMetadata: DatasetMetadata[] = [
   {
@@ -79,15 +80,7 @@ const mockMetadata: DatasetMetadata[] = [
     row_count: 300,
     columns: ["date", "bank_rate", "cpi"],
   },
-  {
-    name: "child-poverty",
-    description: "Child poverty rates by UK region (after housing costs)",
-    source: "DWP/HMRC Children in Low Income Families",
-    source_url: "https://www.gov.uk/government/statistics/children-in-low-income-families",
-    access_date: "2026-05-16",
-    row_count: 120,
-    columns: ["year", "region", "rate"],
-  },
+  childPovertySource,
   {
     name: "generational-wealth",
     description: "Median household wealth by generation at equivalent ages",
@@ -191,6 +184,40 @@ describe("DataSourcesView", () => {
     const hrefs = links.map((l) => l.attributes("href"))
     expect(hrefs).toContain("https://wid.world/")
     expect(hrefs).toContain("https://www.gov.uk/government/statistics/capital-gains-tax-statistics")
+  })
+
+  it("shows the HBAI citation and table-pack link on desktop and mobile", async () => {
+    mockFetchAllMetadata.mockResolvedValue(mockMetadata)
+    const wrapper = mountView()
+    await flushPromises()
+    const entries = [
+      wrapper.findAll("tbody tr").find((entry) => entry.text().includes("Child Poverty"))!,
+      wrapper.findAll("[role='listitem']").find((entry) => entry.text().includes("Child Poverty"))!,
+    ]
+    for (const entry of entries) {
+      expect(entry.text()).toContain(childPovertySource.source)
+      expect(entry.text()).toContain("after housing costs")
+      expect(entry.text()).toContain("2021/22 to 2023/24 (three-year average)")
+      expect(entry.text()).toContain("2026-10-22")
+      expect(entry.find("a").attributes("href")).toBe(childPovertySource.download_url)
+      expect(entry.text()).not.toContain("Children in Low Income Families")
+    }
+  })
+
+  it("does not attach the HBAI table pack to unverified child-poverty data", async () => {
+    mockFetchAllMetadata.mockResolvedValue([
+      {
+        ...childPovertySource,
+        source: "Unverified child-poverty data",
+        source_url: "",
+        access_date: "",
+        data_type: "unverified",
+      },
+    ])
+    const wrapper = mountView()
+    await flushPromises()
+    expect(wrapper.text()).toContain("Unverified child-poverty data")
+    expect(wrapper.find(`a[href="${childPovertySource.download_url}"]`).exists()).toBe(false)
   })
 
   it("shows both recorded BoE and ONS URLs on desktop and mobile", async () => {

@@ -83,11 +83,9 @@ describe("committed public/data/freshness.json contract", () => {
   // The bug class worth locking is a wrong-ORGANISATION drift, which only
   // wealth-shares exhibited. This PR also corrects productivity-pay (ONS/EPI ->
   // ONS, since the US Economic Policy Institute supplies no UK datapoint — the
-  // pipeline is pure ONS LZVD/AWE/CPIH). child-poverty's "DWP/HBAI" was left
-  // as-is: it matches the user-facing ChildPovertyChart.vue and the after-housing-
-  // costs measure, while the pipeline labels it CiLIF — an unresolved HBAI-vs-CiLIF
-  // source conflict deferred to a human (see ORCHESTRATION). Neither has a
-  // committed metadata file, so neither can be structurally locked here anyway.
+  // pipeline is pure ONS LZVD/AWE/CPIH). Child poverty now uses the pinned DWP
+  // HBAI AHC tables with committed metadata; its source contract is tested in
+  // ChildPovertyChart.test.ts.
   it("wealth-shares freshness source matches its authoritative metadata source", () => {
     const data = loadFreshness()
     const metaSource = metadataSource("wealth-shares")
