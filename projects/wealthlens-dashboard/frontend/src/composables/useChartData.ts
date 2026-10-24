@@ -1,9 +1,11 @@
-import { onMounted, ref, shallowRef } from "vue"
+import { computed, onMounted, ref, shallowRef, toValue, type MaybeRefOrGetter } from "vue"
 import { useDataStore, type DatasetRow } from "@/stores/data"
+import { filterChartRowsByRange, parseChartRows } from "@/utils/chart"
 
-export function useChartData(datasetName: string) {
+export function useChartData(datasetName: string, range: MaybeRefOrGetter<string> = "All") {
   const store = useDataStore()
-  const rows = shallowRef<DatasetRow[]>([])
+  const allRows = shallowRef<DatasetRow[]>([])
+  const rows = computed(() => filterChartRowsByRange(allRows.value, toValue(range)))
   const loading = ref(true)
   const error = ref<string | null>(null)
 
@@ -16,7 +18,7 @@ export function useChartData(datasetName: string) {
       // is the backend max (Query le=1000) and covers all current datasets; the
       // static-build path ignores these args.
       const response = await store.fetchDataset(datasetName, 1, 1000)
-      rows.value = response.data
+      allRows.value = parseChartRows(datasetName, response.data)
       // Guard the 1000-row ceiling: if a dataset ever grows past it, surface the
       // truncation loudly instead of silently dropping rows (the bug this fix
       // addressed). The fix then is to paginate; today no dataset approaches 1000.

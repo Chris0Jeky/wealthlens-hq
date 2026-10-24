@@ -19,10 +19,13 @@ import {
   LegendComponent,
 } from "echarts/components"
 import VChart from "vue-echarts"
+import { useChartTheme } from "@/composables/useChartTheme"
 import { useChartData } from "@/composables/useChartData"
 import type { EChartsExportable } from "@/composables/useChartExport"
 import { escapeHtml, safeMinMax, toNumberOrNaN, warnIfSignificantDataLoss } from "@/utils/chart"
 import AccessibleDataTable from "@/components/AccessibleDataTable.vue"
+
+const { colors, axisStyle, markColor } = useChartTheme()
 
 // Register only the ECharts modules we need (tree-shaking)
 use([CanvasRenderer, LineChart, GridComponent, TooltipComponent, TitleComponent, LegendComponent])
@@ -219,7 +222,7 @@ const option = computed(() => {
     }
     // Align to the shared year axis; null for missing years
     const data = years.map((y) => dataMap.get(y) ?? null)
-    const color = REGION_COLORS[idx % REGION_COLORS.length]
+    const color = markColor(REGION_COLORS[idx % REGION_COLORS.length])
 
     return {
       name: region,
@@ -236,13 +239,14 @@ const option = computed(() => {
 
   return {
     animation: !prefersReducedMotion,
+    textStyle: { color: colors.value.text },
     title: {
       text: "Housing Affordability — Price-to-Earnings Ratios by Region",
       left: "center",
       textStyle: {
         fontSize: 16,
         fontWeight: "bold",
-        color: "#111827",
+        color: colors.value.heading,
       },
     },
     tooltip: {
@@ -266,10 +270,11 @@ const option = computed(() => {
       },
     },
     legend: {
+      inactiveColor: colors.value.muted,
       bottom: 0,
       type: "scroll" as const,
       data: regionNames,
-      textStyle: { color: "#374151" },
+      textStyle: { color: colors.value.text },
     },
     grid: {
       left: "3%",
@@ -279,23 +284,25 @@ const option = computed(() => {
       containLabel: true,
     },
     xAxis: {
+      ...axisStyle.value,
       type: "category" as const,
       data: years,
       name: "Year",
       nameLocation: "middle" as const,
       nameGap: 30,
       axisLabel: {
-        color: "#374151",
+        color: colors.value.text,
         rotate: years.length > 30 ? 45 : 0,
       },
     },
     yAxis: {
+      ...axisStyle.value,
       type: "value" as const,
       name: "Price-to-earnings ratio",
       nameLocation: "middle" as const,
       nameGap: 50,
       axisLabel: {
-        color: "#374151",
+        color: colors.value.text,
       },
     },
     series,

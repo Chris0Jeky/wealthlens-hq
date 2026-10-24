@@ -9,6 +9,7 @@
 import { DATASET_PROVENANCE } from "@/constants/datasetProvenance"
 import { usePageMeta } from "@/composables/usePageMeta"
 import { SITE_URL } from "@/constants/site"
+import childPovertySource from "../../public/data/child-poverty-metadata.json"
 
 usePageMeta({
   title: "Methodology",
@@ -23,6 +24,7 @@ interface DatasetSource {
   description: string
   source: string
   sourceUrl: string
+  sourceUrls?: string[]
   accessDate: string
   updateFrequency: string
 }
@@ -89,18 +91,23 @@ const DATASET_CITATIONS: Omit<DatasetSource, "updateFrequency">[] = [
   },
   {
     name: "boe-rates",
-    description: "Bank Rate and CPI annual inflation",
-    source: "Bank of England Interactive Analytical Database",
-    sourceUrl: "https://www.bankofengland.co.uk/boeapps/database/",
-    accessDate: "2026-05-16",
+    description:
+      "Monthly average of official Bank Rate (BoE IUMABEDR) and CPI annual inflation (ONS D7G7, MM23).",
+    source: "Bank of England IUMABEDR / ONS D7G7 (MM23)",
+    sourceUrl:
+      "https://www.bankofengland.co.uk/boeapps/database/_iadb-fromshowcolumns.asp?csv.x=yes&SeriesCodes=IUMABEDR&CSVF=TN&UsingCodes=Y&VFD=N&Datefrom=01%2FJan%2F2000&Dateto=01%2FDec%2F2099&VPD=Y",
+    sourceUrls: [
+      "https://www.bankofengland.co.uk/boeapps/database/_iadb-fromshowcolumns.asp?csv.x=yes&SeriesCodes=IUMABEDR&CSVF=TN&UsingCodes=Y&VFD=N&Datefrom=01%2FJan%2F2000&Dateto=01%2FDec%2F2099&VPD=Y",
+      "https://www.ons.gov.uk/generator?format=csv&uri=/economy/inflationandpriceindices/timeseries/d7g7/mm23",
+    ],
+    accessDate: "2026-10-22",
   },
   {
     name: "child-poverty",
-    description: "Child poverty rates by UK region (after housing costs)",
-    source: "DWP/HMRC Children in Low Income Families",
-    sourceUrl:
-      "https://www.gov.uk/government/statistics/children-in-low-income-families-local-area-statistics-2014-to-2023",
-    accessDate: "2026-05-16",
+    description: childPovertySource.description,
+    source: childPovertySource.source,
+    sourceUrl: childPovertySource.download_url,
+    accessDate: childPovertySource.access_date,
   },
   {
     name: "generational-wealth",
@@ -234,11 +241,13 @@ const datasets: DatasetSource[] = DATASET_CITATIONS.map((d) => ({
                 <dt>URL</dt>
                 <dd>
                   <a
-                    :href="ds.sourceUrl"
+                    v-for="url in ds.sourceUrls ?? [ds.sourceUrl]"
+                    :key="url"
+                    :href="url"
                     target="_blank"
                     rel="noopener noreferrer"
                     class="source-card__link"
-                    >{{ ds.sourceUrl }}</a
+                    >{{ url }}</a
                   >
                 </dd>
               </div>

@@ -1,7 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from "vitest"
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import { mount } from "@vue/test-utils"
 import { createPinia, setActivePinia } from "pinia"
-import { ref, shallowRef } from "vue"
+import { nextTick, ref, shallowRef } from "vue"
+import { _resetForTesting, useTheme } from "@/composables/useTheme"
 
 /**
  * GenerationalWealthChart tests — focused on the ADDITION in the a11y slice:
@@ -91,6 +92,8 @@ const GEN_ROWS = [
 describe("GenerationalWealthChart accessible data table", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    _resetForTesting()
+    localStorage.clear()
     setActivePinia(createPinia())
     mockRows = shallowRef(GEN_ROWS)
     mockLoading = ref(false)
@@ -111,6 +114,64 @@ describe("GenerationalWealthChart accessible data table", () => {
       })),
     })
   })
+
+  afterEach(() => {
+    _resetForTesting()
+    localStorage.clear()
+  })
+
+  it.each(["light", "dark"] as const)(
+    "pairs every generation's legend color with its bars in the %s theme",
+    async (theme) => {
+      // Synthetic mix of all three generations, measured and projected bars,
+      // and missing milestones. Existing source-data fixtures stay unchanged.
+      mockRows.value = [
+        ...GEN_ROWS.slice(0, 2),
+        { ...GEN_ROWS[0], generation: "Gen X" },
+        { ...GEN_ROWS[2], age_milestone: 30, projected: false },
+        GEN_ROWS[2],
+      ]
+      if (theme === "dark") useTheme().toggleTheme()
+      await nextTick()
+      const wrapper = mount(GenerationalWealthChart)
+      try {
+        const option = wrapper.findComponent({ name: "VChart" }).props("option")
+        const palette =
+          theme === "dark" ? ["#98b3ef", "#8ec2b3", "#ef9d9d"] : ["#1a56db", "#047857", "#dc2626"]
+        expect(option.legend.data).toEqual(["Baby Boomers", "Gen X", "Millennials"])
+        expect(option.series).toHaveLength(3)
+        option.series.forEach(
+          (
+            series: {
+              name: string
+              itemStyle: { color: string }
+              data: ({ itemStyle: { color: string } } | null)[]
+            },
+            i: number,
+          ) => {
+            expect(series.name).toBe(option.legend.data[i])
+            // ECharts uses the series-level color for its legend swatch.
+            expect(series.itemStyle).toEqual({ color: palette[i] })
+            for (const datum of series.data) {
+              if (datum) expect(datum.itemStyle.color).toBe(series.itemStyle.color)
+            }
+          },
+        )
+        const millennials = option.series[2]
+        expect(millennials.data[0].itemStyle).toEqual({ color: palette[2] })
+        expect(millennials.data[1].itemStyle).toEqual({
+          color: palette[2],
+          opacity: 0.75,
+          borderWidth: 2,
+          borderColor: palette[2],
+          borderType: "dashed",
+        })
+        expect(millennials.data[2]).toBeNull()
+      } finally {
+        wrapper.unmount()
+      }
+    },
+  )
 
   it("renders an accessible data table with the chart's column headers", () => {
     const wrapper = mount(GenerationalWealthChart)

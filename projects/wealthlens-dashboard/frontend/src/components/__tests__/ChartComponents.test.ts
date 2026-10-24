@@ -1,7 +1,26 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { mount, flushPromises } from "@vue/test-utils"
 import { createPinia, setActivePinia } from "pinia"
-import { ref, shallowRef } from "vue"
+import { nextTick, ref, shallowRef } from "vue"
+import { readFileSync } from "node:fs"
+import { _resetForTesting, useTheme } from "@/composables/useTheme"
+
+const tokens = readFileSync("src/assets/tokens.css", "utf8")
+
+function contrast(foreground: string, background: string): number {
+  const luminance = (hex: string) => {
+    const value = hex.slice(1)
+    const channels = value.length === 3 ? [...value].map((c) => c + c) : value.match(/../g)!
+    return channels
+      .map((c) => {
+        const s = parseInt(c, 16) / 255
+        return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4
+      })
+      .reduce((sum, c, i) => sum + c * [0.2126, 0.7152, 0.0722][i], 0)
+  }
+  const values = [luminance(foreground), luminance(background)].sort((a, b) => b - a)
+  return (values[0] + 0.05) / (values[1] + 0.05)
+}
 
 /**
  * Mock the useChartData composable before importing chart components.
@@ -113,6 +132,7 @@ const chartComponents = [
 describe("Chart components", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    _resetForTesting()
     setActivePinia(createPinia())
     mockRows = shallowRef([])
     mockLoading = ref(true)
@@ -135,6 +155,162 @@ describe("Chart components", () => {
       })),
     })
   })
+
+  const themedLineCharts = [
+    {
+      component: WealthSharesChart,
+      row: { year: 2020, percentile: "p90p100", value: 0.527 },
+    },
+    {
+      component: ProductivityPayChart,
+      row: { year: 2020, productivity_index: 128.0, pay_index: 114.0, gap_pct: 12.3 },
+    },
+  ]
+
+  const themedCharts = [
+    ...themedLineCharts,
+    { component: HousingAffordabilityChart, row: { region: "London", year: 2020, ratio: 12 } },
+    {
+      component: CgtConcentrationChart,
+      row: {
+        gain_band: "£100k+",
+        band_lower: 100000,
+        share_of_gains_pct: 18,
+        share_of_taxpayers_pct: 9,
+        cumul_gains_from_top_pct: 85,
+        cumul_taxpayers_from_top_pct: 22,
+      },
+    },
+    { component: WealthByDecileChart, row: { decile: "10th", total_wealth_bn: 100 } },
+    { component: WageStagChart, row: { year: 2020, real_weekly: 520 } },
+    { component: GdhiByRegionChart, row: { region: "London", gdhi_per_head: 36000, year: 2023 } },
+    {
+      component: TaxCompositionChart,
+      row: {
+        year: "2022-23",
+        income_tax_bn: 100,
+        nics_bn: 100,
+        cgt_bn: 10,
+        iht_bn: 10,
+        sdlt_bn: 10,
+      },
+    },
+    {
+      component: ChildPovertyChart,
+      row: {
+        region: "North East",
+        child_poverty_pct: 35,
+        children_in_poverty: 100000,
+        national_avg_pct: 30,
+      },
+    },
+    {
+      component: GenerationalWealthChart,
+      row: { generation: "Baby Boomers", age_milestone: 30, median_wealth_gbp: 100000 },
+    },
+  ]
+
+  for (const { component, row } of themedLineCharts) {
+    it(`${component.__name} keeps text and line marks above AA contrast in both themes`, async () => {
+      const style = document.createElement("style")
+      style.textContent = [
+        tokens.match(/:root \{[\s\S]*?\n\}/)![0],
+        tokens.match(/\[data-theme="dark"\] \{[\s\S]*?\n\}/)![0],
+      ].join("\n")
+      document.head.appendChild(style)
+      mockLoading.value = false
+      mockRows.value = [row]
+      const wrapper = mount(component)
+      try {
+        for (const theme of ["light", "dark"] as const) {
+          if (theme === "dark") useTheme().toggleTheme()
+          await nextTick()
+          const option = wrapper.findComponent({ name: "VChart" }).props("option")
+          const css = getComputedStyle(document.documentElement)
+          const card = css.getPropertyValue("--wl-card").trim()
+          const heading = css.getPropertyValue("--wl-ink").trim()
+          const text = css.getPropertyValue("--wl-ink-body").trim()
+          const muted = css.getPropertyValue("--wl-ink-muted").trim()
+          expect(option.title.textStyle.color).toBe(heading)
+          expect(contrast(option.title.textStyle.color, card)).toBeGreaterThanOrEqual(4.5)
+          for (const color of [option.textStyle.color, option.legend.textStyle.color]) {
+            expect(color).toBe(text)
+            expect(contrast(color, card)).toBeGreaterThanOrEqual(4.5)
+          }
+          expect(option.legend.inactiveColor).toBe(muted)
+          expect(contrast(option.legend.inactiveColor, card)).toBeGreaterThanOrEqual(4.5)
+          for (const axis of [option.xAxis, option.yAxis]) {
+            for (const color of [axis.axisLabel.color, axis.nameTextStyle.color]) {
+              expect(color).toBe(text)
+              expect(contrast(color, card)).toBeGreaterThanOrEqual(4.5)
+            }
+            for (const color of [axis.axisLine.lineStyle.color, axis.axisTick.lineStyle.color]) {
+              expect(color).toBe(muted)
+              expect(contrast(color, card)).toBeGreaterThanOrEqual(3)
+            }
+          }
+          expect(option.series).toHaveLength(2)
+          for (const series of option.series) {
+            expect(series.itemStyle.color).toBe(series.lineStyle.color)
+            expect(contrast(series.lineStyle.color, card)).toBeGreaterThanOrEqual(3)
+          }
+          if (theme === "light") {
+            expect(
+              option.series.map(
+                (series: { itemStyle: { color: string } }) => series.itemStyle.color,
+              ),
+            ).toEqual(["#1a56db", "#dc2626"])
+          }
+        }
+      } finally {
+        wrapper.unmount()
+        style.remove()
+        _resetForTesting()
+        localStorage.clear()
+      }
+    })
+  }
+
+  for (const { component, row } of themedCharts) {
+    it(`${component.__name} updates ECharts title, axes and series on theme changes`, async () => {
+      mockLoading.value = false
+      mockRows.value = [row]
+      const wrapper = mount(component)
+      await flushPromises()
+      const chart = wrapper.findComponent({ name: "VChart" })
+      expect(chart.exists()).toBe(true)
+      const light = chart.props("option")
+      useTheme().toggleTheme()
+      await nextTick()
+      const dark = chart.props("option")
+      expect(dark.title.textStyle.color).not.toBe(light.title.textStyle.color)
+      expect(dark.series).not.toEqual(light.series)
+      if (dark.legend) {
+        expect(dark.legend.textStyle.color).toBe("#cccccc")
+        expect(dark.legend.inactiveColor).toBe("#999999")
+      }
+      for (const axis of [dark.xAxis, dark.yAxis].flat()) {
+        expect(axis.axisLabel.color).toBe("#cccccc")
+        expect(axis.nameTextStyle.color).toBe("#cccccc")
+      }
+      useTheme().toggleTheme()
+      await nextTick()
+      expect(JSON.stringify(chart.props("option"))).toBe(JSON.stringify(light))
+      if (component === CgtConcentrationChart) {
+        await wrapper.findAll("[role='tab']")[1].trigger("click")
+        const curve = wrapper.findComponent({ name: "VChart" })
+        const lightCurve = JSON.stringify(curve.props("option"))
+        useTheme().toggleTheme()
+        await nextTick()
+        expect(curve.props("option").title.textStyle.color).toBe("#e8e8e8")
+        expect(curve.props("option").xAxis.nameTextStyle.color).toBe("#cccccc")
+        useTheme().toggleTheme()
+        await nextTick()
+        expect(JSON.stringify(curve.props("option"))).toBe(lightCurve)
+      }
+      wrapper.unmount()
+    })
+  }
 
   for (const { name, component } of chartComponents) {
     describe(name, () => {

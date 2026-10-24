@@ -1,19 +1,22 @@
-"""Fetch UK child poverty rates by region.
+"""Fetch official HBAI regional child low-income estimates after housing costs.
 
-Source: DWP/HMRC Children in Low Income Families statistics (OGL v3.0)
-Shows percentage of children in relative low income after housing costs
-by UK region.
+The former CiLIF attribution was unsupported: that release was BHC and the
+legacy constants had no verified table. Never use them as a fetch fallback.
 """
-
 from __future__ import annotations
 
+import io
 import json
 import logging
+import xml.etree.ElementTree as ET  # nosec B405 - stdlib ElementTree resolves no external entities; expat >= 2.4.1 bounds entity expansion.
+import zipfile
 from datetime import date
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
 import pandas as pd
 import plotly.graph_objects as go
+import requests
 from chart_html import write_accessible_chart
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -21,102 +24,151 @@ DATA_DIR = ROOT / "projects" / "wealthlens-dashboard" / "data"
 RAW_DIR = DATA_DIR / "raw"
 PROCESSED_DIR = DATA_DIR / "processed"
 CHART_DIR = ROOT / "projects" / "wealthlens-dashboard" / "charts"
-
 SOURCE_URL = (
     "https://www.gov.uk/government/statistics/"
-    "children-in-low-income-families-local-area-statistics-2014-to-2023"
+    "households-below-average-income-for-financial-years-ending-1995-to-2024"
 )
-
+DOWNLOAD_URL = (
+    "https://assets.publishing.service.gov.uk/media/6836dae29411f0341f323689/"
+    "HBAI_2324_ods_table_pack.zip"
+)
+WORKBOOK = "children-hbai-timeseries-1994-95-2023-24-tables.ods"
+PERIOD = "2021/22 to 2023/24 (three-year average)"
+PERIOD_COLUMN = "21/22-23/241"  # Final 1 is DWP's note marker, not part of the year.
 ACCESS_DATE = date.today().isoformat()
-
+SOURCE = "DWP Households Below Average Income (HBAI), tables 4.16ts and 4.17ts"
+MEASURE = "Children below 60% of contemporary median equivalised disposable household income after housing costs"
+NS = {
+    "table": "urn:oasis:names:tc:opendocument:xmlns:table:1.0",
+    "text": "urn:oasis:names:tc:opendocument:xmlns:text:1.0",
+}
+TABLE_NAME = "{" + NS["table"] + "}name"
+TEXT_P = "{" + NS["text"] + "}p"
+REGIONS = {
+    "North East": "North East",
+    "North West": "North West",
+    "Yorkshire and the Humber": "Yorkshire and The Humber",
+    "East Midlands": "East Midlands",
+    "West Midlands": "West Midlands",
+    "East": "East of England",
+    "London": "London",
+    "South East": "South East",
+    "South West": "South West",
+    "Wales": "Wales",
+    "Scotland": "Scotland",
+    "Northern Ireland": "Northern Ireland",
+}
 logger = logging.getLogger(__name__)
 
-# Fallback data from DWP/HMRC "Children in low income families:
-# local area statistics 2014 to 2023", Table 4 — regional breakdown.
-# Measure: % of children in relative low income after housing costs, 2022/23.
-# Publication: https://www.gov.uk/government/statistics/children-in-low-income-families-local-area-statistics-2014-to-2023
-# Accessed: 2026-05-16
-# Used when the live download is unavailable or the spreadsheet format
-# has changed.
-FALLBACK_DATA = [
-    {"region": "North East", "child_poverty_pct": 38.0, "children_in_poverty": 185000},
-    {"region": "North West", "child_poverty_pct": 33.0, "children_in_poverty": 380000},
-    {"region": "Yorkshire and The Humber", "child_poverty_pct": 33.0, "children_in_poverty": 290000},
-    {"region": "East Midlands", "child_poverty_pct": 28.0, "children_in_poverty": 210000},
-    {"region": "West Midlands", "child_poverty_pct": 35.0, "children_in_poverty": 340000},
-    {"region": "East of England", "child_poverty_pct": 24.0, "children_in_poverty": 230000},
-    {"region": "London", "child_poverty_pct": 36.0, "children_in_poverty": 700000},
-    {"region": "South East", "child_poverty_pct": 22.0, "children_in_poverty": 310000},
-    {"region": "South West", "child_poverty_pct": 24.0, "children_in_poverty": 190000},
-    {"region": "Wales", "child_poverty_pct": 31.0, "children_in_poverty": 150000},
-    {"region": "Scotland", "child_poverty_pct": 26.0, "children_in_poverty": 230000},
-    {"region": "Northern Ireland", "child_poverty_pct": 24.0, "children_in_poverty": 90000},
-]
+
+def _read_ahc_table(root: ET.Element, sheet: str, title: str, unit: str) -> dict[str, Decimal]:
+    """Read displayed cells, avoiding the extra precision hidden in ODS values."""
+    matches = [t for t in root.findall(".//table:table", NS) if t.get(TABLE_NAME) == sheet]
+    if len(matches) != 1:
+        raise ValueError(f"Missing or duplicate HBAI table: {sheet}")
+    rows = []
+    for element_row in matches[0].findall("table:table-row", NS):
+        cells: list[str] = []
+        for cell in element_row:
+            text = " ".join("".join(p.itertext()) for p in cell.findall("text:p", NS)).strip()
+            repeat = int(cell.get("{" + NS["table"] + "}number-columns-repeated", "1"))
+            cells.extend([text] * min(repeat, 64))
+        rows.append(cells)
+    if not rows or not rows[0][0].startswith(title):
+        raise ValueError(f"Unexpected HBAI statistic: {sheet}")
+    headers = [(i, r.index(PERIOD_COLUMN)) for i, r in enumerate(rows) if PERIOD_COLUMN in r]
+    if len(headers) != 1 or not any(unit in r for r in rows):
+        raise ValueError(f"Missing HBAI period or units: {sheet}")
+    header_row, column = headers[0]
+    sections = [i for i, r in enumerate(rows) if r and r[0] == "After Housing Costs"]
+    if len(sections) != 1 or sections[0] <= header_row:
+        raise ValueError(f"Missing or duplicate AHC section: {sheet}")
+    section = rows[sections[0] + 1:]
+    if not section or section[0][0] != "Region/Country (3-year average)":
+        raise ValueError(f"Unexpected HBAI averaging basis: {sheet}")
+    values = {}
+    for row in section[1:]:
+        label = row[0]
+        if label not in REGIONS and not label.startswith("All children ("):
+            continue  # England is an aggregate overlapping the English regions.
+        key = REGIONS.get(label, "UK")
+        if key in values or column >= len(row):
+            raise ValueError(f"Duplicate or incomplete HBAI observation: {label}")
+        try:
+            value = Decimal(row[column])
+        except InvalidOperation as exc:
+            raise ValueError(f"Unavailable HBAI observation: {label}") from exc
+        if not value.is_finite() or value < 0:
+            raise ValueError(f"Invalid HBAI observation: {label}")
+        values[key] = value
+    if set(values) != {*REGIONS.values(), "UK"}:
+        raise ValueError(f"Incomplete HBAI geography: {sheet}")
+    return values
+
+
+def parse_workbook(content: bytes) -> pd.DataFrame:
+    """Extract rates and counts for the same AHC measure, geography and period."""
+    with zipfile.ZipFile(io.BytesIO(content)) as workbook:
+        root = ET.fromstring(workbook.read("content.xml"))  # nosec B314 - see the B405 note on the import.
+    rates = _read_ahc_table(root, "4_16ts", "Table 4.16ts: Percentage of children", "Percentage of children")
+    counts = _read_ahc_table(root, "4_17ts", "Table 4.17ts: Number of children", "Number of children (millions)")
+    if any(value > 100 for value in rates.values()):
+        raise ValueError("HBAI rates outside percentage range")
+    # These are the official DISPLAYED values: whole percentages and 0.1 million.
+    # Unit conversion only, never infer counts from rounded rates or vice versa.
+    return pd.DataFrame([
+        {
+            "region": region,
+            "child_poverty_pct": float(rates[region]),
+            "children_in_poverty": int(counts[region] * 1_000_000),
+            "national_avg_pct": float(rates["UK"]),
+            "above_national_avg": rates[region] > rates["UK"],
+        }
+        for region in REGIONS.values()
+    ]).sort_values("child_poverty_pct", ascending=False).reset_index(drop=True)
 
 
 def fetch() -> tuple[pd.DataFrame, bool]:
-    """Return child poverty data, using hardcoded DWP/HMRC figures.
-
-    The gov.uk landing page does not expose a stable direct-download URL
-    for the spreadsheet — the filename changes with each annual release.
-    A future enhancement could scrape the page for the current .ods link.
-
-    Returns:
-        A tuple of (DataFrame with regional data, is_fallback flag).
-    """
+    """Download the pinned official table pack; any failure aborts publication."""
+    response = requests.get(DOWNLOAD_URL, timeout=60, allow_redirects=False)
+    response.raise_for_status()
+    if response.status_code != 200:
+        raise ValueError("Unexpected HBAI download response")
+    with zipfile.ZipFile(io.BytesIO(response.content)) as archive:
+        content = archive.read(WORKBOOK)
+    frame = parse_workbook(content)  # Validate before writing any output.
     RAW_DIR.mkdir(parents=True, exist_ok=True)
-
-    logger.info("Using fallback data from DWP/HMRC statistics (2022/23, Table 4).")
-    df = pd.DataFrame(FALLBACK_DATA)
-
-    raw_path = RAW_DIR / "child_poverty_by_region_fallback.csv"
-    df.to_csv(raw_path, index=False)
-    logger.info("Raw fallback data saved to %s", raw_path)
-
-    return df, True
+    (RAW_DIR / WORKBOOK).write_bytes(content)
+    return frame, False
 
 
 def process(df_raw: pd.DataFrame, *, is_fallback: bool) -> pd.DataFrame:
-    """Clean and enrich child poverty data; write processed CSV and metadata sidecar."""
-    PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
-
+    """Write official observations and their reproducible provenance sidecar."""
+    if is_fallback:
+        raise ValueError("Unverified legacy child-poverty fallback must not be published")
     df = df_raw.copy()
-    df = df.sort_values("child_poverty_pct", ascending=False).reset_index(drop=True)
-
-    # Compute national average (weighted by children_in_poverty / child_poverty_pct
-    # gives approximate total children per region, then re-derive the weighted rate).
-    total_children_in_poverty = df["children_in_poverty"].sum()
-    total_children_approx = (
-        df["children_in_poverty"] / (df["child_poverty_pct"] / 100)
-    ).sum()
-    national_avg = (total_children_in_poverty / total_children_approx) * 100
-    df["national_avg_pct"] = round(national_avg, 1)
-    df["above_national_avg"] = df["child_poverty_pct"] > national_avg
-
-    out_path = PROCESSED_DIR / "child_poverty_by_region.csv"
-    df.to_csv(out_path, index=False)
-    logger.info("Processed data saved to %s (%d rows)", out_path, len(df))
-
-    # Write .meta.json sidecar
+    PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
+    df.to_csv(PROCESSED_DIR / "child_poverty_by_region.csv", index=False)
     meta = {
-        "source": "DWP/HMRC Children in Low Income Families",
+        "source": SOURCE,
         "source_url": SOURCE_URL,
+        "download_url": DOWNLOAD_URL,
+        "archive_member": WORKBOOK,
+        "tables": ["4.16ts", "4.17ts"],
         "access_date": ACCESS_DATE,
-        "is_fallback": is_fallback,
-        # Provenance for the /metadata contract (backend _get_data_type). These are
-        # REAL DWP published figures compiled statically into the repo (not a live
-        # fetch), so the honest marker is "static_published" — NOT "illustrative_*"
-        # (the numbers are not invented). Absent this key the API reports None,
-        # which the contract documents as "no sidecar / unknown provenance".
-        "data_type": "static_published" if is_fallback else "live_ons",
+        "is_fallback": False,
+        "data_type": "live_ons",
         "row_count": len(df),
-        "period": "2022/23",
-        "measure": "Percentage of children in relative low income after housing costs",
+        "period": PERIOD,
+        "measure": MEASURE,
+        "geography": "Nine English regions, Wales, Scotland and Northern Ireland",
+        "rounding": "Published whole percentages; counts converted from published 0.1 million",
+        "licence": "Open Government Licence v3.0",
+        "update_pattern": "Annual; pinned release, not automatically the latest",
     }
-    meta_path = PROCESSED_DIR / "child_poverty_by_region.meta.json"
-    meta_path.write_text(json.dumps(meta, indent=2), encoding="utf-8")
-    logger.info("Metadata sidecar saved to %s", meta_path)
-
+    (PROCESSED_DIR / "child_poverty_by_region.meta.json").write_text(
+        json.dumps(meta, indent=2), encoding="utf-8"
+    )
     return df
 
 
@@ -166,7 +218,7 @@ def build_chart(df: pd.DataFrame) -> None:
 
     fig.update_layout(
         title=dict(
-            text="Child Poverty Rates by Region — UK (2022/23)",
+            text=f"Child Poverty by Region (AHC): {PERIOD}",
             font=dict(size=18),
         ),
         xaxis=dict(
@@ -187,10 +239,10 @@ def build_chart(df: pd.DataFrame) -> None:
         annotations=[
             dict(
                 text=(
-                    f"Source: DWP/HMRC Children in Low Income Families · "
+                    f'Source: <a href="{SOURCE_URL}">DWP HBAI, tables 4.16ts and 4.17ts</a>.<br>'
                     f"OGL v3.0 · Accessed {ACCESS_DATE}<br>"
                     f"Red bars indicate regions above the national average. "
-                    f"Measure: relative low income after housing costs."
+                    f"{PERIOD}. Relative low income after housing costs."
                 ),
                 xref="paper", yref="paper",
                 x=0, y=-0.18,
@@ -204,11 +256,12 @@ def build_chart(df: pd.DataFrame) -> None:
     write_accessible_chart(
         fig,
         out_path,
-        title="Child Poverty Rates by Region — UK",
+        title="Child Poverty Rates by Region: UK (AHC)",
         description=(
-            "Horizontal bar chart showing child poverty rates across UK regions in 2022/23. "
-            "The North East has the highest rate at 38%, while the South East has the lowest "
-            "at 22%. Regions above the national average are highlighted in red."
+            f"Horizontal bar chart of relative low income after housing costs across UK regions. "
+            f"{PERIOD}. Published whole percentages and counts rounded to the nearest "
+            "hundred thousand. The UK reference is published for the same period. "
+            f"Source: {SOURCE}. {SOURCE_URL}. Accessed {ACCESS_DATE}."
         ),
     )
 

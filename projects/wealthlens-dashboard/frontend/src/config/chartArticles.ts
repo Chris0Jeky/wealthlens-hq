@@ -46,6 +46,7 @@ export interface ChartConfig {
     licence: string
     accessed: string
     chartId: string
+    links?: { name: string; url: string }[]
   }
   /** Article body sections. */
   article: {
@@ -512,7 +513,7 @@ export const chartConfigs: Record<string, ChartConfig> = {
       {
         domain: "Poverty · UK",
         title: "Child poverty by UK region",
-        finding: "Up to <b>38%</b> of children in the North East live in poverty.",
+        finding: "Compare official regional child poverty estimates after housing costs.",
         to: "/charts/child-poverty",
         sparkType: "bar",
       },
@@ -681,68 +682,83 @@ export const chartConfigs: Record<string, ChartConfig> = {
     ],
     pills: [
       { text: "Economy", accent: true },
-      { text: "2000–present" },
+      { text: "Monthly observations since 2000" },
       { text: "United Kingdom" },
-      { text: "Updated 16 May 2026" },
+      { text: "Accessed 2026-10-22" },
     ],
     headline: "The cost of borrowing:",
-    headlineEmphasis: "25 years of interest rate history.",
-    lede: "From <strong>around 6% in 2000–01</strong> to a historic low of <strong>0.1% in 2020–21</strong>, then the fastest rise in decades to <strong>5.25% by late 2023</strong>. The Bank Rate shapes mortgages, savings, and the real value of money.",
+    headlineEmphasis: "monthly Bank Rate and inflation.",
+    lede: "The monthly average of official Bank Rate went from <strong>6% through most of 2000</strong> to a historic low of <strong>0.1% from April 2020 to November 2021</strong>, then climbed to <strong>5.25% from September 2023</strong>. CPI inflation (ONS annual rate) peaked at <strong>11.1% in October 2022</strong>.",
     meta: [
       {
-        label: "Source",
-        value: "Bank of England IADB",
-        href: "https://www.bankofengland.co.uk/boeapps/database/",
+        label: "Bank Rate source",
+        value: "BoE IUMABEDR, monthly average of official Bank Rate",
+        href: "https://www.bankofengland.co.uk/boeapps/database/_iadb-fromshowcolumns.asp?csv.x=yes&SeriesCodes=IUMABEDR&CSVF=TN&UsingCodes=Y&VFD=N&Datefrom=01%2FJan%2F2000&Dateto=01%2FDec%2F2099&VPD=Y",
       },
-      { label: "Series", value: "IUDBEDR (Bank Rate) + D7BT (CPI)" },
-      { label: "Coverage", value: "2000 — present" },
-      { label: "Updated", value: "16 May 2026" },
-      { label: "Licence", value: "OGL v3.0" },
-      { label: "Source cadence", value: "BoE monthly series (IUDBEDR)" },
+      {
+        label: "CPI source",
+        value: "ONS D7G7 (MM23), CPI annual rate",
+        href: "https://www.ons.gov.uk/generator?format=csv&uri=/economy/inflationandpriceindices/timeseries/d7g7/mm23",
+      },
+      { label: "Coverage", value: "2000-01-01 to 2026-09-01" },
+      { label: "Accessed", value: "2026-10-22" },
+      { label: "Licence", value: "Bank of England terms / ONS OGL v3.0" },
+      { label: "Source cadence", value: "Monthly" },
       { label: "Chart ID", value: "WL-E-001" },
     ],
+    // Figures below are derived from public/data/boe-rates.json; the provenance spec checks parity.
     stats: [
       {
-        label: "Peak rate (2023)",
+        label: "Peak Bank Rate (Sep 2023 to Jul 2024)",
         value: "5.25",
         unit: "%",
-        description: "Highest Bank Rate since 2008, reached August 2023",
+        description: "Monthly average of official Bank Rate at its 2023-24 peak (BoE IUMABEDR)",
         headline: true,
       },
       {
-        label: "Historic low",
+        label: "Low (Apr 2020 to Nov 2021)",
         value: "0.1",
         unit: "%",
-        description: "Emergency rate held from March 2020 to December 2021",
+        description: "Lowest monthly-average Bank Rate in the plotted series (BoE IUMABEDR)",
       },
       {
-        label: "Peak CPI (2022)",
+        label: "Peak CPI (October 2022)",
         value: "11.1",
         unit: "%",
-        description: "Highest CPI inflation in 41 years, October 2022",
+        description: "Highest CPI annual rate in the plotted series (ONS D7G7, MM23)",
       },
       {
-        label: "Rate rises (2021–23)",
-        value: "14",
-        unit: "",
-        description: "Consecutive rate increases — the fastest tightening cycle since the 1980s",
+        label: "Latest Bank Rate (September 2026)",
+        value: "3.75",
+        unit: "%",
+        description: "Monthly average of official Bank Rate (BoE IUMABEDR)",
       },
     ],
     toolbar: {
-      title: "Bank Rate vs CPI inflation (%)",
+      title: "Monthly-average Bank Rate vs CPI annual inflation (%)",
       unit: "%",
       series: [
-        { label: "Bank Rate", color: "#1a56db", bold: true },
-        { label: "CPI Inflation", color: "var(--wl-red)" },
+        { label: "Monthly-average Bank Rate", color: "#1a56db", bold: true },
+        { label: "CPI annual inflation", color: "var(--wl-red)" },
       ],
       ranges: ["All", "10y", "5y"],
       defaultRange: "All",
     },
     source: {
-      name: "Bank of England Interactive Analytical Database",
-      url: "https://www.bankofengland.co.uk/boeapps/database/",
-      licence: "OGL v3.0",
-      accessed: "2026-05-16",
+      name: "Bank of England IUMABEDR / ONS D7G7 (MM23)",
+      url: "https://www.bankofengland.co.uk/boeapps/database/_iadb-fromshowcolumns.asp?csv.x=yes&SeriesCodes=IUMABEDR&CSVF=TN&UsingCodes=Y&VFD=N&Datefrom=01%2FJan%2F2000&Dateto=01%2FDec%2F2099&VPD=Y",
+      links: [
+        {
+          name: "Bank of England IUMABEDR",
+          url: "https://www.bankofengland.co.uk/boeapps/database/_iadb-fromshowcolumns.asp?csv.x=yes&SeriesCodes=IUMABEDR&CSVF=TN&UsingCodes=Y&VFD=N&Datefrom=01%2FJan%2F2000&Dateto=01%2FDec%2F2099&VPD=Y",
+        },
+        {
+          name: "ONS D7G7",
+          url: "https://www.ons.gov.uk/generator?format=csv&uri=/economy/inflationandpriceindices/timeseries/d7g7/mm23",
+        },
+      ],
+      licence: "Bank of England terms / ONS OGL v3.0",
+      accessed: "2026-10-22",
       chartId: "WL-E-001",
     },
     article: {
@@ -750,35 +766,29 @@ export const chartConfigs: Record<string, ChartConfig> = {
         {
           heading: "What this chart shows",
           paragraphs: [
-            "Two series across 2000–present: the <em>Bank of England official Bank Rate</em> (the BoE's monthly series — the interest rate it charges to commercial banks, which directly influences mortgage and savings rates) and the <em>CPI annual inflation rate</em> (the 12-month percentage change in consumer prices). Together they show how monetary policy responds to — and sometimes lags behind — price pressures.",
-          ],
-        },
-        {
-          heading: "",
-          paragraphs: [
-            "The story has three distinct chapters. From 2000 to 2008, rates were relatively stable at 4–5%, keeping inflation near the 2% target. The 2008 crisis triggered emergency cuts to 0.5%, then 0.25%, and finally 0.1% in 2020. When inflation surged past 10% in 2022 — driven by energy prices and post-COVID supply shocks — the Bank raised rates 14 consecutive times in under two years, the fastest tightening cycle since the 1980s.",
+            "The monthly average of official Bank Rate (BoE IUMABEDR) and the CPI annual inflation rate (ONS D7G7, MM23) are joined by calendar month. The Bank Rate series averages the official rate during each month; it does not show the policy setting on an individual decision date.",
           ],
         },
         {
           heading: "Why it",
           headingEmphasis: "matters",
           paragraphs: [
-            'Interest rates are the mechanism through which monetary policy reaches households. A 5.25% rate means a typical £200,000 mortgage costs roughly £500/month more than at 0.1%. Savers benefit, but homeowners and renters (via landlord costs) bear the burden. The interaction between rates and inflation also determines real wage growth — when CPI outstrips pay rises, workers get poorer even in a "growing" economy.',
+            "Bank Rate influences mortgage and savings rates, while CPI measures changes in consumer prices. Comparing the series helps explain the pressures on borrowers and savers. Commercial borrowing rates also include lender margins, so the chart does not estimate an individual household's mortgage payments.",
           ],
         },
       ],
       pullQuote: {
-        text: "From <strong>0.1%</strong> to <strong>5.25%</strong> in under two years — the fastest rate-rise cycle in decades. For a typical mortgage holder, that means hundreds of pounds more per month.",
+        text: "Monthly averages describe the rate across a whole month. A policy decision within that month can produce a different setting from the average plotted here.",
       },
     },
     methodology: `
-      <p>Bank Rate data uses the BoE series IUDBEDR (Official Bank Rate, monthly, not seasonally adjusted). CPI uses series D7BT (CPI annual rate, 12-month % change) accessed via the BoE Interactive Analytical Database (IADB).</p>
+      <p>Bank Rate is the <a href="https://www.bankofengland.co.uk/boeapps/database/_iadb-fromshowcolumns.asp?csv.x=yes&amp;SeriesCodes=IUMABEDR&amp;CSVF=TN&amp;UsingCodes=Y&amp;VFD=N&amp;Datefrom=01%2FJan%2F2000&amp;Dateto=01%2FDec%2F2099&amp;VPD=Y">BoE IUMABEDR monthly average of official Bank Rate</a>, not seasonally adjusted. CPI is the <a href="https://www.ons.gov.uk/generator?format=csv&amp;uri=/economy/inflationandpriceindices/timeseries/d7g7/mm23">ONS D7G7 (MM23) CPI annual rate</a>. Both sources accessed 2026-10-22.</p>
       <ul>
-        <li>Bank Rate is a step function — it changes only on MPC decision dates.</li>
-        <li>CPI is the headline consumer price index (not CPIH which includes owner-occupier housing costs).</li>
-        <li>Date range starts from January 2000 to capture the full modern inflation-targeting era.</li>
+        <li>BoE month-end dates label monthly averages. The chart labels the same calendar month at its start; it does not plot individual MPC decisions.</li>
+        <li>CPI is the annual percentage change in consumer prices, not CPIH.</li>
+        <li>Only months covered by both official sources from January 2000 onwards are published, without filling or interpolating missing observations.</li>
       </ul>
-      <p><strong>Known caveats:</strong> CPI does not include mortgage interest payments (unlike the old RPI). The Bank Rate is not the same as the rate borrowers pay — commercial rates include a margin. Real interest rates (Bank Rate minus CPI) were deeply negative in 2021–22, effectively eroding the value of savings.</p>
+      <p><strong>Known caveats:</strong> CPI excludes mortgage interest payments. Bank Rate is not the rate individual borrowers pay; commercial rates include a margin.</p>
     `,
     related: [
       {
@@ -813,72 +823,46 @@ export const chartConfigs: Record<string, ChartConfig> = {
       { label: "Home", to: "/" },
       { label: "The data", to: "/" },
       { label: "Poverty", to: "#" },
-      { label: "One in three children in parts of Britain grows up in poverty" },
+      { label: "Child poverty by UK region" },
     ],
     pills: [
       { text: "Poverty", accent: true },
-      { text: "Regional · 2022-23" },
+      { text: "Regional · 2021/22 to 2023/24" },
       { text: "United Kingdom" },
-      { text: "Updated 16 May 2026" },
+      { text: "Three-year average" },
     ],
-    headline: "One in three children in parts of Britain",
-    headlineEmphasis: "grows up in poverty.",
-    lede: "After housing costs, <strong>38%</strong> of children in the North East live in relative poverty — the highest regional rate in the UK. Even the lowest region (South East) has a rate of <strong>22%</strong>. Nationally, over 3.3 million children are affected.",
+    headline: "Child poverty varies",
+    headlineEmphasis: "across UK regions.",
+    lede: "Official survey estimates of relative low income after housing costs, averaged over 2021/22 to 2023/24. Rates and counts come from DWP's Households Below Average Income (HBAI) regional tables. They replace legacy figures whose provenance could not be verified.",
     meta: [
       {
         label: "Source",
-        value: "DWP/HMRC Statistics",
-        href: "https://www.gov.uk/government/statistics/children-in-low-income-families-local-area-statistics-2014-to-2023",
+        value: "DWP Households Below Average Income",
+        href: "https://www.gov.uk/government/statistics/households-below-average-income-for-financial-years-ending-1995-to-2024",
       },
-      { label: "Series", value: "Children in Low Income Families" },
-      { label: "Coverage", value: "2022-23 (12 regions)" },
-      { label: "Updated", value: "16 May 2026" },
+      { label: "Tables", value: "4.16ts (rates), 4.17ts (counts)" },
+      { label: "Coverage", value: "2021/22 to 2023/24, three-year average" },
+      { label: "Accessed", value: "2026-10-22" },
       { label: "Licence", value: "OGL v3.0" },
-      { label: "Measure", value: "After housing costs" },
+      { label: "Measure", value: "Relative low income after housing costs" },
       { label: "Chart ID", value: "WL-PV-001" },
     ],
-    stats: [
-      {
-        label: "Highest (North East)",
-        value: "38",
-        unit: "%",
-        description: "More than one in three children in relative poverty after housing costs",
-        headline: true,
-      },
-      {
-        label: "London",
-        value: "36",
-        unit: "%",
-        description: "Around 700,000 children in poverty in the capital",
-      },
-      {
-        label: "Lowest (South East)",
-        value: "22",
-        unit: "%",
-        description: "Even the 'best' region has more than one in five children in poverty",
-      },
-      {
-        label: "Children affected (UK)",
-        value: "3.3",
-        unit: "m+",
-        description: "Total children in relative poverty across all regions",
-      },
-    ],
+    stats: [],
     toolbar: {
-      title: "Child poverty rate by UK region (%)",
+      title: "Child poverty rate by UK region after housing costs (%)",
       unit: "%",
       series: [
         { label: "Above UK average", color: "#b91c1c", bold: true },
-        { label: "Below UK average", color: "#1a56db" },
+        { label: "At or below UK average", color: "#1a56db" },
       ],
       ranges: ["All"],
       defaultRange: "All",
     },
     source: {
-      name: "DWP/HMRC Children in Low Income Families (local area statistics, 2014–2023)",
-      url: "https://www.gov.uk/government/statistics/children-in-low-income-families-local-area-statistics-2014-to-2023",
+      name: "DWP HBAI, tables 4.16ts and 4.17ts, 2021/22 to 2023/24 (three-year average)",
+      url: "https://www.gov.uk/government/statistics/households-below-average-income-for-financial-years-ending-1995-to-2024",
       licence: "OGL v3.0",
-      accessed: "2026-05-16",
+      accessed: "2026-10-22",
       chartId: "WL-PV-001",
     },
     article: {
@@ -886,36 +870,26 @@ export const chartConfigs: Record<string, ChartConfig> = {
         {
           heading: "What this chart shows",
           paragraphs: [
-            "The percentage of children living in relative low income <em>after housing costs</em> (AHC) by UK region. Relative low income means a household income below 60% of the median. After-housing-costs is the more policy-relevant measure because housing costs vary enormously by region and consume a large share of low-income families' budgets.",
+            "The percentage of dependent children living in households below 60% of contemporary median equivalised disposable household income after housing costs (AHC). The chart covers the nine English regions and Wales, Scotland and Northern Ireland. All regional figures and the UK reference cover the same three-year period.",
           ],
         },
         {
-          heading: "",
+          heading: "How to interpret the estimates",
           paragraphs: [
-            "The North East has the highest rate at 38%, closely followed by London (36%) and the West Midlands (35%). London's high rate may seem paradoxical given high average incomes — but extreme housing costs push many families below the poverty line after rent is paid. The South East and East of England have the lowest rates, but even these exceed 20%. No region in the UK has a child poverty rate below one in five.",
-          ],
-        },
-        {
-          heading: "Why it",
-          headingEmphasis: "matters",
-          paragraphs: [
-            "Child poverty is the single strongest predictor of poor outcomes in education, health, and lifetime earnings. It is also the most tractable form of inequality — targeted benefit increases (e.g. child benefit, universal credit child elements) have historically reduced child poverty rates rapidly. The regional variation shows that poverty is not evenly distributed: it clusters in areas already affected by deindustrialisation, low GDHI, and poor housing.",
+            "HBAI uses the Family Resources Survey. Regional estimates are averaged across years to reduce sampling variability. Rates are published as whole percentages; counts are rounded to the nearest hundred thousand. Independently rounded regional counts may not sum to the UK total. Differences between regions are subject to sampling uncertainty.",
           ],
         },
       ],
-      pullQuote: {
-        text: "No region in the UK has a child poverty rate below <strong>one in five</strong>. In the North East, it is closer to <strong>two in five</strong>. These are not edge cases — they are millions of children.",
-      },
     },
     methodology: `
-      <p>Data is from the DWP/HMRC "Children in Low Income Families" local area statistics, which combine HMRC administrative data on family incomes with DWP benefit records.</p>
+      <p>Source: DWP Households Below Average Income, FYE 1995 to FYE 2024 release, tables 4.16ts and 4.17ts, accessed 2026-10-22. This pinned release includes the correction to 2022/23 cost-of-living support. It is not presented as the latest release.</p>
       <ul>
-        <li><strong>Measure:</strong> Relative low income after housing costs (below 60% of national median equivalised household income, AHC).</li>
-        <li><strong>Unit:</strong> Percentage of dependent children in each region.</li>
-        <li><strong>Year:</strong> 2022-23 financial year (the most recent available).</li>
-        <li>"Children in poverty" counts are rounded to nearest thousand.</li>
+        <li><strong>Measure:</strong> Below 60% of contemporary median equivalised disposable household income after housing costs.</li>
+        <li><strong>Period:</strong> 2021/22 to 2023/24, three-year average for both regional observations and the UK reference.</li>
+        <li><strong>Children:</strong> Under 16, or aged 16 to 19, unmarried and in full-time non-advanced education.</li>
+        <li><strong>Precision:</strong> Published whole percentages and counts rounded to the nearest hundred thousand. Counts are read from the official table, never inferred from rounded rates.</li>
       </ul>
-      <p><strong>Known caveats:</strong> The measure is "relative" — if median income falls, the poverty line falls too, potentially reducing measured poverty even if living standards worsen. Regional averages mask significant local variation (e.g. within London, rates range from under 20% in Richmond to over 50% in Tower Hamlets). Self-employed income is modelled, not directly measured.</p>
+      <p>The former figures were hard-coded fallback data with unverified provenance. Their citation to the 2014 to 2023 Children in Low Income Families release could not substantiate an AHC measure: that release covers before housing costs. The replacement HBAI figures use a different source and period.</p>
     `,
     related: [
       {

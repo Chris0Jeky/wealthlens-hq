@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
-import { mount } from "@vue/test-utils"
+import { flushPromises, mount } from "@vue/test-utils"
 import { createPinia, setActivePinia } from "pinia"
 import { ref, shallowRef } from "vue"
 
@@ -24,6 +24,11 @@ import { ref, shallowRef } from "vue"
 const mockRows = shallowRef<Record<string, unknown>[]>([])
 const mockLoading = ref(false)
 const mockError = ref<string | null>(null)
+const mockFetchMetadata = vi.fn()
+
+vi.mock("@/stores/data", () => ({
+  useDataStore: () => ({ fetchMetadata: mockFetchMetadata }),
+}))
 
 vi.mock("@/composables/useChartData", () => ({
   useChartData: () => ({
@@ -83,6 +88,7 @@ describe("BoeRatesChart accessible data table", () => {
     mockRows.value = BOE_ROWS
     mockLoading.value = false
     mockError.value = null
+    mockFetchMetadata.mockResolvedValue({ data_type: "live_ons" })
 
     Object.defineProperty(window, "matchMedia", {
       writable: true,
@@ -98,6 +104,43 @@ describe("BoeRatesChart accessible data table", () => {
         dispatchEvent: vi.fn(),
       })),
     })
+  })
+
+  it("warns visibly and accessibly when metadata declares illustrative data", async () => {
+    mockFetchMetadata.mockResolvedValue({ data_type: "illustrative_fallback" })
+    const wrapper = mount(BoeRatesChart)
+    await flushPromises()
+    expect(mockFetchMetadata).toHaveBeenCalledWith("boe-rates")
+    expect(wrapper.find('[role="note"]').text()).toContain("Illustrative composite")
+    expect(wrapper.find('[role="img"]').attributes("aria-label")).toContain("Illustrative")
+    expect(wrapper.find("caption").text()).toContain("not published statistics")
+  })
+
+  it.each(["live_ons", "static_published"])("has no caveat for %s metadata", async (dataType) => {
+    mockFetchMetadata.mockResolvedValue({ data_type: dataType })
+    const wrapper = mount(BoeRatesChart)
+    await flushPromises()
+    expect(wrapper.find('[role="note"]').exists()).toBe(false)
+    expect(wrapper.text()).not.toContain("Illustrative")
+    expect(wrapper.text()).not.toContain("Unverified provenance")
+  })
+
+  it.each([null, undefined, "unverified", "invalid"])(
+    "warns when provenance is %s",
+    async (dataType) => {
+      mockFetchMetadata.mockResolvedValue({ data_type: dataType })
+      const wrapper = mount(BoeRatesChart)
+      await flushPromises()
+      expect(wrapper.find('[role="note"]').text()).toContain("Unverified provenance")
+    },
+  )
+
+  it("keeps the caveat while metadata loads and after a fetch failure", async () => {
+    mockFetchMetadata.mockRejectedValue(new Error("metadata unavailable"))
+    const wrapper = mount(BoeRatesChart)
+    expect(wrapper.find('[role="note"]').text()).toContain("Unverified provenance")
+    await flushPromises()
+    expect(wrapper.find('[role="note"]').text()).toContain("Unverified provenance")
   })
 
   it("renders an accessible data table with the chart's column headers", () => {
@@ -212,5 +255,17 @@ describe("BoeRatesChart accessible data table", () => {
     ])
     // A real 0 must never be rendered as the missing-value placeholder.
     expect(wrapper.text()).not.toContain("—")
+  })
+})
+
+describe("monthly-average rendering", () => {
+  it("joins monthly observations without a policy-decision step function", () => {
+    mockRows.value = BOE_ROWS
+    const wrapper = mount(BoeRatesChart)
+    const option = wrapper.findComponent({ name: "VChart" }).props("option")
+    const bank = option.series.find((series: { name: string }) => series.name === "Bank Rate")
+    expect(bank.step).toBeUndefined()
+    expect(bank.data).toEqual(BOE_ROWS.map((row) => row.bank_rate))
+    wrapper.unmount()
   })
 })

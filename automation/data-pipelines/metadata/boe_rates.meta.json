@@ -1,24 +1,34 @@
 {
   "dataset": "boe_rates",
-  "description": "Bank of England base rate and CPI annual inflation rate over time.",
+  "data_type": "illustrative_fallback",
+  "provenance_note": "Illustrative worked examples, not published statistics. The source links are references and do not verify these figures; live fetch provenance is written by the pipeline.",
+  "description": "Monthly average of official Bank Rate (BoE IUMABEDR) and CPI annual inflation (ONS D7G7, MM23).",
   "sources": [
     {
       "name": "Bank of England",
-      "publication": "Official Bank Rate history",
-      "url": "https://www.bankofengland.co.uk/boeapps/database/Bank-Rate.asp",
-      "licence": "OGL v3.0"
+      "publication": "Monthly average of official Bank Rate (IUMABEDR, not end-month)",
+      "url": "https://www.bankofengland.co.uk/boeapps/database/_iadb-fromshowcolumns.asp",
+      "licence": "Bank of England terms",
+      "licence_url": "https://www.bankofengland.co.uk/legal",
+      "series": "IUMABEDR",
+      "format": "csv",
+      "update_pattern": "monthly"
     },
     {
       "name": "ONS",
-      "publication": "Consumer price inflation, UK",
-      "url": "https://www.ons.gov.uk/economy/inflationandpriceindices/bulletins/consumerpriceinflation/latest",
-      "licence": "OGL v3.0"
+      "publication": "CPI ANNUAL RATE 00: ALL ITEMS 2015=100 (D7G7, MM23)",
+      "url": "https://www.ons.gov.uk/generator?format=csv&uri=/economy/inflationandpriceindices/timeseries/d7g7/mm23",
+      "licence": "OGL v3.0",
+      "series": "D7G7",
+      "format": "csv",
+      "update_pattern": "monthly"
     }
   ],
-  "access_date": "2026-05-15",
+  "access_date": null,
   "columns": {
-    "date": "Date (YYYY-MM-DD)",
-    "bank_rate": "Bank of England base rate (%)",
-    "cpi_annual": "CPI annual rate of change (%)"
-  }
+    "date": "Calendar month labelled YYYY-MM-01; IADB month-end dates label monthly averages, not end-month policy readings",
+    "bank_rate": "Monthly average of official Bank Rate (IUMABEDR, %) when live; illustrative values otherwise",
+    "cpi_annual": "ONS D7G7 (MM23), CPI all-items annual rate of change (%) when live; illustrative values otherwise"
+  },
+  "fetch_note": "Fetch BoE IUMABEDR and ONS D7G7 separately with the same retry policy. Join calendar months from 2000 onwards over the common coverage, without filling or interpolating. Only a successful complete join is live_ons; otherwise the whole dataset is illustrative."
 }

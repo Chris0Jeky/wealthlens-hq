@@ -16,29 +16,48 @@
 
 sources:
   - id: boe-bank-rate-cpi
-    name: Bank of England Bank Rate and CPI
+    name: Bank of England monthly average of official Bank Rate (IUMABEDR)
     url: https://www.bankofengland.co.uk/boeapps/database/_iadb-fromshowcolumns.asp
-    access_date: "2026-05-16"
+    access_date: "2026-10-22"
+    format: csv
+    licence: Bank of England terms (https://www.bankofengland.co.uk/legal)
+    update_pattern: monthly
+    pipeline: fetch_boe_rates.py
+    notes: >
+      IUMABEDR is a monthly average, not an end-month policy rate. Retain the
+      existing registry ID for compatibility. Join with ONS D7G7 by calendar
+      month from 2000 onwards; chart dates use YYYY-MM-01. The whole dataset
+      remains illustrative if either official source cannot be fetched.
+
+  - id: ons-cpi-d7g7
+    name: ONS CPI ANNUAL RATE 00 ALL ITEMS 2015=100 (D7G7, MM23)
+    url: https://www.ons.gov.uk/economy/inflationandpriceindices/timeseries/d7g7/mm23
+    api_url: https://www.ons.gov.uk/generator?format=csv&uri=/economy/inflationandpriceindices/timeseries/d7g7/mm23
+    access_date: "2026-10-22"
     format: csv
     licence: OGL-3.0
     update_pattern: monthly
     pipeline: fetch_boe_rates.py
     notes: >
-      Series IUDBEDR (Bank Rate) and D7BT (CPI annual rate via ONS).
-      Pipeline includes hardcoded fallback if IADB endpoint is unavailable.
+      Read monthly YYYY MON observations only, skipping metadata, annual and
+      quarterly rows. D7G7 is an ONS series, not an IADB code. Publish only
+      common months with BoE IUMABEDR, without interpolation or forward fill.
 
   - id: dwp-child-poverty
-    name: DWP/HMRC Children in Low Income Families
-    url: https://www.gov.uk/government/statistics/children-in-low-income-families-local-area-statistics-2014-to-2023
-    access_date: "2026-05-16"
-    format: xlsx
+    name: DWP Households Below Average Income (HBAI), tables 4.16ts and 4.17ts
+    url: https://www.gov.uk/government/statistics/households-below-average-income-for-financial-years-ending-1995-to-2024
+    access_date: "2026-10-22"
+    format: ods-in-zip
     licence: OGL-3.0
     update_pattern: annual
     pipeline: fetch_child_poverty.py
     notes: >
-      Percentage of children in relative low income after housing costs by
-      UK region. Currently uses hardcoded 2022/23 figures; spreadsheet URL
-      changes with each annual release.
+      Regional relative low income after housing costs, below 60% of contemporary
+      median equivalised disposable household income, 2021/22 to 2023/24
+      three-year average. Rates from table 4.16ts, counts from 4.17ts, read at
+      published precision. The UK reference covers the same period. Pinned
+      official download, no hardcoded fallback. The previous CiLIF citation
+      could not substantiate an AHC measure and the legacy constants were unverified.
 
   - id: resolution-generational-wealth
     name: Resolution Foundation Intergenerational Audit
@@ -83,6 +102,20 @@ sources:
       covers 1997-2023. Ranges from Kensington and Chelsea, and Hammersmith
       and Fulham (£79,500) to Blackpool (£14,200). Fallback URL available for
       1997-2022 edition.
+
+  - id: ons-gdp-ybha
+    name: ONS Gross Domestic Product at market prices, current price, seasonally adjusted (YBHA)
+    url: https://www.ons.gov.uk/economy/grossdomesticproductgdp/timeseries/ybha/qna
+    access_date: "2026-10-22"
+    format: csv
+    licence: OGL-3.0
+    update_pattern: quarterly
+    pipeline: null
+    notes: >
+      Calendar-year 2023 value (2,766,446m GBP, Quarterly National Accounts
+      release 2026-09-30) is the wealth tax simulator's GDP denominator
+      (frontend/src/utils/wealthTaxSimulator.ts UK_GDP). Hand-copied
+      constant, re-check on each QNA release.
 
   - id: ons-housing-affordability
     name: ONS Housing Affordability in England and Wales

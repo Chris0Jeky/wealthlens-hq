@@ -40,14 +40,14 @@ function formatCell(value: string | number | null | undefined, col: string): str
 <template>
   <details class="mt-4">
     <summary
-      class="cursor-pointer text-sm font-medium text-gray-700 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded px-2 py-1"
+      class="cursor-pointer text-sm font-medium text-[var(--wl-ink-body)] hover:text-[var(--wl-ink)] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded px-2 py-1"
     >
       View data as table
     </summary>
 
     <div class="overflow-x-auto mt-2">
       <table class="min-w-full border-collapse border border-gray-300 text-sm">
-        <caption class="text-left text-sm font-medium text-gray-600 pb-2">
+        <caption class="text-left text-sm font-medium text-[var(--wl-ink-muted)] pb-2">
           {{
             props.caption
           }}

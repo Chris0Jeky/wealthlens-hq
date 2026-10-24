@@ -18,6 +18,7 @@ import SkeletonLoader from "@/components/SkeletonLoader.vue"
 import { DATASET_PROVENANCE } from "@/constants/datasetProvenance"
 import { usePageMeta } from "@/composables/usePageMeta"
 import { SITE_URL } from "@/constants/site"
+import childPovertySource from "../../public/data/child-poverty-metadata.json"
 
 usePageMeta({
   title: "Data Sources",
@@ -46,7 +47,21 @@ const filteredDatasets = computed(() => {
 
 onMounted(async () => {
   try {
-    allMetadata.value = await store.fetchAllMetadata()
+    allMetadata.value = (await store.fetchAllMetadata()).map((ds) =>
+      ds.name === "child-poverty" &&
+      (["download_url", "tables", "period", "measure"] as const).every(
+        (field) =>
+          JSON.stringify((ds as DatasetMetadata & Partial<typeof childPovertySource>)[field]) ===
+          JSON.stringify(childPovertySource[field]),
+      ) &&
+      ["live_ons", "static_published"].includes(ds.data_type ?? "") &&
+      ds.source === childPovertySource.source &&
+      ds.source_url === childPovertySource.source_url &&
+      ds.description === childPovertySource.description &&
+      ds.access_date === childPovertySource.access_date
+        ? { ...ds, source_url: childPovertySource.download_url }
+        : ds,
+    )
   } catch (e) {
     error.value = e instanceof Error ? e.message : "Failed to load data source information"
   } finally {
@@ -144,8 +159,14 @@ function formatDatasetName(name: string): string {
                 {{ ds.description }}
               </td>
               <td class="py-3 px-4">
-                <ExternalLink :href="ds.source_url">
-                  {{ ds.source }}
+                <ExternalLink
+                  v-for="source in ds.sources?.length
+                    ? ds.sources
+                    : [{ name: ds.source, url: ds.source_url }]"
+                  :key="source.url"
+                  :href="source.url"
+                >
+                  {{ source.name }}
                 </ExternalLink>
               </td>
               <td class="py-3 px-4 text-[var(--wl-ink-body)]">
@@ -183,8 +204,14 @@ function formatDatasetName(name: string): string {
             <div class="flex gap-2">
               <dt class="font-medium text-[var(--wl-ink)] min-w-[5rem]">Source:</dt>
               <dd>
-                <ExternalLink :href="ds.source_url">
-                  {{ ds.source }}
+                <ExternalLink
+                  v-for="source in ds.sources?.length
+                    ? ds.sources
+                    : [{ name: ds.source, url: ds.source_url }]"
+                  :key="source.url"
+                  :href="source.url"
+                >
+                  {{ source.name }}
                 </ExternalLink>
               </dd>
             </div>
