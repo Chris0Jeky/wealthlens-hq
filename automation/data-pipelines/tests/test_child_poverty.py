@@ -123,6 +123,7 @@ def test_static_api_preserves_fetched_citation_and_observations(tmp_path, monkey
     spec = importlib.util.spec_from_file_location(
         "child_static_api", Path(__file__).resolve().parents[3] / "scripts/generate_static_api.py"
     )
+    assert spec is not None and spec.loader is not None
     api = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(api)
     processed = tmp_path / "processed"
@@ -171,7 +172,11 @@ def test_live_and_static_catalogues_cite_the_same_official_tables():
     ]
     for path in paths:
         tree = ast.parse(path.read_text(encoding="utf-8"))
-        node = next(n for n in tree.body if isinstance(n, ast.AnnAssign) and n.target.id == "DATASET_META")
+        node = next(
+            n for n in tree.body
+            if isinstance(n, ast.AnnAssign) and isinstance(n.target, ast.Name) and n.target.id == "DATASET_META"
+        )
+        assert node.value is not None
         meta = ast.literal_eval(node.value)["child-poverty"]
         assert meta["source_url"] == cp.SOURCE_URL
         assert meta["source"] == cp.SOURCE

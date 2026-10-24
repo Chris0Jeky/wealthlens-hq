@@ -8,7 +8,7 @@ from __future__ import annotations
 import io
 import json
 import logging
-import xml.etree.ElementTree as ET
+import xml.etree.ElementTree as ET  # nosec B405 - stdlib ElementTree resolves no external entities; expat >= 2.4.1 bounds entity expansion.
 import zipfile
 from datetime import date
 from decimal import Decimal, InvalidOperation
@@ -109,7 +109,7 @@ def _read_ahc_table(root: ET.Element, sheet: str, title: str, unit: str) -> dict
 def parse_workbook(content: bytes) -> pd.DataFrame:
     """Extract rates and counts for the same AHC measure, geography and period."""
     with zipfile.ZipFile(io.BytesIO(content)) as workbook:
-        root = ET.fromstring(workbook.read("content.xml"))
+        root = ET.fromstring(workbook.read("content.xml"))  # nosec B314 - see the B405 note on the import.
     rates = _read_ahc_table(root, "4_16ts", "Table 4.16ts: Percentage of children", "Percentage of children")
     counts = _read_ahc_table(root, "4_17ts", "Table 4.17ts: Number of children", "Number of children (millions)")
     if any(value > 100 for value in rates.values()):
