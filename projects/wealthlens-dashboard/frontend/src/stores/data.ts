@@ -11,7 +11,7 @@ export interface DatasetMetadata {
   description: string
   source: string
   source_url: string
-  sources?: { name: string; url: string; access_date?: string | null }[]
+  sources?: { name: string; url: string; publication?: string; access_date?: string | null }[]
   access_date: string
   row_count: number
   columns: string[]

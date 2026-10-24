@@ -165,6 +165,10 @@ describe("Chart components", () => {
       component: ProductivityPayChart,
       row: { year: 2020, productivity_index: 128.0, pay_index: 114.0, gap_pct: 12.3 },
     },
+    {
+      component: BoeRatesChart,
+      row: { date: "2022-10-01", bank_rate: 2.25, cpi_annual: 11.1 },
+    },
   ]
 
   const themedCharts = [
