@@ -68,6 +68,17 @@ async function snapshotRoute(
   const url = `${origin}${base.replace(/\/$/, "")}${route.path}`
   await page.goto(url, { waitUntil: "networkidle", timeout: 45_000 })
 
+  // The baked DOM and meta now survive until the router is ready, so a previously
+  // written snapshot (served as the SPA fallback mid-run) already carries every
+  // marker below. Only a live mount sets this property; a failed or slow initial
+  // route therefore times out the build instead of baking another route's page.
+  await page.waitForFunction(
+    () =>
+      Boolean((document.getElementById("app") as { __vue_app__?: unknown } | null)?.__vue_app__),
+    undefined,
+    { timeout: 15_000 },
+  )
+
   // usePageMeta marker: every view sets og:url (directly or by default), so
   // its presence means the route's meta pass has run.
   await page.waitForSelector(`head meta[${META_MARKER_ATTR}][property="og:url"]`, {
