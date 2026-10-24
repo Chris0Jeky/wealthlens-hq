@@ -367,17 +367,26 @@ def main() -> None:
 
     available: list[str] = []
     errors: list[str] = []
+    regenerated = 0
     # Normalised metadata for static (committed-JSON) datasets, keyed by slug.
     STATIC_META: dict[str, dict[str, Any]] = {}
 
     for slug, filename in DATASETS.items():
         csv_path = DATA_DIR / filename
         if not csv_path.exists():
-            errors.append(f"  SKIP {slug}: {csv_path} not found")
+            # A fail-closed pipeline leaves no CSV on a fresh checkout. Keep serving the
+            # committed last-good files untouched (decision D-D) rather than dropping
+            # the dataset from the listing and the provenance catalogue.
+            if (OUT_DIR / f"{slug}.json").exists() and (OUT_DIR / f"{slug}-metadata.json").exists():
+                available.append(slug)
+                errors.append(f"  KEEP {slug}: {csv_path} not found; serving committed last-good data")
+            else:
+                errors.append(f"  SKIP {slug}: {csv_path} not found")
             continue
 
         records = _read_csv_as_records(csv_path, slug=slug)
         available.append(slug)
+        regenerated += 1
 
         # Paginated data response (all rows in one page)
         data_response = {
@@ -516,10 +525,10 @@ def main() -> None:
     # Simulator scenarios (independent of the CSV datasets above).
     generate_simulator_static()
 
-    print(f"\nGenerated static API for {len(available)}/{len(DATASETS)} datasets in {OUT_DIR}")
+    print(f"\nGenerated static API for {regenerated}/{len(DATASETS)} datasets ({len(available)} listed) in {OUT_DIR}")
     if errors:
         print("\n".join(errors))
-        if not available:
+        if not regenerated:
             sys.exit(1)
 
 

@@ -260,3 +260,53 @@ def test_child_poverty_static_metadata_requires_hbai_sidecar(
         assert records[0]["child_poverty_pct"] == 38
         assert records[0]["children_in_poverty"] == 185000
         assert (out_dir / "child-poverty.csv").read_text(encoding="utf-8").splitlines()[1].endswith(",unverified")
+
+
+def test_missing_csv_keeps_committed_last_good_entry(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A fail-closed pipeline leaves no processed CSV on a fresh checkout (#741).
+
+    The committed public files must stay byte-identical and the dataset must stay
+    in datasets.json and all-metadata.json (decision D-D: serve last-good data).
+    """
+    data_dir = tmp_path / "processed"
+    data_dir.mkdir()
+    (data_dir / "fresh.csv").write_text("a,b\n1,2\n", encoding="utf-8")
+    out_dir = tmp_path / "out"
+    out_dir.mkdir()
+    last_good_data = b'{"data": [{"date": "2026-09-01", "bank_rate": 4.0}]}'
+    last_good_meta = b'{"name": "boe-rates", "source": "Bank of England / ONS", "access_date": "2026-10-22"}'
+    (out_dir / "boe-rates.json").write_bytes(last_good_data)
+    (out_dir / "boe-rates-metadata.json").write_bytes(last_good_meta)
+    monkeypatch.setattr(gsa, "DATA_DIR", data_dir)
+    monkeypatch.setattr(gsa, "OUT_DIR", out_dir)
+    monkeypatch.setattr(gsa, "DATASETS", {"wealth-shares": "fresh.csv", "boe-rates": "absent.csv"})
+    monkeypatch.setattr(gsa, "generate_simulator_static", lambda: 0)
+    gsa.main()
+
+    assert (out_dir / "boe-rates.json").read_bytes() == last_good_data
+    assert (out_dir / "boe-rates-metadata.json").read_bytes() == last_good_meta
+    listing = json.loads((out_dir / "datasets.json").read_text(encoding="utf-8"))
+    assert listing["datasets"] == ["wealth-shares", "boe-rates"]
+    catalogue = json.loads((out_dir / "all-metadata.json").read_text(encoding="utf-8"))["datasets"]
+    assert json.loads(last_good_meta) in catalogue
+
+
+def test_missing_csv_without_last_good_is_skipped(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """With no committed last-good files the dataset is still skipped, not invented."""
+    data_dir = tmp_path / "processed"
+    data_dir.mkdir()
+    (data_dir / "fresh.csv").write_text("a,b\n1,2\n", encoding="utf-8")
+    out_dir = tmp_path / "out"
+    monkeypatch.setattr(gsa, "DATA_DIR", data_dir)
+    monkeypatch.setattr(gsa, "OUT_DIR", out_dir)
+    monkeypatch.setattr(gsa, "DATASETS", {"wealth-shares": "fresh.csv", "boe-rates": "absent.csv"})
+    monkeypatch.setattr(gsa, "generate_simulator_static", lambda: 0)
+    gsa.main()
+
+    listing = json.loads((out_dir / "datasets.json").read_text(encoding="utf-8"))
+    assert listing["datasets"] == ["wealth-shares"]
+    assert not (out_dir / "boe-rates.json").exists()
