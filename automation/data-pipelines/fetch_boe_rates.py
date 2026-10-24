@@ -3,10 +3,12 @@
 Join official observations by calendar month from 2000 onwards, labelling each
 month YYYY-MM-01. IADB dates are month-end labels for monthly averages, not
 end-month policy readings. Only months covered by both sources are published.
+Download or parse failures abort; illustrative fallback is an explicit offline opt-in.
 """
 
 from __future__ import annotations
 
+import argparse
 import csv
 import json
 import logging
@@ -190,12 +192,12 @@ def _parse_iadb_csv(
     return frame
 
 
-def fetch() -> Path:
+def fetch(*, allow_fallback: bool = False) -> Path:
     """Download Bank Rate from BoE IADB and CPI annual inflation from ONS.
 
-    Falls back as a whole if either official series cannot be downloaded.
+    Abort before writing if either source cannot be downloaded or parsed.
+    Set allow_fallback=True only for illustrative offline development data.
     """
-    RAW_DIR.mkdir(parents=True, exist_ok=True)
     out_path = RAW_DIR / "boe_iadb_rates.csv"
 
     try:
@@ -207,10 +209,6 @@ def fetch() -> Path:
         cpi_response = _download_ons()
         cpi = _parse_ons_csv(cpi_response.content.decode("utf-8-sig"))
         joined = _join_monthly(bank, cpi)
-        # Keep both unedited responses for audit; publish only the validated join.
-        (RAW_DIR / "boe_iumabedr.csv").write_bytes(bank_response.content)
-        (RAW_DIR / "ons_d7g7.csv").write_bytes(cpi_response.content)
-        joined.to_csv(out_path, index=False)
         template = json.loads(
             (Path(__file__).parent / "metadata/boe_rates.meta.json").read_text(encoding="utf-8")
         )
@@ -218,19 +216,30 @@ def fetch() -> Path:
             {**source, "url": response.url, "access_date": ACCESS_DATE}
             for source, response in zip(template["sources"], (bank_response, cpi_response), strict=True)
         ]
-        _write_metadata(
-            out_path, data_type="live_ons", access_date=ACCESS_DATE,
-            source_url=bank_response.url, sources=sources,
-        )
-        logger.info("Saved joined official monthly data to %s (%d rows)", out_path, len(joined))
-        return out_path
     except (requests.RequestException, OSError, ValueError) as exc:
+        if not allow_fallback:
+            message = "BoE IUMABEDR / ONS D7G7 fetch failed; preserving last-good outputs"
+            logger.error("%s: %s", message, exc)
+            raise RuntimeError(message) from exc
         logger.warning("Official Bank Rate/CPI fetch failed (%s), using fallback data", exc)
+        RAW_DIR.mkdir(parents=True, exist_ok=True)
         return _write_fallback(out_path)
+
+    # Keep both unedited responses for audit; publish only the validated join.
+    RAW_DIR.mkdir(parents=True, exist_ok=True)
+    (RAW_DIR / "boe_iumabedr.csv").write_bytes(bank_response.content)
+    (RAW_DIR / "ons_d7g7.csv").write_bytes(cpi_response.content)
+    joined.to_csv(out_path, index=False)
+    _write_metadata(
+        out_path, data_type="live_ons", access_date=ACCESS_DATE,
+        source_url=bank_response.url, sources=sources,
+    )
+    logger.info("Saved joined official monthly data to %s (%d rows)", out_path, len(joined))
+    return out_path
 
 
 def _write_fallback(out_path: Path) -> Path:
-    """Write illustrative fallback data when the live API is unreachable.
+    """Write explicitly requested illustrative offline development data.
 
     IMPORTANT: This data is clearly marked as illustrative. Values are
     approximate historical Bank Rate and CPI figures for demonstration.
@@ -547,7 +556,13 @@ def build_chart(df: pd.DataFrame) -> None:
 
 def main() -> None:
     """Fetch BoE interest rate and CPI data, then generate chart."""
-    raw_path = fetch()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--allow-illustrative-fallback", action="store_true",
+        help="Allow illustrative fallback data for offline development (default: off).",
+    )
+    args = parser.parse_args()
+    raw_path = fetch(allow_fallback=args.allow_illustrative_fallback)
     df = process(raw_path)
     build_chart(df)
     logger.info("Done. Open the chart HTML in a browser to view.")
