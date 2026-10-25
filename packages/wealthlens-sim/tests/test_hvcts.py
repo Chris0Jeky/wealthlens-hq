@@ -428,3 +428,35 @@ class TestUncappedBandPlacement:
 
     def test_announced_bands_still_valid(self) -> None:
         assert HVCTSConfig(bands=ANNOUNCED_BANDS).bands == ANNOUNCED_BANDS
+
+
+class TestBandGap:
+    def test_property_in_gap_between_bands_not_in_scope(self):
+        """A value in a gap between custom bands pays nothing, so it is not 'in scope'."""
+        bands = (
+            HVCTSBand(lower=2_000_000, upper=2_500_000, annual_surcharge=2_500),
+            HVCTSBand(lower=3_000_000, upper=None, annual_surcharge=5_000),
+        )
+        config = HVCTSConfig(bands=bands)
+        person = make_person(assets=[
+            (AssetType.MAIN_RESIDENCE, 2_700_000, 0),  # gap: no band charges it
+            (AssetType.OTHER_PROPERTY, 3_200_000, 0),  # charged by the second band
+        ])
+        hh = make_household([person], nation=Nation.ENGLAND)
+        result = compute_hvcts(hh, config)
+        assert result.total_surcharge == 5_000
+        assert result.properties_in_scope == 1
+
+    def test_only_gap_property_is_not_liable_and_not_in_scope(self):
+        bands = (
+            HVCTSBand(lower=2_000_000, upper=2_500_000, annual_surcharge=2_500),
+            HVCTSBand(lower=3_000_000, upper=None, annual_surcharge=5_000),
+        )
+        config = HVCTSConfig(bands=bands)
+        hh = make_household(
+            [make_person(assets=[(AssetType.MAIN_RESIDENCE, 2_700_000, 0)])],
+            nation=Nation.ENGLAND,
+        )
+        result = compute_hvcts(hh, config)
+        assert result.properties_in_scope == 0
+        assert not result.is_liable

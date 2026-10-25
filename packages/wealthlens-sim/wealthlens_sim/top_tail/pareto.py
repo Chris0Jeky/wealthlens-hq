@@ -149,7 +149,13 @@ def pareto_tail_mean(alpha: float, threshold: float) -> float:
 def empirical_wealth_shares(
     wealth: NDArray[np.floating],
 ) -> dict[str, float]:
-    """Compute top-10%, top-1%, top-0.1% shares from empirical data."""
+    """Compute top-10%, top-1%, top-0.1% shares from empirical data.
+
+    Raises ValueError on NaN or infinite wealth rather than clamping it to zero shares.
+    """
+    if not bool(np.all(np.isfinite(wealth))):
+        msg = "wealth contains non-finite values (NaN or inf)"
+        raise ValueError(msg)
     total = float(np.sum(wealth))
     if total <= 0:
         return {"top_10_pct": 0.0, "top_1_pct": 0.0, "top_01_pct": 0.0}

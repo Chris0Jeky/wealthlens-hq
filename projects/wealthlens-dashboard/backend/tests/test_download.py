@@ -63,3 +63,18 @@ class TestDownloadEndpoint:
         response = client.get("/api/data/wealth-shares/download")
         assert response.status_code == 200
         assert "text/csv" in response.headers["content-type"]
+
+
+class TestDownloadUnreadableFile:
+    """A file that exists but cannot be opened must fail with a 5xx, not a truncated 200."""
+
+    def test_unreadable_file_returns_503(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        def _boom(*_a: object, **_k: object) -> None:
+            raise PermissionError(13, "Permission denied")
+
+        monkeypatch.setattr(data_mod, "open", _boom, raising=False)
+
+        # raise_server_exceptions=False: observe the status the client would get.
+        response = TestClient(app, raise_server_exceptions=False).get("/api/data/wealth-shares/download")
+        assert response.status_code == 503
+        assert "Permission denied" not in response.text
