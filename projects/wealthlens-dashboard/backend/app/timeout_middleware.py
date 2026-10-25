@@ -3,7 +3,9 @@
 Pure ASGI middleware that wraps each incoming request with an asyncio timeout
 to prevent long-running handlers from tying up workers indefinitely.  Returns
 a 504 Gateway Timeout JSON response if the handler exceeds the configured
-threshold.
+threshold.  If the response has already started (status and headers sent) a 504 is
+impossible; the timeout is recorded on the scope and ``StreamAbortGuard`` (outermost
+layer) aborts the transfer, so the client sees an incomplete body, not a clean 200.
 
 Configuration:
     REQUEST_TIMEOUT env var — timeout in seconds (float).  Default: 30.0
@@ -26,6 +28,42 @@ logger = logging.getLogger(__name__)
 
 _EXEMPT_PATHS: frozenset[str] = frozenset({"/health", "/api/health/data"})
 _DEFAULT_TIMEOUT = 30.0
+_ABORT_KEY = "wealthlens.timeout_after_response_start"
+
+
+class StreamAbortedError(RuntimeError):
+    """Raised by ``StreamAbortGuard`` to drop a response that timed out mid-body."""
+
+
+class StreamAbortGuard:
+    """Outermost pure-ASGI layer: turn a post-header timeout into an aborted transfer.
+
+    ``TimeoutMiddleware`` cannot abort by itself: Starlette's ``BaseHTTPMiddleware``
+    layers outside it (logging, security headers) end the body stream cleanly and
+    only then re-raise, so the client would get a truncated 200 that looks complete.
+    This guard sits outside all of them and refuses to forward the terminating body
+    message once the timeout is flagged, so the server closes the connection.
+    """
+
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        async def guarded_send(message: dict) -> None:  # type: ignore[type-arg]
+            if (
+                message["type"] == "http.response.body"
+                and not message.get("more_body", False)
+                and scope.get(_ABORT_KEY)
+            ):
+                msg = "response aborted: request timed out after the response had started"
+                raise StreamAbortedError(msg)
+            await send(message)  # type: ignore[arg-type]
+
+        await self.app(scope, receive, guarded_send)  # type: ignore[arg-type]
 
 
 class TimeoutMiddleware:
@@ -84,3 +122,6 @@ class TimeoutMiddleware:
                     },
                 )
                 await response(scope, receive, send)
+            else:
+                logger.warning("Request timed out after response start; aborting %s", path)
+                scope[_ABORT_KEY] = True

@@ -9,15 +9,22 @@ import asyncio
 from collections.abc import AsyncGenerator
 
 import pytest
-from app.timeout_middleware import _DEFAULT_TIMEOUT, TimeoutMiddleware
+from app.timeout_middleware import _DEFAULT_TIMEOUT, StreamAbortedError, StreamAbortGuard, TimeoutMiddleware
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from starlette.responses import StreamingResponse
+from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
+from starlette.requests import Request
+from starlette.responses import Response, StreamingResponse
 from starlette.types import Receive, Scope, Send
 
 
 async def _noop_app(scope: Scope, receive: Receive, send: Send) -> None:
     """Minimal ASGI app for unit-testing TimeoutMiddleware construction."""
+
+
+async def _passthrough(request: Request, call_next: RequestResponseEndpoint) -> Response:
+    """Stand-in for app.main's BaseHTTPMiddleware layers (logging, security headers)."""
+    return await call_next(request)
 
 
 # ---------------------------------------------------------------------------
@@ -156,19 +163,39 @@ class TestHealthEndpointsExempt:
 
 
 class TestStreamingTimeout:
-    """When headers are already sent, the middleware must not send a second response."""
+    """When headers are already sent, the timeout must abort the transfer, not end it cleanly."""
 
-    def test_streaming_timeout_does_not_corrupt_response(self) -> None:
-        """A streaming endpoint that stalls mid-body should not produce a 504 JSON response."""
-        client = TestClient(_make_app(timeout=0.1))
-        response = client.get("/streaming-slow")
-        # Headers were already sent (200) so middleware cannot override to 504.
-        # The client sees whatever was sent before the timeout (partial or 200).
+    def test_streaming_timeout_does_not_inject_error_envelope(self) -> None:
+        """Without the guard, the middleware alone must not append a JSON 504 to the body."""
+        response = TestClient(_make_app(timeout=0.1)).get("/streaming-slow")
         assert response.status_code == 200
-
-    def test_streaming_timeout_no_error_envelope(self) -> None:
-        """A streaming timeout must not inject a JSON error envelope into the body."""
-        client = TestClient(_make_app(timeout=0.1))
-        response = client.get("/streaming-slow")
         assert "Request timed out" not in response.text
         assert "chunk2" not in response.text
+
+    def test_guard_aborts_behind_base_http_middleware(self) -> None:
+        """BaseHTTPMiddleware between guard and timeout (as in app.main) ends the body cleanly.
+
+        The guard must still abort: this is the case that produced a truncated 200.
+        """
+        app = _make_app(timeout=0.1)
+        app.add_middleware(BaseHTTPMiddleware, dispatch=_passthrough)
+        app.add_middleware(StreamAbortGuard)
+        with pytest.raises(StreamAbortedError):
+            TestClient(app).get("/streaming-slow")
+
+    def test_pre_header_timeout_still_returns_504_with_guard(self) -> None:
+        """Aborting only applies once headers are sent; a slow handler still gets a 504."""
+        app = _make_app(timeout=0.1)
+        app.add_middleware(BaseHTTPMiddleware, dispatch=_passthrough)
+        app.add_middleware(StreamAbortGuard)
+        assert TestClient(app).get("/slow").status_code == 504
+
+    def test_guard_passes_normal_streams_through(self) -> None:
+        app = _make_app(timeout=5.0)
+        app.add_middleware(StreamAbortGuard)
+        assert TestClient(app).get("/fast").json() == {"status": "ok"}
+
+    def test_main_app_has_guard_outermost(self) -> None:
+        from app.main import app as main_app
+
+        assert main_app.user_middleware[0].cls is StreamAbortGuard

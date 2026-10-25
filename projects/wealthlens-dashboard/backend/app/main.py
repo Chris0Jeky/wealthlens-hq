@@ -23,7 +23,7 @@ from app.logging_middleware import RequestLoggingMiddleware
 from app.middleware import SecurityHeadersMiddleware
 from app.rate_limit import RateLimitMiddleware
 from app.routers import data, simulator
-from app.timeout_middleware import TimeoutMiddleware
+from app.timeout_middleware import StreamAbortGuard, TimeoutMiddleware
 
 setup_logging(os.environ.get("LOG_LEVEL", "INFO"))
 logger = logging.getLogger("wealthlens.main")
@@ -170,6 +170,9 @@ app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 app.add_middleware(RequestLoggingMiddleware)
+
+# Outermost: aborts a response that timed out after its headers were sent (see timeout_middleware).
+app.add_middleware(StreamAbortGuard)
 
 register_error_handlers(app)
 
