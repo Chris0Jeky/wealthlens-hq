@@ -157,13 +157,17 @@ def compute_hvcts(
     config: HVCTSConfig,
 ) -> HVCTSResult:
     """Compute HVCTS surcharge for a single household."""
-    properties = _eligible_properties(household, config)
     sorted_bands = tuple(sorted(config.bands, key=lambda b: b.lower))
-    total = sum(_surcharge_for_property(a.gross_value, sorted_bands) for a in properties)
+    surcharges = [
+        _surcharge_for_property(a.gross_value, sorted_bands)
+        for a in _eligible_properties(household, config)
+    ]
+    # A value in a gap between custom bands attracts no surcharge, so it is not in scope.
+    total = sum(surcharges)
 
     return HVCTSResult(
         household_id=household.household_id,
-        properties_in_scope=len(properties),
+        properties_in_scope=sum(1 for c in surcharges if c > 0),
         total_surcharge=total,
         is_liable=total > 0,
     )
