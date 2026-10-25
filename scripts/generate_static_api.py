@@ -385,6 +385,9 @@ def main() -> None:
             continue
 
         records = _read_csv_as_records(csv_path, slug=slug)
+        # Reject empty pipeline output before it can erase a last-good chart.
+        if not records:
+            raise ValueError(f"Dataset '{slug}' has no rows; refusing to replace public data")
         available.append(slug)
         regenerated += 1
 
