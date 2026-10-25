@@ -80,7 +80,7 @@ def _run_generator_on(
     monkeypatch.setattr(gsa, "DATA_DIR", in_dir)
     monkeypatch.setattr(gsa, "OUT_DIR", out_dir)
     monkeypatch.setattr(gsa, "DATASETS", {"t": "t.csv"})
-    monkeypatch.setattr(gsa, "generate_simulator_static", lambda: 0)
+    monkeypatch.setattr(gsa, "generate_simulator_static", lambda *args: 0)
     gsa.main()
     return out_dir
 
@@ -144,12 +144,132 @@ def test_header_only_csv_cannot_publish_empty_data(
     monkeypatch.setattr(gsa, "DATA_DIR", data_dir)
     monkeypatch.setattr(gsa, "OUT_DIR", out_dir)
     monkeypatch.setattr(gsa, "DATASETS", {"wealth-shares": "wid.csv"})
-    monkeypatch.setattr(gsa, "generate_simulator_static", lambda: 0)
+    monkeypatch.setattr(gsa, "generate_simulator_static", lambda *args: 0)
 
     with pytest.raises(ValueError, match=r"wealth-shares.*no rows"):
         gsa.main()
 
     assert {path.name: path.read_bytes() for path in out_dir.iterdir()} == before
+
+
+@pytest.mark.parametrize("has_last_good", [False, True])
+@pytest.mark.parametrize("failure", ["empty", "nonfinite", "metadata", "simulator"])
+def test_later_failure_preserves_all_public_outputs(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, has_last_good: bool, failure: str
+) -> None:
+    """A late validation failure must not publish any part of a new export."""
+    data_dir = tmp_path / "processed"
+    data_dir.mkdir()
+    (data_dir / "fresh.csv").write_text("year,value\n2024,42\n", encoding="utf-8")
+    out_dir = tmp_path / "out"
+    out_dir.mkdir()
+    if has_last_good:
+        artifacts = {
+            "wealth-shares.json": '{"data":[{"year":2020,"value":21}]}',
+            "wealth-shares-metadata.json": '{"name":"wealth-shares","row_count":1}',
+            "wealth-shares.csv": "year,value\n2020,21\n",
+            "boe-rates.json": '{"data":[{"bank_rate":1}]}',
+            "boe-rates-metadata.json": '{"name":"boe-rates","row_count":1}',
+            "boe-rates.csv": "bank_rate\n1\n",
+            "datasets.json": '{"datasets":["wealth-shares","boe-rates"]}',
+            "all-metadata.json": '{"datasets":[]}',
+            "freshness.json": '{"wealth-shares":{"last_updated":"2020-01-01"}}',
+            "simulator/first.json": '{"old":true}',
+            "simulator/scenarios.json": '{"scenarios":[]}',
+        }
+        for filename, content in artifacts.items():
+            path = out_dir / filename
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(content, encoding="utf-8")
+    before = {p.relative_to(out_dir): p.read_bytes() for p in out_dir.rglob("*") if p.is_file()}
+    monkeypatch.setattr(gsa, "DATA_DIR", data_dir)
+    monkeypatch.setattr(gsa, "OUT_DIR", out_dir)
+    monkeypatch.setattr(gsa, "DATASETS", {"wealth-shares": "fresh.csv", "boe-rates": "later.csv"})
+    error: type[Exception]
+    if failure == "simulator":
+        sim_src = tmp_path / "sim-input"
+        sim_src.mkdir()
+        (sim_src / "first.json").write_text(
+            json.dumps(dict.fromkeys(gsa._SIM_REQUIRED_KEYS, "test")), encoding="utf-8"
+        )
+        monkeypatch.setattr(gsa, "SIM_SRC_DIR", sim_src)
+        monkeypatch.setattr(gsa, "SIM_OUT_DIR", out_dir / "simulator")
+        monkeypatch.setattr(gsa, "_load_simulator_scenarios", lambda: {
+            "first": {"name": "First", "description": "Test fixture"},
+            "missing": {"name": "Missing", "description": "Missing fixture"},
+        })
+        error, message = FileNotFoundError, "missing"
+    else:
+        monkeypatch.setattr(gsa, "generate_simulator_static", lambda *args: 0)
+        csv_text = {
+            "empty": "bank_rate\n",
+            "nonfinite": "bank_rate\ninf\n",
+            "metadata": "bank_rate\n4\n",
+        }[failure]
+        (data_dir / "later.csv").write_text(csv_text, encoding="utf-8")
+        if failure == "metadata":
+            (data_dir / "later.meta.json").write_text('{"data_type":"live_ons"}', encoding="utf-8")
+            error, message = KeyError, "sources"
+        else:
+            error, message = ValueError, "no rows" if failure == "empty" else "Out of range"
+
+    with pytest.raises(error, match=message):
+        gsa.main()
+
+    assert {p.relative_to(out_dir): p.read_bytes() for p in out_dir.rglob("*") if p.is_file()} == before
+    assert set(tmp_path.iterdir()) == {data_dir, out_dir} | ({sim_src} if failure == "simulator" else set())
+
+
+def test_success_publishes_staged_export_and_preserves_curated_files(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Publish rows, mirrors, catalogue and scenarios together after generation."""
+    data_dir = tmp_path / "processed"
+    data_dir.mkdir()
+    (data_dir / "fresh.csv").write_text("year,value\n2024,42\n", encoding="utf-8")
+    out_dir = tmp_path / "out"
+    out_dir.mkdir()
+    preserved = {
+        "boe-rates.json": '{"data":[{"bank_rate":1}]}',
+        "boe-rates-metadata.json": '{"name":"boe-rates","row_count":1}',
+        "boe-rates.csv": "bank_rate\n1\n",
+        "freshness.json": '{"wealth-shares":{"last_updated":"2020-01-01"}}',
+        "wage-stagnation.json": '[{"year":2020,"wage":100}]',
+        "wage-stagnation-metadata.json": '{"name":"wage-stagnation","source":"Test"}',
+    }
+    for filename, content in preserved.items():
+        (out_dir / filename).write_text(content, encoding="utf-8")
+    before = {name: (out_dir / name).read_bytes() for name in preserved}
+    (out_dir / "wealth-shares.json").write_text('{"old":true}', encoding="utf-8")
+    sim_src = tmp_path / "sim-input"
+    sim_src.mkdir()
+    payload = dict.fromkeys(gsa._SIM_REQUIRED_KEYS, "test")
+    (sim_src / "first.json").write_text(json.dumps(payload), encoding="utf-8")
+    monkeypatch.setattr(gsa, "DATA_DIR", data_dir)
+    monkeypatch.setattr(gsa, "OUT_DIR", out_dir)
+    monkeypatch.setattr(gsa, "DATASETS", {"wealth-shares": "fresh.csv", "boe-rates": "absent.csv"})
+    monkeypatch.setattr(gsa, "SIM_SRC_DIR", sim_src)
+    monkeypatch.setattr(gsa, "_load_simulator_scenarios", lambda: {
+        "first": {"name": "First", "description": "Test fixture"},
+    })
+
+    gsa.main()
+
+    assert json.loads((out_dir / "wealth-shares.json").read_text())["data"] == [{"year": 2024, "value": 42}]
+    assert (out_dir / "wealth-shares.csv").read_text() == "year,value\n2024,42\n"
+    assert json.loads((out_dir / "datasets.json").read_text())["datasets"] == ["wealth-shares", "boe-rates"]
+    catalogue = json.loads((out_dir / "all-metadata.json").read_text())["datasets"]
+    assert [entry["name"] for entry in catalogue] == ["wealth-shares", "boe-rates", "wage-stagnation"]
+    assert catalogue[0] == json.loads((out_dir / "wealth-shares-metadata.json").read_text())
+    assert catalogue[1] == json.loads(preserved["boe-rates-metadata.json"])
+    assert catalogue[2]["row_count"] == 1
+    assert (out_dir / "wage-stagnation.csv").read_text() == "year,wage\n2020,100\n"
+    assert json.loads((out_dir / "simulator/first.json").read_text()) == payload
+    assert json.loads((out_dir / "simulator/scenarios.json").read_text())["scenarios"] == [
+        {"id": "first", "name": "First", "description": "Test fixture"}
+    ]
+    assert {name: (out_dir / name).read_bytes() for name in preserved} == before
+    assert set(tmp_path.iterdir()) == {data_dir, out_dir, sim_src}
 
 
 def test_generator_emits_csv_mirror_with_data_type_column(
@@ -167,7 +287,7 @@ def test_generator_emits_csv_mirror_with_data_type_column(
     monkeypatch.setattr(gsa, "DATA_DIR", data_dir)
     monkeypatch.setattr(gsa, "OUT_DIR", out_dir)
     monkeypatch.setattr(gsa, "DATASETS", {"t": "t.csv"})
-    monkeypatch.setattr(gsa, "generate_simulator_static", lambda: 0)
+    monkeypatch.setattr(gsa, "generate_simulator_static", lambda *args: 0)
     gsa.main()
 
     lines = (out_dir / "t.csv").read_text(encoding="utf-8").strip().splitlines()
@@ -205,7 +325,7 @@ def test_generator_preserves_unverified_provenance(
     monkeypatch.setattr(gsa, "DATA_DIR", tmp_path)
     monkeypatch.setattr(gsa, "OUT_DIR", out_dir)
     monkeypatch.setattr(gsa, "DATASETS", {"productivity-pay": csv_path.name})
-    monkeypatch.setattr(gsa, "generate_simulator_static", lambda: 0)
+    monkeypatch.setattr(gsa, "generate_simulator_static", lambda *args: 0)
     gsa.main()
 
     metadata = json.loads((out_dir / "productivity-pay-metadata.json").read_text(encoding="utf-8"))
@@ -227,7 +347,7 @@ def test_generator_skips_csv_mirror_for_nc_nd_dataset(
     monkeypatch.setattr(gsa, "DATA_DIR", data_dir)
     monkeypatch.setattr(gsa, "OUT_DIR", out_dir)
     monkeypatch.setattr(gsa, "DATASETS", {"generational-wealth": "g.csv"})
-    monkeypatch.setattr(gsa, "generate_simulator_static", lambda: 0)
+    monkeypatch.setattr(gsa, "generate_simulator_static", lambda *args: 0)
     gsa.main()
 
     assert (out_dir / "generational-wealth.json").exists()
@@ -273,7 +393,7 @@ def test_child_poverty_static_metadata_requires_hbai_sidecar(
     monkeypatch.setattr(gsa, "DATA_DIR", tmp_path)
     monkeypatch.setattr(gsa, "OUT_DIR", out_dir)
     monkeypatch.setattr(gsa, "DATASETS", {"child-poverty": csv.name})
-    monkeypatch.setattr(gsa, "generate_simulator_static", lambda: 0)
+    monkeypatch.setattr(gsa, "generate_simulator_static", lambda *args: 0)
     gsa.main()
     metadata = json.loads((out_dir / "child-poverty-metadata.json").read_text(encoding="utf-8"))
     catalogue = json.loads((out_dir / "all-metadata.json").read_text(encoding="utf-8"))["datasets"][0]
@@ -314,7 +434,7 @@ def test_missing_csv_keeps_committed_last_good_entry(
     monkeypatch.setattr(gsa, "DATA_DIR", data_dir)
     monkeypatch.setattr(gsa, "OUT_DIR", out_dir)
     monkeypatch.setattr(gsa, "DATASETS", {"wealth-shares": "fresh.csv", "boe-rates": "absent.csv"})
-    monkeypatch.setattr(gsa, "generate_simulator_static", lambda: 0)
+    monkeypatch.setattr(gsa, "generate_simulator_static", lambda *args: 0)
     gsa.main()
 
     assert (out_dir / "boe-rates.json").read_bytes() == last_good_data
@@ -336,7 +456,7 @@ def test_missing_csv_without_last_good_is_skipped(
     monkeypatch.setattr(gsa, "DATA_DIR", data_dir)
     monkeypatch.setattr(gsa, "OUT_DIR", out_dir)
     monkeypatch.setattr(gsa, "DATASETS", {"wealth-shares": "fresh.csv", "boe-rates": "absent.csv"})
-    monkeypatch.setattr(gsa, "generate_simulator_static", lambda: 0)
+    monkeypatch.setattr(gsa, "generate_simulator_static", lambda *args: 0)
     gsa.main()
 
     listing = json.loads((out_dir / "datasets.json").read_text(encoding="utf-8"))
