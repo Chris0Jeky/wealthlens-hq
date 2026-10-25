@@ -690,10 +690,23 @@ def download_dataset(
             detail=f"Dataset file not found: {dataset_name} — run the pipeline first",
         )
 
-    size = csv_path.stat().st_size
+    # Open (and stat) BEFORE building the response: once StreamingResponse starts, the 200
+    # status and Content-Length are already sent, so a failure inside the generator would
+    # surface as a truncated 200 instead of an error status.
+    try:
+        f = open(csv_path, "rb")  # noqa: SIM115 - closed by iterfile once streaming ends
+        size = os.fstat(f.fileno()).st_size
+    except OSError as e:
+        # Covers PermissionError, FileNotFoundError (TOCTOU race) and Windows file locks.
+        # The exception text may hold the filesystem path, so log it, never echo it.
+        logger.exception("Failed to open dataset '%s' for download", dataset_name)
+        raise HTTPException(
+            status_code=503,
+            detail=f"Failed to read dataset '{dataset_name}'",
+        ) from e
 
     def iterfile():
-        with open(csv_path, "rb") as f:
+        with f:
             yield from f
 
     return StreamingResponse(
