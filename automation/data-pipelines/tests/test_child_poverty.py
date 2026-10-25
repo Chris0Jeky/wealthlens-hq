@@ -134,7 +134,7 @@ def test_static_api_preserves_fetched_citation_and_observations(tmp_path, monkey
     monkeypatch.setattr(api, "DATA_DIR", processed)
     monkeypatch.setattr(api, "OUT_DIR", out)
     monkeypatch.setattr(api, "DATASETS", {"child-poverty": "child_poverty_by_region.csv"})
-    monkeypatch.setattr(api, "generate_simulator_static", lambda: None)
+    monkeypatch.setattr(api, "generate_simulator_static", lambda *args: None)
     api.main()
     metadata = json.loads((out / "child-poverty-metadata.json").read_text())
     assert metadata["source_url"] == cp.SOURCE_URL

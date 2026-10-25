@@ -104,7 +104,7 @@ def test_opt_in_failed_fetch_labels_fallback_through_api_and_static_export(
     monkeypatch.setattr(static_api, "DATA_DIR", processed)
     monkeypatch.setattr(static_api, "OUT_DIR", output)
     monkeypatch.setattr(static_api, "DATASETS", {"boe-rates": "boe_rates.csv"})
-    monkeypatch.setattr(static_api, "generate_simulator_static", lambda: 0)
+    monkeypatch.setattr(static_api, "generate_simulator_static", lambda *args: 0)
     static_api.main()
     metadata = json.loads((output / "boe-rates-metadata.json").read_text())
     assert metadata["data_type"] == "illustrative_fallback"
@@ -221,7 +221,7 @@ def test_committed_boe_values_rebuild_exactly_from_full_official_fixtures(
     monkeypatch.setattr(static_api, "DATA_DIR", pipeline_dirs / "processed")
     monkeypatch.setattr(static_api, "OUT_DIR", output)
     monkeypatch.setattr(static_api, "DATASETS", {"boe-rates": "boe_rates.csv"})
-    monkeypatch.setattr(static_api, "generate_simulator_static", lambda: 0)
+    monkeypatch.setattr(static_api, "generate_simulator_static", lambda *args: 0)
     static_api.main()
     # Compare text with normalised line endings: git stores these files with LF and
     # checks them out with the platform's endings, while the CSV writer emits CRLF.
@@ -316,7 +316,7 @@ def test_two_official_fetches_join_months_and_publish_sources(
     monkeypatch.setattr(static_api, "DATA_DIR", processed)
     monkeypatch.setattr(static_api, "OUT_DIR", pipeline_dirs / "public")
     monkeypatch.setattr(static_api, "DATASETS", {"boe-rates": "boe_rates.csv"})
-    monkeypatch.setattr(static_api, "generate_simulator_static", lambda: 0)
+    monkeypatch.setattr(static_api, "generate_simulator_static", lambda *args: 0)
     static_api.main()
     published = json.loads((pipeline_dirs / "public/boe-rates-metadata.json").read_text())
     assert published["sources"] == metadata["sources"]

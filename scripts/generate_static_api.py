@@ -20,6 +20,7 @@ import sys
 from collections.abc import Callable
 from datetime import date
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -280,7 +281,7 @@ def _load_simulator_scenarios() -> dict[str, dict[str, str]]:
     raise RuntimeError(f"SIMULATOR_SCENARIOS not found in {BACKEND_SIMULATOR}")
 
 
-def generate_simulator_static() -> int:
+def generate_simulator_static(out_dir: Path | None = None) -> int:
     """Mirror the registered simulator scenarios into the static build.
 
     Writes ``{id}.json`` (the same dashboard contract the API serves) plus a
@@ -288,8 +289,10 @@ def generate_simulator_static() -> int:
     static path is byte-for-byte equivalent to the API path. Returns the count
     of scenarios published.
     """
+    if out_dir is None:
+        out_dir = SIM_OUT_DIR
     scenarios = _load_simulator_scenarios()
-    SIM_OUT_DIR.mkdir(parents=True, exist_ok=True)
+    out_dir.mkdir(parents=True, exist_ok=True)
     index: list[dict[str, str]] = []
     for scenario_id, meta in scenarios.items():
         src = SIM_SRC_DIR / f"{scenario_id}.json"
@@ -316,15 +319,15 @@ def generate_simulator_static() -> int:
                 f"Simulator fixture '{scenario_id}' is missing required contract keys: "
                 f"{sorted(_SIM_REQUIRED_KEYS - present)}"
             )
-        (SIM_OUT_DIR / f"{scenario_id}.json").write_text(
+        (out_dir / f"{scenario_id}.json").write_text(
             json.dumps(payload, allow_nan=False), encoding="utf-8"
         )
         index.append({"id": scenario_id, "name": meta["name"], "description": meta["description"]})
         print(f"  OK simulator {scenario_id}")
-    (SIM_OUT_DIR / "scenarios.json").write_text(
+    (out_dir / "scenarios.json").write_text(
         json.dumps({"scenarios": index}, allow_nan=False), encoding="utf-8"
     )
-    print(f"Generated {len(index)}/{len(scenarios)} simulator scenarios in {SIM_OUT_DIR}")
+    print(f"Generated {len(index)}/{len(scenarios)} simulator scenarios in {out_dir}")
     return len(index)
 
 
@@ -335,7 +338,7 @@ def generate_simulator_static() -> int:
 CSV_MIRROR_EXCLUDED = frozenset({"generational-wealth"})
 
 
-def _write_csv_mirror(slug: str, records: list[dict], data_type: str | None) -> None:
+def _write_csv_mirror(out_dir: Path, slug: str, records: list[dict], data_type: str | None) -> None:
     """Write ``{slug}.csv`` next to the JSON — the downloadable data mirror.
 
     RFC-001a: chart pages and home cards link these directly, so the reuse
@@ -351,7 +354,7 @@ def _write_csv_mirror(slug: str, records: list[dict], data_type: str | None) -> 
         return
     columns = list(records[0].keys())
     fieldnames = columns + (["data_type"] if data_type and "data_type" not in columns else [])
-    csv_out = OUT_DIR / f"{slug}.csv"
+    csv_out = out_dir / f"{slug}.csv"
     with csv_out.open("w", encoding="utf-8", newline="") as fh:
         writer = csv.DictWriter(fh, fieldnames=fieldnames, extrasaction="ignore")
         writer.writeheader()
@@ -363,7 +366,22 @@ def _write_csv_mirror(slug: str, records: list[dict], data_type: str | None) -> 
 
 
 def main() -> None:
+    """Stage the entire export before replacing any last-good public files."""
     OUT_DIR.mkdir(parents=True, exist_ok=True)
+    # Sibling staging keeps replacements on the same filesystem. Only generated
+    # files are promoted; curated files and missing-CSV fallbacks stay untouched.
+    with TemporaryDirectory(prefix=".static-api-", dir=OUT_DIR.parent) as tmp:
+        staged = Path(tmp)
+        _generate_static_api(staged)
+        for source in staged.rglob("*"):
+            if source.is_file():
+                destination = OUT_DIR / source.relative_to(staged)
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                source.replace(destination)
+
+
+def _generate_static_api(out_dir: Path) -> None:
+    """Generate into staging, reading committed fallbacks from OUT_DIR."""
 
     available: list[str] = []
     errors: list[str] = []
@@ -399,7 +417,7 @@ def main() -> None:
             "total": len(records),
             "total_pages": 1,
         }
-        data_path = OUT_DIR / f"{slug}.json"
+        data_path = out_dir / f"{slug}.json"
         # allow_nan=False: NaN/Infinity are not valid JSON; fail the build loudly
         # rather than ship an unparseable file (records are sanitised above, so
         # this only fires on a genuinely new non-finite leak).
@@ -409,7 +427,7 @@ def main() -> None:
 
         # CSV mirror for the download links (RFC-001a)
         data_type = _read_data_type(csv_path, records)
-        _write_csv_mirror(slug, records, data_type)
+        _write_csv_mirror(out_dir, slug, records, data_type)
 
         # Metadata response
         meta = _metadata_citation(slug, data_type)
@@ -444,7 +462,7 @@ def main() -> None:
                 meta_response[key] = meta[key]
         if slug == "boe-rates" and data_type == "live_ons":
             meta_response["sources"] = sources
-        meta_path = OUT_DIR / f"{slug}-metadata.json"
+        meta_path = out_dir / f"{slug}-metadata.json"
         meta_path.write_text(
             json.dumps(meta_response, allow_nan=False), encoding="utf-8"
         )
@@ -485,7 +503,7 @@ def main() -> None:
                     columns = list(rows[0].keys())
                 # CSV mirror so the download links cover ALL routed charts,
                 # not just the CSV-pipeline datasets (RFC-001a).
-                _write_csv_mirror(slug, rows, m.get("data_type"))
+                _write_csv_mirror(out_dir, slug, rows, m.get("data_type"))
         STATIC_META[slug] = {
             "name": m.get("name", m.get("slug", slug)),
             "description": m.get("description", ""),
@@ -501,18 +519,20 @@ def main() -> None:
 
     # Dataset listing (CSV-pipeline datasets only — what the data API can serve)
     listing = {"datasets": available}
-    listing_path = OUT_DIR / "datasets.json"
+    listing_path = out_dir / "datasets.json"
     listing_path.write_text(json.dumps(listing, allow_nan=False), encoding="utf-8")
 
     # All metadata combined: CSV-pipeline datasets + the static-JSON datasets, so the
     # provenance page lists every routed chart.
     all_meta: dict[str, list[dict[str, Any]]] = {"datasets": []}
     for slug in available:
-        meta_path = OUT_DIR / f"{slug}-metadata.json"
+        meta_path = out_dir / f"{slug}-metadata.json"
+        if not meta_path.exists():
+            meta_path = OUT_DIR / meta_path.name
         all_meta["datasets"].append(json.loads(meta_path.read_text(encoding="utf-8")))
     for static_entry in STATIC_META.values():
         all_meta["datasets"].append(static_entry)
-    all_meta_path = OUT_DIR / "all-metadata.json"
+    all_meta_path = out_dir / "all-metadata.json"
     all_meta_path.write_text(json.dumps(all_meta, allow_nan=False), encoding="utf-8")
 
     # NOTE: this generator deliberately does NOT write freshness.json. The committed
@@ -526,7 +546,7 @@ def main() -> None:
     # the /api/data/freshness endpoint; the static badge uses the curated file as-is.
 
     # Simulator scenarios (independent of the CSV datasets above).
-    generate_simulator_static()
+    generate_simulator_static(out_dir / "simulator")
 
     print(f"\nGenerated static API for {regenerated}/{len(DATASETS)} datasets ({len(available)} listed) in {OUT_DIR}")
     if errors:
