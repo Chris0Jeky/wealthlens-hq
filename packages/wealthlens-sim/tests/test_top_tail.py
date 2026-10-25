@@ -500,3 +500,12 @@ class TestSafetyGuards:
         data = _make_pareto_sample(alpha=1.5, n=500, threshold=1_000_000)
         with pytest.raises(ValueError, match="ci confidence"):
             bootstrap_alpha(data, 1_000_000, ci=1.5, rng=np.random.default_rng(1))
+
+
+class TestEmpiricalSharesNonFinite:
+    @pytest.mark.parametrize("bad", [np.nan, np.inf, -np.inf])
+    def test_non_finite_wealth_raises(self, bad):
+        """Non-finite wealth must fail loudly, not be clamped into zero shares."""
+        wealth = np.array([10.0, 20.0, bad, 40.0])
+        with pytest.raises(ValueError, match="non-finite"):
+            empirical_wealth_shares(wealth)
