@@ -120,6 +120,38 @@ def test_generator_write_path_fails_loud_on_a_nonfinite_leak(
         _run_generator_on(tmp_path, monkeypatch, "a,b\n1.0,inf\n")
 
 
+@pytest.mark.parametrize("has_last_good", [False, True])
+def test_header_only_csv_cannot_publish_empty_data(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, has_last_good: bool
+) -> None:
+    """A header-only CSV must not replace its dataset's public artifacts."""
+    data_dir = tmp_path / "processed"
+    data_dir.mkdir()
+    (data_dir / "wid.csv").write_text("variable,year,value\n", encoding="utf-8")
+    out_dir = tmp_path / "out"
+    out_dir.mkdir()
+    if has_last_good:
+        artifacts = {
+            "wealth-shares.json": '{"data":[{"year":2020,"value":0.21}]}',
+            "wealth-shares-metadata.json": '{"name":"wealth-shares","row_count":1}',
+            "wealth-shares.csv": "year,value\n2020,0.21\n",
+            "datasets.json": '{"datasets":["wealth-shares"]}',
+            "all-metadata.json": '{"datasets":[{"name":"wealth-shares","row_count":1}]}',
+        }
+        for filename, content in artifacts.items():
+            (out_dir / filename).write_text(content, encoding="utf-8")
+    before = {path.name: path.read_bytes() for path in out_dir.iterdir()}
+    monkeypatch.setattr(gsa, "DATA_DIR", data_dir)
+    monkeypatch.setattr(gsa, "OUT_DIR", out_dir)
+    monkeypatch.setattr(gsa, "DATASETS", {"wealth-shares": "wid.csv"})
+    monkeypatch.setattr(gsa, "generate_simulator_static", lambda: 0)
+
+    with pytest.raises(ValueError, match=r"wealth-shares.*no rows"):
+        gsa.main()
+
+    assert {path.name: path.read_bytes() for path in out_dir.iterdir()} == before
+
+
 def test_generator_emits_csv_mirror_with_data_type_column(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
