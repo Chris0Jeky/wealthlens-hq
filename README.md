@@ -209,6 +209,14 @@ make frontend-dev                    # http://localhost:3000 — Vite proxies /a
 
 Pipelines need the network and currently known-broken upstream fetches are tracked in [#494](https://github.com/Chris0Jeky/wealthlens-hq/issues/494). The weekly cron is off; refresh is `workflow_dispatch`. The site serves last-good committed static data.
 
+`scripts/generate_static_api.py` stages the full export before publication and backs up every
+existing file it will replace. If promotion raises an ordinary exception, it restores replaced
+files and removes newly published files and directories, then fails the build. Curated files
+and missing-CSV fallbacks remain untouched. If restoration itself fails, the error names the
+retained `.static-api-backup-*` directory for recovery. This rollback requires a writable
+filesystem; it is not crash-atomic publication. Readers can observe a mixed snapshot during
+promotion, and process termination or power loss can leave one behind. Run one generator at a time.
+
 ## Tech stack
 
 | Layer | What is actually in the manifests |
