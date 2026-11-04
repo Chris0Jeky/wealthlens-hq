@@ -11,7 +11,7 @@ ruff>=0.17.2
 mypy>=2.4.0,<3
 # pandas-stubs: backend modules import pandas and it is NOT in the mypy
 # ignore-missing-imports overrides, so `mypy .` needs the stubs to pass.
-pandas-stubs>=3.0.5.260914
+pandas-stubs>=3.1.0.261029
 # NumPy 2.5's stubs use PEP 695 `type` statements, which mypy rejects under the root
 # python_version = "3.11" target (the Dockerfile runtime). On a 3.12+ interpreter an
 # uncapped install resolves 2.5 and aborts `make ci-quick` (#574). This caps only the
