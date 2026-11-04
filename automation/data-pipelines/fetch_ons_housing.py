@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pandas as pd
 import plotly.graph_objects as go
-from _cells import to_finite_float
+from _cells import is_present, to_finite_float
 from chart_html import write_accessible_chart
 from http_retry import fetch_with_retry
 
@@ -93,7 +93,7 @@ def process(xlsx_path: Path) -> pd.DataFrame:
                 # finite number (text, footnote, NaN written as text). Genuinely-empty
                 # grid cells (NaN) are expected in this sparse region/year grid and are
                 # not counted, to keep the signal meaningful.
-                if pd.notna(cell) and str(cell).strip():
+                if is_present(cell) and str(cell).strip():
                     dropped_present += 1
                 continue
             records.append({"region": region, "year": year, "ratio": ratio})

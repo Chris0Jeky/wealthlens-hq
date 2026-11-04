@@ -10,6 +10,9 @@ bad inputs identically (it was previously copied byte-for-byte into four files).
 from __future__ import annotations
 
 import math
+from typing import Any, cast
+
+import pandas as pd
 
 
 def to_finite_float(value: object) -> float | None:
@@ -36,3 +39,12 @@ def to_finite_float(value: object) -> float | None:
     except (ValueError, TypeError):
         return None
     return parsed if math.isfinite(parsed) else None
+
+
+def is_present(value: object) -> bool:
+    """``pd.notna`` for one spreadsheet cell (a ``df.iloc[i, j]`` scalar).
+
+    Typed as ``object`` because pandas-stubs 3.1's ``iloc`` scalar union is wider
+    than ``notna``'s scalar overload, so passing the cell straight in fails mypy.
+    """
+    return bool(pd.notna(cast(Any, value)))
