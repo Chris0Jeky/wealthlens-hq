@@ -28,7 +28,7 @@ from pathlib import Path
 import pandas as pd
 import plotly.graph_objects as go
 import requests
-from _cells import to_finite_float
+from _cells import is_present, to_finite_float
 from chart_html import write_accessible_chart
 
 logger = logging.getLogger(__name__)
@@ -279,7 +279,7 @@ def _parse_gdhi_per_head(df_raw: pd.DataFrame) -> pd.DataFrame | None:
     for i in range(year_row + 1, len(df_raw)):
         region = (
             str(df_raw.iloc[i, name_col]).strip()
-            if pd.notna(df_raw.iloc[i, name_col])
+            if is_present(df_raw.iloc[i, name_col])
             else ""
         )
         if not region or region == "nan" or region.startswith("Source"):
@@ -293,7 +293,7 @@ def _parse_gdhi_per_head(df_raw: pd.DataFrame) -> pd.DataFrame | None:
             continue
 
         itl_code = ""
-        if code_col is not None and pd.notna(df_raw.iloc[i, code_col]):
+        if code_col is not None and is_present(df_raw.iloc[i, code_col]):
             itl_code = str(df_raw.iloc[i, code_col]).strip()
 
         records.append({
@@ -385,7 +385,7 @@ def _find_name_column(df_raw: pd.DataFrame, year_row: int) -> int:
         text_count = 0
         for i in range(year_row + 1, min(year_row + 20, len(df_raw))):
             val = df_raw.iloc[i, col]
-            if pd.notna(val):
+            if is_present(val):
                 s = str(val).strip()
                 if s and not s.replace(".", "").replace("-", "").isdigit():
                     text_count += 1

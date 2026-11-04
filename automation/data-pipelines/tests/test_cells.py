@@ -16,7 +16,8 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from _cells import to_finite_float
+import pandas as pd
+from _cells import is_present, to_finite_float
 
 
 def test_plain_number() -> None:
@@ -92,3 +93,9 @@ def test_bool_still_rejected() -> None:
     True/False are not numeric cells and must return None (unchanged behaviour)."""
     assert to_finite_float(True) is None
     assert to_finite_float(False) is None
+
+
+def test_is_present_matches_notna_for_a_dataframe_cell() -> None:
+    """``is_present`` is ``pd.notna`` for one ``iloc`` cell: blanks (NaN/None/NaT) are absent."""
+    df = pd.DataFrame([["Region", 1.5, None, pd.NaT, float("nan"), ""]])
+    assert [is_present(df.iloc[0, j]) for j in range(6)] == [True, True, False, False, False, True]

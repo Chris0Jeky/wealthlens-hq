@@ -22,7 +22,7 @@ from pathlib import Path
 import pandas as pd
 import plotly.graph_objects as go
 import requests
-from _cells import to_finite_float
+from _cells import is_present, to_finite_float
 from chart_html import write_accessible_chart
 from http_retry import fetch_with_retry
 
@@ -240,7 +240,7 @@ def _parse_table_2_2(df_raw: pd.DataFrame) -> pd.DataFrame | None:
 
     records: list[dict[str, object]] = []
     for i in range(agg_row, min(agg_row + 12, len(df_raw))):
-        label = str(df_raw.iloc[i, 1]).strip() if pd.notna(df_raw.iloc[i, 1]) else ""
+        label = str(df_raw.iloc[i, 1]).strip() if is_present(df_raw.iloc[i, 1]) else ""
         if "decile" not in label.lower():
             continue
 
