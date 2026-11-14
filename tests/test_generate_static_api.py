@@ -23,6 +23,117 @@ if str(SCRIPTS_DIR) not in sys.path:
 import generate_static_api as gsa  # noqa: E402
 
 
+@pytest.mark.parametrize("fail_at", range(1, 8))
+@pytest.mark.parametrize("has_last_good", [True, False])
+def test_promotion_failure_restores_complete_snapshot(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, fail_at: int, has_last_good: bool
+) -> None:
+    """A failed replacement restores old bytes and removes newly published files."""
+    data_dir = tmp_path / "processed"
+    data_dir.mkdir()
+    (data_dir / "t.csv").write_text("year,value\n2024,42\n", encoding="utf-8")
+    out_dir = tmp_path / "out"
+    out_dir.mkdir()
+    if has_last_good:
+        for name in ("all-metadata.json", "datasets.json", "t.json", "t-metadata.json",
+                     "simulator/scenarios.json", "freshness.json"):
+            path = out_dir / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(b"old snapshot\r\n")
+    before = {p.relative_to(out_dir): p.read_bytes() for p in out_dir.rglob("*") if p.is_file()}
+    dirs_before = {p.relative_to(out_dir) for p in out_dir.rglob("*") if p.is_dir()}
+    monkeypatch.setattr(gsa, "DATA_DIR", data_dir)
+    monkeypatch.setattr(gsa, "OUT_DIR", out_dir)
+    monkeypatch.setattr(gsa, "DATASETS", {"t": "t.csv"})
+
+    def simulator(out: Path) -> None:
+        out.mkdir()
+        (out / "scenarios.json").write_text('{"scenarios":[]}', encoding="utf-8")
+        (out / "new.json").write_text('{"new":true}', encoding="utf-8")
+
+    monkeypatch.setattr(gsa, "generate_simulator_static", simulator)
+    replace = Path.replace
+    calls = 0
+
+    def fail_promotion(source: Path, target: Path) -> Path:
+        nonlocal calls
+        if source.is_relative_to(tmp_path) and target.is_relative_to(out_dir):
+            calls += 1
+            if calls == fail_at:
+                raise OSError("injected promotion failure")
+        return replace(source, target)
+
+    monkeypatch.setattr(Path, "replace", fail_promotion)
+    with pytest.raises(OSError, match="injected promotion failure"):
+        gsa.main()
+
+    assert {p.relative_to(out_dir): p.read_bytes() for p in out_dir.rglob("*") if p.is_file()} == before
+    assert {p.relative_to(out_dir) for p in out_dir.rglob("*") if p.is_dir()} == dirs_before
+    assert set(tmp_path.iterdir()) == {data_dir, out_dir}
+
+
+def test_backup_failure_does_not_start_promotion(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    out_dir = tmp_path / "out"
+    out_dir.mkdir()
+    staged = tmp_path / "staged"
+    staged.mkdir()
+    for name in ("a.json", "b.json"):
+        (out_dir / name).write_bytes(b"old")
+        (staged / name).write_bytes(b"new")
+    monkeypatch.setattr(gsa, "OUT_DIR", out_dir)
+
+    def fail_copy(*args: object) -> None:
+        raise OSError("backup unavailable")
+
+    monkeypatch.setattr(gsa.shutil, "copy2", fail_copy)
+    with pytest.raises(OSError, match="backup unavailable"):
+        gsa._promote_static_api(staged)
+    assert {p.name: p.read_bytes() for p in out_dir.iterdir()} == {"a.json": b"old", "b.json": b"old"}
+    assert set(tmp_path.iterdir()) == {out_dir, staged}
+
+
+def test_real_filesystem_promotion_error_rolls_back(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """A file blocking a nested output gives a real OS error after one replacement."""
+    out_dir = tmp_path / "out"
+    out_dir.mkdir()
+    (out_dir / "a.json").write_bytes(b"old")
+    (out_dir / "nested").write_bytes(b"blocking file")
+    staged = tmp_path / "staged"
+    (staged / "nested").mkdir(parents=True)
+    (staged / "a.json").write_bytes(b"new")
+    (staged / "nested" / "b.json").write_bytes(b"new")
+    monkeypatch.setattr(gsa, "OUT_DIR", out_dir)
+    with pytest.raises(OSError):
+        gsa._promote_static_api(staged)
+    assert {p.name: p.read_bytes() for p in out_dir.iterdir()} == {"a.json": b"old", "nested": b"blocking file"}
+    assert set(tmp_path.iterdir()) == {out_dir, staged}
+
+
+def test_rollback_failure_retains_recovery_backup(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    out_dir = tmp_path / "out"
+    out_dir.mkdir()
+    staged = tmp_path / "staged"
+    staged.mkdir()
+    for name in ("a.json", "b.json"):
+        (out_dir / name).write_bytes(b"old")
+        (staged / name).write_bytes(b"new")
+    monkeypatch.setattr(gsa, "OUT_DIR", out_dir)
+    replace = Path.replace
+
+    def fail_replace(source: Path, target: Path) -> Path:
+        if source.name == "b.json" or source.parent != staged:
+            raise OSError("filesystem unavailable")
+        return replace(source, target)
+
+    monkeypatch.setattr(Path, "replace", fail_replace)
+    with pytest.raises(RuntimeError, match="rollback failed; backups retained in") as raised:
+        gsa._promote_static_api(staged)
+    backup, = tmp_path.glob(".static-api-backup-*")
+    assert str(backup) in str(raised.value)
+    assert (backup / "a.json").read_bytes() == b"old"
+    assert (backup / "b.json").read_bytes() == b"old"
+
+
 def _write_csv(tmp_path: Path, text: str) -> Path:
     path = tmp_path / "dataset.csv"
     path.write_text(text, encoding="utf-8")

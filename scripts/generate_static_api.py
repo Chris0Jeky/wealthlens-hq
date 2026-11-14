@@ -16,11 +16,12 @@ from __future__ import annotations
 import ast
 import json
 import re
+import shutil
 import sys
 from collections.abc import Callable
 from datetime import date
 from pathlib import Path
-from tempfile import TemporaryDirectory
+from tempfile import TemporaryDirectory, mkdtemp
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -373,11 +374,52 @@ def main() -> None:
     with TemporaryDirectory(prefix=".static-api-", dir=OUT_DIR.parent) as tmp:
         staged = Path(tmp)
         _generate_static_api(staged)
-        for source in staged.rglob("*"):
-            if source.is_file():
-                destination = OUT_DIR / source.relative_to(staged)
-                destination.parent.mkdir(parents=True, exist_ok=True)
-                source.replace(destination)
+        _promote_static_api(staged)
+
+
+def _promote_static_api(staged: Path) -> None:
+    """Roll back ordinary promotion failures; this is not crash-atomic publication."""
+    sources = sorted(p for p in staged.rglob("*") if p.is_file())
+    backup = Path(mkdtemp(prefix=".static-api-backup-", dir=OUT_DIR.parent))
+    promoted: list[Path] = []
+    created_dirs: list[Path] = []
+    try:
+        # Finish all backups before modifying the public snapshot.
+        for source in sources:
+            relative = source.relative_to(staged)
+            destination = OUT_DIR / relative
+            if destination.exists():
+                saved = backup / relative
+                saved.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(destination, saved)
+        for source in sources:
+            destination = OUT_DIR / source.relative_to(staged)
+            missing = []
+            parent = destination.parent
+            while not parent.exists():
+                missing.append(parent)
+                parent = parent.parent
+            for parent in reversed(missing):
+                parent.mkdir()
+                created_dirs.append(parent)
+            source.replace(destination)
+            promoted.append(destination)
+    except Exception:
+        try:
+            for destination in reversed(promoted):
+                saved = backup / destination.relative_to(OUT_DIR)
+                if saved.exists():
+                    saved.replace(destination)
+                else:
+                    destination.unlink()
+            for directory in reversed(created_dirs):
+                directory.rmdir()
+        except OSError as error:
+            # Keep recovery files if the filesystem also refuses restoration.
+            raise RuntimeError(f"Static API rollback failed; backups retained in {backup}") from error
+        shutil.rmtree(backup)
+        raise
+    shutil.rmtree(backup)
 
 
 def _generate_static_api(out_dir: Path) -> None:
