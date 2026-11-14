@@ -89,3 +89,12 @@ npm run typecheck      # vue-tsc
 - Methodology note
 - Downloadable CSV where provided
 - Mobile-responsive and WCAG AA accessible implementation
+
+## Manual Data Refresh
+
+The repository's `weekly-data-update.yml` workflow remains manual-only. It regenerates
+the static API after pipelines succeed, then detects and stages chart changes plus the
+whitelisted `frontend/public/data/` artifacts, including new files and tracked deletions.
+Ignored processed CSVs remain local. Generation or Git-status failure stops the job before
+PR creation. This does not restore the cron or qualify a live fetch; upstream failures
+remain tracked in [#494](https://github.com/Chris0Jeky/wealthlens-hq/issues/494).

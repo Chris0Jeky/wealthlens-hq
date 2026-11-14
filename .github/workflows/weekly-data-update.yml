@@ -40,10 +40,18 @@ jobs:
           WID_API_KEY: ${{ secrets.WID_API_KEY }}
         run: python automation/data-pipelines/run_all.py
 
+      - name: Generate the served static API
+        run: python scripts/generate_static_api.py
+
       - name: Check for changes
         id: changes
         run: |
-          git diff --quiet projects/wealthlens-dashboard/charts/ && echo "changed=false" >> "$GITHUB_OUTPUT" || echo "changed=true" >> "$GITHUB_OUTPUT"
+          changes=$(git status --porcelain --untracked-files=all -- projects/wealthlens-dashboard/charts/ projects/wealthlens-dashboard/frontend/public/data/)
+          if [ -n "$changes" ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Create PR if data changed
         if: steps.changes.outputs.changed == 'true'
@@ -52,8 +60,7 @@ jobs:
         run: |
           BRANCH="data-update/$(date +%Y-%m-%d)"
           git checkout -b "$BRANCH"
-          git add projects/wealthlens-dashboard/charts/
-          git add projects/wealthlens-dashboard/data/processed/
+          git add -- projects/wealthlens-dashboard/charts/ projects/wealthlens-dashboard/frontend/public/data/
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -m "data: weekly pipeline refresh $(date +%Y-%m-%d)"
