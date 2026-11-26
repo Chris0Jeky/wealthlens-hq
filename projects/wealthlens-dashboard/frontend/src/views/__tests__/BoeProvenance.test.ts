@@ -96,6 +96,19 @@ describe("BoE article and embed citations", () => {
     expect(config.lede).toContain("6% through most of 2000")
   })
 
+  it("labels the latest card and coverage with the actual last plotted month", () => {
+    const last = rows.at(-1)!
+    const month = new Intl.DateTimeFormat("en-GB", {
+      month: "long",
+      year: "numeric",
+      timeZone: "UTC",
+    }).format(new Date(last.date))
+    expect(config.stats.at(-1)?.label).toBe(`Latest Bank Rate (${month})`)
+    expect(config.meta.find((item) => item.label === "Coverage")?.value).toBe(
+      `${rows[0].date} to ${last.date}`,
+    )
+  })
+
   it("names the actual series, monthly-average definition and both official URLs", () => {
     const copy = JSON.stringify({ ...config, related: [] })
     expect(copy).toContain("IUMABEDR")
@@ -103,6 +116,9 @@ describe("BoE article and embed citations", () => {
     expect(copy).toContain("MM23")
     expect(copy).not.toMatch(/IUDBEDR|D7BT|step function|2026-05-16|16 May 2026|\u2014/)
     expect(config.source.accessed).toBe(metadata.access_date)
+    expect(config.pills.map((pill) => pill.text)).toContain(`Accessed ${metadata.access_date}`)
+    expect(config.meta.find((item) => item.label === "Accessed")?.value).toBe(metadata.access_date)
+    expect(config.methodology).toContain(`Both sources accessed ${metadata.access_date}.`)
     expect(config.source.links?.map((link) => link.url)).toEqual(
       metadata.sources.map((source: { url: string }) => source.url),
     )

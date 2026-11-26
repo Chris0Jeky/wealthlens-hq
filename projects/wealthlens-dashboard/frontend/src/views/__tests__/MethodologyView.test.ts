@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs"
+import { resolve } from "node:path"
 import { describe, it, expect } from "vitest"
 import { mount } from "@vue/test-utils"
 import { createRouter, createMemoryHistory } from "vue-router"
@@ -59,6 +61,18 @@ describe("MethodologyView", () => {
     )
     expect(card.text()).not.toContain("Children in Low Income Families")
     expect(card.text()).not.toContain("2026-05-16")
+  })
+
+  it("shows the shipped BoE and ONS snapshot's access date", () => {
+    const metadata = JSON.parse(
+      readFileSync(resolve("public/data/boe-rates-metadata.json"), "utf-8"),
+    )
+    const wrapper = mountWithRouter()
+    const card = wrapper
+      .findAll(".source-card")
+      .find((entry) => entry.text().includes("boe-rates"))!
+    expect(card.text()).toContain(metadata.access_date)
+    wrapper.unmount()
   })
 
   it("contains privacy note", () => {

@@ -74,7 +74,7 @@ export const OG_METADATA: Record<string, OgMetadataEntry> = {
     title: "Monthly Bank Rate and Inflation",
     subtitle: "Monthly average of official Bank Rate (IUMABEDR) and CPI annual rate (D7G7, MM23)",
     source: "BoE IUMABEDR / ONS D7G7 (MM23)",
-    sourceAccessDate: "2026-10-22",
+    sourceAccessDate: "2026-11-25",
   },
   "child-poverty": {
     title: "Child Poverty by Region",
