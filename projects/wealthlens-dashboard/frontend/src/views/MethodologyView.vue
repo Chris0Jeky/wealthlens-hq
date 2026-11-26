@@ -100,7 +100,7 @@ const DATASET_CITATIONS: Omit<DatasetSource, "updateFrequency">[] = [
       "https://www.bankofengland.co.uk/boeapps/database/_iadb-fromshowcolumns.asp?csv.x=yes&SeriesCodes=IUMABEDR&CSVF=TN&UsingCodes=Y&VFD=N&Datefrom=01%2FJan%2F2000&Dateto=01%2FDec%2F2099&VPD=Y",
       "https://www.ons.gov.uk/generator?format=csv&uri=/economy/inflationandpriceindices/timeseries/d7g7/mm23",
     ],
-    accessDate: "2026-10-22",
+    accessDate: "2026-11-25",
   },
   {
     name: "child-poverty",

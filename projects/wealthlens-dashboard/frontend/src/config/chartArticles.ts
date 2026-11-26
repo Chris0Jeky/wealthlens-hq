@@ -684,7 +684,7 @@ export const chartConfigs: Record<string, ChartConfig> = {
       { text: "Economy", accent: true },
       { text: "Monthly observations since 2000" },
       { text: "United Kingdom" },
-      { text: "Accessed 2026-10-22" },
+      { text: "Accessed 2026-11-25" },
     ],
     headline: "The cost of borrowing:",
     headlineEmphasis: "monthly Bank Rate and inflation.",
@@ -700,8 +700,8 @@ export const chartConfigs: Record<string, ChartConfig> = {
         value: "ONS D7G7 (MM23), CPI annual rate",
         href: "https://www.ons.gov.uk/generator?format=csv&uri=/economy/inflationandpriceindices/timeseries/d7g7/mm23",
       },
-      { label: "Coverage", value: "2000-01-01 to 2026-09-01" },
-      { label: "Accessed", value: "2026-10-22" },
+      { label: "Coverage", value: "2000-01-01 to 2026-10-01" },
+      { label: "Accessed", value: "2026-11-25" },
       { label: "Licence", value: "Bank of England terms / ONS OGL v3.0" },
       { label: "Source cadence", value: "Monthly" },
       { label: "Chart ID", value: "WL-E-001" },
@@ -728,7 +728,7 @@ export const chartConfigs: Record<string, ChartConfig> = {
         description: "Highest CPI annual rate in the plotted series (ONS D7G7, MM23)",
       },
       {
-        label: "Latest Bank Rate (September 2026)",
+        label: "Latest Bank Rate (October 2026)",
         value: "3.75",
         unit: "%",
         description: "Monthly average of official Bank Rate (BoE IUMABEDR)",
@@ -758,7 +758,7 @@ export const chartConfigs: Record<string, ChartConfig> = {
         },
       ],
       licence: "Bank of England terms / ONS OGL v3.0",
-      accessed: "2026-10-22",
+      accessed: "2026-11-25",
       chartId: "WL-E-001",
     },
     article: {
@@ -782,7 +782,7 @@ export const chartConfigs: Record<string, ChartConfig> = {
       },
     },
     methodology: `
-      <p>Bank Rate is the <a href="https://www.bankofengland.co.uk/boeapps/database/_iadb-fromshowcolumns.asp?csv.x=yes&amp;SeriesCodes=IUMABEDR&amp;CSVF=TN&amp;UsingCodes=Y&amp;VFD=N&amp;Datefrom=01%2FJan%2F2000&amp;Dateto=01%2FDec%2F2099&amp;VPD=Y">BoE IUMABEDR monthly average of official Bank Rate</a>, not seasonally adjusted. CPI is the <a href="https://www.ons.gov.uk/generator?format=csv&amp;uri=/economy/inflationandpriceindices/timeseries/d7g7/mm23">ONS D7G7 (MM23) CPI annual rate</a>. Both sources accessed 2026-10-22.</p>
+      <p>Bank Rate is the <a href="https://www.bankofengland.co.uk/boeapps/database/_iadb-fromshowcolumns.asp?csv.x=yes&amp;SeriesCodes=IUMABEDR&amp;CSVF=TN&amp;UsingCodes=Y&amp;VFD=N&amp;Datefrom=01%2FJan%2F2000&amp;Dateto=01%2FDec%2F2099&amp;VPD=Y">BoE IUMABEDR monthly average of official Bank Rate</a>, not seasonally adjusted. CPI is the <a href="https://www.ons.gov.uk/generator?format=csv&amp;uri=/economy/inflationandpriceindices/timeseries/d7g7/mm23">ONS D7G7 (MM23) CPI annual rate</a>. Both sources accessed 2026-11-25.</p>
       <ul>
         <li>BoE month-end dates label monthly averages. The chart labels the same calendar month at its start; it does not plot individual MPC decisions.</li>
         <li>CPI is the annual percentage change in consumer prices, not CPIH.</li>
